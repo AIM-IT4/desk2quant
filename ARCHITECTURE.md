@@ -110,7 +110,7 @@ sequenceDiagram
     FE->>RZ: Checkout (notes.type = session)
     RZ->>WH: payment.captured
     WH->>SB: Dedup check, insert booking (meet link, status upcoming)
-    WH->>BR: Customer confirmation (Google Meet link)
+    WH->>BR: Customer confirmation (private session link)
     WH->>BR: Admin alert
     Note over SB: cron-job.org hits /api/reminders every 5 min<br/>to email upcoming-session reminders
 ```
