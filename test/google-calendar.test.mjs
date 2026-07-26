@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildCalendarEvent, createUniqueMeetEvent } from '../lib/google-calendar.js';
+import { buildCalendarEvent, createUniqueMeetEvent } from '../api/google-calendar.js';
 
 test('creates a unique Google Meet request per payment', () => {
     const base = { customerEmail: 'customer@example.com', customerName: 'Customer', sessionName: 'Mentoring', sessionDate: '2026-08-02', sessionTime: '2:30 PM', sessionDuration: '60' };
