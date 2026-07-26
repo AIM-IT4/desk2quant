@@ -3,7 +3,7 @@
 // Handles product purchases and session bookings
 
 import crypto from 'crypto';
-import { createUniqueMeetEvent } from './google-calendar.js';
+import { createUniqueMeetEvent } from '../lib/google-calendar.js';
 
 // Disable Vercel body parsing so we can read the raw stream for signature verification
 export const config = {
