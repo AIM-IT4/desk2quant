@@ -514,7 +514,7 @@
                             <i class="fas fa-video" style="color: var(--primary);"></i>
                             <div>
                                 <strong>Google Meet Link:</strong><br>
-                                <a href="${booking.meet_link || booking.meetLink || '#'}" target="_blank">${booking.meet_link || booking.meetLink || '#'}</a>
+                                <a href="${booking.meet_link || booking.meetLink || 'https://meet.google.com/hfp-npyq-qho'}" target="_blank">${booking.meet_link || booking.meetLink || 'https://meet.google.com/hfp-npyq-qho'}</a>
                             </div>
                         </div>
                     ` : ''}
@@ -792,7 +792,7 @@ Status: CONFIRMED
                 );
 
                 // 4. Send confirmation email to customer (with meeting link)
-                const meetLink = booking.meet_link || '#';
+                const meetLink = booking.meet_link || 'https://meet.google.com/hfp-npyq-qho';
 
                 const htmlContent = `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
