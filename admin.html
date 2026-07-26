@@ -2801,9 +2801,12 @@ Desk2Quant
                         const { error: updateError } = await window.supabaseAdminClient
                             .from('bookings')
                             .update({
-                                booking_date: altDate,
-                                booking_time: altTime,
-                                status: 'upcoming',
+                                admin_proposed_date: altDate,
+                                admin_proposed_time: altTime,
+                                admin_reschedule_reason: message || null,
+                                admin_reschedule_requested_at: new Date().toISOString(),
+                                status: 'admin_reschedule_pending',
+                                customer_response: null,
                                 requested_date: null,
                                 requested_time: null,
                                 reschedule_reason: null
@@ -2823,8 +2826,7 @@ Desk2Quant
                         <p><strong>📅 Date:</strong> ${altDate}</p>
                         <p><strong>⏰ Time:</strong> ${altTime}</p>
                         ${message ? `<p><strong>Message from Admin:</strong></p><p style="background: #f3f4f6; padding: 10px; border-radius: 5px;">${message}</p>` : ''}
-                        <p>Your session has been automatically updated to this new date/time.</p>
-                        <p>If this doesn't work for you, please contact us to reschedule.</p>
+                        <p>Please visit <a href="${window.location.origin}/my-bookings.html">My Bookings</a> to accept this time or suggest another.</p>
                         <hr style="border: 1px solid #e5e7eb; margin: 20px 0;">
                         <p style="color: #6b7280;">Best regards,<br>Desk2Quant</p>
                     </div>
@@ -2841,9 +2843,7 @@ Alternative Schedule:
 • Time: ${altTime}
 
 ${message ? 'Message from Admin:\n' + message + '\n\n' : ''}
-Your session has been automatically updated to this new date/time.
-
-If this doesn't work for you, please contact us to reschedule.
+Please visit ${window.location.origin}/my-bookings.html to accept this time or suggest another.
 ━━━━━━━━━━━━━━━━━━━━
                 `.trim();
 
@@ -4216,7 +4216,9 @@ Desk2Quant
                     return Math.floor(seconds) + "s ago";
                 }
 
-                async function updateDashboardCharts() {
+                // Legacy fixed-range chart implementation retained for reference;
+                // the all-time-aware implementation above is the active chart renderer.
+                async function updateDashboardChartsLegacy() {
                     const range = parseInt(document.getElementById('revenueRange').value);
                     const cutoffDate = new Date();
                     cutoffDate.setDate(cutoffDate.getDate() - range);
