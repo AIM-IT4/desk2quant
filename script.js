@@ -2819,7 +2819,8 @@ async function initSessionPayment(description, amount, customerEmail, currency =
             customer_name: bookingData ? bookingData.name : '',
             customer_email: customerEmail,
             session_name: bookingData ? bookingData.sessionType : '',
-            session_date: bookingData ? bookingData.date : '',
+            // Calendar requires the original ISO date, not the display-formatted date.
+            session_date: bookingData ? (bookingData.bookingDate || bookingData.date) : '',
             session_time: bookingData ? bookingData.time : '',
             session_duration: bookingData ? String(bookingData.duration) : '',
             session_price: String(inrAmountForLogging || amount),
