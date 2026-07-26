@@ -1668,18 +1668,6 @@ async function loadSessionsFromSupabase(prefetchPromise) {
         }
 
         if (data && data.length > 0) {
-            // Keep this low-value option scoped to the Calendar integration preview.
-            // It is intentionally never added to the shared Supabase sessions table.
-            if (window.location.hostname.includes('codex-google-calendar-meet')) {
-                data.unshift({
-                    name: 'Google Meet integration test (Preview only)',
-                    duration: 15,
-                    price: 1,
-                    description: 'Rs. 1 preview test for a private Google Calendar Meet link.',
-                    features: ['Private Google Meet link', 'Preview deployment only'],
-                    is_popular: false
-                });
-            }
             console.log('🎯 Loading ' + data.length + ' sessions from Supabase');
             // Store sessions globally for booking form reference
             window.dynamicSessions = data;
