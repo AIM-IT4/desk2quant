@@ -1668,6 +1668,18 @@ async function loadSessionsFromSupabase(prefetchPromise) {
         }
 
         if (data && data.length > 0) {
+            // Keep this low-value option scoped to the Calendar integration preview.
+            // It is intentionally never added to the shared Supabase sessions table.
+            if (window.location.hostname.includes('codex-google-calendar-meet')) {
+                data.unshift({
+                    name: 'Google Meet integration test (Preview only)',
+                    duration: 15,
+                    price: 1,
+                    description: 'Rs. 1 preview test for a private Google Calendar Meet link.',
+                    features: ['Private Google Meet link', 'Preview deployment only'],
+                    is_popular: false
+                });
+            }
             console.log('🎯 Loading ' + data.length + ' sessions from Supabase');
             // Store sessions globally for booking form reference
             window.dynamicSessions = data;
@@ -2884,20 +2896,292 @@ async function initSessionPayment(description, amount, customerEmail, currency =
  */
 async function handleSessionPaymentSuccess(response) {
     const paymentId = response.payment_id;
-    let booking = window.pendingBooking;
-    if (!booking) {
-        try {
-            const stored = localStorage.getItem('pendingBooking');
-            if (stored) booking = JSON.parse(stored);
-        } catch (e) { console.warn('Could not retrieve booking from localStorage:', e); }
-    }
-    if (!booking || !booking.email) {
-        alert('Payment received. Please contact support with Payment ID: ' + paymentId);
+
+    try {
+        // Try to get booking from window, fallback to localStorage
+        let booking = window.pendingBooking;
+        if (!booking) {
+            try {
+                const stored = localStorage.getItem('pendingBooking');
+                if (stored) booking = JSON.parse(stored);
+            } catch (e) { console.warn('Could not retrieve booking from localStorage:', e); }
+        }
+
+        if (!booking || !booking.email) {
+            console.error('❌ No booking data found!');
+            alert('Error: Booking data was lost. Please contact support with Payment ID: ' + paymentId);
+            return;
+        }
+
+        console.log('📧 Booking object:', booking);
+        console.log('📧 Email to send to:', booking.email);
+
+        // The signed webhook creates the booking, private Meet event, and confirmation email.
+        alert('Payment received!\n\nYour booking confirmation and private Google Meet link will arrive by email shortly.\nPayment ID: ' + paymentId);
+        try { localStorage.removeItem('pendingBooking'); } catch (e) {}
         return;
+
+        // Generate unique meeting link for this booking
+        const uniqueMeetLink = generateUniqueMeetLink(booking.name, booking.date);
+        console.log('🔗 Generated unique meeting link:', uniqueMeetLink);
+
+        // ===== STEP 0: DEDUP CHECK (prevent webhook + client-side double-fire) =====
+        if (window.supabaseClient) {
+            try {
+                const { data: existing } = await window.supabaseClient
+                    .from('bookings')
+                    .select('id')
+                    .eq('payment_id', paymentId)
+                    .limit(1);
+                if (existing && existing.length > 0) {
+                    console.log('ℹ️ Booking already exists for payment', paymentId, '— skipping duplicate client-side insert');
+                    alert(`✅ Booking already confirmed!\nPayment ID: ${paymentId}\nCheck your email for details.`);
+                    try { localStorage.removeItem('pendingBooking'); } catch (e) { }
+                    return;
+                }
+            } catch (e) { console.warn('Dedup check failed (proceeding):', e); }
+        }
+
+        // ===== STEP 1: SEND CUSTOMER EMAIL FIRST (HIGHEST PRIORITY) =====
+        console.log('📧 Sending session confirmation to customer:', booking.email);
+
+        console.log('📧 Sending customer email securely via API...');
+
+        const htmlContent = `
+            <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
+                <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                    <div style="background-color: #1a1a1a; padding: 20px; text-align: center;">
+                        <span style="color: #ffffff; font-size: 24px; font-weight: bold; letter-spacing: 1px;">Desk2Quant</span>
+                    </div>
+                    <div style="padding: 30px;">
+                        <div style="margin-bottom: 20px;">
+                            <span style="display: inline-block; background: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; margin-right: 10px;">Booking Confirmed</span>
+                            <span style="display: inline-block; background: #d1fae5; color: #065f46; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase;">Paid</span>
+                        </div>
+                        <p style="font-size: 16px; margin-bottom: 25px;">Hi <strong>${booking.name}</strong>, your mentoring session is confirmed.</p>
+
+                        <div style="background: #f9f8f4; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
+                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Session Details</p>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                                <tr><td style="padding: 5px 0; color: #666; width: 30%;">Session</td><td style="padding: 5px 0; color: #1a1a1a; font-weight: bold;">${booking.sessionType}</td></tr>
+                                <tr><td style="padding: 5px 0; color: #666;">Duration</td><td style="padding: 5px 0; color: #1a1a1a;">${booking.duration} mins</td></tr>
+                                <tr><td style="padding: 5px 0; color: #666;">Date</td><td style="padding: 5px 0; color: #1a1a1a;">${booking.date}</td></tr>
+                                <tr><td style="padding: 5px 0; color: #666;">Time</td><td style="padding: 5px 0; color: #1a1a1a;">${booking.time}</td></tr>
+                                <tr><td style="padding: 5px 0; color: #666;">Amount Paid</td><td style="padding: 5px 0; color: #1a1a1a;">${booking.pay_currency === 'INR' ? '₹' : '$'}${booking.pay_currency === 'INR' ? booking.price : Math.round(booking.price * 0.012)}</td></tr>
+                                <tr><td style="padding: 5px 0; color: #666;">Payment ID</td><td style="padding: 5px 0; color: #1a1a1a;">${paymentId}</td></tr>
+                            </table>
+                        </div>
+
+                        <div style="background: #f9f8f4; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
+                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Join Your Session</p>
+                            <a href="${uniqueMeetLink}" style="display: inline-block; background: #10b981; color: #ffffff; font-weight: bold; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-size: 14px;">Join Meeting</a>
+                            <p style="margin-top: 10px; font-size: 13px; color: #666; word-break: break-all;">${uniqueMeetLink}</p>
+                        </div>
+
+                        <div style="background: #fffbeb; padding: 20px; border-radius: 6px; border-left: 4px solid #f59e0b;">
+                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Need to Reschedule?</p>
+                            <p style="margin: 0; font-size: 14px; color: #1a1a1a;">Visit <a href="${window.location.origin}/my-bookings.html" style="color: #2563eb; text-decoration: none;">My Bookings</a> and enter your email (<strong>${booking.email}</strong>) to view and reschedule.</p>
+                        </div>
+                    </div>
+                    <div style="background-color: #1a1a1a; padding: 25px 20px; text-align: center; color: #888; font-size: 12px;">
+                        <p style="margin: 0 0 10px 0;">Sent by Desk2Quant</p>
+                        <p style="margin: 0;">Have an issue? Reply to this email.</p>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const textContent = `🎉 Your session has been booked!
+
+Hi ${booking.name},
+
+Session: ${booking.sessionType} (${booking.duration} mins)
+Date: ${booking.date}
+Time: ${booking.time}
+Amount Paid: ${booking.pay_currency === 'INR' ? '₹' + booking.price : '$' + Math.round(booking.price * 0.012)}
+Payment ID: ${paymentId}
+
+JOIN YOUR SESSION HERE:
+${uniqueMeetLink}
+
+Need to Reschedule?
+Visit: ${window.location.origin}/my-bookings.html
+Enter your email (${booking.email}) to view and reschedule.
+
+Best regards,
+${BUSINESS_NAME}`;
+
+        try {
+            const result = await sendEmailWithBrevo(
+                booking.email,
+                `Booking Confirmed: ${booking.sessionType}`,
+                htmlContent,
+                textContent
+            );
+
+            if (result.success) {
+                console.log('✅ Session confirmation SUCCESS via Brevo');
+            } else {
+                console.error('❌ Brevo session email FAILED:', result.error);
+            }
+        } catch (error) {
+            console.error('❌ Session email failed:', error);
+        }
+
+        // ===== STEP 2: STORE IN SUPABASE (SECONDARY) =====
+        console.log('📋 Attempting to store booking in Supabase...');
+        if (window.supabaseClient) {
+            try {
+                const { data, error } = await window.supabaseClient
+                    .from('bookings')
+                    .insert({
+                        email: booking.email,
+                        name: booking.name,
+                        phone: booking.phone,
+                        service_name: booking.sessionType,
+                        service_price: booking.price,
+                        service_duration: booking.duration,
+                        // Keep display date for emails, but persist a valid DATE value.
+                        // Fallback supports an in-flight booking created before this fix.
+                        booking_date: booking.bookingDate || new Date(booking.date).toISOString().split('T')[0],
+                        booking_time: booking.time,
+                        message: booking.message,
+                        status: 'upcoming',
+                        payment_id: paymentId,
+                        meet_link: uniqueMeetLink
+                    })
+                    .select();
+
+                if (error) {
+                    console.error('❌ Supabase insert failed:', error);
+                } else {
+                    console.log('✅ Booking stored in Supabase:', data);
+                }
+            } catch (error) {
+                console.error('❌ Error storing booking in database:', error);
+            }
+        } else {
+            console.warn('⚠️ Supabase client not available — saving booking to localStorage for webhook pickup');
+            try {
+                localStorage.setItem('pendingBooking', JSON.stringify({
+                    ...booking,
+                    payment_id: paymentId,
+                    meet_link: uniqueMeetLink,
+                    saved_at: Date.now()
+                }));
+            } catch (e) { console.warn('localStorage save failed:', e); }
+        }
+
+        // ===== STEP 3: SEND ADMIN NOTIFICATION (TERTIARY) =====
+        try {
+            const emailBody = `
+New Booking Details:
+━━━━━━━━━━━━━━━━━━━━
+📋 Session: ${booking.sessionType} (${booking.duration} mins)
+💰 Amount Paid: ${booking.pay_currency === 'INR' ? '₹' + booking.price : '$' + Math.round(booking.price * 0.012)}
+🆔 Payment ID: ${paymentId}
+
+👤 Customer Details:
+   Name: ${booking.name}
+   Email: ${booking.email}
+   Phone: ${booking.phone}
+
+📅 Scheduled For:
+   Date: ${booking.date}
+   Time: ${booking.time}
+
+📝 Customer Message:
+   ${booking.message}
+
+🔗 Google Meet Link to Share:
+   ${uniqueMeetLink}
+━━━━━━━━━━━━━━━━━━━━
+    `.trim();
+
+            const adminHtml = `
+        <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
+            <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                <div style="background-color: #1a1a1a; padding: 20px; text-align: center;">
+                    <span style="color: #ffffff; font-size: 24px; font-weight: bold; letter-spacing: 1px;">Desk2Quant Admin</span>
+                </div>
+                <div style="padding: 30px;">
+                    <div style="margin-bottom: 20px;">
+                        <span style="display: inline-block; background: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase;">New Booking Received</span>
+                    </div>
+                    <p style="font-size: 16px; margin-bottom: 25px;"><strong>${booking.name}</strong> booked a mentoring session.</p>
+                    <div style="background: #f9f8f4; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
+                        <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Session Details</p>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                            <tr><td style="padding: 5px 0; color: #666; width: 30%;">Session</td><td style="padding: 5px 0; color: #1a1a1a; font-weight: bold;">${booking.sessionType}</td></tr>
+                            <tr><td style="padding: 5px 0; color: #666;">Duration</td><td style="padding: 5px 0; color: #1a1a1a;">${booking.duration} mins</td></tr>
+                            <tr><td style="padding: 5px 0; color: #666;">Date</td><td style="padding: 5px 0; color: #1a1a1a;">${booking.date}</td></tr>
+                            <tr><td style="padding: 5px 0; color: #666;">Time</td><td style="padding: 5px 0; color: #1a1a1a;">${booking.time}</td></tr>
+                            <tr><td style="padding: 5px 0; color: #666;">Amount</td><td style="padding: 5px 0; color: #1a1a1a;">${booking.pay_currency === 'INR' ? '₹' : (booking.pay_currency || '$')}${booking.pay_currency === 'INR' ? booking.price : Math.round(booking.price * 0.012)}</td></tr>
+                        </table>
+                    </div>
+                    <div style="background: #f9f8f4; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
+                        <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Customer Details</p>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                            <tr><td style="padding: 5px 0; color: #666; width: 30%;">Name</td><td style="padding: 5px 0; color: #1a1a1a;">${booking.name}</td></tr>
+                            <tr><td style="padding: 5px 0; color: #666;">Email</td><td style="padding: 5px 0; color: #1a1a1a;"><a href="mailto:${booking.email}" style="color: #2563eb; text-decoration: none;">${booking.email}</a></td></tr>
+                            <tr><td style="padding: 5px 0; color: #666;">Phone</td><td style="padding: 5px 0; color: #1a1a1a;">${booking.phone}</td></tr>
+                            <tr><td style="padding: 5px 0; color: #666;">Payment ID</td><td style="padding: 5px 0; color: #1a1a1a;">${paymentId}</td></tr>
+                        </table>
+                    </div>
+                    <div style="background: #f9f8f4; padding: 20px; border-radius: 6px;">
+                        <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Meeting Link</p>
+                        <a href="${uniqueMeetLink}" style="display: inline-block; background: #10b981; color: #ffffff; font-weight: bold; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-size: 14px;">Join Meeting</a>
+                        <p style="margin-top: 10px; font-size: 13px; color: #666; word-break: break-all;">${uniqueMeetLink}</p>
+                    </div>
+                    <div style="background: #fffbeb; padding: 20px; border-radius: 6px; margin-top: 16px; border-left: 4px solid #f59e0b;">
+                        <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Customer Message</p>
+                        <p style="margin: 0; color: #1a1a1a; font-size: 14px;">${booking.message}</p>
+                    </div>
+                </div>
+                <div style="background-color: #1a1a1a; padding: 20px; text-align: center; color: #888; font-size: 12px;">
+                    <p style="margin: 0;">Sent by Desk2Quant</p>
+                </div>
+            </div>
+        </div>
+    `;
+            await sendAdminNotification(`New Booking: ${booking.name} - ${booking.sessionType}`, adminHtml, emailBody);
+        } catch (adminErr) {
+            console.error('⚠️ Admin notification failed (non-blocking):', adminErr);
+        }
+
+        // Clear localStorage backup
+        try { localStorage.removeItem('pendingBooking'); } catch (e) { }
+
+
+        // Show success message to customer
+        alert(`🎉 Session Booked Successfully!
+
+Payment ID: ${paymentId}
+
+📅 ${booking.sessionType}
+📆 ${booking.date}
+⏰ ${booking.time}
+
+✅ Confirmation email with Google Meet link has been sent to ${booking.email}
+
+📩 IMPORTANT: Please check your Spam/Junk folder if you don't see the email in your Inbox.
+
+🔄 Need to Reschedule?
+Visit: ${window.location.origin}/my-bookings.html
+Enter your email to view and reschedule your session.
+
+Thank you for booking!`);
+
+        // Reset form
+        const bookingForm = document.getElementById('bookingForm');
+        if (bookingForm) bookingForm.reset();
+        const bookingPrice = document.getElementById('bookingPrice');
+        if (bookingPrice) bookingPrice.style.display = 'none';
+
+    } catch (outerErr) {
+        console.error('❌ handleSessionPaymentSuccess failed:', outerErr);
+        alert('Payment received (ID: ' + paymentId + '). If you did not get a confirmation email, please contact support.');
     }
-    // The signed webhook creates the booking, private Meet event, and confirmation email.
-    alert('Payment received!\n\nYour booking confirmation and private Google Meet link will arrive by email shortly.\nPayment ID: ' + paymentId);
-    try { localStorage.removeItem('pendingBooking'); } catch (e) {}
 }
 
 // --- BLOG & RESOURCES LOGIC ---
