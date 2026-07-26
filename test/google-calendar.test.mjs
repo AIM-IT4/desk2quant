@@ -8,7 +8,7 @@ test('creates a unique Google Meet request per payment', () => {
     const first = buildCalendarEvent({ ...base, paymentId: 'pay_123' });
     const second = buildCalendarEvent({ ...base, paymentId: 'pay_456' });
     assert.equal(first.conferenceData.createRequest.conferenceSolutionKey.type, 'hangoutsMeet');
-    assert.equal(first.attendees[0].email, 'customer@example.com');
+    assert.equal('attendees' in first, false);
     assert.equal(first.start.timeZone, 'Asia/Kolkata');
     assert.notEqual(first.conferenceData.createRequest.requestId, second.conferenceData.createRequest.requestId);
     assert.notEqual(first.id, second.id);
