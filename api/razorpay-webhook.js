@@ -647,7 +647,7 @@ async function handleSessionBooking(data) {
     const sessionPrice = notes.session_price || amount;
     const customerPhone = notes.customer_phone || '';
     const customerMessage = notes.customer_message || '';
-    const meetLink = createJitsiMeetingLink(paymentId, RAZORPAY_WEBHOOK_SECRET);
+    const meetLink = createJitsiMeetingLink(paymentId, customerName, RAZORPAY_WEBHOOK_SECRET);
 
     let displayTime = sessionTime;
     if (displayTime !== 'TBD' && !displayTime.toLowerCase().match(/am|pm/)) {
