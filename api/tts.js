@@ -1,3 +1,5 @@
+import { createUniqueMeetEvent } from '../lib/google-calendar.js';
+
 export default async function handler(req, res) {
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -6,6 +8,25 @@ export default async function handler(req, res) {
 
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+    // Preview-only, idempotent Calendar API health check. It has no attendee and sends no email.
+    if (req.query.calendar_test === '1') {
+        try {
+            const result = await createUniqueMeetEvent({
+                paymentId: 'desk2quant_calendar_api_healthcheck_20260726',
+                customerEmail: '',
+                customerName: '',
+                sessionName: 'Desk2Quant Calendar API health check (do not attend)',
+                sessionDate: '2030-01-02',
+                sessionTime: '10:00',
+                sessionDuration: '15'
+            });
+            if (!result.meetLink) throw new Error('Google Calendar returned no Meet link');
+            return res.status(200).json({ ok: true, meetLink: result.meetLink });
+        } catch (error) {
+            return res.status(502).json({ ok: false, error: error.message });
+        }
+    }
 
     const GROQ_API_KEY = process.env.GROQ_API_KEY;
     if (!GROQ_API_KEY) {
