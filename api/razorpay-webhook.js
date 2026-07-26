@@ -720,6 +720,7 @@ async function handleSessionBooking(data) {
                 status: 'upcoming',
                 payment_id: paymentId,
                 meet_link: meetLink,
+                source: 'webhook', // Mark for debugging
                 customer_country: notes.customer_country || notes.country || 'Unknown'
             })
         });
