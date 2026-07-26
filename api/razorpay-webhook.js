@@ -737,6 +737,12 @@ async function handleSessionBooking(data) {
 
     // 3. Send confirmation email to customer via Brevo
     if (BREVO_API_KEY && customerEmail) {
+        const meetingSection = meetLink
+            ? `<center><a href="${meetLink}" style="display: inline-block; background: #e95836; color: #ffffff; font-weight: bold; text-decoration: none; padding: 14px 30px; border-radius: 6px; font-size: 16px; margin-bottom: 30px;">Join Meeting</a></center>`
+            : `<div style="background: #fff7ed; padding: 16px; border-radius: 6px; margin-bottom: 24px; color: #9a3412;"><strong>Meeting link update:</strong> We are preparing your private Google Meet link and will email it shortly.</div>`;
+        const meetingText = meetLink
+            ? `\n\nJoin Meeting Link:\n${meetLink}`
+            : '\n\nYour private Google Meet link is being prepared and will be emailed shortly.';
         const customerHtml = `
             <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
                 <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
@@ -769,9 +775,7 @@ async function handleSessionBooking(data) {
                             </table>
                         </div>
                         
-                        <center>
-                            <a href="${meetLink}" style="display: inline-block; background: #e95836; color: #ffffff; font-weight: bold; text-decoration: none; padding: 14px 30px; border-radius: 6px; font-size: 16px; margin-bottom: 30px;">Join Meeting</a>
-                        </center>
+                        ${meetingSection}
 
                         <div style="background: #f9f8f4; padding: 20px; border-radius: 6px; margin-bottom: 20px;">
                             <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Need to Reschedule?</p>
@@ -805,7 +809,7 @@ async function handleSessionBooking(data) {
                     to: [{ email: customerEmail, name: customerName }],
                     subject: `Booking Confirmed: ${sessionName}`,
                     htmlContent: customerHtml,
-                    textContent: `Hi ${customerName},\n\nYour session is confirmed!\n\nSession: ${sessionName}\nDate: ${sessionDate}\nTime: ${displayTime} (${sessionDuration} mins)\nAmount Paid: ₹${sessionPrice}\n\nJoin Meeting Link:\n${meetLink}\n\nPayment ID: ${paymentId}\n\nNeed to reschedule? You can view and manage your bookings on our website.\n\nHave an issue? Reply to this email.\n\nSent by Desk2Quant`
+                    textContent: `Hi ${customerName},\n\nYour session is confirmed!\n\nSession: ${sessionName}\nDate: ${sessionDate}\nTime: ${displayTime} (${sessionDuration} mins)\nAmount Paid: ₹${sessionPrice}\n\n${meetingText}\n\nPayment ID: ${paymentId}\n\nNeed to reschedule? You can view and manage your bookings on our website.\n\nHave an issue? Reply to this email.\n\nSent by Desk2Quant`
                 })
             });
 
