@@ -2439,15 +2439,12 @@ if (modalPayBtn) {
 // ⚠️ YOUR EMAIL - Where booking notifications will be sent
 const ADMIN_EMAIL = 'jha.8@alumni.iitj.ac.in';
 
-// Google Meet link for all sessions (reliable, no setup needed)
-const GOOGLE_MEET_LINK = "https://meet.google.com/hfp-npyq-qho";
-
-/**
- * Get meeting link for booking
- * Using your existing Google Meet link - most reliable option
- */
-function generateUniqueMeetLink(customerName, bookingDate) {
-    return GOOGLE_MEET_LINK;
+// Paid-session links are created by the signed Razorpay webhook. Free sessions do not
+// trigger a payment webhook, so they receive an independently random Jitsi room here.
+function generateFreeSessionLink() {
+    const token = window.crypto?.randomUUID?.().replace(/-/g, '')
+        || `${Date.now()}${Math.random().toString(16).slice(2)}`;
+    return `https://meet.jit.si/desk2quant-free-${token}`;
 }
 
 // Session types (loaded dynamically from Supabase)
@@ -2894,6 +2891,20 @@ async function initSessionPayment(description, amount, customerEmail, currency =
  * Handle successful session payment - send email notification
  */
 async function handleSessionPaymentSuccess(response) {
+    const paymentId = response?.payment_id || response?.razorpay_payment_id || '';
+
+    // Paid bookings are fulfilled exactly once by the verified Razorpay webhook.
+    // Keeping email/database work off the browser prevents duplicate confirmations.
+    if (!String(paymentId).startsWith('FREE_SESSION_')) {
+        try { localStorage.removeItem('pendingBooking'); } catch (e) { }
+        alert('Payment received! Your booking is being confirmed and your private session link will arrive by email shortly.');
+        return;
+    }
+
+    return fulfillFreeSessionBooking({ payment_id: paymentId });
+}
+
+async function fulfillFreeSessionBooking(response) {
     const paymentId = response.payment_id;
 
     try {
@@ -2916,7 +2927,7 @@ async function handleSessionPaymentSuccess(response) {
         console.log('📧 Email to send to:', booking.email);
 
         // Generate unique meeting link for this booking
-        const uniqueMeetLink = generateUniqueMeetLink(booking.name, booking.date);
+        const uniqueMeetLink = generateFreeSessionLink();
         console.log('🔗 Generated unique meeting link:', uniqueMeetLink);
 
         // ===== STEP 0: DEDUP CHECK (prevent webhook + client-side double-fire) =====
@@ -3087,7 +3098,7 @@ New Booking Details:
 📝 Customer Message:
    ${booking.message}
 
-🔗 Google Meet Link to Share:
+🔗 Private Session Link:
    ${uniqueMeetLink}
 ━━━━━━━━━━━━━━━━━━━━
     `.trim();
@@ -3156,7 +3167,7 @@ Payment ID: ${paymentId}
 📆 ${booking.date}
 ⏰ ${booking.time}
 
-✅ Confirmation email with Google Meet link has been sent to ${booking.email}
+✅ Confirmation email with your private session link has been sent to ${booking.email}
 
 📩 IMPORTANT: Please check your Spam/Junk folder if you don't see the email in your Inbox.
 

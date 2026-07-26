@@ -3,6 +3,7 @@
 // Handles product purchases and session bookings
 
 import crypto from 'crypto';
+import { createJitsiMeetingLink } from '../lib/jitsi.js';
 
 // Disable Vercel body parsing so we can read the raw stream for signature verification
 export const config = {
@@ -171,7 +172,8 @@ export default async function handler(req, res) {
                     BREVO_API_KEY,
                     ADMIN_EMAIL,
                     SENDER_EMAIL,
-                    SENDER_NAME
+                    SENDER_NAME,
+                    RAZORPAY_WEBHOOK_SECRET
                 });
             }
 
@@ -633,7 +635,8 @@ export async function handleProductPurchase(data) {
 async function handleSessionBooking(data) {
     const {
         paymentId, amount, currency, customerEmail, notes,
-        SUPABASE_URL, SUPABASE_KEY, BREVO_API_KEY, ADMIN_EMAIL, SENDER_EMAIL, SENDER_NAME
+        SUPABASE_URL, SUPABASE_KEY, BREVO_API_KEY, ADMIN_EMAIL, SENDER_EMAIL, SENDER_NAME,
+        RAZORPAY_WEBHOOK_SECRET
     } = data;
 
     const customerName = notes.customer_name || 'Customer';
@@ -644,7 +647,7 @@ async function handleSessionBooking(data) {
     const sessionPrice = notes.session_price || amount;
     const customerPhone = notes.customer_phone || '';
     const customerMessage = notes.customer_message || '';
-    const meetLink = "https://meet.google.com/hfp-npyq-qho";
+    const meetLink = createJitsiMeetingLink(paymentId, RAZORPAY_WEBHOOK_SECRET);
 
     let displayTime = sessionTime;
     if (displayTime !== 'TBD' && !displayTime.toLowerCase().match(/am|pm/)) {
@@ -705,7 +708,6 @@ async function handleSessionBooking(data) {
                 status: 'upcoming',
                 payment_id: paymentId,
                 meet_link: meetLink,
-                source: 'webhook', // Mark for debugging
                 customer_country: notes.customer_country || notes.country || 'Unknown'
             })
         });

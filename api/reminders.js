@@ -134,7 +134,11 @@ export default async function handler(req, res) {
 async function sendReminder(booking, type, config) {
     const { SUPABASE_URL, SUPABASE_KEY, BREVO_API_KEY, ADMIN_EMAIL, SENDER_EMAIL, SENDER_NAME } = config;
 
-    const meetLink = booking.meet_link || 'https://meet.google.com/hfp-npyq-qho';
+    const meetLink = booking.meet_link;
+    if (!meetLink) {
+        console.warn('Skipping reminder without a private session link:', booking.id);
+        return;
+    }
     const userName = booking.name || 'Learner';
 
     let displayTime = booking.booking_time || '';

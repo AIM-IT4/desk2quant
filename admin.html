@@ -2648,8 +2648,8 @@ Brief Q&A"></textarea>
                         </div>
 
                         ${(function () {
-                                const link = booking.meet_link || 'https://meet.google.com/hfp-npyq-qho';
-                                return `<div style="background: rgba(34, 197, 94, 0.1); padding: 8px 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.9em; color: #22c55e;"><i class="fas fa-video"></i> <strong>Meet Link:</strong> <a href="${link}" target="_blank" style="color: inherit; text-decoration: underline;">${link}</a></div>`;
+                                const link = booking.meet_link;
+                                return link ? `<div style="background: rgba(34, 197, 94, 0.1); padding: 8px 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.9em; color: #22c55e;"><i class="fas fa-video"></i> <strong>Session Link:</strong> <a href="${link}" target="_blank" style="color: inherit; text-decoration: underline;">${link}</a></div>` : '';
                             })()}
                         
                         ${booking.reschedule_reason ? `<p style="color: var(--text-muted); margin-bottom: 15px; font-size: 0.9em;"><strong>Reason:</strong> ${booking.reschedule_reason}</p>` : ''}
@@ -2711,7 +2711,7 @@ Brief Q&A"></textarea>
                         if (updateError) throw updateError;
 
                         // Notify user via Brevo
-                        const meetLink = booking.meet_link || 'https://meet.google.com/hfp-npyq-qho';
+                        const meetLink = booking.meet_link || '';
                         // Use booking name if available
                         const customerName = booking.name || 'Customer';
 
@@ -2725,7 +2725,7 @@ Brief Q&A"></textarea>
                         <h3 style="color: #2563eb;">New Schedule:</h3>
                         <p><strong>📅 Date:</strong> ${booking.requested_date}</p>
                         <p><strong>⏰ Time:</strong> ${booking.requested_time}</p>
-                        <p><strong>🔗 Meet Link:</strong> <a href="${meetLink}">${meetLink}</a></p>
+                        ${meetLink ? `<p><strong>?? Session Link:</strong> <a href="${meetLink}">${meetLink}</a></p>` : '<p><strong>Session link:</strong> It will be shared separately.</p>'}
                         <p>Your session is now confirmed for the new date/time.</p>
                         <hr style="border: 1px solid #e5e7eb; margin: 20px 0;">
                         <p style="color: #6b7280;">Best regards,<br>Desk2Quant</p>
@@ -2742,7 +2742,7 @@ New Schedule:
 • Date: ${booking.requested_date}
 • Time: ${booking.requested_time}
 
-Meet Link: ${meetLink}
+Session Link: ${meetLink || 'Will be shared separately'}
 
 Your session is now confirmed for the new date/time.
 

@@ -509,15 +509,15 @@
                     </div>
 
 
-                    ${(booking.status === 'upcoming' || booking.status === 'confirmed') ? `
+                    ${(booking.status === 'upcoming' || booking.status === 'confirmed') ? ((booking.meet_link || booking.meetLink) ? `
                         <div class="meet-link">
                             <i class="fas fa-video" style="color: var(--primary);"></i>
                             <div>
-                                <strong>Google Meet Link:</strong><br>
-                                <a href="${booking.meet_link || booking.meetLink || 'https://meet.google.com/hfp-npyq-qho'}" target="_blank">${booking.meet_link || booking.meetLink || 'https://meet.google.com/hfp-npyq-qho'}</a>
+                                <strong>Private Session Link:</strong><br>
+                                <a href="${booking.meet_link || booking.meetLink}" target="_blank">${booking.meet_link || booking.meetLink}</a>
                             </div>
                         </div>
-                    ` : ''}
+                    ` : `<div class="meet-link"><i class="fas fa-clock" style="color: var(--primary);"></i><div><strong>Session Link:</strong><br>Being prepared - please check your confirmation email shortly.</div></div>`) : ''}
 
                     ${booking.status === 'admin_reschedule_pending' ? `
                         <div style="background: var(--bg-glass); border: 1px dashed var(--warning); padding: 25px; border-radius: var(--radius-md); margin-top: 20px;">
@@ -792,7 +792,7 @@ Status: CONFIRMED
                 );
 
                 // 4. Send confirmation email to customer (with meeting link)
-                const meetLink = booking.meet_link || 'https://meet.google.com/hfp-npyq-qho';
+                const meetLink = booking.meet_link || '';
 
                 const htmlContent = `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -809,7 +809,7 @@ Status: CONFIRMED
                         <div style="background: #ede9fe; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #6366f1;">
                             <h3 style="margin-top: 0; color: #6366f1;">📹 Meeting Link</h3>
                             <p>Join your session using the link below:</p>
-                            <a href="${meetLink}" style="display: inline-block; background: #6366f1; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">${meetLink}</a>
+                            ${meetLink ? `<a href="${meetLink}" style="display: inline-block; background: #6366f1; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">${meetLink}</a>` : '<p>We will share your private session link separately.</p>'}
                         </div>
 
                         <p>We look forward to seeing you!</p>
