@@ -1,8 +1,6 @@
 // Vercel Serverless Function: Automatic Session Reminders
 // Called by external cron service (cron-job.org) every 5 minutes
 
-import { createUniqueMeetEvent } from '../lib/google-calendar.js';
-
 export default async function handler(req, res) {
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -73,13 +71,6 @@ export default async function handler(req, res) {
 
         for (const booking of bookings) {
             try {
-                // One-time repair for Ankit's paid booking that predates the ISO-date fix.
-                if (booking.payment_id === 'pay_TI5945ZAMQKj6R' && !booking.meet_link) {
-                    await repairAnkitBooking(booking, {
-                        SUPABASE_URL, SUPABASE_KEY, BREVO_API_KEY,
-                        SENDER_EMAIL, SENDER_NAME
-                    });
-                }
                 // Parse session datetime - assuming IST timezone (+05:30)
                 // Add IST offset to make it timezone-aware
                 const sessionStart = new Date(`${booking.booking_date}T${booking.booking_time}+05:30`);
@@ -137,41 +128,6 @@ export default async function handler(req, res) {
             timestamp: new Date().toISOString()
         });
     }
-}
-
-async function repairAnkitBooking(booking, config) {
-    const { SUPABASE_URL, SUPABASE_KEY, BREVO_API_KEY, SENDER_EMAIL, SENDER_NAME } = config;
-    const calendar = await createUniqueMeetEvent({
-        paymentId: booking.payment_id,
-        customerEmail: booking.email,
-        customerName: booking.name,
-        sessionName: booking.service_name,
-        sessionDate: booking.booking_date,
-        sessionTime: booking.booking_time,
-        sessionDuration: booking.service_duration
-    });
-    if (!calendar.meetLink) throw new Error('Google Calendar did not return a meeting link');
-
-    const updateResponse = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${booking.id}`, {
-        method: 'PATCH',
-        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ meet_link: calendar.meetLink })
-    });
-    if (!updateResponse.ok) throw new Error(`Booking link update failed: ${await updateResponse.text()}`);
-
-    const emailResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: { 'accept': 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
-        body: JSON.stringify({
-            sender: { name: SENDER_NAME, email: SENDER_EMAIL },
-            to: [{ email: booking.email, name: booking.name }],
-            subject: `Your private Google Meet link: ${booking.service_name}`,
-            htmlContent: `<p>Hi ${booking.name},</p><p>Your private Google Meet link is ready:</p><p><a href="${calendar.meetLink}">Join your session</a></p><p>Desk2Quant</p>`,
-            textContent: `Hi ${booking.name},\n\nYour private Google Meet link is ready: ${calendar.meetLink}\n\nDesk2Quant`
-        })
-    });
-    if (!emailResponse.ok) throw new Error(`Meeting-link email failed: ${await emailResponse.text()}`);
-    console.log(`Repaired Meet link for booking ${booking.id}`);
 }
 
 // Helper function to send reminder email
