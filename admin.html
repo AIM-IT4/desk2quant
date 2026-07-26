@@ -2648,7 +2648,7 @@ Brief Q&A"></textarea>
                         </div>
 
                         ${(function () {
-                                const link = booking.meet_link || 'https://meet.google.com/hfp-npyq-qho';
+                                const link = booking.meet_link || '#';
                                 return `<div style="background: rgba(34, 197, 94, 0.1); padding: 8px 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.9em; color: #22c55e;"><i class="fas fa-video"></i> <strong>Meet Link:</strong> <a href="${link}" target="_blank" style="color: inherit; text-decoration: underline;">${link}</a></div>`;
                             })()}
                         
@@ -2711,7 +2711,7 @@ Brief Q&A"></textarea>
                         if (updateError) throw updateError;
 
                         // Notify user via Brevo
-                        const meetLink = booking.meet_link || 'https://meet.google.com/hfp-npyq-qho';
+                        const meetLink = booking.meet_link || '#';
                         // Use booking name if available
                         const customerName = booking.name || 'Customer';
 

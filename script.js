@@ -2439,17 +2439,6 @@ if (modalPayBtn) {
 // ⚠️ YOUR EMAIL - Where booking notifications will be sent
 const ADMIN_EMAIL = 'jha.8@alumni.iitj.ac.in';
 
-// Google Meet link for all sessions (reliable, no setup needed)
-const GOOGLE_MEET_LINK = "https://meet.google.com/hfp-npyq-qho";
-
-/**
- * Get meeting link for booking
- * Using your existing Google Meet link - most reliable option
- */
-function generateUniqueMeetLink(customerName, bookingDate) {
-    return GOOGLE_MEET_LINK;
-}
-
 // Session types (loaded dynamically from Supabase)
 let SESSION_TYPES = {};
 
@@ -2914,6 +2903,11 @@ async function handleSessionPaymentSuccess(response) {
 
         console.log('📧 Booking object:', booking);
         console.log('📧 Email to send to:', booking.email);
+
+        // The signed webhook creates the booking, private Meet event, and confirmation email.
+        alert('Payment received!\n\nYour booking confirmation and private Google Meet link will arrive by email shortly.\nPayment ID: ' + paymentId);
+        try { localStorage.removeItem('pendingBooking'); } catch (e) {}
+        return;
 
         // Generate unique meeting link for this booking
         const uniqueMeetLink = generateUniqueMeetLink(booking.name, booking.date);

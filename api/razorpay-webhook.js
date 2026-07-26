@@ -3,6 +3,7 @@
 // Handles product purchases and session bookings
 
 import crypto from 'crypto';
+import { createUniqueMeetEvent } from './google-calendar.js';
 
 // Disable Vercel body parsing so we can read the raw stream for signature verification
 export const config = {
@@ -644,7 +645,21 @@ async function handleSessionBooking(data) {
     const sessionPrice = notes.session_price || amount;
     const customerPhone = notes.customer_phone || '';
     const customerMessage = notes.customer_message || '';
-    const meetLink = "https://meet.google.com/hfp-npyq-qho";
+    let meetLink = null;
+    try {
+        const calendar = await createUniqueMeetEvent({
+            paymentId, customerEmail, customerName, sessionName,
+            sessionDate, sessionTime, sessionDuration
+        });
+        meetLink = calendar.meetLink;
+        if (!calendar.configured) {
+            console.warn('Google Calendar is not configured; confirmation will not include a meeting link');
+        } else if (!meetLink) {
+            console.error('Google Calendar did not return a meeting link');
+        }
+    } catch (err) {
+        console.error('Google Calendar meeting creation failed; confirmation will not include a meeting link:', err.message);
+    }
 
     let displayTime = sessionTime;
     if (displayTime !== 'TBD' && !displayTime.toLowerCase().match(/am|pm/)) {
