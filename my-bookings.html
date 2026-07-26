@@ -393,50 +393,39 @@
             }
         });
 
-        // Brevo Email Configuration
-        const getBrevoSenderEmail = () => (window.CONFIG && window.CONFIG.BREVO_SENDER_EMAIL) || 'jha.8@alumni.iitj.ac.in';
-        const getBrevoSenderName = () => (window.CONFIG && window.CONFIG.BREVO_SENDER_NAME) || 'Desk2Quant';
+        const ADMIN_EMAIL = 'jha.8@alumni.iitj.ac.in';
 
-        // Send email via Brevo API
+        // Send email through the secure Brevo backend.
         async function sendEmailWithBrevo(to, subject, htmlContent, textContent) {
-            const apiKey = (window.CONFIG && window.CONFIG.BREVO_API_KEY) || '';
-
-            if (!apiKey) {
-                console.warn('⚠️ Brevo API key not configured. Email not sent.');
-                return { success: false, error: 'API key not configured' };
-            }
-
             try {
-                const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+                const response = await fetch('/api/send-email', {
                     method: 'POST',
-                    headers: {
-                        'accept': 'application/json',
-                        'api-key': apiKey,
-                        'content-type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        sender: { email: getBrevoSenderEmail(), name: getBrevoSenderName() },
-                        to: [{ email: to }],
-                        subject: subject,
-                        htmlContent: htmlContent,
-                        textContent: textContent
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ to, subject, htmlContent, textContent })
                 });
 
                 if (response.ok) {
-                    console.log('✅ Email sent successfully via Brevo');
+                    console.log('Email sent successfully via Brevo');
                     return { success: true };
                 } else {
                     const error = await response.json();
-                    console.error('❌ Brevo error:', error);
+                    console.error('Brevo error:', error);
                     return { success: false, error: error.message };
                 }
             } catch (error) {
-                console.error('❌ Failed to send email:', error);
+                console.error('Failed to send email:', error);
                 return { success: false, error: error.message };
             }
         }
 
+        async function sendAdminNotification(subject, textContent) {
+            return sendEmailWithBrevo(
+                ADMIN_EMAIL,
+                subject,
+                `<pre style="font-family: Arial, sans-serif; white-space: pre-wrap;">${textContent}</pre>`,
+                textContent
+            );
+        }
         // Search bookings by email
         async function searchBookings() {
             const email = document.getElementById('searchEmail').value.trim();
@@ -712,35 +701,21 @@
 
                 console.log('✅ Reschedule request submitted:', data);
 
-                // Send reschedule notification via Formspree
-                const FORMSPREE_ID = 'mjgozran';
-
-                await fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        _subject: `Reschedule Request - ${bookingId}`,
-                        email: email,
-                        booking_id: bookingId,
-                        requested_date: newDate,
-                        requested_time: newTime,
-                        reason: reason,
-                        message: `
-📅 RESCHEDULE REQUEST PENDING
-━━━━━━━━━━━━━━━━━━━━
+                await sendAdminNotification(
+                    `Reschedule Request - ${bookingId}`,
+                    `RESCHEDULE REQUEST PENDING
+----------------------------
 Booking ID: ${bookingId}
 Customer Email: ${email}
 
 Requested Schedule:
-• Date: ${newDate}
-• Time: ${newTime}
-${reason ? `• Reason: ${reason}` : ''}
+- Date: ${newDate}
+- Time: ${newTime}
+${reason ? `- Reason: ${reason}` : ''}
 
 Status: Pending admin approval
-━━━━━━━━━━━━━━━━━━━━
-                        `.trim()
-                    })
-                });
+----------------------------`.trim()
+                );
 
                 alert('✅ Reschedule request submitted!\n\nYour request is pending admin approval. You will be notified once approved.');
                 toggleRescheduleForm(bookingId);
@@ -800,34 +775,21 @@ Status: Pending admin approval
                     throw updateError;
                 }
 
-                // 3. Send confirmation email to admin (via Formspree for simplicity)
-                const FORMSPREE_ID = 'mjgozran';
-                await fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        _subject: `✅ Reschedule ACCEPTED - ${booking.email}`,
-                        email: booking.email,
-                        name: booking.name,
-                        booking_id: bookingId,
-                        service: booking.service_name,
-                        new_date: booking.admin_proposed_date,
-                        new_time: booking.admin_proposed_time,
-                        message: `
-✅ CUSTOMER ACCEPTED RESCHEDULE
-━━━━━━━━━━━━━━━━━━━━
+                // 3. Notify admin through Brevo
+                await sendAdminNotification(
+                    `Reschedule Accepted - ${booking.email}`,
+                    `CUSTOMER ACCEPTED RESCHEDULE
+----------------------------
 Customer: ${booking.name} (${booking.email})
 Service: ${booking.service_name}
 
 New Confirmed Schedule:
-• Date: ${booking.admin_proposed_date}
-• Time: ${booking.admin_proposed_time}
+- Date: ${booking.admin_proposed_date}
+- Time: ${booking.admin_proposed_time}
 
 Status: CONFIRMED
-━━━━━━━━━━━━━━━━━━━━
-                        `.trim()
-                    })
-                });
+----------------------------`.trim()
+                );
 
                 // 4. Send confirmation email to customer (with meeting link)
                 const meetLink = booking.meet_link || 'https://meet.google.com/hfp-npyq-qho';
@@ -901,32 +863,20 @@ Status: CONFIRMED
                     throw updateError;
                 }
 
-                // Notify admin via Formspree
-                const FORMSPREE_ID = 'mjgozran';
-                await fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        _subject: `📅 Counter-Proposal Received - ${email}`,
-                        email: email,
-                        booking_id: bookingId,
-                        counter_proposed_date: newDate,
-                        counter_proposed_time: newTime,
-                        message: `
-📅 CUSTOMER COUNTER-PROPOSAL
-━━━━━━━━━━━━━━━━━━━━
+                await sendAdminNotification(
+                    `Counter-Proposal Received - ${email}`,
+                    `CUSTOMER COUNTER-PROPOSAL
+----------------------------
 Customer Email: ${email}
 Booking ID: ${bookingId}
 
 Customer's Preferred Schedule:
-• Date: ${newDate}
-• Time: ${newTime}
+- Date: ${newDate}
+- Time: ${newTime}
 
 Status: Pending admin approval
-━━━━━━━━━━━━━━━━━━━━
-                        `.trim()
-                    })
-                });
+----------------------------`.trim()
+                );
 
                 alert('✅ Counter-proposal submitted!\n\nThe admin will review your preferred time and respond shortly.');
                 toggleCounterProposeForm(bookingId);
