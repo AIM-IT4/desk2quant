@@ -16,178 +16,26 @@
     <link rel="canonical" href="https://desk2quant.vercel.app/testimonials.html">
     <link rel="icon" type="image/png" href="assets/images/desk2quant-logo.png?v=3">
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --secondary: #a855f7;
-            --background: #0a0a0f;
-            --surface: #13131f;
-            --text: #e2e8f0;
-            --text-muted: #94a3b8;
-            --border: rgba(255, 255, 255, 0.1);
+            --primary: var(--accent-primary);
+            --secondary: var(--accent-secondary);
         }
 
-        body {
-            font-family: 'Space Grotesk', sans-serif;
-            background-color: var(--background);
-            color: var(--text);
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-
-        .testimonials-stats {
+        .testimonials-page-stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 30px;
-            margin-bottom: 60px;
-        }
-
-        .stat-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 30px;
-            text-align: center;
-        }
-
-        .stat-number {
-            font-size: 3em;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
-            white-space: nowrap;
-        }
-
-        .stat-number--text {
-            font-size: 1.7em;
-            white-space: normal;
-        }
-
-        .stat-label {
-            color: var(--text-muted);
-            font-size: 1.1em;
-        }
-
-        .testimonials-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 30px;
-        }
-
-        .testimonial-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 30px;
-            transition: all 0.3s ease;
-            max-height: 380px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .testimonial-card:hover {
-            border-color: var(--primary);
-            transform: translateY(-5px);
-            box-shadow: 0 10px 40px rgba(99, 102, 241, 0.15);
-        }
-
-        .testimonial-rating {
-            color: #fbbf24;
-            margin-bottom: 15px;
-        }
-
-        .testimonial-text {
-            color: var(--text);
-            line-height: 1.8;
+            gap: 24px;
             margin-bottom: 20px;
-            font-size: 1.05em;
-            overflow-y: auto;
-            flex: 1;
-            min-height: 0;
-        }
-
-        .testimonial-author {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .author-avatar {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2em;
-            color: white;
-        }
-
-        .author-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .author-name {
-            font-weight: 600;
-            color: var(--text);
-        }
-
-        .author-role {
-            font-size: 0.9em;
-            color: var(--text-muted);
-        }
-
-        .verified-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            color: #22c55e;
-            font-size: 0.85em;
-            background: rgba(34, 197, 94, 0.1);
-            padding: 5px 12px;
-            border-radius: 20px;
         }
 
         .filter-buttons {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             justify-content: center;
             margin-bottom: 40px;
             flex-wrap: wrap;
-        }
-
-        .filter-btn {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 10px 20px;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .filter-btn:hover,
-        .filter-btn.active {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border-color: transparent;
         }
     </style>
 </head>
@@ -204,35 +52,36 @@
         </div>
     </nav>
 
-    <div class="container" style="margin-top: 100px;">
-        <div style="text-align: center; margin-bottom: 60px;">
-            <h1 style="margin-bottom: 20px; color: var(--text);">What Our Students Say</h1>
-            <p style="color: var(--text-muted); font-size: 1.2em; max-width: 600px; margin: 0 auto;">
+    <div class="section-container" style="margin-top: 100px; max-width: 1200px; padding: 0 24px;">
+        <div class="section-header">
+            <span class="section-tag">Testimonials</span>
+            <h1 class="section-title" style="font-size: var(--h2-size);">What Our Students Say</h1>
+            <p class="section-subtitle">
                 Real feedback from professionals and students who transformed their quant careers
             </p>
         </div>
 
         <!-- Stats -->
-        <div class="testimonials-stats">
-            <div class="stat-card">
-                <div class="stat-number">25</div>
-                <div class="stat-label">Verified reviews</div>
+        <div class="testimonials-page-stats">
+            <div class="ratings-summary-card">
+                <h3 class="summary-value">25</h3>
+                <p class="summary-label">Verified reviews</p>
             </div>
-            <div class="stat-card">
-                <div class="stat-number">5.0</div>
-                <div class="stat-label">Average Rating</div>
+            <div class="ratings-summary-card">
+                <h3 class="summary-value">5.0</h3>
+                <p class="summary-label">Average Rating</p>
             </div>
-            <div class="stat-card">
-                <div class="stat-number stat-number--text">Verified</div>
-                <div class="stat-label">Published after record check</div>
+            <div class="ratings-summary-card">
+                <h3 class="summary-value" style="font-size: 1.7rem;">Verified</h3>
+                <p class="summary-label">Published after record check</p>
             </div>
-            <div class="stat-card">
-                <div class="stat-number">500+</div>
-                <div class="stat-label">Learners reached</div>
+            <div class="ratings-summary-card">
+                <h3 class="summary-value">500+</h3>
+                <p class="summary-label">Learners reached</p>
             </div>
         </div>
 
-        <p style="color: var(--text-muted); text-align: center; margin: -30px auto 40px; max-width: 720px;">Reviews marked verified are matched to a product purchase or paid session record before publication.</p>
+        <p style="color: var(--text-muted); text-align: center; margin: 0 auto 40px; max-width: 720px;">Reviews marked verified are matched to a product purchase or paid session record before publication.</p>
 
         <!-- Filter Buttons -->
         <div class="filter-buttons">
@@ -663,33 +512,33 @@
         <!-- Review Form Section -->
         <div style="margin-top: 60px; max-width: 600px; margin-left: auto; margin-right: auto;">
             <div style="text-align: center; margin-bottom: 30px;">
-                <h2 style="margin-bottom: 10px; color: var(--text);">Share Your Experience</h2>
+                <h2 style="margin-bottom: 10px; color: var(--text-primary);">Share Your Experience</h2>
                 <p style="color: var(--text-muted);">Had a session? Leave a review!</p>
             </div>
 
             <div
-                style="background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 35px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);">
+                style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 16px; padding: 35px; box-shadow: var(--shadow-sm);">
                 <form id="reviewFormPage">
                     <div style="display: grid; gap: 20px;">
                         <div>
                             <label
-                                style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text);">Your
+                                style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-primary);">Your
                                 Name *</label>
                             <input type="text" name="name" required
-                                style="width: 100%; padding: 14px 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--background); color: var(--text); font-size: 1rem; box-sizing: border-box;">
+                                style="width: 100%; padding: 14px 16px; border: 1px solid var(--border-light); border-radius: 10px; background: var(--bg-secondary); color: var(--text-primary); font-size: 1rem; box-sizing: border-box;">
                         </div>
 
                         <div>
                             <label
-                                style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text);">Review
+                                style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-primary);">Review
                                 Title *</label>
                             <input type="text" name="title" required
-                                style="width: 100%; padding: 14px 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--background); color: var(--text); font-size: 1rem; box-sizing: border-box;">
+                                style="width: 100%; padding: 14px 16px; border: 1px solid var(--border-light); border-radius: 10px; background: var(--bg-secondary); color: var(--text-primary); font-size: 1rem; box-sizing: border-box;">
                         </div>
 
                         <div>
                             <label
-                                style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text);">Rating
+                                style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-primary);">Rating
                                 *</label>
                             <div style="display: flex; gap: 8px;">
                                 <input type="radio" id="s5" name="rating" value="5" required
@@ -712,10 +561,10 @@
 
                         <div>
                             <label
-                                style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text);">Your
+                                style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-primary);">Your
                                 Review *</label>
                             <textarea name="review" rows="4" required
-                                style="width: 100%; padding: 14px 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--background); color: var(--text); font-size: 1rem; resize: vertical; box-sizing: border-box;"></textarea>
+                                style="width: 100%; padding: 14px 16px; border: 1px solid var(--border-light); border-radius: 10px; background: var(--bg-secondary); color: var(--text-primary); font-size: 1rem; resize: vertical; box-sizing: border-box;"></textarea>
                         </div>
 
                         <button type="submit"
@@ -726,28 +575,28 @@
                 </form>
 
                 <div id="reviewSuccessPage" style="display: none; text-align: center; padding: 40px 20px;">
-                    <i class="fas fa-check-circle" style="font-size: 3rem; color: #22c55e; margin-bottom: 16px;"></i>
-                    <h3 style="margin-bottom: 10px; color: var(--text);">Thank You!</h3>
+                    <i class="fas fa-check-circle" style="font-size: 3rem; color: var(--success); margin-bottom: 16px;"></i>
+                    <h3 style="margin-bottom: 10px; color: var(--text-primary);">Thank You!</h3>
                     <p style="color: var(--text-muted);">Your review has been submitted successfully.</p>
                 </div>
             </div>
         </div>
 
         <div
-            style="text-align: center; margin-top: 60px; padding: 40px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 12px; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.2);">
+            style="text-align: center; margin-top: 60px; padding: 40px; background: var(--accent-gradient); border-radius: 12px; box-shadow: var(--shadow-md);">
             <h2 style="color: white; margin-bottom: 15px;">Ready to Join Our Success Stories?</h2>
             <p style="color: rgba(255,255,255,0.9); margin-bottom: 25px;">
                 Start your quant journey today with personalized mentorship
             </p>
             <a href="index.html#contact" class="btn"
-                style="background: white; color: var(--primary); font-weight: 600;">
+                style="background: white; color: var(--d2q-navy); font-weight: 600;">
                 <i class="fas fa-calendar-check"></i> Book Your Session
             </a>
         </div>
     </div>
 
-    <footer class="footer" style="background: var(--surface); border-top: 1px solid var(--border); margin-top: 40px;">
-        <div class="footer-bottom" style="text-align: center; padding: 30px; border-top: 1px solid var(--border);">
+    <footer class="footer">
+        <div class="footer-bottom" style="text-align: center; padding: 30px;">
             <p style="color: var(--text-muted);">&copy; 2026 Desk2Quant. All rights reserved.</p>
         </div>
     </footer>
