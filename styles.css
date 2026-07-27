@@ -1488,6 +1488,90 @@ body.d2q-reference .footer .logo-img {
 }
 
 /* --------------------------------
+   About Section
+   -------------------------------- */
+.about {
+    padding: var(--section-padding);
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-subtle);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.about-wrapper {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 64px;
+    align-items: start;
+}
+
+.about-bio {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    line-height: 1.75;
+    margin-bottom: 20px;
+}
+
+.about-links {
+    display: flex;
+    gap: 16px;
+    margin-top: 28px;
+    flex-wrap: wrap;
+}
+
+.about-credentials {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.credential-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+}
+
+.credential-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--d2q-teal-soft);
+    border-radius: 12px;
+    color: var(--d2q-teal);
+    font-size: 1.2rem;
+}
+
+.credential-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.credential-title {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.credential-detail {
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+    .about-wrapper {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+}
+
+/* --------------------------------
    Testimonials Section
    -------------------------------- */
 .testimonials {
