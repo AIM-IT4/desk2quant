@@ -930,6 +930,12 @@ body.d2q-reference .footer .logo-img {
 
 .profile-title {
     color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.profile-credentials {
+    color: var(--text-muted);
+    font-size: 0.85rem;
     margin-bottom: 20px;
 }
 
