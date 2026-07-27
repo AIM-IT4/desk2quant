@@ -4,17 +4,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Details | Desk2Quant</title>
-    <meta name="description"
+    <title id="p-meta-title">Product Details | Desk2Quant</title>
+    <meta id="p-meta-description" name="description"
         content="View detailed product information, pricing, and features for Desk2Quant premium quant finance resources and study materials.">
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="Desk2Quant Premium Resource">
-    <meta property="og:description" content="Premium digital resource for quantitative finance professionals.">
-    <meta property="og:image" content="https://desk2quant.vercel.app/assets/images/desk2quant-logo.png">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Product Details | Desk2Quant">
-    <meta name="twitter:description"
+    <link id="p-meta-canonical" rel="canonical" href="https://desk2quant.vercel.app/product.html">
+    <meta id="p-meta-og-type" property="og:type" content="website">
+    <meta id="p-meta-og-url" property="og:url" content="https://desk2quant.vercel.app/product.html">
+    <meta id="p-meta-og-title" property="og:title" content="Desk2Quant Premium Resource">
+    <meta id="p-meta-og-description" property="og:description" content="Premium digital resource for quantitative finance professionals.">
+    <meta id="p-meta-og-image" property="og:image" content="https://desk2quant.vercel.app/assets/images/desk2quant-logo.png">
+    <meta id="p-meta-twitter-card" name="twitter:card" content="summary_large_image">
+    <meta id="p-meta-twitter-title" name="twitter:title" content="Product Details | Desk2Quant">
+    <meta id="p-meta-twitter-description" name="twitter:description"
         content="View detailed product information, pricing, and features for Desk2Quant premium quant finance resources.">
+    <meta id="p-meta-twitter-image" name="twitter:image" content="https://desk2quant.vercel.app/assets/images/desk2quant-logo.png">
+    <script id="p-product-jsonld" type="application/ld+json"></script>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -838,6 +842,59 @@
             }
         });
 
+        // Strip HTML tags and collapse whitespace for use in meta/description contexts
+        function plainTextFromHtml(html, maxLen) {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html || '';
+            const text = (tmp.textContent || tmp.innerText || '').replace(/\s+/g, ' ').trim();
+            return maxLen && text.length > maxLen ? text.slice(0, maxLen - 1).trim() + '…' : text;
+        }
+
+        function updateProductSEO(product, id) {
+            const pageUrl = `https://desk2quant.vercel.app/product.html?id=${id}`;
+            const title = `${product.name} | Desk2Quant`;
+            const description = plainTextFromHtml(product.description, 160) ||
+                'Premium digital resource for quantitative finance professionals from Desk2Quant.';
+            const image = product.cover_image_url || 'https://desk2quant.vercel.app/assets/images/desk2quant-logo.png';
+
+            document.title = title;
+            document.getElementById('p-meta-description').setAttribute('content', description);
+            document.getElementById('p-meta-canonical').setAttribute('href', pageUrl);
+            document.getElementById('p-meta-og-type').setAttribute('content', 'product');
+            document.getElementById('p-meta-og-url').setAttribute('content', pageUrl);
+            document.getElementById('p-meta-og-title').setAttribute('content', title);
+            document.getElementById('p-meta-og-description').setAttribute('content', description);
+            document.getElementById('p-meta-og-image').setAttribute('content', image);
+            document.getElementById('p-meta-twitter-title').setAttribute('content', title);
+            document.getElementById('p-meta-twitter-description').setAttribute('content', description);
+            document.getElementById('p-meta-twitter-image').setAttribute('content', image);
+
+            const jsonLd = {
+                '@context': 'https://schema.org',
+                '@type': 'Product',
+                name: product.name,
+                description: description,
+                image: image,
+                url: pageUrl,
+                brand: { '@type': 'Brand', name: 'Desk2Quant' },
+                offers: {
+                    '@type': 'Offer',
+                    url: pageUrl,
+                    priceCurrency: 'INR',
+                    price: product.price,
+                    availability: 'https://schema.org/InStock'
+                }
+            };
+            if (product.average_rating) {
+                jsonLd.aggregateRating = {
+                    '@type': 'AggregateRating',
+                    ratingValue: product.average_rating,
+                    reviewCount: product.sales_count && product.sales_count > 0 ? product.sales_count : 1
+                };
+            }
+            document.getElementById('p-product-jsonld').textContent = JSON.stringify(jsonLd);
+        }
+
         async function loadProduct(id) {
             try {
                 const { data: product, error } = await window.supabaseClient
@@ -851,6 +908,9 @@
                     showError();
                     return;
                 }
+
+                // SEO: set per-product title/description/canonical/OG/Twitter/JSON-LD
+                updateProductSEO(product, id);
 
                 // Populate UI
                 document.getElementById('p-title').textContent = product.name;
