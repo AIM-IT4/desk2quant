@@ -3482,6 +3482,26 @@ window.shareBlog = function (platform) {
     }
 };
 
+// --- BOOKING FORM DEEP LINK SUPPORT ---
+// If URL has ?scrollTo=bookingForm, scroll to the booking form and
+// immediately strip the query param so Razorpay's checkout never sees
+// anything but the plain page origin (avoids '#bookingForm'/'?scrollTo='
+// tripping domain verification on the payment step).
+document.addEventListener('DOMContentLoaded', function () {
+    const deepLinkParams = new URLSearchParams(window.location.search);
+    const scrollTarget = deepLinkParams.get('scrollTo');
+    if (scrollTarget) {
+        // Clean the URL right away, before the user can act on it.
+        history.replaceState(null, '', window.location.pathname);
+        const targetEl = document.getElementById(scrollTarget);
+        if (targetEl) {
+            setTimeout(() => {
+                targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 300);
+        }
+    }
+});
+
 // --- BLOG DEEP LINK SUPPORT ---
 // If URL has ?slug=xxx, auto-open that blog post
 document.addEventListener('DOMContentLoaded', function () {
