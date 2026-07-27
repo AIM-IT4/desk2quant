@@ -1078,11 +1078,21 @@
                         of experience.</p>
                 </div>
 
-                <div class="products-filter">
-                    <button class="filter-btn active" data-filter="all">All</button>
-                    <button class="filter-btn" data-filter="notes">Notes & PDFs</button>
-                    <button class="filter-btn" data-filter="code">Code & Scripts</button>
-                    <button class="filter-btn" data-filter="bundle">Bundles</button>
+                <div class="products-toolbar">
+                    <div class="products-filter">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="notes">Notes & PDFs</button>
+                        <button class="filter-btn" data-filter="code">Code & Scripts</button>
+                        <button class="filter-btn" data-filter="bundle">Bundles</button>
+                    </div>
+                    <div class="products-sort">
+                        <label for="productSortSelect">Sort by</label>
+                        <select id="productSortSelect" aria-label="Sort products">
+                            <option value="popular">Popular</option>
+                            <option value="price-low">Price: Low to High</option>
+                            <option value="price-high">Price: High to Low</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="products-grid">

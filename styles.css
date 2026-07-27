@@ -1234,6 +1234,61 @@ body.d2q-reference .footer .logo-img {
     color: white;
 }
 
+.products-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-bottom: 48px;
+}
+
+.products-toolbar .products-filter {
+    margin-bottom: 0;
+}
+
+.products-sort {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.products-sort label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.products-sort select {
+    padding: 9px 16px;
+    background: var(--bg-glass);
+    border: 1px solid var(--border-subtle);
+    border-radius: 100px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color var(--transition-fast);
+}
+
+.products-sort select:hover,
+.products-sort select:focus {
+    border-color: var(--accent-primary);
+    outline: none;
+}
+
+@media (max-width: 600px) {
+    .products-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+    }
+
+    .products-sort {
+        justify-content: center;
+    }
+}
+
 .products-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -3416,6 +3471,29 @@ body {
 }
 .popup-footer-note i {
     color: var(--d2q-teal);
+}
+
+/* Bestseller ribbon, driven by verified real purchase counts */
+.bestseller-ribbon {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    background: linear-gradient(135deg, #eab308, #ca8a04);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    border-radius: 100px;
+    box-shadow: 0 2px 8px rgba(202, 138, 4, 0.35);
+}
+
+.bestseller-ribbon i {
+    font-size: 0.85em;
 }
 
 /* Card highlight and pulse glow */

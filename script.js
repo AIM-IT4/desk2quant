@@ -189,26 +189,48 @@ document.addEventListener('DOMContentLoaded', function () {
     // Product Filtering
     // --------------------------------
     const filterBtns = document.querySelectorAll('.filter-btn');
-    const productCards = document.querySelectorAll('.product-card');
+
+    // Applies the currently-active category filter to all rendered product cards.
+    // Exposed globally so the sort control can re-apply the filter after a re-render.
+    window.applyActiveProductFilter = function () {
+        const activeBtn = document.querySelector('.filter-btn.active');
+        const filter = activeBtn ? activeBtn.dataset.filter : 'all';
+        // Query live: product cards are rendered asynchronously from Supabase
+        // after DOMContentLoaded, so a NodeList captured at init time would
+        // still be empty skeleton cards.
+        const productCards = document.querySelectorAll('#products .product-card');
+        productCards.forEach(card => {
+            if (filter === 'all' || card.dataset.category === filter) {
+                card.style.display = 'block';
+                card.style.animation = 'fadeIn 0.3s ease';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    };
 
     filterBtns.forEach(btn => {
         btn.addEventListener('click', function () {
-            // Update active button
             filterBtns.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
-
-            const filter = this.dataset.filter;
-
-            productCards.forEach(card => {
-                if (filter === 'all' || card.dataset.category === filter) {
-                    card.style.display = 'block';
-                    card.style.animation = 'fadeIn 0.3s ease';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
+            window.applyActiveProductFilter();
         });
     });
+
+    // --------------------------------
+    // Product Sorting
+    // --------------------------------
+    const productSortSelect = document.getElementById('productSortSelect');
+    if (productSortSelect) {
+        productSortSelect.addEventListener('change', async function () {
+            window.currentProductSort = this.value;
+            // Re-render from the already-fetched product list rather than refetching
+            if (typeof displaySupabaseProducts === 'function' && window.allProducts) {
+                await displaySupabaseProducts(window.allProducts);
+                if (window.applyActiveProductFilter) window.applyActiveProductFilter();
+            }
+        });
+    }
 
     // --------------------------------
     // Product Modal
@@ -1433,6 +1455,60 @@ async function loadProductsFromSupabase(prefetchPromise) {
 }
 
 // Display products from Supabase in the products grid
+// Real product category assignment (the `sales_count` column and generic keyword
+// matching are unreliable/wrong for several products, e.g. "Quant Desk Cheatcode"
+// is a mnemonics PDF, not code, despite containing the word "code"). Mapped by id
+// from actual product content type.
+const PRODUCT_CATEGORY_MAP = {
+    '798495e8-653a-480c-9ea8-3182f43f2b9d': 'code',   // SQL for Quant Interviews
+    'c3e4c5cc-6616-4728-b979-782bec4d8811': 'code',   // C++ for Quants
+    '9ad9f8ac-9872-40c3-82b8-1e6168e65062': 'code',   // Python for Quants
+    '4cd13da8-ab2a-4287-a8f8-5bfca8d37bde': 'code',   // Stochastic Calculus Visual Lab (Jupyter notebooks)
+    '067381aa-df15-42ad-b27e-2556d141e52f': 'code',   // R for Risk Quants (scripts)
+    '6b78550d-e130-41d1-9409-92335ce82a6c': 'code',   // Numerical Methods (scripts)
+    'bd2e57b7-32c4-44ad-8a2a-d156222b7ff7': 'bundle', // 45 Projects Pack
+    'bdb3c59e-c8c0-430f-8705-b7467514458e': 'bundle', // Derivatives Master Pack
+    '164308cd-e3cd-4026-8fdc-337a5955ffff': 'bundle', // Complete Front Office Bundle
+    '75f6118b-c10e-43c6-acc6-ec48cd6a6cbc': 'bundle', // Quant Models Master Pack
+};
+function getProductCategory(product) {
+    return PRODUCT_CATEGORY_MAP[product.id] || 'notes';
+}
+
+// Verified bestsellers from real Supabase `purchases` records (not the unreliable
+// `sales_count` column on `products`, which was found to mismatch actual sales
+// counts for 36 of 37 products). Ordered by real purchase volume.
+const VERIFIED_BESTSELLER_IDS = [
+    '0f0e5936-042a-4153-b13f-19eaef3b33b5', // Quantitative Finance for Absolute Beginners (38 sales)
+    'bd2e57b7-32c4-44ad-8a2a-d156222b7ff7', // Ultimate Industry Grade Quant Project Pack (24 sales)
+    '73806d69-768b-497e-87b7-d94fa4cfd772', // Quant Interview Problem Book (22 sales)
+    'b753e318-fd6e-4615-9416-746283abd370', // Exotic Options Pricing Guide (20 sales)
+    'a778e6ae-43d1-4cbd-a6a7-6dce693e5f69', // Model Validation Quant Case Study Pack (15 sales)
+];
+
+// Sort products by the selected mode. 'popular' uses the verified bestseller
+// order first, falling back to newest-first for the rest (since sales_count is
+// unreliable, we cannot rank the long tail by volume).
+function sortProducts(items, mode) {
+    const list = [...items];
+    if (mode === 'price-low') {
+        list.sort((a, b) => a.price - b.price);
+    } else if (mode === 'price-high') {
+        list.sort((a, b) => b.price - a.price);
+    } else {
+        // popular (default): verified bestsellers first, in verified order, then newest-first
+        list.sort((a, b) => {
+            const aIdx = VERIFIED_BESTSELLER_IDS.indexOf(a.id);
+            const bIdx = VERIFIED_BESTSELLER_IDS.indexOf(b.id);
+            if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+            if (aIdx !== -1) return -1;
+            if (bIdx !== -1) return 1;
+            return new Date(b.created_at) - new Date(a.created_at);
+        });
+    }
+    return list;
+}
+
 // Display products separated by Paid and Free
 async function displaySupabaseProducts(products) {
     const productsGrid = document.querySelector('#products .products-grid') || document.querySelector('.products-grid');
@@ -1441,8 +1517,12 @@ async function displaySupabaseProducts(products) {
     if (productsGrid) productsGrid.innerHTML = '';
     if (resourcesGrid) resourcesGrid.innerHTML = '';
 
-    const paidProducts = products.filter(p => p.price > 0);
+    let paidProducts = products.filter(p => p.price > 0);
     const freeProducts = products.filter(p => p.price === 0);
+
+    // Store the unsorted paid list so the sort control can re-sort without a refetch
+    window.allPaidProducts = paidProducts;
+    paidProducts = sortProducts(paidProducts, window.currentProductSort || 'popular');
 
     const renderList = [
         { items: paidProducts, container: productsGrid, isFree: false },
@@ -1496,8 +1576,10 @@ async function displaySupabaseProducts(products) {
         for (const product of items) {
             const productCard = document.createElement('div');
             const isTargetLaunch = product.id === '6b78550d-e130-41d1-9409-92335ce82a6c';
+            const isBestseller = VERIFIED_BESTSELLER_IDS.includes(product.id);
             productCard.className = isTargetLaunch ? 'product-card reveal-up highlighted-product' : 'product-card reveal-up';
-            productCard.dataset.category = 'notes';
+            if (isBestseller) productCard.classList.add('bestseller-product');
+            productCard.dataset.category = getProductCategory(product);
 
             // Convert price to local currency (async)
             const localPrice = await convertPrice(product.price, userCountryCode, product.enable_ppp);
@@ -1561,6 +1643,7 @@ async function displaySupabaseProducts(products) {
 
             productCard.innerHTML = `
                 <div class="product-image reference-cover">
+                    ${isBestseller ? '<span class="bestseller-ribbon"><i class="fas fa-star"></i> Bestseller</span>' : ''}
                     <span class="reference-signal">${visual.signal}</span>
                     <span class="reference-cover-label">${visual.label}</span>
                 </div>
