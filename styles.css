@@ -2712,9 +2712,15 @@ body.d2q-reference .footer .logo-img {
 }
 
 /* --------------------------------
-   Scroll Reveal Animations (v3.5)
+   Scroll Reveal Animations (v3.6)
+   Content stays visible unless JavaScript successfully enables animation.
    -------------------------------- */
 .reveal-up {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+html.reveal-enabled .reveal-up {
     opacity: 0;
     transform: translateY(30px);
     transition: opacity 0.8s cubic-bezier(0.2, 1, 0.3, 1),
@@ -2722,9 +2728,19 @@ body.d2q-reference .footer .logo-img {
     will-change: opacity, transform;
 }
 
-.reveal-up.revealed {
+html.reveal-enabled .reveal-up.revealed {
     opacity: 1;
     transform: translateY(0);
+    will-change: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html.reveal-enabled .reveal-up,
+    html.reveal-enabled .reveal-up.revealed {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
 }
 
 /* Staggered Delays */

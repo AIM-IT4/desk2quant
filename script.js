@@ -482,24 +482,63 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // --------------------------------
-    // Scroll Reveal Animations (v3.5)
+    // Scroll Reveal Animations (v3.6)
+    // Progressive enhancement: CSS is visible by default. Animation is enabled
+    // only after the observers are ready, including for dynamically added cards.
     // --------------------------------
-    window.revealObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('revealed');
-                window.revealObserver.unobserve(entry.target);
-            }
-        });
-    }, {
-        threshold: 0.01,
-        rootMargin: '0px 0px 100px 0px'
-    });
+    try {
+        const reduceRevealMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const canObserveReveals = 'IntersectionObserver' in window && 'MutationObserver' in window;
 
-    // Target all elements with .reveal-up
-    document.querySelectorAll('.reveal-up').forEach(el => {
-        window.revealObserver.observe(el);
-    });
+        if (reduceRevealMotion || !canObserveReveals) {
+            document.querySelectorAll('.reveal-up').forEach(el => el.classList.add('revealed'));
+        } else {
+            window.revealObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('revealed');
+                        window.revealObserver.unobserve(entry.target);
+                    }
+                });
+            }, {
+                threshold: 0.01,
+                rootMargin: '0px 0px 100px 0px'
+            });
+
+            const registerRevealElements = (root) => {
+                const revealElements = [];
+
+                if (root.nodeType === Node.ELEMENT_NODE && root.matches('.reveal-up')) {
+                    revealElements.push(root);
+                }
+
+                if (root.querySelectorAll) {
+                    revealElements.push(...root.querySelectorAll('.reveal-up'));
+                }
+
+                revealElements.forEach(el => {
+                    if (!el.dataset.revealObserved) {
+                        el.dataset.revealObserved = 'true';
+                        window.revealObserver.observe(el);
+                    }
+                });
+            };
+
+            registerRevealElements(document);
+            document.documentElement.classList.add('reveal-enabled');
+
+            window.revealMutationObserver = new MutationObserver((mutations) => {
+                mutations.forEach(mutation => {
+                    mutation.addedNodes.forEach(node => registerRevealElements(node));
+                });
+            });
+            window.revealMutationObserver.observe(document.body, { childList: true, subtree: true });
+        }
+    } catch (error) {
+        console.warn('Scroll reveal disabled; keeping all content visible.', error);
+        document.documentElement.classList.remove('reveal-enabled');
+        document.querySelectorAll('.reveal-up').forEach(el => el.classList.add('revealed'));
+    }
 
     // --------------------------------
     // Add fade-in animation keyframes dynamically
