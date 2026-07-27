@@ -69,6 +69,12 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             margin-bottom: 10px;
+            white-space: nowrap;
+        }
+
+        .stat-number--text {
+            font-size: 1.7em;
+            white-space: normal;
         }
 
         .stat-label {
@@ -200,7 +206,7 @@
 
     <div class="container" style="margin-top: 100px;">
         <div style="text-align: center; margin-bottom: 60px;">
-            <h1 style="margin-bottom: 20px;">What Our Students Say</h1>
+            <h1 style="margin-bottom: 20px; color: var(--text);">What Our Students Say</h1>
             <p style="color: var(--text-muted); font-size: 1.2em; max-width: 600px; margin: 0 auto;">
                 Real feedback from professionals and students who transformed their quant careers
             </p>
@@ -217,7 +223,7 @@
                 <div class="stat-label">Average Rating</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">Verified</div>
+                <div class="stat-number stat-number--text">Verified</div>
                 <div class="stat-label">Published after record check</div>
             </div>
             <div class="stat-card">
