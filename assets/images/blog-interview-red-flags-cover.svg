@@ -5,17 +5,39 @@
       <stop offset="58%" stop-color="#0a3476"/>
       <stop offset="100%" stop-color="#08a9a2"/>
     </linearGradient>
-    <radialGradient id="glow" cx="50%" cy="50%" r="60%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.14"/>
+    <radialGradient id="glow" cx="50%" cy="38%" r="65%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.16"/>
       <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
     </radialGradient>
   </defs>
   <rect width="1200" height="630" fill="url(#bg)"/>
   <rect width="1200" height="630" fill="url(#glow)"/>
-  <g stroke="#f43f5e" stroke-width="6" opacity="0.55" stroke-linecap="round">
-    <path d="M120 140 L170 190 M170 140 L120 190"/>
-    <path d="M1030 470 L1080 520 M1080 470 L1030 520"/>
-    <path d="M110 470 L150 510 M150 470 L110 510"/>
-    <path d="M1060 150 L1100 190 M1100 150 L1060 190"/>
+
+  <!-- faint grid texture -->
+  <g stroke="#ffffff" stroke-opacity="0.05" stroke-width="1">
+    <line x1="0" y1="120" x2="1200" y2="120"/>
+    <line x1="0" y1="240" x2="1200" y2="240"/>
+    <line x1="0" y1="360" x2="1200" y2="360"/>
+    <line x1="0" y1="480" x2="1200" y2="480"/>
+    <line x1="200" y1="0" x2="200" y2="630"/>
+    <line x1="400" y1="0" x2="400" y2="630"/>
+    <line x1="600" y1="0" x2="600" y2="630"/>
+    <line x1="800" y1="0" x2="800" y2="630"/>
+    <line x1="1000" y1="0" x2="1000" y2="630"/>
+  </g>
+
+  <!-- baseline / desk line -->
+  <line x1="0" y1="470" x2="1200" y2="470" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2"/>
+
+  <!-- three flag poles planted on the baseline, center flag raised/highlighted -->
+  <g>
+    <line x1="430" y1="470" x2="430" y2="280" stroke="#ffffff" stroke-opacity="0.55" stroke-width="5" stroke-linecap="round"/>
+    <path d="M430 280 L430 220 L500 232 L430 260 Z" fill="#f43f5e" fill-opacity="0.55"/>
+
+    <line x1="600" y1="470" x2="600" y2="195" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
+    <path d="M600 195 L600 120 L700 136 L600 172 Z" fill="#f43f5e"/>
+
+    <line x1="770" y1="470" x2="770" y2="280" stroke="#ffffff" stroke-opacity="0.55" stroke-width="5" stroke-linecap="round"/>
+    <path d="M770 280 L770 220 L840 232 L770 260 Z" fill="#f43f5e" fill-opacity="0.55"/>
   </g>
 </svg>
