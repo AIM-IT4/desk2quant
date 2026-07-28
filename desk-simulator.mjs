@@ -19,7 +19,7 @@ const artifactTypeLabels = {
     comparison: 'REVALUATION',
     bars: 'STABILITY'
 };
-const caseIcons = ['Δ', 'f(t)', 'σ'];
+const caseIcons = ['Δ', 'f(t)', 'σ', 'F(t)'];
 const tabProgress = {
     brief: { label: 'Briefing', value: 12 },
     evidence: { label: 'Evidence review', value: 35 },

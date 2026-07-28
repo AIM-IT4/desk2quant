@@ -739,6 +739,244 @@ export const scenarios = Object.freeze([
                 href: 'index.html#products'
             }
         ]
+    },
+    {
+        id: 'fx-basis-forward',
+        number: '04',
+        title: 'The Forward That Ignored the Basis',
+        shortTitle: 'FX forward mispricing',
+        desk: 'FX & Cross-Currency',
+        discipline: 'Pricing validation',
+        level: 'Intermediate',
+        duration: '15-18 min',
+        accent: 'blue',
+        teaser: 'The desk quoted a 6M USD/JPY forward 36 pips away from the interbank mid. Client dealing wants to know if the desk is mispricing, or if the market moved.',
+        objective: 'Determine whether the quoted forward reflects a real market condition or a pricing-model gap, then propose a fix and a control.',
+        opening: {
+            eyebrow: '07:42 Tokyo · Client dealing escalation',
+            headline: 'Client dealing says the desk\'s 6M USD/JPY forward is 36 pips away from every other bank\'s quote.',
+            body: 'A corporate client flagged that Desk2Bank\'s 6-month USD/JPY forward is notably off-market versus three competitor quotes shown on the same dealing screen. The desk\'s forward pricer uses the USD and JPY deposit curves and textbook covered interest rate parity (CIP). Spot and both interest rate curves were refreshed this morning.',
+            metrics: [
+                { label: 'Desk quoted forward', value: '145.43', tone: 'neutral' },
+                { label: 'Interbank mid (3 dealers)', value: '145.07', tone: 'positive' },
+                { label: 'Gap', value: '36 pips', tone: 'negative' }
+            ]
+        },
+        brief: [
+            { label: 'Your role', value: 'Desk quant covering FX forwards & cross-currency' },
+            { label: 'Deadline', value: '08:30 client dealing callback' },
+            { label: 'Primary pair', value: 'USD/JPY 6M forward' },
+            { label: 'Investigation budget', value: '100 points' }
+        ],
+        messages: [
+            {
+                role: 'Client Dealing',
+                initials: 'CD',
+                time: '07:42',
+                text: 'Client is asking why our forward is 36 pips off three other dealers on the same screen. They want an answer before they trade elsewhere.'
+            },
+            {
+                role: 'Rates Desk',
+                initials: 'RT',
+                time: '07:45',
+                text: 'USD and JPY deposit curves were refreshed at 07:00 Tokyo. Both look like normal moves versus yesterday.'
+            },
+            {
+                role: 'FX Trader',
+                initials: 'FX',
+                time: '07:48',
+                text: 'Spot printed clean at 148.50. If CIP holds, the forward should be close to what we quoted. Either the model is wrong or the whole street is wrong — and it\'s never the whole street.'
+            }
+        ],
+        artifacts: [
+            {
+                id: 'cip-worksheet',
+                title: 'Textbook CIP worksheet',
+                eyebrow: 'Initial evidence',
+                type: 'keyValue',
+                summary: 'The desk pricer\'s own textbook-CIP math is internally consistent with its quoted forward.',
+                values: [
+                    ['Spot USD/JPY', '148.50'],
+                    ['USD 6M deposit rate', '4.85%'],
+                    ['JPY 6M deposit rate', '0.62%'],
+                    ['Textbook CIP forward', '145.43'],
+                    ['Desk quoted forward', '145.43']
+                ]
+            },
+            {
+                id: 'rate-refresh-log',
+                title: 'Curve refresh log',
+                eyebrow: 'Initial evidence',
+                type: 'code',
+                summary: 'Both deposit curves refreshed on time with no missing tenors.',
+                code: [
+                    '07:00:04 INFO  loaded USD_DEPO curve, 14/14 tenors',
+                    '07:00:06 INFO  loaded JPY_DEPO curve, 14/14 tenors',
+                    '07:00:07 INFO  no stale-node warnings raised',
+                    '07:00:09 INFO  forward pricer using CIP_NO_BASIS model v3'
+                ]
+            },
+            {
+                id: 'competitor-quotes',
+                title: 'Competitor forward quotes',
+                eyebrow: 'Unlocked evidence',
+                type: 'table',
+                summary: 'All three other dealers quote a materially bigger USD discount than the desk\'s textbook CIP number, and agree closely with each other.',
+                locked: true,
+                columns: ['Dealer', '6M forward', 'Points vs spot'],
+                rows: [
+                    ['Dealer A', '145.06', '-344 pips'],
+                    ['Dealer B', '145.08', '-342 pips'],
+                    ['Dealer C', '145.07', '-343 pips'],
+                    ['Desk2Bank (us)', '145.43', '-307 pips']
+                ]
+            },
+            {
+                id: 'basis-swap-data',
+                title: 'USD/JPY cross-currency basis swap data',
+                eyebrow: 'Unlocked evidence',
+                type: 'keyValue',
+                summary: 'A live, actively-quoted 6M cross-currency basis exists and is not small.',
+                locked: true,
+                values: [
+                    ['6M USD/JPY xccy basis (mid)', '-50 bps'],
+                    ['Basis 1M ago', '-47 bps'],
+                    ['Basis 1Y ago', '-43 bps'],
+                    ['Desk pricer basis input', '0 bps (not modelled)']
+                ]
+            },
+            {
+                id: 'basis-reval',
+                title: 'Controlled revaluation with basis',
+                eyebrow: 'Unlocked evidence',
+                type: 'comparison',
+                summary: 'Adding the observed cross-currency basis to the discounting closes almost the entire gap.',
+                locked: true,
+                left: { label: 'Textbook CIP (no basis)', value: '145.43', note: '0 bps basis assumed' },
+                right: { label: 'CIP + observed basis', value: '145.07', note: '-50 bps basis applied' },
+                footer: 'This matches the interbank mid of 145.07 within normal quoting tolerance.'
+            }
+        ],
+        tests: [
+            {
+                id: 'recompute-cip',
+                title: 'Recompute textbook CIP by hand',
+                category: 'Pricing',
+                cost: 8,
+                signal: 'supporting',
+                description: 'Independently rebuild the forward from spot and both deposit rates.',
+                resultTitle: 'Desk math matches its own model',
+                result: 'Recomputing textbook CIP from the same spot and deposit rates reproduces 145.43 exactly. The desk pricer is not miscalculating its own formula.',
+                unlocks: []
+            },
+            {
+                id: 'pull-competitor-quotes',
+                title: 'Pull live competitor forward quotes',
+                category: 'Market data',
+                cost: 10,
+                signal: 'decisive',
+                description: 'Compare the desk quote against three other dealers on the same pair and tenor.',
+                resultTitle: 'The street agrees with itself, not with the desk',
+                result: 'Three independent dealers quote within 2 pips of each other, all showing a materially bigger USD discount than the desk\'s textbook CIP forward.',
+                unlocks: ['competitor-quotes']
+            },
+            {
+                id: 'check-basis-market',
+                title: 'Check the cross-currency basis swap market',
+                category: 'Market data',
+                cost: 12,
+                signal: 'decisive',
+                description: 'Look up whether a USD/JPY cross-currency basis is actively quoted and non-zero.',
+                resultTitle: 'A -50 bps basis is live and has persisted for over a year',
+                result: 'The cross-currency basis market shows a stable, actively-traded -50 bps 6M basis. The desk pricer does not read this input at all.',
+                unlocks: ['basis-swap-data']
+            },
+            {
+                id: 'basis-controlled-reval',
+                title: 'Revalue the forward including the basis',
+                category: 'Valuation',
+                cost: 14,
+                signal: 'decisive',
+                description: 'Rerun the forward pricer with the observed basis added to the discounting.',
+                resultTitle: 'Gap closes from 36 pips to about zero',
+                result: 'Adding the -50 bps basis to the discount curve produces 145.07, matching the interbank mid within normal tolerance.',
+                unlocks: ['basis-reval']
+            },
+            {
+                id: 'reverify-spot',
+                title: 'Reverify the spot print',
+                category: 'Market data',
+                cost: 6,
+                signal: 'neutral',
+                description: 'Check whether the 148.50 spot reference itself is stale or wrong.',
+                resultTitle: 'Spot is clean',
+                result: 'The 148.50 spot print matches two independent venues within 1 pip. Spot is not the issue.',
+                unlocks: []
+            },
+            {
+                id: 'daycount-check',
+                title: 'Check day-count conventions',
+                category: 'Pricing',
+                cost: 7,
+                signal: 'neutral',
+                description: 'Test whether a day-count mismatch between the two deposit curves explains the gap.',
+                resultTitle: 'Day-count treatment is correct',
+                result: 'Both curves use their standard market conventions (ACT/360 USD, ACT/365 JPY) and the pricer applies them correctly. This is not the driver.',
+                unlocks: []
+            }
+        ],
+        diagnosis: {
+            rootCauses: [
+                { id: 'no-basis-modelled', label: 'The forward pricer ignores the live cross-currency basis and assumes textbook CIP holds exactly' },
+                { id: 'stale-deposit-curve', label: 'One of the USD or JPY deposit curves is stale' },
+                { id: 'spot-error', label: 'The reference spot rate used for the forward is wrong' },
+                { id: 'daycount-mismatch', label: 'A day-count convention mismatch between the two curves is mispricing the forward' }
+            ],
+            contributors: [
+                { id: 'model-v3-gap', label: 'The pricer\'s CIP_NO_BASIS model has no input field for cross-currency basis at all' },
+                { id: 'no-basis-alert', label: 'No control flags forwards priced without a basis input on pairs with an active basis market' },
+                { id: 'assumed-frictionless', label: 'The model assumes frictionless arbitrage between USD and JPY funding markets' },
+                { id: 'usd-funding-scarcity', label: 'Dollar funding scarcity outside the US is a structural, persistent feature of this market, not a temporary glitch' }
+            ],
+            fixes: [
+                { id: 'add-basis-input', label: 'Add a cross-currency basis input to the forward pricer and re-quote' },
+                { id: 'match-competitors', label: 'Manually override today\'s quote to match competitor screens' },
+                { id: 'widen-spread', label: 'Widen the bid-offer spread to absorb the discrepancy' },
+                { id: 'blame-client-screen', label: 'Tell the client their competitor screen is showing stale prices' }
+            ],
+            controls: [
+                { id: 'basis-required-field', label: 'Require a cross-currency basis input for every forward on a pair with an active basis market' },
+                { id: 'competitor-benchmark', label: 'Automatically benchmark quotes against a live composite of dealer forwards' },
+                { id: 'ignore-small-gaps', label: 'Treat any gap under 50 pips as immaterial and skip review' },
+                { id: 'manual-review-large', label: 'Route quotes that deviate from the composite benchmark beyond a threshold to manual review' }
+            ]
+        },
+        answer: {
+            rootCause: 'no-basis-modelled',
+            contributors: ['model-v3-gap', 'no-basis-alert', 'usd-funding-scarcity'],
+            fix: 'add-basis-input',
+            controls: ['basis-required-field', 'competitor-benchmark', 'manual-review-large'],
+            decisiveTests: ['pull-competitor-quotes', 'check-basis-market', 'basis-controlled-reval'],
+            supportingTests: ['recompute-cip'],
+            explanation: 'Textbook covered interest rate parity assumes frictionless, unlimited arbitrage between USD and JPY funding markets. In reality a persistent cross-currency basis exists because dollar funding outside the US is structurally scarcer than the two deposit curves alone imply. The desk\'s pricer never modelled this basis, so it produced an internally consistent but factually wrong forward. Adding the observed -50 bps basis to the discounting closes the gap to within normal tolerance.',
+            learning: [
+                'CIP has not held exactly since the 2008 crisis — a persistent cross-currency basis is a real, tradable market feature, not noise.',
+                'A model can be internally consistent with its own formula and still be wrong if the formula omits a real market friction.',
+                'Benchmarking against live competitor quotes catches model-scope gaps that recomputation of your own formula cannot.'
+            ]
+        },
+        nextSteps: [
+            {
+                label: 'Explore Desk2Quant notes',
+                title: 'FX Models: Quant Interview Playbook',
+                href: 'product.html?id=cf217e64-e64f-49c7-9f0d-a8d1478ef7b5'
+            },
+            {
+                label: 'Explore Desk2Quant notes',
+                title: 'Derivatives pricing across asset classes',
+                href: 'index.html#products'
+            }
+        ]
     }
 ]);
 

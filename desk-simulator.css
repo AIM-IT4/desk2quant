@@ -747,6 +747,10 @@ img {
     --card-accent: #cf455c;
 }
 
+.case-card[data-accent='blue'] {
+    --card-accent: #3f7dd6;
+}
+
 .case-card-top {
     display: flex;
     align-items: center;

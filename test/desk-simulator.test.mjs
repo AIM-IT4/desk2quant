@@ -13,7 +13,7 @@ import {
 } from '../desk-simulator-engine.mjs';
 
 test('scenario definitions have unique IDs and valid answer references', () => {
-    assert.equal(scenarios.length, 3);
+    assert.equal(scenarios.length, 4);
     assert.equal(new Set(scenarios.map((scenario) => scenario.id)).size, scenarios.length);
 
     scenarios.forEach((scenario) => {
@@ -115,5 +115,5 @@ test('completed progress records best score, attempts and summary', () => {
 
     const summary = getProgressSummary(progress, scenarios);
     assert.equal(summary.completed, 1);
-    assert.equal(summary.total, 3);
+    assert.equal(summary.total, 4);
 });
