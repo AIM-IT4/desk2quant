@@ -1049,6 +1049,128 @@ body.d2q-reference .footer .logo-img {
 }
 
 /* --------------------------------
+   Lead Capture Section
+   -------------------------------- */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.lead-capture {
+    padding: 8px 0 44px;
+    background: var(--d2q-paper);
+}
+
+.lead-capture-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+    flex-wrap: wrap;
+    padding: 40px 44px;
+    background: var(--accent-gradient);
+    border-radius: 24px;
+    box-shadow: 0 20px 45px rgba(6, 39, 91, 0.22);
+}
+
+.lead-capture-copy {
+    flex: 1 1 380px;
+    color: #fff;
+}
+
+.lead-capture-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 14px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin-bottom: 14px;
+}
+
+.lead-capture-copy h2 {
+    font-size: 1.9rem;
+    line-height: 1.25;
+    margin-bottom: 10px;
+    color: #fff;
+}
+
+.lead-capture-copy p {
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 0.98rem;
+    line-height: 1.6;
+    max-width: 480px;
+}
+
+.lead-capture-form {
+    flex: 1 1 340px;
+    display: flex;
+    gap: 10px;
+    max-width: 420px;
+}
+
+.lead-capture-form input[type="email"] {
+    flex: 1;
+    padding: 13px 18px;
+    border-radius: 100px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    font-family: inherit;
+}
+
+.lead-capture-form input[type="email"]:focus {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
+.lead-capture-form .btn {
+    white-space: nowrap;
+    background: #fff;
+    color: var(--d2q-navy);
+    border: none;
+}
+
+.lead-capture-form .btn:hover {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.lead-capture-note {
+    flex-basis: 100%;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 0.78rem;
+    margin-top: -4px;
+}
+
+@media (max-width: 640px) {
+    .lead-capture-card {
+        padding: 30px 24px;
+    }
+
+    .lead-capture-form {
+        flex-direction: column;
+        max-width: none;
+    }
+
+    .lead-capture-form .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* --------------------------------
    Services Section
    -------------------------------- */
 .services {

@@ -3645,6 +3645,71 @@ document.addEventListener('DOMContentLoaded', () => {
 window.pendingBooking = null;
 
 
+// --- LEAD CAPTURE FORM HANDLER (homepage free Quant Formula Sheet signup) ---
+document.addEventListener('DOMContentLoaded', function () {
+    const leadForm = document.getElementById('leadCaptureForm');
+    if (!leadForm) return;
+
+    leadForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const emailInput = document.getElementById('leadCaptureEmail');
+        const submitBtn = document.getElementById('leadCaptureSubmit');
+        const note = document.getElementById('leadCaptureNote');
+        const email = (emailInput.value || '').trim();
+
+        if (!email || !email.includes('@')) {
+            if (note) { note.textContent = 'Please enter a valid email address.'; note.style.color = '#f43f5e'; }
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending...';
+
+        try {
+            // Look up the current Quant Formula Sheet file_url directly (not the
+            // hardcoded fallback map) so this always sends the latest file.
+            let downloadLink = 'https://desk2quant.vercel.app/#resources';
+            if (window.supabaseClient) {
+                const { data } = await window.supabaseClient
+                    .from('products')
+                    .select('file_url')
+                    .ilike('name', '%Quant Formulea Sheet%')
+                    .limit(1)
+                    .maybeSingle();
+                if (data && data.file_url) downloadLink = data.file_url;
+            }
+
+            await sendProductEmail(email, 'Quant Formula Sheet', 'FREE_LEAD', downloadLink, 'Quant', 0, 'INR');
+
+            // Track the lead the same way free downloads are tracked, so it shows
+            // up alongside other conversions rather than being invisible.
+            if (window.supabaseClient) {
+                window.supabaseClient.from('purchases').insert({
+                    customer_email: email,
+                    product_name: 'Quant Formula Sheet (Lead Capture)',
+                    amount: 0,
+                    currency: 'INR',
+                    payment_id: 'LEAD_' + Date.now(),
+                    source: 'lead_capture',
+                    download_link: downloadLink
+                }).then(() => console.log('✅ Lead logged to Supabase')).catch(err => console.error('❌ Failed to log lead:', err));
+            }
+
+            leadForm.style.display = 'none';
+            if (note) {
+                note.textContent = '✅ Check your inbox — your formula sheet is on its way!';
+                note.style.color = '#fff';
+            }
+        } catch (err) {
+            console.error('Lead capture failed:', err);
+            if (note) { note.textContent = 'Something went wrong. Please try again.'; note.style.color = '#f43f5e'; }
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Send Me the Sheet <i class="fas fa-arrow-right"></i>';
+        }
+    });
+});
+
 // --- REVIEW FORM HANDLER ---
 document.addEventListener('DOMContentLoaded', function () {
     const reviewForm = document.getElementById('reviewForm');
