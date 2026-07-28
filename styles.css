@@ -1097,6 +1097,26 @@ body.d2q-reference .footer .logo-img {
     background: #ffffff;
 }
 
+/* Flagship: the highest-tier session (most comprehensive, longest, priciest).
+   Distinct gold accent so it doesn't read as a duplicate "Most Popular" card. */
+.service-card.flagship {
+    border-color: #ca8a04;
+    background: #ffffff;
+}
+
+.flagship-badge {
+    background: linear-gradient(135deg, #eab308, #ca8a04) !important;
+    color: #fff !important;
+    border: none !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.flagship-badge i {
+    font-size: 0.85em;
+}
+
 .popular-badge {
     position: absolute;
     top: 16px;

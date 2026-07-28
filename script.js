@@ -1813,13 +1813,23 @@ async function updateServicesSection(sessions) {
     servicesContainer.innerHTML = '';
 
     let popularAssigned = false;
+    // Sessions are fetched ordered by price ascending, so the highest-priced
+    // active session is genuinely the most comprehensive/flagship offering --
+    // distinguish it visually instead of letting it look identical to the
+    // plainer mid-tier card next to it.
+    const flagshipIndex = sessions.length > 2 ? sessions.length - 1 : -1;
 
     for (let index = 0; index < sessions.length; index++) {
         const session = sessions[index];
         const serviceCard = document.createElement('div');
         const showPopular = session.is_popular && !popularAssigned;
         if (showPopular) popularAssigned = true;
-        serviceCard.className = showPopular ? 'service-card popular reveal-up' : 'service-card reveal-up';
+        const showFlagship = !showPopular && index === flagshipIndex;
+        serviceCard.className = showPopular
+            ? 'service-card popular reveal-up'
+            : showFlagship
+                ? 'service-card flagship reveal-up'
+                : 'service-card reveal-up';
 
         // Generate features HTML
         const featuresHtml = session.features ? session.features.map(feature =>
@@ -1843,6 +1853,7 @@ async function updateServicesSection(sessions) {
                 </div>
                 <h3 class="service-title">${session.name}</h3>
                 ${showPopular ? '<span class="popular-badge">Most Popular</span>' : ''}
+                ${showFlagship ? '<span class="popular-badge flagship-badge"><i class="fas fa-award"></i> Flagship Bootcamp</span>' : ''}
             </div>
             <div class="service-content">
                 <div class="service-price">
