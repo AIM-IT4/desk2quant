@@ -1,0 +1,155 @@
+/* ================================
+   FAQ Page Styling
+   Uses the site's real design tokens (same system as legal-page.css).
+   Previously this page referenced --surface, which doesn't exist, so FAQ
+   "cards" had no background/border, and it used the legacy rose/blue accent
+   pair instead of the site's navy/teal brand used everywhere else.
+   ================================ */
+
+.faq-main {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 140px 20px 80px;
+}
+
+.faq-hero {
+    text-align: center;
+    margin-bottom: 44px;
+}
+
+.faq-eyebrow {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--d2q-teal);
+    font-weight: 700;
+    margin-bottom: 14px;
+    display: block;
+}
+
+.faq-hero h1 {
+    font-size: 2.4rem;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    line-height: 1.2;
+}
+
+.faq-hero-sub {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+}
+
+.faq-accordion {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.faq-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: border-color 0.2s ease;
+}
+
+.faq-item[open] {
+    border-color: rgba(8, 169, 162, 0.35);
+}
+
+.faq-item summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 22px 26px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 1.05rem;
+}
+
+.faq-item summary::-webkit-details-marker { display: none; }
+
+.faq-item summary .faq-icon {
+    color: var(--d2q-teal);
+    flex-shrink: 0;
+    font-size: 0.95rem;
+}
+
+.faq-item summary .faq-chevron {
+    margin-left: auto;
+    color: var(--text-muted);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+.faq-item[open] summary .faq-chevron {
+    transform: rotate(180deg);
+}
+
+.faq-item-body {
+    padding: 0 26px 24px 26px;
+    color: var(--text-secondary);
+    line-height: 1.75;
+}
+
+.faq-item-body a { color: var(--d2q-teal); }
+
+.faq-item-body strong { color: var(--text-primary); }
+
+.faq-cta {
+    background: var(--accent-gradient);
+    padding: 44px 40px;
+    border-radius: 18px;
+    margin-top: 48px;
+    text-align: center;
+}
+
+.faq-cta h2 {
+    color: #fff;
+    margin-bottom: 12px;
+    font-size: 1.6rem;
+}
+
+.faq-cta p {
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 26px;
+}
+
+.faq-cta-actions {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.faq-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 26px;
+    border-radius: 999px;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: transform 0.15s ease;
+}
+
+.faq-cta-btn:hover { transform: translateY(-2px); }
+
+.faq-cta-btn.faq-cta-primary {
+    background: #fff;
+    color: var(--d2q-navy);
+}
+
+.faq-cta-btn.faq-cta-secondary {
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.7);
+    color: #fff;
+}
+
+@media (max-width: 640px) {
+    .faq-cta { padding: 34px 24px; }
+}

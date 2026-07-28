@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -18,13 +18,9 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
-    <style>
-        :root {
-            --primary: var(--accent-primary);
-            --secondary: var(--accent-secondary);
-        }
-    </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="legal-page.css">
+    <link rel="stylesheet" href="faq-page.css">
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
@@ -107,140 +103,102 @@
                 <img src="assets/images/desk2quant-logo.png?v=3" alt="Desk2Quant Logo"
                     style="height: 32px; width: auto;">
             </a>
-            <a href="index.html" style="color: var(--text-secondary);">← Back to Home</a>
+            <a href="index.html" class="legal-back-link"><i class="fas fa-arrow-left"></i> Back to Home</a>
         </div>
     </nav>
 
-    <main style="max-width: 800px; margin: 100px auto 60px; padding: 0 20px;">
-        <h1 style="text-align: center; margin-bottom: 10px;">Frequently Asked Questions</h1>
-        <p style="text-align: center; color: var(--text-muted); margin-bottom: 50px;">
-            Everything you need to know about our services
-        </p>
+    <main class="faq-main">
+        <div class="faq-hero">
+            <span class="faq-eyebrow">Support</span>
+            <h1>Frequently Asked Questions</h1>
+            <p class="faq-hero-sub">Everything you need to know about bookings, payments, and digital products.</p>
+        </div>
 
-        <div style="display: flex; flex-direction: column; gap: 20px;">
-            <!-- FAQ Item 1 -->
-            <div style="background: var(--surface); padding: 25px 30px; border-radius: 12px;">
-                <h3 style="margin-bottom: 15px; color: var(--primary);">
-                    <i class="fas fa-question-circle" style="margin-right: 10px;"></i>
-                    What happens after I book a session?
-                </h3>
-                <p style="color: var(--text-muted); line-height: 1.8;">
-                    After booking and payment, you'll receive a confirmation email with a private session link within 15
-                    minutes.
-                    The session will be held at your scheduled time. After the session, you'll receive any promised
-                    resources
-                    and follow-up materials via email.
-                </p>
-            </div>
+        <div class="faq-accordion">
+            <details class="faq-item" open>
+                <summary><i class="fas fa-question-circle faq-icon"></i> What happens after I book a session? <i class="fas fa-chevron-down faq-chevron"></i></summary>
+                <div class="faq-item-body">
+                    After booking and payment, you'll receive a confirmation email with a private session link within
+                    15 minutes. The session will be held at your scheduled time. After the session, you'll receive
+                    any promised resources and follow-up materials via email.
+                </div>
+            </details>
 
-            <!-- FAQ Item 2 -->
-            <div style="background: var(--surface); padding: 25px 30px; border-radius: 12px;">
-                <h3 style="margin-bottom: 15px; color: var(--primary);">
-                    <i class="fas fa-question-circle" style="margin-right: 10px;"></i>
-                    Can I reschedule my session?
-                </h3>
-                <p style="color: var(--text-muted); line-height: 1.8;">
+            <details class="faq-item">
+                <summary><i class="fas fa-question-circle faq-icon"></i> Can I reschedule my session? <i class="fas fa-chevron-down faq-chevron"></i></summary>
+                <div class="faq-item-body">
                     Yes! You can reschedule up to 24 hours before your scheduled session by emailing us at
                     <strong>jha.8@alumni.iitj.ac.in</strong>. Please include your booking reference and preferred new
                     time.
-                </p>
-            </div>
+                </div>
+            </details>
 
-            <!-- FAQ Item 3 -->
-            <div style="background: var(--surface); padding: 25px 30px; border-radius: 12px;">
-                <h3 style="margin-bottom: 15px; color: var(--primary);">
-                    <i class="fas fa-question-circle" style="margin-right: 10px;"></i>
-                    What payment methods do you accept?
-                </h3>
-                <p style="color: var(--text-muted); line-height: 1.8;">
+            <details class="faq-item">
+                <summary><i class="fas fa-question-circle faq-icon"></i> What payment methods do you accept? <i class="fas fa-chevron-down faq-chevron"></i></summary>
+                <div class="faq-item-body">
                     We accept all major payment methods through Razorpay: UPI (Google Pay, PhonePe, Paytm),
                     Credit/Debit Cards, Net Banking, and Wallets. All transactions are secure and encrypted.
-                </p>
-            </div>
+                </div>
+            </details>
 
-            <!-- FAQ Item 4 -->
-            <div style="background: var(--surface); padding: 25px 30px; border-radius: 12px;">
-                <h3 style="margin-bottom: 15px; color: var(--primary);">
-                    <i class="fas fa-question-circle" style="margin-right: 10px;"></i>
-                    How do I access digital products after purchase?
-                </h3>
-                <p style="color: var(--text-muted); line-height: 1.8;">
-                    After payment, you'll receive an email with a secure download link. The link remains active for 30
-                    days.
-                    You can also access your purchases anytime from the confirmation email. For any issues, contact
-                    support.
-                </p>
-            </div>
+            <details class="faq-item">
+                <summary><i class="fas fa-question-circle faq-icon"></i> How do I access digital products after purchase? <i class="fas fa-chevron-down faq-chevron"></i></summary>
+                <div class="faq-item-body">
+                    After payment, you'll receive an email with a secure download link. The link remains active for
+                    30 days. You can also access your purchases anytime from the confirmation email. For any issues,
+                    contact support.
+                </div>
+            </details>
 
-            <!-- FAQ Item 5 -->
-            <div style="background: var(--surface); padding: 25px 30px; border-radius: 12px;">
-                <h3 style="margin-bottom: 15px; color: var(--primary);">
-                    <i class="fas fa-question-circle" style="margin-right: 10px;"></i>
-                    What's the difference between session types?
-                </h3>
-                <p style="color: var(--text-muted); line-height: 1.8;">
+            <details class="faq-item">
+                <summary><i class="fas fa-question-circle faq-icon"></i> What's the difference between session types? <i class="fas fa-chevron-down faq-chevron"></i></summary>
+                <div class="faq-item-body">
                     <strong>Free Test (15 min):</strong> Quick intro to see if we're a good fit.<br>
                     <strong>Quick Consultation (30 min):</strong> Focused advice on specific topics.<br>
                     <strong>Deep Dive (60 min):</strong> Comprehensive coverage with action plan.<br>
                     <strong>Interview Prep (90 min):</strong> Mock interviews and intensive prep.
-                </p>
-            </div>
+                </div>
+            </details>
 
-            <!-- FAQ Item 6 -->
-            <div style="background: var(--surface); padding: 25px 30px; border-radius: 12px;">
-                <h3 style="margin-bottom: 15px; color: var(--primary);">
-                    <i class="fas fa-question-circle" style="margin-right: 10px;"></i>
-                    Do you offer refunds?
-                </h3>
-                <p style="color: var(--text-muted); line-height: 1.8;">
+            <details class="faq-item">
+                <summary><i class="fas fa-question-circle faq-icon"></i> Do you offer refunds? <i class="fas fa-chevron-down faq-chevron"></i></summary>
+                <div class="faq-item-body">
                     Yes, we have a flexible refund policy. Sessions: Full refund if cancelled 24+ hours before.
-                    Digital products: Full refund within 7 days if not downloaded. See our <a href="refund.html"
-                        style="color: var(--primary);">Refund Policy</a> for details.
-                </p>
-            </div>
+                    Digital products: Full refund within 7 days if not downloaded. See our
+                    <a href="refund.html">Refund Policy</a> for details.
+                </div>
+            </details>
 
-            <!-- FAQ Item 7 -->
-            <div style="background: var(--surface); padding: 25px 30px; border-radius: 12px;">
-                <h3 style="margin-bottom: 15px; color: var(--primary);">
-                    <i class="fas fa-question-circle" style="margin-right: 10px;"></i>
-                    Are the mentorship sessions recorded?
-                </h3>
-                <p style="color: var(--text-muted); line-height: 1.8;">
+            <details class="faq-item">
+                <summary><i class="fas fa-question-circle faq-icon"></i> Are the mentorship sessions recorded? <i class="fas fa-chevron-down faq-chevron"></i></summary>
+                <div class="faq-item-body">
                     Sessions are not recorded by default for privacy. However, if you'd like a recording for personal
-                    reference,
-                    please request it at the start of the session. You'll receive the recording within 24 hours.
-                </p>
-            </div>
+                    reference, please request it at the start of the session. You'll receive the recording within 24
+                    hours.
+                </div>
+            </details>
 
-            <!-- FAQ Item 8 -->
-            <div style="background: var(--surface); padding: 25px 30px; border-radius: 12px;">
-                <h3 style="margin-bottom: 15px; color: var(--primary);">
-                    <i class="fas fa-question-circle" style="margin-right: 10px;"></i>
-                    Can I get a certificate after completing mentorship?
-                </h3>
-                <p style="color: var(--text-muted); line-height: 1.8;">
+            <details class="faq-item">
+                <summary><i class="fas fa-question-circle faq-icon"></i> Can I get a certificate after completing mentorship? <i class="fas fa-chevron-down faq-chevron"></i></summary>
+                <div class="faq-item-body">
                     Yes! Upon completion of 3+ paid sessions, you're eligible for a "Quant Mentorship Completion"
-                    certificate
-                    which can be added to your LinkedIn profile and resume. Mention this interest during your first
-                    session.
-                </p>
-            </div>
+                    certificate which can be added to your LinkedIn profile and resume. Mention this interest during
+                    your first session.
+                </div>
+            </details>
         </div>
 
-        <div
-            style="background: linear-gradient(135deg, var(--primary), var(--secondary)); padding: 40px; border-radius: 12px; margin-top: 50px; text-align: center;">
-            <h2 style="color: white; margin-bottom: 15px;">Still Have Questions?</h2>
-            <p style="color: rgba(255,255,255,0.9); margin-bottom: 25px;">
-                Can't find what you're looking for? Reach out directly.
-            </p>
-            <a href="mailto:jha.8@alumni.iitj.ac.in" class="btn"
-                style="background: white; color: var(--primary); margin-right: 10px;">
-                <i class="fas fa-envelope"></i> Email Us
-            </a>
-            <a href="https://www.linkedin.com/in/akjha002/" target="_blank" class="btn"
-                style="background: transparent; border: 2px solid white; color: white;">
-                <i class="fab fa-linkedin"></i> LinkedIn DM
-            </a>
+        <div class="faq-cta">
+            <h2>Still Have Questions?</h2>
+            <p>Can't find what you're looking for? Reach out directly.</p>
+            <div class="faq-cta-actions">
+                <a href="mailto:jha.8@alumni.iitj.ac.in" class="faq-cta-btn faq-cta-primary">
+                    <i class="fas fa-envelope"></i> Email Us
+                </a>
+                <a href="https://www.linkedin.com/in/akjha002/" target="_blank" rel="noopener" class="faq-cta-btn faq-cta-secondary">
+                    <i class="fab fa-linkedin"></i> LinkedIn DM
+                </a>
+            </div>
         </div>
     </main>
 
