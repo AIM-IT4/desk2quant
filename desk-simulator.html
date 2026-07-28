@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quant Desk Simulator | Desk2Quant</title>
+    <meta name="description"
+        content="Investigate realistic quant desk failures in pricing, P&L and model validation. Run tests, diagnose root causes and earn an evidence-based scorecard.">
+    <meta name="keywords"
+        content="quant finance simulator, model validation training, P&L explain, quant interview practice, Monte Carlo Greeks, yield curve bootstrapping">
+    <meta name="theme-color" content="#071019">
+    <link rel="canonical" href="https://desk2quant.vercel.app/desk-simulator.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://desk2quant.vercel.app/desk-simulator.html">
+    <meta property="og:title" content="Desk2Quant Desk Simulator">
+    <meta property="og:description"
+        content="The number is broken. The desk is waiting. Investigate realistic quant incidents and defend your diagnosis.">
+    <meta property="og:image"
+        content="https://desk2quant.vercel.app/assets/images/desk-simulator-og.png">
+    <meta property="og:image:width" content="1731">
+    <meta property="og:image:height" content="909">
+    <meta property="og:image:alt"
+        content="Desk2Quant Desk Simulator showing an options P&L incident investigation">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Desk2Quant Desk Simulator">
+    <meta name="twitter:description"
+        content="Investigate realistic pricing, risk and model-validation incidents. Free launch beta.">
+    <meta name="twitter:image"
+        content="https://desk2quant.vercel.app/assets/images/desk-simulator-og.png">
+
+    <link rel="icon" type="image/png" href="assets/images/desk2quant-logo.png?v=3">
+    <link rel="apple-touch-icon" href="assets/images/desk2quant-logo.png?v=3">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="desk-simulator.css?v=1">
+
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "Desk2Quant Desk Simulator",
+            "url": "https://desk2quant.vercel.app/desk-simulator.html",
+            "description": "An educational simulator for practising investigation of realistic quantitative-finance pricing, P&L and model-validation incidents.",
+            "applicationCategory": "EducationalApplication",
+            "operatingSystem": "Web",
+            "isAccessibleForFree": true,
+            "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+            },
+            "provider": {
+                "@type": "Organization",
+                "name": "Desk2Quant",
+                "url": "https://desk2quant.vercel.app/"
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <a class="skip-link" href="#mainContent">Skip to content</a>
+
+    <header class="site-nav" id="siteNav">
+        <div class="nav-inner">
+            <a class="brand" href="index.html" aria-label="Desk2Quant home">
+                <img src="assets/images/desk2quant-logo.png?v=3" alt="" width="34" height="34">
+                <span>Desk2Quant</span>
+                <span class="brand-product">Desk Simulator</span>
+            </a>
+            <nav class="nav-links" aria-label="Desk Simulator navigation">
+                <a href="#cases">Incidents</a>
+                <a href="#how-it-works">How it works</a>
+                <a href="#faq">FAQ</a>
+            </nav>
+            <button class="button button-primary button-small" id="navStartButton" type="button">
+                Start free case
+                <span aria-hidden="true">↗</span>
+            </button>
+        </div>
+    </header>
+
+    <main id="mainContent">
+        <div id="landingView">
+            <section class="hero">
+                <div class="hero-grid" aria-hidden="true"></div>
+                <div class="hero-glow hero-glow-one" aria-hidden="true"></div>
+                <div class="hero-glow hero-glow-two" aria-hidden="true"></div>
+                <div class="container hero-layout">
+                    <div class="hero-copy">
+                        <div class="eyebrow">
+                            <span class="status-dot"></span>
+                            Free launch beta · no signup
+                        </div>
+                        <h1>Your first day on the quant desk starts with a <span>broken number.</span></h1>
+                        <p class="hero-lede">
+                            Investigate realistic pricing, risk and model-validation incidents. Inspect the evidence,
+                            run controlled tests and defend a diagnosis that can survive review.
+                        </p>
+                        <div class="hero-actions">
+                            <button class="button button-primary button-large" id="heroStartButton" type="button">
+                                Open the first incident
+                                <span aria-hidden="true">→</span>
+                            </button>
+                            <a class="button button-ghost button-large" href="#cases">Explore all incidents</a>
+                        </div>
+                        <div class="hero-facts" aria-label="Product highlights">
+                            <span><strong>3</strong> desk incidents</span>
+                            <span><strong>100%</strong> evidence-based scoring</span>
+                            <span><strong>0</strong> signup walls</span>
+                        </div>
+                    </div>
+
+                    <div class="hero-product" aria-label="Preview of the Options P and L Break incident">
+                        <div class="terminal-topbar">
+                            <div class="terminal-lights" aria-hidden="true">
+                                <span></span><span></span><span></span>
+                            </div>
+                            <span>INCIDENT 01 / EQUITY DERIVATIVES</span>
+                            <span class="live-pill"><i></i> LIVE</span>
+                        </div>
+                        <div class="terminal-body">
+                            <div class="terminal-alert">
+                                <span class="alert-code">P1</span>
+                                <div>
+                                    <small>08:07 · P&L CONTROL</small>
+                                    <h2>$810k is missing from the official explain.</h2>
+                                </div>
+                            </div>
+                            <div class="mini-bridge">
+                                <div>
+                                    <span>Desk estimate</span>
+                                    <strong class="positive">+$1.42m</strong>
+                                </div>
+                                <div class="bridge-line" aria-hidden="true">
+                                    <span></span>
+                                </div>
+                                <div>
+                                    <span>Official P&L</span>
+                                    <strong>+$0.61m</strong>
+                                </div>
+                            </div>
+                            <div class="terminal-panels">
+                                <div class="terminal-panel">
+                                    <span class="panel-label">RISK SNAPSHOT</span>
+                                    <dl>
+                                        <div><dt>SPX move</dt><dd>+1.00%</dd></div>
+                                        <div><dt>3M ATM vol</dt><dd>+2.50 pts</dd></div>
+                                        <div><dt>Book vega</dt><dd>$331k / pt</dd></div>
+                                    </dl>
+                                </div>
+                                <div class="terminal-panel tests-preview">
+                                    <span class="panel-label">NEXT TEST</span>
+                                    <div><span>01</span> Compare vol snapshots</div>
+                                    <div><span>02</span> Controlled revaluation</div>
+                                    <div><span>03</span> Inspect loader log</div>
+                                </div>
+                            </div>
+                            <div class="terminal-command">
+                                <span aria-hidden="true">&gt;_</span>
+                                <span>Build an evidence trail before the 09:00 sign-off.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section case-section" id="cases">
+                <div class="container">
+                    <div class="section-heading split-heading">
+                        <div>
+                            <span class="section-kicker">Incident library</span>
+                            <h2>Learn by finding what failed.</h2>
+                        </div>
+                        <div class="progress-summary" id="progressSummary" aria-live="polite">
+                            <span class="progress-number" id="progressCompleted">0 / 3</span>
+                            <span>incidents completed on this device</span>
+                        </div>
+                    </div>
+                    <div class="case-grid" id="caseGrid"></div>
+                </div>
+            </section>
+
+            <section class="section method-section" id="how-it-works">
+                <div class="container">
+                    <div class="section-heading centered-heading">
+                        <span class="section-kicker">How it works</span>
+                        <h2>No flashcards. No answer theatre.</h2>
+                        <p>You are scored on the quality of your investigation, not on guessing a hidden keyword.</p>
+                    </div>
+                    <ol class="method-grid">
+                        <li>
+                            <span class="method-number">01</span>
+                            <div class="method-icon" aria-hidden="true">⌁</div>
+                            <h3>Read the desk</h3>
+                            <p>Start with the same incomplete brief, conflicting numbers and stakeholder messages a
+                                desk quant receives.</p>
+                        </li>
+                        <li>
+                            <span class="method-number">02</span>
+                            <div class="method-icon" aria-hidden="true">⌕</div>
+                            <h3>Spend your evidence budget</h3>
+                            <p>Inspect artefacts and choose tests deliberately. Decisive experiments beat noisy,
+                                expensive reruns.</p>
+                        </li>
+                        <li>
+                            <span class="method-number">03</span>
+                            <div class="method-icon" aria-hidden="true">✓</div>
+                            <h3>Defend the diagnosis</h3>
+                            <p>Submit the root cause, remediation and controls. Receive a transparent scorecard and
+                                worked debrief.</p>
+                        </li>
+                    </ol>
+                </div>
+            </section>
+
+            <section class="section score-section">
+                <div class="container score-layout">
+                    <div class="score-copy">
+                        <span class="section-kicker">Transparent assessment</span>
+                        <h2>A score you can audit.</h2>
+                        <p>
+                            Every point comes from a visible rubric: diagnosis, remediation, evidence, preventive
+                            controls and investigation efficiency. The simulator does not pretend that an opaque AI
+                            opinion is ground truth.
+                        </p>
+                        <ul class="check-list">
+                            <li>Deterministic scoring for repeatable practice</li>
+                            <li>Worked causal explanation after submission</li>
+                            <li>Progress stored only on your current device</li>
+                        </ul>
+                    </div>
+                    <div class="rubric-card">
+                        <div class="rubric-header">
+                            <span>EXAMPLE SCORECARD</span>
+                            <strong>86</strong>
+                        </div>
+                        <div class="rubric-row">
+                            <span>Diagnosis</span>
+                            <div><i style="--value: 100%"></i></div>
+                            <strong>35 / 35</strong>
+                        </div>
+                        <div class="rubric-row">
+                            <span>Remediation</span>
+                            <div><i style="--value: 100%"></i></div>
+                            <strong>20 / 20</strong>
+                        </div>
+                        <div class="rubric-row">
+                            <span>Evidence</span>
+                            <div><i style="--value: 80%"></i></div>
+                            <strong>16 / 20</strong>
+                        </div>
+                        <div class="rubric-row">
+                            <span>Controls</span>
+                            <div><i style="--value: 73%"></i></div>
+                            <strong>11 / 15</strong>
+                        </div>
+                        <div class="rubric-row">
+                            <span>Efficiency</span>
+                            <div><i style="--value: 40%"></i></div>
+                            <strong>4 / 10</strong>
+                        </div>
+                        <p class="rubric-callout"><span></span> Desk ready · strong causal diagnosis</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section audience-section">
+                <div class="container audience-grid">
+                    <div>
+                        <span class="section-kicker">Built for the gap</span>
+                        <h2>Between knowing a model and supporting one.</h2>
+                    </div>
+                    <div class="audience-list">
+                        <article>
+                            <span>01</span>
+                            <div>
+                                <h3>Aspiring quants</h3>
+                                <p>Practise the investigation and communication layer that textbooks rarely cover.</p>
+                            </div>
+                        </article>
+                        <article>
+                            <span>02</span>
+                            <div>
+                                <h3>Early-career practitioners</h3>
+                                <p>Build a repeatable approach to P&L breaks, calibration failures and numerical noise.</p>
+                            </div>
+                        </article>
+                        <article>
+                            <span>03</span>
+                            <div>
+                                <h3>Interview candidates</h3>
+                                <p>Develop stronger desk-scenario answers by working through evidence instead of memorising scripts.</p>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section faq-section" id="faq">
+                <div class="container faq-layout">
+                    <div class="section-heading">
+                        <span class="section-kicker">Questions</span>
+                        <h2>Before you enter the desk.</h2>
+                    </div>
+                    <div class="faq-list">
+                        <details>
+                            <summary>Is this a trading system or model certification tool?<span>+</span></summary>
+                            <p>No. It is an educational simulation built from fictional cases. It does not connect to
+                                markets, execute trades, certify models or replace independent professional review.</p>
+                        </details>
+                        <details>
+                            <summary>Do I need an account or payment method?<span>+</span></summary>
+                            <p>No. The launch beta is immediately usable without an account or card. Completed scores
+                                are saved in your browser on this device.</p>
+                        </details>
+                        <details>
+                            <summary>Is there one correct investigation path?<span>+</span></summary>
+                            <p>No. You may run any available test. Scoring rewards decisive evidence and penalises only
+                                inefficient or unsafe choices; the debrief explains the causal chain.</p>
+                        </details>
+                    </div>
+                </div>
+            </section>
+
+            <section class="final-cta">
+                <div class="container final-cta-inner">
+                    <div>
+                        <span class="section-kicker">Incident 01 is waiting</span>
+                        <h2>The market closed. The numbers disagree.</h2>
+                    </div>
+                    <button class="button button-light button-large" id="finalStartButton" type="button">
+                        Start the P&L investigation
+                        <span aria-hidden="true">→</span>
+                    </button>
+                </div>
+            </section>
+        </div>
+
+        <section class="workspace" id="workspaceView" hidden aria-label="Desk incident workspace">
+            <header class="workspace-header">
+                <button class="icon-button workspace-exit" id="exitWorkspaceButton" type="button"
+                    aria-label="Exit incident and return to the incident library">
+                    <span aria-hidden="true">←</span>
+                </button>
+                <div class="workspace-case">
+                    <span id="workspaceCaseNumber">INCIDENT 01</span>
+                    <strong id="workspaceCaseTitle">The Missing Vega</strong>
+                </div>
+                <div class="workspace-status">
+                    <div class="workspace-budget">
+                        <span>Investigation budget</span>
+                        <strong id="budgetValue">100</strong>
+                    </div>
+                    <div class="workspace-progress">
+                        <span id="workspaceProgressLabel">Briefing</span>
+                        <div role="progressbar" aria-label="Incident progress" aria-valuemin="0" aria-valuemax="100"
+                            aria-valuenow="10" id="workspaceProgressBar">
+                            <i id="workspaceProgressFill"></i>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="workspace-grid" id="workspaceShell">
+                <aside class="incident-sidebar" aria-label="Incident brief">
+                    <div class="incident-severity">
+                        <span class="severity-code">P1</span>
+                        <div>
+                            <small id="incidentDesk">Equity Derivatives</small>
+                            <strong>Active investigation</strong>
+                        </div>
+                    </div>
+                    <p class="incident-objective" id="incidentObjective"></p>
+                    <dl class="brief-list" id="briefList"></dl>
+                    <div class="sidebar-tip">
+                        <span>INVESTIGATION PRINCIPLE</span>
+                        <p>Prefer a test that can falsify a hypothesis over one that merely produces more output.</p>
+                    </div>
+                </aside>
+
+                <section class="investigation-main">
+                    <div class="workspace-tabs" role="tablist" aria-label="Investigation stages">
+                        <button type="button" role="tab" aria-selected="true" aria-controls="briefPanel"
+                            id="briefTab" data-tab="brief">
+                            <span>01</span> Brief
+                        </button>
+                        <button type="button" role="tab" aria-selected="false" aria-controls="evidencePanel"
+                            id="evidenceTab" data-tab="evidence">
+                            <span>02</span> Evidence
+                        </button>
+                        <button type="button" role="tab" aria-selected="false" aria-controls="testsPanel"
+                            id="testsTab" data-tab="tests">
+                            <span>03</span> Tests
+                        </button>
+                        <button type="button" role="tab" aria-selected="false" aria-controls="diagnosePanel"
+                            id="diagnoseTab" data-tab="diagnose">
+                            <span>04</span> Diagnose
+                        </button>
+                    </div>
+
+                    <div class="workspace-panel" id="briefPanel" role="tabpanel" aria-labelledby="briefTab">
+                        <div class="panel-heading">
+                            <span id="briefEyebrow">08:07 London · Daily P&L control</span>
+                            <h1 id="briefHeadline"></h1>
+                            <p id="briefBody"></p>
+                        </div>
+                        <div class="metric-grid" id="metricGrid"></div>
+                        <div class="brief-callout">
+                            <span>YOUR MANDATE</span>
+                            <p id="mandateText"></p>
+                        </div>
+                        <div class="panel-actions">
+                            <span>Read the brief, then inspect the available evidence.</span>
+                            <button class="button button-primary" type="button" data-next-tab="evidence">
+                                Inspect evidence <span aria-hidden="true">→</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="workspace-panel" id="evidencePanel" role="tabpanel" aria-labelledby="evidenceTab"
+                        hidden>
+                        <div class="panel-heading compact">
+                            <span>EVIDENCE ROOM</span>
+                            <h2>Inspect what the desk already knows.</h2>
+                            <p>Some artefacts unlock only after you run the relevant investigation test.</p>
+                        </div>
+                        <div class="evidence-grid" id="evidenceGrid"></div>
+                        <div class="panel-actions">
+                            <span>Opening an artefact is free. Running a test spends investigation budget.</span>
+                            <button class="button button-primary" type="button" data-next-tab="tests">
+                                Choose tests <span aria-hidden="true">→</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="workspace-panel" id="testsPanel" role="tabpanel" aria-labelledby="testsTab" hidden>
+                        <div class="panel-heading compact">
+                            <span>INVESTIGATION QUEUE</span>
+                            <h2>Choose the next discriminating test.</h2>
+                            <p>Every test consumes budget. You may submit a diagnosis at any time, but unsupported
+                                conclusions score poorly.</p>
+                        </div>
+                        <div class="test-grid" id="testGrid"></div>
+                        <div class="test-log" id="testLog">
+                            <div class="test-log-heading">
+                                <span>RESULT STREAM</span>
+                                <span id="testCount">0 tests run</span>
+                            </div>
+                            <div class="empty-log" id="emptyTestLog">
+                                <span aria-hidden="true">&gt;_</span>
+                                <p>No results yet. Select a test above to begin the investigation.</p>
+                            </div>
+                            <div id="testResults"></div>
+                        </div>
+                        <div class="panel-actions">
+                            <span id="diagnosisReadiness">Run evidence-producing tests before diagnosing.</span>
+                            <button class="button button-primary" type="button" data-next-tab="diagnose">
+                                Draft diagnosis <span aria-hidden="true">→</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="workspace-panel" id="diagnosePanel" role="tabpanel" aria-labelledby="diagnoseTab"
+                        hidden>
+                        <div class="panel-heading compact">
+                            <span>FINAL HANDOFF</span>
+                            <h2>Defend your diagnosis.</h2>
+                            <p>Your submission is graded against a visible rubric. Select only factors and controls
+                                that materially belong in the causal chain.</p>
+                        </div>
+                        <form class="diagnosis-form" id="diagnosisForm">
+                            <fieldset>
+                                <legend><span>01</span> Primary root cause</legend>
+                                <p>Select the failure that best explains the observed incident.</p>
+                                <div class="choice-list" id="rootCauseChoices"></div>
+                            </fieldset>
+                            <fieldset>
+                                <legend><span>02</span> Contributing factors</legend>
+                                <p>Select every factor that materially enabled or amplified the failure.</p>
+                                <div class="choice-list" id="contributorChoices"></div>
+                            </fieldset>
+                            <fieldset>
+                                <legend><span>03</span> Immediate remediation</legend>
+                                <p>Choose the safest action that restores a defensible result.</p>
+                                <div class="choice-list" id="fixChoices"></div>
+                            </fieldset>
+                            <fieldset>
+                                <legend><span>04</span> Preventive controls</legend>
+                                <p>Select controls that would detect or prevent recurrence.</p>
+                                <div class="choice-list" id="controlChoices"></div>
+                            </fieldset>
+                            <fieldset>
+                                <legend><span>05</span> Confidence and handoff note</legend>
+                                <div class="confidence-row">
+                                    <label for="confidenceRange">Confidence</label>
+                                    <input id="confidenceRange" name="confidence" type="range" min="1" max="5"
+                                        value="3" step="1">
+                                    <output for="confidenceRange" id="confidenceOutput">3 / 5</output>
+                                </div>
+                                <label class="note-label" for="handoffNote">
+                                    Briefing note <span>optional · saved only on this device</span>
+                                </label>
+                                <textarea id="handoffNote" name="note" rows="5" maxlength="1200"
+                                    placeholder="Summarise the causal evidence, remediation and any residual uncertainty..."></textarea>
+                            </fieldset>
+                            <div class="submit-row">
+                                <p id="formError" role="alert"></p>
+                                <button class="button button-submit button-large" type="submit">
+                                    Submit diagnosis
+                                    <span aria-hidden="true">→</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <aside class="desk-channel" aria-label="Desk channel">
+                    <div class="channel-heading">
+                        <div>
+                            <span class="channel-live"></span>
+                            <strong>Desk channel</strong>
+                        </div>
+                        <span id="messageCount">3 messages</span>
+                    </div>
+                    <div class="channel-messages" id="channelMessages"></div>
+                    <div class="channel-note">
+                        <span>READ-ONLY SIMULATION</span>
+                        <p>Stakeholder messages provide context. Your evidence must come from artefacts and tests.</p>
+                    </div>
+                </aside>
+            </div>
+
+            <div class="result-view" id="resultView" hidden>
+                <div class="result-container">
+                    <div class="result-hero">
+                        <div class="score-ring" id="scoreRing">
+                            <span id="resultScore">0</span>
+                            <small>/ 100</small>
+                        </div>
+                        <div class="result-title">
+                            <span id="resultCaseLabel">INCIDENT 01 COMPLETE</span>
+                            <h1 id="resultBand">Desk ready</h1>
+                            <p id="resultMessage"></p>
+                        </div>
+                        <div class="result-hero-actions">
+                            <button class="button button-primary" id="shareResultButton" type="button">Share score</button>
+                            <button class="button button-ghost-dark" id="retryCaseButton" type="button">Retry case</button>
+                        </div>
+                    </div>
+
+                    <div class="result-grid">
+                        <section class="result-card rubric-result">
+                            <div class="result-card-heading">
+                                <span>SCORING RUBRIC</span>
+                                <strong id="resultBestScore"></strong>
+                            </div>
+                            <div id="scoreBreakdown"></div>
+                        </section>
+                        <section class="result-card diagnosis-result">
+                            <div class="result-card-heading">
+                                <span>WORKED DEBRIEF</span>
+                            </div>
+                            <h2>The causal chain</h2>
+                            <p id="workedExplanation"></p>
+                            <div class="learning-list" id="learningList"></div>
+                        </section>
+                    </div>
+
+                    <section class="result-card evidence-review">
+                        <div class="result-card-heading">
+                            <span>EVIDENCE REVIEW</span>
+                        </div>
+                        <div class="evidence-review-grid" id="evidenceReviewGrid"></div>
+                    </section>
+
+                    <section class="result-next">
+                        <div>
+                            <span>KEEP BUILDING THE SKILL</span>
+                            <h2 id="nextCaseHeading">Take the next incident.</h2>
+                        </div>
+                        <div class="result-next-actions">
+                            <button class="button button-light" id="nextCaseButton" type="button">
+                                Next incident <span aria-hidden="true">→</span>
+                            </button>
+                            <button class="button button-outline-light" id="returnLibraryButton" type="button">
+                                Incident library
+                            </button>
+                        </div>
+                        <div class="resource-links" id="resourceLinks"></div>
+                    </section>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer" id="siteFooter">
+        <div class="container footer-grid">
+            <div>
+                <a class="brand footer-brand" href="index.html">
+                    <img src="assets/images/desk2quant-logo.png?v=3" alt="" width="32" height="32">
+                    <span>Desk2Quant</span>
+                </a>
+                <p>Desk-first quantitative-finance learning through notes, tools and practitioner mentoring.</p>
+            </div>
+            <div class="footer-links">
+                <a href="index.html#products">Digital products</a>
+                <a href="interview.html">AI Interview</a>
+                <a href="salary-explorer.html">Salary Explorer</a>
+                <a href="index.html#services">Book a session</a>
+            </div>
+            <div class="footer-links">
+                <a href="privacy.html">Privacy</a>
+                <a href="terms.html">Terms</a>
+                <a href="mailto:jha.8@alumni.iitj.ac.in?subject=Desk%20Simulator%20feedback">Send feedback</a>
+            </div>
+        </div>
+        <div class="container footer-bottom">
+            <span>© 2026 Desk2Quant</span>
+            <span>Educational simulations · not trading advice or model certification</span>
+        </div>
+    </footer>
+
+    <dialog class="artifact-dialog" id="artifactDialog" aria-labelledby="artifactDialogTitle">
+        <div class="dialog-topbar">
+            <div>
+                <span id="artifactDialogEyebrow"></span>
+                <h2 id="artifactDialogTitle"></h2>
+            </div>
+            <button class="icon-button" id="closeArtifactDialog" type="button" aria-label="Close evidence artefact">
+                <span aria-hidden="true">×</span>
+            </button>
+        </div>
+        <p class="dialog-summary" id="artifactDialogSummary"></p>
+        <div class="dialog-content" id="artifactDialogContent"></div>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+    <div class="sr-only" id="liveRegion" aria-live="polite" aria-atomic="true"></div>
+
+    <script type="module" src="desk-simulator.mjs?v=1"></script>
+</body>
+
+</html>
