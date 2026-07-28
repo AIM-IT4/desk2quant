@@ -78,10 +78,11 @@
             --text-secondary: #475569;
             --text-muted: #64748b;
 
-            /* Accents */
-            --accent-primary: #f43f5e;
-            --accent-secondary: #3b82f6;
-            --accent-gradient: linear-gradient(135deg, #f43f5e 0%, #3b82f6 100%);
+            /* Accents — matches the live site's real brand (styles.css), not the
+               old rose/blue palette this panel previously carried on its own. */
+            --accent-primary: #06275b;
+            --accent-secondary: #08a9a2;
+            --accent-gradient: linear-gradient(135deg, #06275b 0%, #0a3476 58%, #08a9a2 100%);
 
             /* Borders */
             --border-subtle: rgba(0, 0, 0, 0.08);
@@ -102,6 +103,11 @@
             --surface: var(--bg-card);
             --text: var(--text-primary);
             --border: var(--border-subtle);
+
+            /* Was referenced by the map tooltip but never defined anywhere —
+               silently fell back to unstyled/transparent. */
+            --card-bg: var(--bg-card);
+            --text-main: var(--text-primary);
 
             /* Sidebar */
             --sidebar-width: 260px;
@@ -744,14 +750,15 @@
     <!-- Login Overlay -->
     <div id="loginOverlay" style="background: rgba(248, 250, 252, 0.98) !important;">
         <div class="card"
-            style="width: 300px; text-align: center; background: #ffffff !important; border: 1px solid rgba(0,0,0,0.12) !important; color: #0f172a !important;">
+            style="width: 320px; text-align: center; background: #ffffff !important; border: 1px solid rgba(0,0,0,0.12) !important; color: #0f172a !important;">
+            <img src="assets/images/desk2quant-logo.png?v=3" alt="Desk2Quant" style="height: 36px; width: auto; margin-bottom: 20px;">
             <h2 style="color: #0f172a !important; margin-bottom: 20px;">Admin Access</h2>
             <div class="form-group">
                 <input type="password" id="adminPassword" placeholder="Enter Password"
-                    style="background: #222 !important; color: white !important; border: 1px solid #444 !important; outline: none; padding: 12px; border-radius: 8px; width: 100%;">
+                    style="background: #f8fafc !important; color: #0f172a !important; border: 1px solid rgba(0,0,0,0.12) !important; outline: none; padding: 12px; border-radius: 8px; width: 100%; box-sizing: border-box;">
             </div>
             <button id="loginBtn" onclick="checkPassword()"
-                style="background: white !important; color: black !important; border: none !important; margin-top: 10px; width: 100%; padding: 12px; border-radius: 100px; font-weight: 700; cursor: pointer;">Login</button>
+                style="background: var(--accent-gradient) !important; color: white !important; border: none !important; margin-top: 10px; width: 100%; padding: 12px; border-radius: 100px; font-weight: 700; cursor: pointer;">Login</button>
         </div>
     </div>
 
@@ -772,8 +779,17 @@
                 <a class="nav-item" onclick="showSection('productsSection', 'Product Management', this)">
                     <i class="fas fa-box"></i> Products
                 </a>
+                <a class="nav-item" onclick="showSection('bookingsSection', 'Bookings &amp; Requests', this)">
+                    <i class="fas fa-calendar-check"></i> Bookings
+                </a>
+                <a class="nav-item" onclick="showSection('blogsSection', 'Blog &amp; Articles', this)">
+                    <i class="fas fa-newspaper"></i> Blog
+                </a>
+                <a class="nav-item" onclick="showSection('availabilitySection', 'Availability', this)">
+                    <i class="fas fa-clock"></i> Availability
+                </a>
                 <a class="nav-item" onclick="showSection('blockedDatesSection', 'Blocked Dates', this)">
-                    <i class="fas fa-calendar-times"></i> Availability
+                    <i class="fas fa-calendar-times"></i> Blocked Dates
                 </a>
                 <a class="nav-item" onclick="showSection('testimonialsSection', 'Review Approvals', this)">
                     <i class="fas fa-star"></i> Reviews
@@ -1377,8 +1393,14 @@ Brief Q&A"></textarea>
                     </div>
                 </div>
 
+            </section>
+
+            <!-- Bookings, Reschedule & Cancellation Management (split out of
+                 Product Management — was previously filed under the "Products"
+                 nav tab, which was confusing) -->
+            <section id="bookingsSection" class="content-section" style="display: none;">
                 <!-- All Bookings Management -->
-                <div class="bookings-management" style="margin-top: 60px;">
+                <div class="bookings-management">
                     <h2>All Bookings</h2>
                     <div class="card">
                         <div class="card-header"
