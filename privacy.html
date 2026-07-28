@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -19,6 +19,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="legal-page.css">
 </head>
 
 <body>
@@ -29,70 +30,109 @@
                 <img src="assets/images/desk2quant-logo.png?v=3" alt="Desk2Quant Logo"
                     style="height: 32px; width: auto;">
             </a>
-            <a href="index.html" style="color: var(--text-secondary);">← Back to Home</a>
+            <a href="index.html" class="legal-back-link"><i class="fas fa-arrow-left"></i> Back to Home</a>
         </div>
     </nav>
 
-    <main style="max-width: 800px; margin: 100px auto 60px; padding: 0 20px;">
-        <h1 style="margin-bottom: 40px;">Privacy Policy</h1>
+    <main class="legal-main">
+        <div class="legal-hero">
+            <span class="legal-eyebrow">Legal</span>
+            <h1>Privacy Policy</h1>
+            <p class="legal-hero-sub">This policy explains what personal data Desk2Quant collects, how it's used,
+                and the rights you have over it when you book a session or purchase a digital product.</p>
+            <div class="legal-meta-row">
+                <span class="legal-meta-pill"><i class="fas fa-clock"></i> Last updated: February 2026</span>
+                <span class="legal-meta-pill"><i class="fas fa-shield-halved"></i> PCI-compliant payments via Razorpay</span>
+            </div>
+        </div>
 
-        <div style="background: var(--surface); padding: 30px; border-radius: 12px; margin-bottom: 20px;">
-            <h2 style="color: var(--primary); margin-top: 0;">1. Information We Collect</h2>
+        <nav class="legal-toc" aria-label="Table of contents">
+            <div class="legal-toc-title">On this page</div>
+            <ol>
+                <li><a href="#collect">Information We Collect</a></li>
+                <li><a href="#use">How We Use Your Information</a></li>
+                <li><a href="#sharing">Data Sharing &amp; Third Parties</a></li>
+                <li><a href="#security">Data Security</a></li>
+                <li><a href="#retention">Data Retention</a></li>
+                <li><a href="#rights">Your Rights</a></li>
+                <li><a href="#contact">Contact Us</a></li>
+            </ol>
+        </nav>
+
+        <section class="legal-section" id="collect">
+            <h2><span class="legal-section-number">1</span> Information We Collect</h2>
             <p>We collect information you provide directly to us, including:</p>
-            <ul style="margin-left: 20px; line-height: 1.8;">
+            <ul>
                 <li>Name and email address for booking sessions</li>
                 <li>Payment information processed securely through Razorpay</li>
                 <li>Session preferences and communication history</li>
                 <li>Usage data to improve our services</li>
             </ul>
-        </div>
+        </section>
 
-        <div style="background: var(--surface); padding: 30px; border-radius: 12px; margin-bottom: 20px;">
-            <h2 style="color: var(--primary); margin-top: 0;">2. How We Use Your Information</h2>
-            <ul style="margin-left: 20px; line-height: 1.8;">
+        <section class="legal-section" id="use">
+            <h2><span class="legal-section-number">2</span> How We Use Your Information</h2>
+            <ul>
                 <li>To provide and manage mentorship sessions</li>
                 <li>To process payments and send receipts</li>
                 <li>To send session reminders and follow-up materials</li>
                 <li>To improve our services and user experience</li>
                 <li>To comply with legal obligations</li>
             </ul>
-        </div>
+        </section>
 
-        <div style="background: var(--surface); padding: 30px; border-radius: 12px; margin-bottom: 20px;">
-            <h2 style="color: var(--primary); margin-top: 0;">3. Data Security</h2>
+        <section class="legal-section" id="sharing">
+            <h2><span class="legal-section-number">3</span> Data Sharing &amp; Third Parties</h2>
+            <p>We do not sell your personal data. We share only what's necessary with the service providers that
+                power Desk2Quant:</p>
+            <ul>
+                <li><strong>Razorpay</strong> &mdash; to process payments (handles your card/UPI details directly; we never store full payment credentials)</li>
+                <li><strong>Supabase</strong> &mdash; to securely store booking, purchase, and account records</li>
+                <li><strong>Our email service provider</strong> &mdash; to send booking confirmations, receipts, and requested resources</li>
+            </ul>
+            <p>We do not share your data with advertisers or data brokers.</p>
+        </section>
+
+        <section class="legal-section" id="security">
+            <h2><span class="legal-section-number">4</span> Data Security</h2>
             <p>We implement appropriate security measures to protect your personal information:</p>
-            <ul style="margin-left: 20px; line-height: 1.8;">
+            <ul>
                 <li>All payments processed through PCI-compliant Razorpay</li>
                 <li>Data stored in secure Supabase infrastructure</li>
                 <li>Email communications via secure email service</li>
                 <li>Regular security audits and updates</li>
             </ul>
-        </div>
+        </section>
 
-        <div style="background: var(--surface); padding: 30px; border-radius: 12px; margin-bottom: 20px;">
-            <h2 style="color: var(--primary); margin-top: 0;">4. Your Rights</h2>
+        <section class="legal-section" id="retention">
+            <h2><span class="legal-section-number">5</span> Data Retention</h2>
+            <p>We retain your booking, purchase, and communication records for as long as needed to provide our
+                services, comply with tax and accounting obligations, and resolve any disputes. You may request
+                deletion of your data at any time, subject to records we're legally required to keep (such as
+                payment records).</p>
+        </section>
+
+        <section class="legal-section legal-callout" id="rights">
+            <h2><span class="legal-section-number">6</span> Your Rights</h2>
             <p>You have the right to:</p>
-            <ul style="margin-left: 20px; line-height: 1.8;">
+            <ul>
                 <li>Access your personal data</li>
                 <li>Request correction of inaccurate data</li>
                 <li>Request deletion of your data</li>
                 <li>Opt-out of marketing communications</li>
             </ul>
-        </div>
+        </section>
 
-        <div style="background: var(--surface); padding: 30px; border-radius: 12px; margin-bottom: 20px;">
-            <h2 style="color: var(--primary); margin-top: 0;">5. Contact Us</h2>
+        <section class="legal-section" id="contact">
+            <h2><span class="legal-section-number">7</span> Contact Us</h2>
             <p>For privacy-related inquiries, contact us at:</p>
-            <p style="margin-top: 10px;">
-                <strong>Email:</strong> jha.8@alumni.iitj.ac.in<br>
-                <strong>LinkedIn:</strong> <a href="https://www.linkedin.com/in/akjha002/" target="_blank">Amit Kumar
-                    Jha</a>
-            </p>
-        </div>
+            <div class="legal-contact-grid">
+                <a class="legal-contact-item" href="mailto:jha.8@alumni.iitj.ac.in"><i class="fas fa-envelope"></i> jha.8@alumni.iitj.ac.in</a>
+                <a class="legal-contact-item" href="https://www.linkedin.com/in/akjha002/" target="_blank" rel="noopener"><i class="fab fa-linkedin"></i> Amit Kumar Jha</a>
+            </div>
+        </section>
 
-        <p style="color: var(--text-muted); margin-top: 40px;">
-            <strong>Last Updated:</strong> February 2026
-        </p>
+        <p class="legal-updated"><strong>Last Updated:</strong> February 2026</p>
     </main>
 
     <footer class="footer">

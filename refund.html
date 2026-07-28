@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -19,6 +19,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="legal-page.css">
 </head>
 
 <body>
@@ -29,80 +30,98 @@
                 <img src="assets/images/desk2quant-logo.png?v=3" alt="Desk2Quant Logo"
                     style="height: 32px; width: auto;">
             </a>
-            <a href="index.html" style="color: var(--text-secondary);">← Back to Home</a>
+            <a href="index.html" class="legal-back-link"><i class="fas fa-arrow-left"></i> Back to Home</a>
         </div>
     </nav>
 
-    <main style="max-width: 800px; margin: 100px auto 60px; padding: 0 20px;">
-        <h1 style="margin-bottom: 40px;">Refund Policy</h1>
+    <main class="legal-main">
+        <div class="legal-hero">
+            <span class="legal-eyebrow">Legal</span>
+            <h1>Refund Policy</h1>
+            <p class="legal-hero-sub">Eligibility, timeframes, and the process for refunding mentorship session
+                bookings and digital resource purchases.</p>
+            <div class="legal-meta-row">
+                <span class="legal-meta-pill"><i class="fas fa-clock"></i> Last updated: February 2026</span>
+                <span class="legal-meta-pill"><i class="fas fa-reply"></i> Response time: 24&ndash;48 hours</span>
+            </div>
+        </div>
 
-        <div style="background: var(--surface); padding: 30px; border-radius: 12px; margin-bottom: 20px;">
-            <h2 style="color: var(--primary); margin-top: 0;">1. Mentorship Sessions</h2>
-            <ul style="margin-left: 20px; line-height: 1.8;">
-                <li><strong>Full Refund:</strong> Available if cancellation is made 24+ hours before scheduled session
-                </li>
-                <li><strong>Partial Refund:</strong> 50% refund for cancellations 12-24 hours before session</li>
+        <nav class="legal-toc" aria-label="Table of contents">
+            <div class="legal-toc-title">On this page</div>
+            <ol>
+                <li><a href="#sessions">Mentorship Sessions</a></li>
+                <li><a href="#products">Digital Products</a></li>
+                <li><a href="#how-to">How to Request a Refund</a></li>
+                <li><a href="#processing">Processing Time</a></li>
+                <li><a href="#exceptions">Exceptions</a></li>
+                <li><a href="#contact">Contact for Refunds</a></li>
+            </ol>
+        </nav>
+
+        <section class="legal-section" id="sessions">
+            <h2><span class="legal-section-number">1</span> Mentorship Sessions</h2>
+            <ul>
+                <li><strong>Full Refund:</strong> Available if cancellation is made 24+ hours before scheduled session</li>
+                <li><strong>Partial Refund:</strong> 50% refund for cancellations 12&ndash;24 hours before session</li>
                 <li><strong>No Refund:</strong> For cancellations less than 12 hours or no-shows</li>
                 <li><strong>Rescheduling:</strong> Free rescheduling available up to 24 hours before session</li>
             </ul>
-        </div>
+        </section>
 
-        <div style="background: var(--surface); padding: 30px; border-radius: 12px; margin-bottom: 20px;">
-            <h2 style="color: var(--primary); margin-top: 0;">2. Digital Products</h2>
-            <ul style="margin-left: 20px; line-height: 1.8;">
+        <section class="legal-section" id="products">
+            <h2><span class="legal-section-number">2</span> Digital Products</h2>
+            <ul>
                 <li><strong>Non-Downloaded Products:</strong> Full refund within 7 days if not downloaded</li>
                 <li><strong>Downloaded Products:</strong> No refund once download link is accessed</li>
-                <li><strong>Defective Files:</strong> Full refund or replacement if files are corrupted or inaccessible
-                </li>
-                <li><strong>Preview Products:</strong> Free Test Product (₹0) is non-refundable</li>
+                <li><strong>Defective Files:</strong> Full refund or replacement if files are corrupted or inaccessible</li>
+                <li><strong>Preview Products:</strong> Free Test Product (&#8377;0) is non-refundable</li>
             </ul>
-        </div>
+        </section>
 
-        <div style="background: var(--surface); padding: 30px; border-radius: 12px; margin-bottom: 20px;">
-            <h2 style="color: var(--primary); margin-top: 0;">3. How to Request a Refund</h2>
+        <section class="legal-section" id="how-to">
+            <h2><span class="legal-section-number">3</span> How to Request a Refund</h2>
             <p>To request a refund:</p>
-            <ol style="margin-left: 20px; line-height: 1.8;">
+            <ul>
                 <li>Send an email to <strong>jha.8@alumni.iitj.ac.in</strong></li>
                 <li>Include your order/payment ID</li>
                 <li>State the reason for refund request</li>
-                <li>Allow 3-5 business days for processing</li>
-            </ol>
-        </div>
+                <li>Allow 3&ndash;5 business days for processing</li>
+            </ul>
+        </section>
 
-        <div style="background: var(--surface); padding: 30px; border-radius: 12px; margin-bottom: 20px;">
-            <h2 style="color: var(--primary); margin-top: 0;">4. Processing Time</h2>
-            <ul style="margin-left: 20px; line-height: 1.8;">
-                <li>Approved refunds processed within 5-7 business days</li>
+        <section class="legal-section" id="processing">
+            <h2><span class="legal-section-number">4</span> Processing Time</h2>
+            <ul>
+                <li>Approved refunds processed within 5&ndash;7 business days</li>
                 <li>Refunds issued to original payment method</li>
-                <li>Bank processing times may vary (additional 3-5 days)</li>
+                <li>Bank processing times may vary (additional 3&ndash;5 days)</li>
                 <li>You will receive email confirmation once processed</li>
             </ul>
-        </div>
+        </section>
 
-        <div style="background: var(--surface); padding: 30px; border-radius: 12px; margin-bottom: 20px;">
-            <h2 style="color: var(--primary); margin-top: 0;">5. Exceptions</h2>
+        <section class="legal-section legal-callout" id="exceptions">
+            <h2><span class="legal-section-number">5</span> Exceptions</h2>
             <p>Refunds may not be granted in the following cases:</p>
-            <ul style="margin-left: 20px; line-height: 1.8;">
+            <ul>
                 <li>Change of mind after session completion</li>
                 <li>Customer's inability to attend due to technical issues on their end</li>
                 <li>Violation of Terms of Service</li>
                 <li>Bulk purchase orders (special terms apply)</li>
             </ul>
-        </div>
+        </section>
 
-        <div style="background: var(--surface); padding: 30px; border-radius: 12px; margin-bottom: 20px;">
-            <h2 style="color: var(--primary); margin-top: 0;">6. Contact for Refunds</h2>
-            <p><strong>Email:</strong> jha.8@alumni.iitj.ac.in</p>
-            <p><strong>Response Time:</strong> Within 24-48 hours</p>
-            <p style="margin-top: 15px; color: var(--text-muted);">
-                We strive to handle all refund requests fairly and promptly. For any disputes, please contact us
-                directly.
-            </p>
-        </div>
+        <section class="legal-section" id="contact">
+            <h2><span class="legal-section-number">6</span> Contact for Refunds</h2>
+            <p>For refund requests or questions about this policy:</p>
+            <div class="legal-contact-grid">
+                <a class="legal-contact-item" href="mailto:jha.8@alumni.iitj.ac.in"><i class="fas fa-envelope"></i> jha.8@alumni.iitj.ac.in</a>
+                <span class="legal-contact-item" style="cursor:default;"><i class="fas fa-reply"></i> Response within 24&ndash;48 hours</span>
+            </div>
+            <p style="margin-top:16px;">We strive to handle all refund requests fairly and promptly. For any
+                disputes, please contact us directly.</p>
+        </section>
 
-        <p style="color: var(--text-muted); margin-top: 40px;">
-            <strong>Last Updated:</strong> February 2026
-        </p>
+        <p class="legal-updated"><strong>Last Updated:</strong> February 2026</p>
     </main>
 
     <footer class="footer">
