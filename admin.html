@@ -3269,6 +3269,32 @@ Desk2Quant
                     return amount * rate;
                 }
 
+                // Every purchase gets written twice — once by the frontend right
+                // after checkout, once by the server-side webhook once Razorpay
+                // confirms the payment. The webhook row is the one with a reliable,
+                // Razorpay-verified inr_amount (see api/razorpay-webhook.js); the
+                // frontend row is a client-side guess that can be missing/mislabeled
+                // for foreign currencies. Every dashboard widget must call this ONE
+                // function to get a de-duplicated, trustworthy purchase list — do not
+                // read the raw 'purchases' table result directly.
+                function dedupePurchases(list) {
+                    if (!list) return [];
+                    const bySource = { webhook: 2, frontend_legacy: 1, frontend: 1 };
+                    const byPayment = new Map();
+                    list.forEach(p => {
+                        const key = p.payment_id || `no-id-${Math.random()}`;
+                        const existing = byPayment.get(key);
+                        if (!existing) {
+                            byPayment.set(key, p);
+                            return;
+                        }
+                        const existingRank = bySource[existing.source] || 0;
+                        const candidateRank = bySource[p.source] || 0;
+                        if (candidateRank > existingRank) byPayment.set(key, p);
+                    });
+                    return Array.from(byPayment.values());
+                }
+
                 function formatCurrency(amount, currency = 'INR') {
                     const code = (currency || 'INR').toUpperCase();
                     try {
@@ -3352,11 +3378,6 @@ Desk2Quant
                             .select('*', { count: 'exact', head: true })
                             .eq('status', 'completed');
 
-                        // 3. Total Sales Count
-                        const { count: totalSalesCount } = await window.supabaseAdminClient
-                            .from('purchases')
-                            .select('*', { count: 'exact', head: true });
-
                         // 4. Financials (Current Period vs Previous Period)
                         let currentBookingsQuery = window.supabaseAdminClient
                             .from('bookings')
@@ -3365,7 +3386,7 @@ Desk2Quant
 
                         let currentPurchasesQuery = window.supabaseAdminClient
                             .from('purchases')
-                            .select('amount, currency, payment_id, inr_amount, customer_country');
+                            .select('amount, currency, payment_id, inr_amount, customer_country, source');
 
                         let previousBookingsQuery = null;
                         let previousPurchasesQuery = null;
@@ -3390,7 +3411,7 @@ Desk2Quant
 
                             previousPurchasesQuery = window.supabaseAdminClient
                                 .from('purchases')
-                                .select('amount, currency, payment_id, inr_amount, customer_country')
+                                .select('amount, currency, payment_id, inr_amount, customer_country, source')
                                 .gte('created_at', startOfPrevious)
                                 .lte('created_at', endOfPrevious);
                         }
@@ -3409,23 +3430,13 @@ Desk2Quant
 
                         let { data: allPurchasesRev } = await window.supabaseAdminClient
                             .from('purchases')
-                            .select('amount, currency, payment_id, inr_amount, customer_country');
+                            .select('amount, currency, payment_id, inr_amount, customer_country, source');
 
-                        // Deduplicate purchases by Payment ID to prevent ghost/duplicate counts
-                        const deduplicatePurchases = (list) => {
-                            if (!list) return [];
-                            const map = new Map();
-                            // Sort by amount desc so we keep the "real" price if duplicates exist
-                            [...list].sort((a, b) => (b.amount || 0) - (a.amount || 0)).forEach(p => {
-                                if (p.payment_id && !map.has(p.payment_id)) map.set(p.payment_id, p);
-                                else if (!p.payment_id) map.set(Math.random(), p); // Keep untracked ones
-                            });
-                            return Array.from(map.values());
-                        };
-
-                        const cleanCurrentPurchases = deduplicatePurchases(currentPeriodPurchases);
-                        const cleanPreviousPurchases = deduplicatePurchases(previousPeriodPurchases);
-                        const cleanLifetimePurchases = deduplicatePurchases(allPurchasesRev);
+                        // Deduplicate purchases by Payment ID, preferring the webhook row
+                        // (Razorpay-verified amount/inr_amount) — see dedupePurchases() above.
+                        const cleanCurrentPurchases = dedupePurchases(currentPeriodPurchases);
+                        const cleanPreviousPurchases = dedupePurchases(previousPeriodPurchases);
+                        const cleanLifetimePurchases = dedupePurchases(allPurchasesRev);
 
                         // Calculations with Currency Breakdown
                         const calcRevenueBreakdown = (bookings, purchases) => {
@@ -3523,7 +3534,7 @@ Desk2Quant
                         document.getElementById('revenueGrowth').innerHTML = growthHtml;
                         document.getElementById('activeBookings').textContent = activeBookingsCount || 0;
                         document.getElementById('completedBookingsCount').textContent = completedBookingsCount;
-                        document.getElementById('totalSales').textContent = isAllTime ? totalSalesCount : currentSalesCount;
+                        document.getElementById('totalSales').textContent = isAllTime ? cleanLifetimePurchases.length : currentSalesCount;
 
                         let salesGrowthHtml = '<span style="color:var(--text-muted)">Period sales</span>';
                         if (!isAllTime) {
@@ -3577,13 +3588,14 @@ Desk2Quant
                     try {
                         const { data: purchases, error } = await window.supabaseAdminClient
                             .from('purchases')
-                            .select('customer_country, currency, inr_amount');
+                            .select('customer_country, currency, inr_amount, payment_id, source');
 
                         if (error || !purchases) return;
 
-                        // Build country sales count
+                        // Build country sales count (deduped — raw rows contain a
+                        // frontend + webhook copy of every sale)
                         const countryData = {};
-                        purchases.forEach(p => {
+                        dedupePurchases(purchases).forEach(p => {
                             let country = p.customer_country;
                             if (!country || country === 'Unknown') {
                                 country = MAP_COUNTRY_HINTS[p.currency?.toUpperCase()];
@@ -3711,13 +3723,14 @@ Desk2Quant
                     try {
                         const { data, error } = await window.supabaseAdminClient
                             .from('purchases')
-                            .select('product_name, amount, currency');
+                            .select('product_name, amount, currency, payment_id, inr_amount, source');
 
                         if (error) throw error;
 
-                        // Group by Product
+                        // Group by Product (deduped — raw rows contain a frontend +
+                        // webhook copy of every sale)
                         const productStats = {};
-                        data.forEach(p => {
+                        dedupePurchases(data).forEach(p => {
                             const name = p.product_name || 'Unknown Product';
                             if (!productStats[name]) productStats[name] = { count: 0, revenue: {}, totalNorm: 0 };
 
@@ -3726,7 +3739,7 @@ Desk2Quant
                             // Track multi-currency revenue
                             const c = (p.currency || 'INR').toUpperCase();
                             productStats[name].revenue[c] = (productStats[name].revenue[c] || 0) + (p.amount || 0);
-                            productStats[name].totalNorm += normalizeToINR(p.amount, p.currency);
+                            productStats[name].totalNorm += normalizeToINR(p.amount, p.currency, p.inr_amount);
                         });
 
                         // Convert to Array & Sort by Normalized Total
@@ -3775,14 +3788,14 @@ Desk2Quant
 
                         const { data: purchases } = await window.supabaseAdminClient
                             .from('purchases')
-                            .select('id, product_name, amount, currency, created_at, customer_email')
+                            .select('id, product_name, amount, currency, inr_amount, payment_id, source, created_at, customer_email')
                             .order('created_at', { ascending: false })
-                            .limit(20);
+                            .limit(40); // fetch extra since every real sale has 2 rows (frontend + webhook)
 
-                        // Combine and Sort
+                        // Combine and Sort (purchases deduped so each real sale shows once)
                         const activity = [
                             ...(bookings || []).map(b => ({ type: 'booking', ...b, date: new Date(b.created_at) })),
-                            ...(purchases || []).map(p => ({ type: 'purchase', ...p, date: new Date(p.created_at) }))
+                            ...dedupePurchases(purchases).map(p => ({ type: 'purchase', ...p, date: new Date(p.created_at) }))
                         ].sort((a, b) => b.date - a.date).slice(0, 10);
 
                         const feed = document.getElementById('recentActivityFeed');
@@ -3854,7 +3867,7 @@ Desk2Quant
 
                     let purchasesQuery = window.supabaseAdminClient
                         .from('purchases')
-                        .select('amount, currency, created_at, product_name');
+                        .select('amount, currency, inr_amount, payment_id, source, created_at, product_name');
 
                     if (!isAllTime) {
                         const range = parseInt(rangeVal);
@@ -3867,7 +3880,8 @@ Desk2Quant
 
                     try {
                         const { data: bookings } = await bookingsQuery;
-                        const { data: purchases } = await purchasesQuery;
+                        const { data: rawPurchases } = await purchasesQuery;
+                        const purchases = dedupePurchases(rawPurchases);
 
                         // Daily/Weekly/Monthly Data Aggregation
                         const periodData = {};
@@ -3962,7 +3976,7 @@ Desk2Quant
                                 // Calculate normalized amount
                                 let val = 0;
                                 if (amountField === 'service_price') val = item[amountField] || 0;
-                                else val = normalizeToINR(item[amountField], item.currency);
+                                else val = normalizeToINR(item[amountField], item.currency, item.inr_amount);
 
                                 if (periodData[k] !== undefined) {
                                     periodData[k] += val;
@@ -4107,118 +4121,6 @@ Desk2Quant
                     }
                 }
 
-                async function loadTopProducts() {
-                    try {
-                        const { data, error } = await window.supabaseAdminClient
-                            .from('purchases')
-                            .select('product_name, amount, currency');
-
-                        if (error) throw error;
-
-                        // Group by Product
-                        const productStats = {};
-                        data.forEach(p => {
-                            const name = p.product_name || 'Unknown Product';
-                            if (!productStats[name]) productStats[name] = { count: 0, revenue: {}, totalNorm: 0 };
-
-                            productStats[name].count++;
-
-                            // Track multi-currency revenue
-                            const c = (p.currency || 'INR').toUpperCase();
-                            productStats[name].revenue[c] = (productStats[name].revenue[c] || 0) + (p.amount || 0);
-                            productStats[name].totalNorm += normalizeToINR(p.amount, p.currency);
-                        });
-
-                        // Convert to Array & Sort by Normalized Total
-                        const sortedProducts = Object.entries(productStats)
-                            .map(([name, stats]) => ({ name, ...stats }))
-                            .sort((a, b) => b.totalNorm - a.totalNorm)
-                            .slice(0, 5); // Start with top 5
-
-                        const list = document.getElementById('topProductsList');
-                        if (sortedProducts.length === 0) {
-                            list.innerHTML = '<tr><td colspan="3" style="text-align: center; padding: 20px; color: var(--text-muted);">No sales data yet.</td></tr>';
-                            return;
-                        }
-
-                        list.innerHTML = sortedProducts.map(p => `
-                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                        <td style="padding: 12px; font-weight: 500;">${p.name}</td>
-                                        <td style="padding: 12px; text-align: center;">${p.count}</td>
-                                        <td style="padding: 12px; text-align: right; color: #22c55e;">
-                                            ${Object.entries(p.revenue).map(([c, amt]) => formatCurrency(amt, c)).join('<br>')}
-                                        </td>
-                                    </tr>
-                                `).join('');
-
-                    } catch (error) {
-                        console.error('Error loading top products:', error);
-                    }
-                }
-
-                async function loadRecentActivity() {
-                    try {
-                        // Fetch latest 5 bookings and 5 purchases to mix
-                        const { data: bookings } = await window.supabaseAdminClient
-                            .from('bookings')
-                            .select('id, name, service_name, booking_date, created_at, service_price')
-                            .order('created_at', { ascending: false })
-                            .order('created_at', { ascending: false })
-                            .limit(20); // Increased limit to ensure mixing works better
-
-                        const { data: purchases } = await window.supabaseAdminClient
-                            .from('purchases')
-                            .select('id, product_name, amount, currency, created_at, customer_email')
-                            .order('created_at', { ascending: false })
-                            .limit(20);
-
-                        // Combine and Sort
-                        const activity = [
-                            ...(bookings || []).map(b => ({ type: 'booking', ...b, date: new Date(b.created_at) })),
-                            ...(purchases || []).map(p => ({ type: 'purchase', ...p, date: new Date(p.created_at) }))
-                        ].sort((a, b) => b.date - a.date).slice(0, 10);
-
-                        const feed = document.getElementById('recentActivityFeed');
-                        if (activity.length === 0) {
-                            feed.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);">No recent activity.</div>';
-                            return;
-                        }
-
-                        feed.innerHTML = activity.map(item => {
-                            const timeAgo = getTimeAgo(item.date);
-                            if (item.type === 'booking') {
-                                return `
-                                            <div style="display: flex; gap: 15px; align-items: center; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                                <div style="background: rgba(168, 85, 247, 0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #a855f7;">
-                                                    <i class="fas fa-calendar-alt"></i>
-                                                </div>
-                                                <div style="flex: 1;">
-                                                    <div style="font-size: 0.95em;"><strong>${escapeHtml(item.name)}</strong> booked <strong>${escapeHtml(item.service_name || 'Session')}</strong></div>
-                                                    <div style="font-size: 0.85em; color: var(--text-muted);">${timeAgo} • ₹${item.service_price}</div>
-                                                </div>
-                                            </div>
-                                        `;
-                            } else {
-                                const displayAmount = formatCurrency(item.amount, item.currency);
-                                return `
-                                             <div style="display: flex; gap: 15px; align-items: center; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);" title="${item.date.toLocaleString()}">
-                                                <div style="background: rgba(34, 197, 94, 0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #22c55e;">
-                                                    <i class="fas fa-shopping-cart"></i>
-                                                </div>
-                                                <div style="flex: 1;">
-                                                    <div style="font-size: 0.95em;">New purchase of <strong>${escapeHtml(item.product_name)}</strong></div>
-                                                    <div style="font-size: 0.85em; color: var(--text-muted);">${timeAgo} • ${displayAmount}</div>
-                                                </div>
-                                            </div>
-                                        `;
-                            }
-                        }).join('');
-
-                    } catch (error) {
-                        console.error('Error loading activity:', error);
-                    }
-                }
-
                 function getTimeAgo(date) {
                     const seconds = Math.floor((new Date() - date) / 1000);
                     let interval = seconds / 31536000;
@@ -4236,188 +4138,6 @@ Desk2Quant
                     return Math.floor(seconds) + "s ago";
                 }
 
-                // Legacy fixed-range chart implementation retained for reference;
-                // the all-time-aware implementation above is the active chart renderer.
-                async function updateDashboardChartsLegacy() {
-                    const range = parseInt(document.getElementById('revenueRange').value);
-                    const cutoffDate = new Date();
-                    cutoffDate.setDate(cutoffDate.getDate() - range);
-
-                    try {
-                        // Fetch daily data limited to range
-                        const { data: bookings } = await window.supabaseAdminClient
-                            .from('bookings')
-                            .select('service_price, created_at, service_name')
-                            .gte('created_at', cutoffDate.toISOString())
-                            .in('status', ['confirmed', 'completed', 'pending', 'upcoming']);
-
-                        const { data: purchases } = await window.supabaseAdminClient
-                            .from('purchases')
-                            .select('amount, currency, created_at, product_name')
-                            .gte('created_at', cutoffDate.toISOString());
-
-                        // Daily Data Aggregation key: YYYY-MM-DD
-                        const dailyData = {};
-                        const distribution = {};
-
-                        // Initialize all dates in range with 0
-                        for (let i = 0; i <= range; i++) {
-                            const d = new Date();
-                            d.setDate(d.getDate() - i);
-                            dailyData[d.toLocaleDateString('en-CA')] = 0;
-                        }
-
-                        const aggregate = (items, amountField, nameField) => {
-                            (items || []).forEach(item => {
-                                // Revenue Line
-                                const d = new Date(item.created_at);
-                                const k = d.toLocaleDateString('en-CA');
-
-                                // Calculate normalized amount
-                                let val = 0;
-                                if (amountField === 'service_price') val = item[amountField] || 0; // Bookings (INR)
-                                else val = normalizeToINR(item[amountField], item.currency); // Purchases (Mixed)
-
-                                if (dailyData[k] !== undefined) dailyData[k] += val;
-
-                                if (dailyData[k] !== undefined) dailyData[k] += val;
-
-                                // Distribution Pie -> CHANGE TO CURRENCY DISTRIBUTION based on user feedback
-                                // "show from region or countries... based on currency"
-                                let curr = 'INR';
-                                if (amountField === 'service_price') curr = 'INR';
-                                else curr = (item.currency || 'INR').toUpperCase();
-
-                                // Map currency to region/name
-                                let regionName = curr;
-                                if (curr === 'USD') regionName = 'USD (Global/US)';
-                                else if (curr === 'INR') regionName = 'INR (India)';
-                                else if (curr === 'EUR') regionName = 'EUR (Europe)';
-                                else if (curr === 'GBP') regionName = 'GBP (UK)';
-                                else if (curr === 'BRL') regionName = 'BRL (Brazil)';
-
-                                distribution[regionName] = (distribution[regionName] || 0) + 1;
-                            });
-                        };
-
-                        aggregate(bookings, 'service_price', 'service_name');
-                        aggregate(purchases, 'amount', 'product_name');
-
-                        const labels = Object.keys(dailyData).sort();
-                        const values = labels.map(l => Math.round(dailyData[l]));
-
-                        // --- CHART 1: REVENUE ---
-                        if (revenueChart) revenueChart.destroy();
-                        const ctxRevenue = document.getElementById('revenueChart').getContext('2d');
-
-                        // Create gradient
-                        let gradient = ctxRevenue.createLinearGradient(0, 0, 0, 400);
-                        gradient.addColorStop(0, 'rgba(99, 102, 241, 0.5)');
-                        gradient.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
-
-                        revenueChart = new Chart(ctxRevenue, {
-                            type: 'line',
-                            data: {
-                                labels: labels.map(l => {
-                                    const [y, m, d] = l.split('-');
-                                    return `${d}/${m}`;
-                                }),
-                                datasets: [{
-                                    label: 'Revenue (₹)',
-                                    data: values,
-                                    borderColor: '#6366f1',
-                                    backgroundColor: gradient,
-                                    borderWidth: 2,
-                                    tension: 0.4,
-                                    pointRadius: 0,
-                                    pointHoverRadius: 6,
-                                    fill: true
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    legend: { display: false },
-                                    tooltip: {
-                                        mode: 'index',
-                                        intersect: false,
-                                        backgroundColor: 'rgba(30, 41, 59, 0.9)',
-                                        titleColor: '#e2e8f0',
-                                        bodyColor: '#e2e8f0',
-                                        borderColor: 'rgba(255,255,255,0.1)',
-                                        borderWidth: 1
-                                    }
-                                },
-                                interaction: {
-                                    mode: 'nearest',
-                                    axis: 'x',
-                                    intersect: false
-                                },
-                                scales: {
-                                    y: {
-                                        beginAtZero: true,
-                                        grid: { color: 'rgba(255,255,255,0.05)' },
-                                        ticks: { color: '#94a3b8' }
-                                    },
-                                    x: {
-                                        grid: { display: false },
-                                        ticks: { color: '#94a3b8' }
-                                    }
-                                }
-                            }
-                        });
-
-                        // --- CHART 2: DISTRIBUTION ---
-                        if (distributionChart) distributionChart.destroy();
-                        const ctxDist = document.getElementById('distributionChart').getContext('2d');
-
-                        // Organize Distribution Data (Top 5 + Others)
-                        const sortedDist = Object.entries(distribution).sort((a, b) => b[1] - a[1]);
-                        let distLabels = [], distValues = [];
-
-                        if (sortedDist.length > 5) {
-                            distLabels = sortedDist.slice(0, 4).map(x => x[0]);
-                            distValues = sortedDist.slice(0, 4).map(x => x[1]);
-                            const otherSum = sortedDist.slice(4).reduce((sum, x) => sum + x[1], 0);
-                            distLabels.push('Others');
-                            distValues.push(otherSum);
-                        } else {
-                            distLabels = sortedDist.map(x => x[0]);
-                            distValues = sortedDist.map(x => x[1]);
-                        }
-
-                        distributionChart = new Chart(ctxDist, {
-                            type: 'doughnut',
-                            data: {
-                                labels: distLabels,
-                                datasets: [{
-                                    data: distValues,
-                                    backgroundColor: [
-                                        '#6366f1', '#a855f7', '#ec4899', '#f59e0b', '#10b981', '#64748b'
-                                    ],
-                                    borderWidth: 0
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    legend: {
-                                        position: 'right',
-                                        labels: { color: '#94a3b8', boxWidth: 12, padding: 10, font: { size: 11 } }
-                                    }
-                                },
-                                layout: {
-                                    padding: { left: 0, right: 0, top: 0, bottom: 0 }
-                                }
-                            }
-                        });
-
-                    } catch (err) {
-                        console.error('❌ Failed to update charts:', err);
-                    }
-                }
                 window.updateDashboardCharts = updateDashboardCharts;
                 // --- BLOG MANAGEMENT LOGIC ---
                 async function loadBlogs() {
@@ -5493,9 +5213,10 @@ Desk2Quant
                             .from('bookings')
                             .select('email, name, service_price, created_at, status');
 
-                        const { data: purchases } = await window.supabaseAdminClient
+                        const { data: rawPurchases } = await window.supabaseAdminClient
                             .from('purchases')
-                            .select('customer_email, amount, created_at');
+                            .select('customer_email, amount, currency, inr_amount, payment_id, source, created_at');
+                        const purchases = dedupePurchases(rawPurchases);
 
                         const clients = {};
 
@@ -5542,7 +5263,9 @@ Desk2Quant
                             }
 
                             clients[email].orders++;
-                            clients[email].spend += (p.amount || 0);
+                            // Normalize to INR — raw amount is in the customer's checkout
+                            // currency (USD/GBP/EUR/etc.), not comparable across clients as-is.
+                            clients[email].spend += normalizeToINR(p.amount, p.currency, p.inr_amount);
 
                             const date = new Date(p.created_at);
                             if (date > clients[email].lastActive) clients[email].lastActive = date;
@@ -5568,7 +5291,7 @@ Desk2Quant
                                             </span>
                                         </td>
                                         <td style="padding: 12px; text-align: center;">${c.orders}</td>
-                                        <td style="padding: 12px; text-align: right; font-weight: 600;">₹${c.spend.toLocaleString()}</td>
+                                        <td style="padding: 12px; text-align: right; font-weight: 600;">₹${Math.round(c.spend).toLocaleString()}</td>
                                         <td style="padding: 12px; text-align: center; color: var(--text-muted); font-size: 0.9em;">
                                             ${c.lastActive.toLocaleDateString()}
                                         </td>
@@ -5722,9 +5445,14 @@ Desk2Quant
                             return;
                         }
 
+                        // Dedupe first — every real sale has a frontend + webhook row,
+                        // which would otherwise double "Lifetime Purchases" counts and
+                        // falsely mark one-time buyers as "returning".
+                        const dedupedData = dedupePurchases(data);
+
                         // Group by customer_email
                         const customerMap = {};
-                        data.forEach(p => {
+                        dedupedData.forEach(p => {
                             const email = p.customer_email.toLowerCase().trim();
                             if (!customerMap[email]) {
                                 customerMap[email] = {
@@ -5734,7 +5462,7 @@ Desk2Quant
                                 };
                             }
                             customerMap[email].purchases.push(p);
-                            customerMap[email].totalSpend += parseFloat(p.amount) || 0;
+                            customerMap[email].totalSpend += normalizeToINR(p.amount, p.currency, p.inr_amount);
                         });
 
                         // Filter and render

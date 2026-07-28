@@ -102,7 +102,22 @@ export default async function handler(req, res) {
             const customerName = payment.notes?.customer_name || 'Customer';
             const customerPhone = payment.notes?.customer_phone || '';
             const customerCountry = payment.notes?.customer_country || payment.notes?.country || 'Unknown';
-            const inrAmount = payment.notes?.inr_amount ? parseFloat(payment.notes.inr_amount) : amount;
+            // Ground truth for INR value: Razorpay's own base_amount/base_currency
+            // (its real settlement-time FX conversion — matches the Razorpay dashboard
+            // exactly). payment.notes.inr_amount is just a catalog-price snapshot the
+            // frontend stamped at checkout time (pre-discount, pre-real-FX) and was
+            // previously used here by mistake, causing dashboard revenue figures to
+            // diverge sharply from the real Razorpay numbers for foreign-currency sales.
+            let inrAmount;
+            if (payment.base_currency === 'INR' && typeof payment.base_amount === 'number') {
+                inrAmount = payment.base_amount / 100;
+            } else if (currency === 'INR') {
+                inrAmount = amount;
+            } else if (payment.notes?.inr_amount) {
+                inrAmount = parseFloat(payment.notes.inr_amount); // last-resort fallback
+            } else {
+                inrAmount = amount;
+            }
             let productName = payment.notes?.product_name;
             let productType = payment.notes?.type; // 'product' or 'session'
 
