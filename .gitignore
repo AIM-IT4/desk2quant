@@ -46,3 +46,5 @@ temp/
 # Large media & binaries
 *.exe
 *.mp3
+.vercel
+.env*

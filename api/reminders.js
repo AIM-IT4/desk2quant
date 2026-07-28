@@ -1,5 +1,12 @@
 // Vercel Serverless Function: Automatic Session Reminders
 // Called by external cron service (cron-job.org) every 5 minutes
+//
+// Also sweeps the `recommendation_emails` queue (see lib/recommendationQueue.js
+// and lib/recommendationEmail.js) so post-purchase/post-booking recommendation
+// emails are actually sent + retried, instead of the old fire-and-forget call
+// inside the Razorpay webhook that had no completion guarantee on serverless.
+
+import { sendRecommendationEmail } from '../lib/recommendationEmail.js';
 
 export default async function handler(req, res) {
     // CORS headers
@@ -61,9 +68,13 @@ export default async function handler(req, res) {
         const bookings = await supabaseResponse.json();
 
         if (!bookings || bookings.length === 0) {
+            const recResultsEarly = await processRecommendationQueue({
+                SUPABASE_URL, SUPABASE_KEY, BREVO_API_KEY, SENDER_EMAIL, SENDER_NAME
+            });
             return res.status(200).json({
                 ...results,
-                message: 'No confirmed bookings found'
+                message: 'No confirmed bookings found',
+                recommendationQueue: recResultsEarly
             });
         }
 
@@ -114,11 +125,17 @@ export default async function handler(req, res) {
             }
         }
 
+        // Sweep the recommendation-email queue on the same cron tick.
+        const recResults = await processRecommendationQueue({
+            SUPABASE_URL, SUPABASE_KEY, BREVO_API_KEY, SENDER_EMAIL, SENDER_NAME
+        });
+
         return res.status(200).json({
             ...results,
             message: `Processed ${bookings.length} bookings`,
             sent24h: results.reminders24h.length,
-            sent10m: results.reminders10m.length
+            sent10m: results.reminders10m.length,
+            recommendationQueue: recResults
         });
 
     } catch (error) {
@@ -128,6 +145,82 @@ export default async function handler(req, res) {
             timestamp: new Date().toISOString()
         });
     }
+}
+
+// Process due, pending rows in the recommendation_emails queue: send, then
+// mark sent/failed with attempts + last_error so every attempt is auditable.
+// Rows that fail MAX_ATTEMPTS times are left as 'failed' (not retried further)
+// so a permanently-broken row doesn't loop forever burning Brevo credits.
+const MAX_ATTEMPTS = 3;
+
+async function processRecommendationQueue({ SUPABASE_URL, SUPABASE_KEY, BREVO_API_KEY, SENDER_EMAIL, SENDER_NAME }) {
+    const outcome = { checked: 0, sent: 0, failed: 0, errors: [] };
+
+    if (!SUPABASE_URL || !SUPABASE_KEY || !BREVO_API_KEY) {
+        outcome.errors.push('Missing SUPABASE_URL/SUPABASE_KEY/BREVO_API_KEY');
+        return outcome;
+    }
+
+    let due = [];
+    try {
+        const nowIso = new Date().toISOString();
+        const resp = await fetch(
+            `${SUPABASE_URL}/rest/v1/recommendation_emails?status=eq.pending&send_at=lte.${nowIso}&attempts=lt.${MAX_ATTEMPTS}&select=*&order=send_at.asc&limit=25`,
+            { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+        );
+        if (!resp.ok) {
+            outcome.errors.push(`Queue fetch failed: ${resp.status}`);
+            return outcome;
+        }
+        due = await resp.json();
+    } catch (err) {
+        outcome.errors.push(`Queue fetch threw: ${err.message}`);
+        return outcome;
+    }
+
+    outcome.checked = due.length;
+
+    for (const row of due) {
+        const result = await sendRecommendationEmail({
+            customerEmail: row.customer_email,
+            customerName: row.customer_name,
+            purchasedProductName: row.purchased_product,
+            trigger: row.trigger_type,
+            couponCode: row.coupon_code,
+            SUPABASE_URL, SUPABASE_KEY, BREVO_API_KEY, SENDER_EMAIL, SENDER_NAME
+        });
+
+        const nextAttempts = (row.attempts || 0) + 1;
+        const patch = result.ok
+            ? { status: 'sent', attempts: nextAttempts, sent_at: new Date().toISOString(), sent: true, brevo_message_id: result.messageId || null, last_error: result.skipped ? (result.reason || null) : null }
+            : { status: nextAttempts >= MAX_ATTEMPTS ? 'failed' : 'pending', attempts: nextAttempts, last_error: result.error };
+
+        try {
+            await fetch(`${SUPABASE_URL}/rest/v1/recommendation_emails?id=eq.${row.id}`, {
+                method: 'PATCH',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify(patch)
+            });
+        } catch (err) {
+            outcome.errors.push(`Failed to update queue row ${row.id}: ${err.message}`);
+        }
+
+        if (result.ok) {
+            outcome.sent++;
+            console.log(`✅ Recommendation email sent to ${row.customer_email} [${row.coupon_code}]`);
+        } else {
+            outcome.failed++;
+            outcome.errors.push(`${row.customer_email}: ${result.error}`);
+            console.error(`❌ Recommendation email failed for ${row.customer_email} (attempt ${nextAttempts}/${MAX_ATTEMPTS}):`, result.error);
+        }
+    }
+
+    return outcome;
 }
 
 // Helper function to send reminder email
