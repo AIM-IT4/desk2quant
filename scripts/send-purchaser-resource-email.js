@@ -52,7 +52,7 @@ async function main() {
             <p>Hi,</p>
             <p>I wanted to quickly let you know that a new resource has been added to the website: <strong>Common Mistakes in Quant Interviews — Desk Fixes Edition</strong>.</p>
             <p>If you're interested, you can check it out here:<br>
-            <a href="https://quant-mentor.vercel.app/product.html?id=df618802-04a8-4fcf-837e-f12dc9db2276">https://quant-mentor.vercel.app/product.html?id=df618802-04a8-4fcf-837e-f12dc9db2276</a></p>
+            <a href="https://desk2quant.vercel.app/product.html?id=df618802-04a8-4fcf-837e-f12dc9db2276">https://desk2quant.vercel.app/product.html?id=df618802-04a8-4fcf-837e-f12dc9db2276</a></p>
             <p>Best regards,<br>
             Desk2Quant</p>
         </div>

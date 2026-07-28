@@ -72,7 +72,7 @@ const productCardsHtml = recommendations.map(rec => {
                     <span style="font-size:22px; font-weight:800; color:#4f46e5;">₹${rec.discountedPrice}</span>
                     <span style="font-size:12px; color:#10b981; font-weight:600; margin-left:auto;">Save 30%</span>
                 </div>
-                <a href="https://quant-mentor.vercel.app/product.html?id=${rec.id}" style="display:block; text-align:center; background:#4f46e5; color:#ffffff; font-weight:700; text-decoration:none; padding:12px 20px; border-radius:8px; font-size:14px;">Apply Code & View →</a>
+                <a href="https://desk2quant.vercel.app/product.html?id=${rec.id}" style="display:block; text-align:center; background:#4f46e5; color:#ffffff; font-weight:700; text-decoration:none; padding:12px 20px; border-radius:8px; font-size:14px;">Apply Code & View →</a>
             </div>
         </div>
     `;
@@ -148,7 +148,7 @@ const htmlContent = `
                     <tr>
                         <td style="background-color:#0f172a; padding:24px; text-align:center; color:#94a3b8; font-size:12px;">
                             <p style="margin:0 0 8px 0;">Desk2Quant &copy; 2026. All rights reserved.</p>
-                            <p style="margin:0;"><a href="https://quant-mentor.vercel.app" style="color:#38bdf8; text-decoration:none;">quant-mentor.vercel.app</a></p>
+                            <p style="margin:0;"><a href="https://desk2quant.vercel.app" style="color:#38bdf8; text-decoration:none;">desk2quant.vercel.app</a></p>
                         </td>
                     </tr>
 
@@ -175,19 +175,19 @@ Recommended Resources:
 
 1. Quant Models for Each Asset Class
    - Original Price: ₹1999 -> Your Price: ₹1399
-   - View: https://quant-mentor.vercel.app/product.html?id=75f6118b-c10e-43c6-acc6-ec48cd6a6cbc
+   - View: https://desk2quant.vercel.app/product.html?id=75f6118b-c10e-43c6-acc6-ec48cd6a6cbc
 
 2. Derivatives Products & Pricing
    - Original Price: ₹1999 -> Your Price: ₹1399
-   - View: https://quant-mentor.vercel.app/product.html?id=bdb3c59e-c8c0-430f-8705-b7467514458e
+   - View: https://desk2quant.vercel.app/product.html?id=bdb3c59e-c8c0-430f-8705-b7467514458e
 
 3. Ultimate Industry Grade Quant Projects
    - Original Price: ₹799 -> Your Price: ₹559
-   - View: https://quant-mentor.vercel.app/product.html?id=bd2e57b7-32c4-44ad-8a2a-d156222b7ff7
+   - View: https://desk2quant.vercel.app/product.html?id=bd2e57b7-32c4-44ad-8a2a-d156222b7ff7
 
 4. Quant Interview Problem Book
    - Original Price: ₹899 -> Your Price: ₹629
-   - View: https://quant-mentor.vercel.app/product.html?id=73806d69-768b-497e-87b7-d94fa4cfd772
+   - View: https://desk2quant.vercel.app/product.html?id=73806d69-768b-497e-87b7-d94fa4cfd772
 
 Reply to this email if you have any questions!
 

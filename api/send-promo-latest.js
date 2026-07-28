@@ -336,7 +336,7 @@ function buildPromoEmail(product, discountCode, discountPercent) {
                     Questions? Simply reply to this email.
                 </p>
                 <p style="margin:0;">
-                    <a href="https://desk2quant.vercel.app" style="color:#818cf8; text-decoration:none; font-size:13px; font-weight:600;">quant-mentor.vercel.app</a>
+                    <a href="https://desk2quant.vercel.app" style="color:#818cf8; text-decoration:none; font-size:13px; font-weight:600;">desk2quant.vercel.app</a>
                 </p>
             </div>
 
@@ -378,7 +378,7 @@ Be among the first to get this resource — early buyers always get the best val
 Browse all products: https://desk2quant.vercel.app/#products
 
 ---
-Sent by Desk2Quant • quant-mentor.vercel.app
+Sent by Desk2Quant • desk2quant.vercel.app
 You're receiving this because you previously purchased from Desk2Quant.`;
 }
 
