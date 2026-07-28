@@ -1406,6 +1406,60 @@ async function loadBlogsFromSupabase() {
     }
 }
 
+// Build and inject the site-wide Product ItemList JSON-LD from the SAME live
+// data used to render the products grid. This replaces a previously hand-typed
+// static list that had drifted out of sync (wrong item count, stale bundle
+// price, and generic offer URLs instead of per-product links) — deriving it
+// at runtime from `products` guarantees it can never drift again.
+function buildProductCatalogJsonLd(products) {
+    const script = document.getElementById('product-catalog-jsonld');
+    if (!script || !Array.isArray(products) || products.length === 0) return;
+
+    const itemListElement = products.map((product, index) => {
+        const rawDesc = stripMarkdown((product.description || '').replace(/<[^>]*>?/gm, ''));
+        const description = truncateText(rawDesc, 200) ||
+            'Premium digital resource for quantitative finance professionals from Desk2Quant.';
+        const url = `https://desk2quant.vercel.app/product.html?id=${product.id}`;
+
+        return {
+            '@type': 'ListItem',
+            position: index + 1,
+            item: {
+                '@type': 'Product',
+                name: product.name,
+                description: description,
+                url: url,
+                image: product.cover_image_url || 'https://desk2quant.vercel.app/assets/images/desk2quant-logo.png?v=3',
+                offers: {
+                    '@type': 'Offer',
+                    price: String(product.price),
+                    priceCurrency: 'INR',
+                    url: url,
+                    availability: 'https://schema.org/InStock',
+                    hasMerchantReturnPolicy: {
+                        '@type': 'MerchantReturnPolicy',
+                        applicableCountry: 'IN',
+                        returnPolicyCategory: 'https://schema.org/MerchantReturnPolicyNoReturns'
+                    }
+                },
+                brand: { '@type': 'Brand', name: 'Desk2Quant' }
+            }
+        };
+    });
+
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        name: 'Desk2Quant Digital Products',
+        description: 'Premium digital products for quantitative finance professionals — study materials, coding scripts, interview guides, and desk-ready playbooks.',
+        url: 'https://desk2quant.vercel.app/#products',
+        numberOfItems: itemListElement.length,
+        itemListElement: itemListElement
+    };
+
+    script.textContent = JSON.stringify(jsonLd);
+}
+
 // Load and display products from Supabase
 async function loadProductsFromSupabase(prefetchPromise) {
     try {
@@ -1448,6 +1502,7 @@ async function loadProductsFromSupabase(prefetchPromise) {
             console.log('📦 Loading ' + data.length + ' products from Supabase');
             window.allProducts = data;
             await displaySupabaseProducts(data);
+            buildProductCatalogJsonLd(data);
         }
     } catch (err) {
         console.error('Failed to load products:', err);
