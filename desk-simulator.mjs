@@ -93,7 +93,11 @@ const elements = {
     resourceLinks: document.getElementById('resourceLinks'),
     nextCaseButton: document.getElementById('nextCaseButton'),
     toast: document.getElementById('toast'),
-    liveRegion: document.getElementById('liveRegion')
+    liveRegion: document.getElementById('liveRegion'),
+    simLeadForm: document.getElementById('simLeadForm'),
+    simLeadEmail: document.getElementById('simLeadEmail'),
+    simLeadSubmit: document.getElementById('simLeadSubmit'),
+    simLeadNote: document.getElementById('simLeadNote')
 };
 
 init();
@@ -125,6 +129,7 @@ function bindEvents() {
         if (currentScenario) openScenario(currentScenario.id, { fresh: true });
     });
     document.getElementById('shareResultButton').addEventListener('click', shareResult);
+    elements.simLeadForm?.addEventListener('submit', submitSimLead);
 
     elements.nextCaseButton.addEventListener('click', () => {
         if (!currentScenario) return;
@@ -706,6 +711,18 @@ function renderResult() {
     const saved = progress.scenarios[currentScenario.id];
     elements.workspaceShell.hidden = true;
     elements.resultView.hidden = false;
+
+    // Reset the lead-capture form each time a result screen is shown (e.g.
+    // retry or next incident) so a previous submission doesn't hide it forever.
+    if (elements.simLeadForm) {
+        elements.simLeadForm.style.display = '';
+        elements.simLeadForm.reset();
+    }
+    if (elements.simLeadNote) elements.simLeadNote.textContent = '';
+    if (elements.simLeadSubmit) {
+        elements.simLeadSubmit.disabled = false;
+        elements.simLeadSubmit.textContent = 'Send Me the Sheet';
+    }
     elements.resultScore.textContent = String(score.total);
     elements.scoreRing.style.setProperty('--score-angle', `${score.total * 3.6}deg`);
     elements.resultCaseLabel.textContent = `INCIDENT ${currentScenario.number} COMPLETE`;
@@ -798,6 +815,97 @@ function renderResult() {
     window.scrollTo({ top: 0, behavior: 'auto' });
     elements.resultBand.focus?.();
     elements.liveRegion.textContent = `Incident complete. Score ${score.total} out of 100. ${score.band.label}.`;
+}
+
+const SIM_SUPABASE_URL = 'https://dntabmyurlrlnoajdnja.supabase.co';
+const SIM_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRudGFibXl1cmxybG5vYWpkbmphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMDEyNjUsImV4cCI6MjA4NTY3NzI2NX0.PYpNd_t_px09zi2d5WGjFVOB23sjb3ZPuAnxagYshe0';
+
+async function submitSimLead(event) {
+    event.preventDefault();
+    const email = (elements.simLeadEmail?.value || '').trim();
+    const note = elements.simLeadNote;
+    const submitBtn = elements.simLeadSubmit;
+
+    if (!email || !email.includes('@')) {
+        if (note) { note.textContent = 'Please enter a valid email address.'; note.style.color = 'var(--rose)'; }
+        return;
+    }
+
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Sending...'; }
+
+    try {
+        // Look up the current Quant Formula Sheet download link so the email
+        // always sends the latest file, same source of truth as the homepage
+        // lead-capture form.
+        let downloadLink = 'https://desk2quant.vercel.app/index.html#resources';
+        try {
+            const lookupRes = await fetch(
+                `${SIM_SUPABASE_URL}/rest/v1/products?name=ilike.*Quant+Formula+Sheet*&select=file_url&limit=1`,
+                { headers: { apikey: SIM_SUPABASE_KEY, Authorization: `Bearer ${SIM_SUPABASE_KEY}` } }
+            );
+            if (lookupRes.ok) {
+                const rows = await lookupRes.json();
+                if (rows && rows[0] && rows[0].file_url) downloadLink = rows[0].file_url;
+            }
+        } catch (lookupErr) {
+            console.warn('Formula sheet lookup failed, using fallback link:', lookupErr);
+        }
+
+        const htmlContent = `
+            <div style="font-family: Arial, sans-serif; background:#f9f8f4; padding:40px 20px; color:#1a1a1a;">
+              <div style="max-width:600px; margin:0 auto; background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+                <div style="background:#1a1a1a; padding:20px; text-align:center;">
+                  <span style="color:#fff; font-size:22px; font-weight:bold;">Desk2Quant</span>
+                </div>
+                <div style="padding:30px;">
+                  <p style="font-size:16px; margin-bottom:20px;">Here's your Quant Formula Sheet — thanks for investigating an incident in the Desk Simulator.</p>
+                  <center>
+                    <a href="${downloadLink}" style="display:inline-block; background:#e95836; color:#fff; font-weight:bold; text-decoration:none; padding:14px 30px; border-radius:6px; font-size:16px; margin-bottom:20px;">Download the Sheet</a>
+                  </center>
+                  <p style="font-size:13px; color:#666; word-break:break-all;">Direct link: <a href="${downloadLink}" style="color:#2563eb;">${downloadLink}</a></p>
+                </div>
+                <div style="background:#1a1a1a; padding:20px; text-align:center; color:#888; font-size:12px;">
+                  <p style="margin:0;">Sent by Desk2Quant · Reply if you have questions.</p>
+                </div>
+              </div>
+            </div>`;
+        const textContent = `Here's your Quant Formula Sheet: ${downloadLink}\n\nThanks for investigating an incident in the Desk2Quant Desk Simulator.`;
+
+        await fetch('/api/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ to: email, subject: 'Your Quant Formula Sheet', htmlContent, textContent })
+        });
+
+        // Log the lead the same way the homepage lead-capture form does, so it
+        // shows up alongside other conversions rather than being invisible.
+        fetch(`${SIM_SUPABASE_URL}/rest/v1/purchases`, {
+            method: 'POST',
+            headers: {
+                apikey: SIM_SUPABASE_KEY,
+                Authorization: `Bearer ${SIM_SUPABASE_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                customer_email: email,
+                product_name: 'Quant Formula Sheet (Lead Capture - Desk Simulator)',
+                amount: 0,
+                currency: 'INR',
+                payment_id: 'LEAD_SIM_' + Date.now(),
+                source: 'lead_capture',
+                download_link: downloadLink,
+                created_at: new Date().toISOString()
+            })
+        }).catch((err) => console.warn('Failed to log simulator lead:', err));
+
+        if (elements.simLeadForm) elements.simLeadForm.style.display = 'none';
+        if (note) { note.textContent = '✓ Check your inbox — your formula sheet is on its way!'; note.style.color = 'var(--teal)'; }
+    } catch (err) {
+        console.error('Simulator lead capture failed:', err);
+        if (note) { note.textContent = 'Something went wrong. Please try again.'; note.style.color = 'var(--rose)'; }
+    } finally {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Send Me the Sheet'; }
+    }
 }
 
 async function shareResult() {

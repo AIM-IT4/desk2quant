@@ -3900,7 +3900,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const { data } = await window.supabaseClient
                     .from('products')
                     .select('file_url')
-                    .ilike('name', '%Quant Formulea Sheet%')
+                    .ilike('name', '%Quant Formula Sheet%')
                     .limit(1)
                     .maybeSingle();
                 if (data && data.file_url) downloadLink = data.file_url;

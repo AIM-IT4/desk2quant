@@ -2626,6 +2626,55 @@ img {
     font-size: 0.75rem;
 }
 
+.lead-capture-result {
+    margin-top: 22px;
+    padding: 28px 32px 32px;
+}
+
+.lead-capture-result h2 {
+    margin: 14px 0 8px;
+    color: var(--text);
+    font-size: 1.4rem;
+    letter-spacing: -0.02em;
+}
+
+.lead-capture-result > p {
+    max-width: 60ch;
+    color: var(--text-soft);
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+.lead-capture-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.lead-capture-form input[type="email"] {
+    flex: 1 1 280px;
+    padding: 12px 16px;
+    background: var(--panel-raised);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+}
+
+.lead-capture-form input[type="email"]:focus {
+    outline: 2px solid var(--teal);
+    outline-offset: 1px;
+}
+
+.lead-capture-note {
+    margin: 12px 0 0;
+    font-size: 0.85rem;
+    color: var(--teal);
+    min-height: 1.2em;
+}
+
 .toast {
     position: fixed;
     z-index: 100;
