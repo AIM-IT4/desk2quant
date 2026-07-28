@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -19,6 +19,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="legal-page.css">
 </head>
 
 <body>
@@ -29,80 +30,129 @@
                 <img src="assets/images/desk2quant-logo.png?v=3" alt="Desk2Quant Logo"
                     style="height: 32px; width: auto;">
             </a>
-            <a href="index.html" style="color: var(--text-secondary);">← Back to Home</a>
+            <a href="index.html" class="legal-back-link"><i class="fas fa-arrow-left"></i> Back to Home</a>
         </div>
     </nav>
 
-    <main style="max-width: 800px; margin: 100px auto 60px; padding: 0 20px;">
-        <h1 style="margin-bottom: 40px;">Terms of Service</h1>
+    <main class="legal-main">
+        <div class="legal-hero">
+            <span class="legal-eyebrow">Legal</span>
+            <h1>Terms of Service</h1>
+            <p class="legal-hero-sub">These terms govern your use of Desk2Quant's mentorship sessions, digital
+                products, and website. Please read them before booking a session or making a purchase.</p>
+            <div class="legal-meta-row">
+                <span class="legal-meta-pill"><i class="fas fa-clock"></i> Last updated: February 2026</span>
+                <span class="legal-meta-pill"><i class="fas fa-globe"></i> Governing law: India</span>
+            </div>
+        </div>
 
-        <div style="background: var(--surface); padding: 30px; border-radius: 12px; margin-bottom: 20px;">
-            <h2 style="color: var(--primary); margin-top: 0;">1. Services Provided</h2>
+        <nav class="legal-toc" aria-label="Table of contents">
+            <div class="legal-toc-title">On this page</div>
+            <ol>
+                <li><a href="#services">Services Provided</a></li>
+                <li><a href="#booking">Booking and Payment</a></li>
+                <li><a href="#cancellation">Cancellation and Rescheduling</a></li>
+                <li><a href="#digital-products">Digital Products</a></li>
+                <li><a href="#ip">Intellectual Property</a></li>
+                <li><a href="#disclaimer">Educational Disclaimer</a></li>
+                <li><a href="#liability">Limitation of Liability</a></li>
+                <li><a href="#governing-law">Governing Law &amp; Disputes</a></li>
+                <li><a href="#changes">Changes to These Terms</a></li>
+                <li><a href="#contact">Contact Information</a></li>
+            </ol>
+        </nav>
+
+        <section class="legal-section" id="services">
+            <h2><span class="legal-section-number">1</span> Services Provided</h2>
             <p>Desk2Quant provides the following services:</p>
-            <ul style="margin-left: 20px; line-height: 1.8;">
+            <ul>
                 <li>One-on-one mentorship sessions for quant finance</li>
                 <li>Interview preparation and career guidance</li>
                 <li>Digital products including study materials and code resources</li>
                 <li>Technical consulting on derivatives, XVA, and quantitative methods</li>
             </ul>
-        </div>
+        </section>
 
-        <div style="background: var(--surface); padding: 30px; border-radius: 12px; margin-bottom: 20px;">
-            <h2 style="color: var(--primary); margin-top: 0;">2. Booking and Payment</h2>
-            <ul style="margin-left: 20px; line-height: 1.8;">
+        <section class="legal-section" id="booking">
+            <h2><span class="legal-section-number">2</span> Booking and Payment</h2>
+            <ul>
                 <li>All sessions must be booked through our website</li>
                 <li>Payment is required at the time of booking</li>
                 <li>Payment accepted via Razorpay (UPI, Cards, Net Banking)</li>
                 <li>Session details and private session link sent via email after payment</li>
             </ul>
-        </div>
+        </section>
 
-        <div style="background: var(--surface); padding: 30px; border-radius: 12px; margin-bottom: 20px;">
-            <h2 style="color: var(--primary); margin-top: 0;">3. Cancellation and Rescheduling</h2>
-            <ul style="margin-left: 20px; line-height: 1.8;">
+        <section class="legal-section" id="cancellation">
+            <h2><span class="legal-section-number">3</span> Cancellation and Rescheduling</h2>
+            <ul>
                 <li>Sessions can be rescheduled up to 24 hours before the scheduled time</li>
                 <li>Cancellations made less than 24 hours in advance may not be eligible for refund</li>
                 <li>No-shows without notice are not eligible for refund</li>
                 <li>Contact us via email for rescheduling requests</li>
             </ul>
-        </div>
+        </section>
 
-        <div style="background: var(--surface); padding: 30px; border-radius: 12px; margin-bottom: 20px;">
-            <h2 style="color: var(--primary); margin-top: 0;">4. Digital Products</h2>
-            <ul style="margin-left: 20px; line-height: 1.8;">
+        <section class="legal-section" id="digital-products">
+            <h2><span class="legal-section-number">4</span> Digital Products</h2>
+            <ul>
                 <li>All digital products are for personal use only</li>
                 <li>Sharing, redistributing, or reselling is prohibited</li>
                 <li>Download links are valid for 30 days from purchase</li>
                 <li>Products are non-refundable once downloaded</li>
             </ul>
-        </div>
+        </section>
 
-        <div style="background: var(--surface); padding: 30px; border-radius: 12px; margin-bottom: 20px;">
-            <h2 style="color: var(--primary); margin-top: 0;">5. Intellectual Property</h2>
+        <section class="legal-section" id="ip">
+            <h2><span class="legal-section-number">5</span> Intellectual Property</h2>
             <p>All content, materials, and resources provided by Desk2Quant are protected by copyright. Materials
-                provided during sessions or as part of digital products are for the purchasing customer's personal use
-                only.</p>
-        </div>
+                provided during sessions or as part of digital products are for the purchasing customer's personal
+                use only.</p>
+        </section>
 
-        <div style="background: var(--surface); padding: 30px; border-radius: 12px; margin-bottom: 20px;">
-            <h2 style="color: var(--primary); margin-top: 0;">6. Educational Disclaimer</h2>
-            <p>Desk2Quant is an independent educational service. Content is for learning and career development only, not investment, legal, tax, or financial advice. Examples do not guarantee interview, employment, trading, or investment outcomes.</p>
-        </div>
+        <section class="legal-section legal-callout" id="disclaimer">
+            <h2><span class="legal-section-number">6</span> Educational Disclaimer</h2>
+            <p>Desk2Quant is an independent educational service. Content is for learning and career development
+                only, not investment, legal, tax, or financial advice. Examples do not guarantee interview,
+                employment, trading, or investment outcomes.</p>
+        </section>
 
-        <div style="background: var(--surface); padding: 30px; border-radius: 12px; margin-bottom: 20px;">
-            <h2 style="color: var(--primary); margin-top: 0;">7. Contact Information</h2>
+        <section class="legal-section" id="liability">
+            <h2><span class="legal-section-number">7</span> Limitation of Liability</h2>
+            <p>To the maximum extent permitted by law, Desk2Quant and its founder shall not be liable for any
+                indirect, incidental, or consequential damages arising from your use of our mentorship sessions,
+                digital products, or website &mdash; including, but not limited to, loss of income, missed job
+                opportunities, or reliance on any advice, template, or material provided.</p>
+            <p>Our total liability for any claim relating to a purchased session or product is limited to the amount
+                you paid for that specific session or product.</p>
+        </section>
+
+        <section class="legal-section" id="governing-law">
+            <h2><span class="legal-section-number">8</span> Governing Law &amp; Disputes</h2>
+            <p>These Terms are governed by the laws of India. Any dispute arising out of or relating to these Terms
+                or our services will first be addressed informally by emailing us; if unresolved, it will be subject
+                to the exclusive jurisdiction of the courts of India.</p>
+        </section>
+
+        <section class="legal-section" id="changes">
+            <h2><span class="legal-section-number">9</span> Changes to These Terms</h2>
+            <p>We may update these Terms from time to time to reflect changes in our services or for legal
+                reasons. The "Last Updated" date at the top of this page will always reflect the most recent
+                revision. Continued use of our services after an update constitutes acceptance of the revised
+                Terms.</p>
+        </section>
+
+        <section class="legal-section" id="contact">
+            <h2><span class="legal-section-number">10</span> Contact Information</h2>
             <p>For questions about these terms, contact:</p>
-            <p style="margin-top: 10px;">
-                <strong>Email:</strong> jha.8@alumni.iitj.ac.in<br>
-                <strong>LinkedIn:</strong> <a href="https://www.linkedin.com/in/akjha002/" target="_blank">Amit Kumar
-                    Jha</a><br>
-                <strong>X (Twitter):</strong> <a href="https://x.com/Akjha2023" target="_blank">@Akjha2023</a>
-            </p>
-        </div>
+            <div class="legal-contact-grid">
+                <a class="legal-contact-item" href="mailto:jha.8@alumni.iitj.ac.in"><i class="fas fa-envelope"></i> jha.8@alumni.iitj.ac.in</a>
+                <a class="legal-contact-item" href="https://www.linkedin.com/in/akjha002/" target="_blank" rel="noopener"><i class="fab fa-linkedin"></i> Amit Kumar Jha</a>
+                <a class="legal-contact-item" href="https://x.com/Akjha2023" target="_blank" rel="noopener"><i class="fab fa-x-twitter"></i> @Akjha2023</a>
+            </div>
+        </section>
 
-        <p style="color: var(--text-muted); margin-top: 40px;">
-            <strong>Last Updated:</strong> February 2026
-        </p>
+        <p class="legal-updated"><strong>Last Updated:</strong> February 2026</p>
     </main>
 
     <footer class="footer">
