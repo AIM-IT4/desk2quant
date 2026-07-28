@@ -1,45 +1,97 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#06275b"/>
-      <stop offset="58%" stop-color="#0a3476"/>
-      <stop offset="100%" stop-color="#08a9a2"/>
+      <stop offset="0%" stop-color="#04060f"/>
+      <stop offset="55%" stop-color="#070b1c"/>
+      <stop offset="100%" stop-color="#050a14"/>
     </linearGradient>
-    <radialGradient id="glow" cx="50%" cy="38%" r="65%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.16"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    <radialGradient id="glowSpot" cx="46%" cy="46%" r="60%">
+      <stop offset="0%" stop-color="#1c3a6e" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#050a14" stop-opacity="0"/>
     </radialGradient>
+    <linearGradient id="curveStroke" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4fd6ff"/>
+      <stop offset="50%" stop-color="#08a9a2"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <filter id="softGlow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="strongGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="14" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+      </feMerge>
+    </filter>
   </defs>
+
   <rect width="1200" height="630" fill="url(#bg)"/>
-  <rect width="1200" height="630" fill="url(#glow)"/>
+  <rect width="1200" height="630" fill="url(#glowSpot)"/>
 
-  <!-- faint grid texture -->
-  <g stroke="#ffffff" stroke-opacity="0.05" stroke-width="1">
-    <line x1="0" y1="120" x2="1200" y2="120"/>
-    <line x1="0" y1="240" x2="1200" y2="240"/>
-    <line x1="0" y1="360" x2="1200" y2="360"/>
-    <line x1="0" y1="480" x2="1200" y2="480"/>
-    <line x1="200" y1="0" x2="200" y2="630"/>
-    <line x1="400" y1="0" x2="400" y2="630"/>
-    <line x1="600" y1="0" x2="600" y2="630"/>
-    <line x1="800" y1="0" x2="800" y2="630"/>
-    <line x1="1000" y1="0" x2="1000" y2="630"/>
+  <!-- faint background formula texture, like a chalkboard behind the visual -->
+  <g font-family="Georgia, 'Times New Roman', serif" fill="#7fa8d9" fill-opacity="0.09" font-size="22">
+    <text x="40" y="70">CVA = (1-R) &#8747; EE(t) dPD(t)</text>
+    <text x="640" y="55">FVA = &#8747; s_f(t) EPE(t) dt</text>
+    <text x="70" y="580">KVA = &#8747; k(t) RWA(t) e^{-r&#964;} d&#964;</text>
+    <text x="660" y="600">MVA = &#8747; s_IM(t) IM(t) dt</text>
+    <text x="860" y="110">DVA = -(1-R) &#8747; NEE(t) dPD_own(t)</text>
+    <text x="30" y="330" fill-opacity="0.06" font-size="120">&#8747;</text>
+    <text x="1080" y="350" fill-opacity="0.06" font-size="120">&#8721;</text>
   </g>
 
-  <!-- layered rings: risk-free core price, with XVA adjustments stacked around it -->
-  <g fill="none" stroke="#ffffff">
-    <circle cx="600" cy="320" r="200" stroke-opacity="0.14" stroke-width="2"/>
-    <circle cx="600" cy="320" r="160" stroke-opacity="0.22" stroke-width="2"/>
-    <circle cx="600" cy="320" r="120" stroke-opacity="0.32" stroke-width="2"/>
-    <circle cx="600" cy="320" r="80" stroke-opacity="0.5" stroke-width="2"/>
-    <circle cx="600" cy="320" r="40" fill="#08a9a2" fill-opacity="0.9" stroke="none"/>
+  <!-- ground plane / axes, echoing a desk risk-exposure chart -->
+  <g stroke="#5b7fb8" stroke-opacity="0.28" stroke-width="1.4">
+    <line x1="140" y1="470" x2="1080" y2="470"/>
+    <line x1="140" y1="470" x2="140" y2="170"/>
+  </g>
+  <g font-family="Arial, sans-serif" fill="#8fa9d6" fill-opacity="0.55" font-size="14" letter-spacing="2">
+    <text x="560" y="500">TIME</text>
+    <text x="70" y="280" transform="rotate(-90 70 280)">EXPOSURE</text>
   </g>
 
-  <!-- ring labels -->
-  <g font-family="Arial, sans-serif" fill="#ffffff" text-anchor="middle">
-    <text x="600" y="326" font-size="15" font-weight="700" fill="#06275b">PV</text>
-    <text x="600" y="260" font-size="14" fill-opacity="0.85">CVA</text>
-    <text x="600" y="200" font-size="14" fill-opacity="0.7">MVA</text>
-    <text x="600" y="140" font-size="14" fill-opacity="0.55">KVA</text>
+  <!-- expected-exposure profile: rises then decays to zero at maturity, the shape
+       every XVA term is computed against -->
+  <path d="M140,470 C260,320 340,235 460,225 C560,217 640,255 760,300 C860,335 940,390 1080,470"
+        fill="none" stroke="url(#curveStroke)" stroke-width="4" filter="url(#softGlow)"/>
+
+  <!-- CVA-shaded area under the curve -->
+  <path d="M140,470 C260,320 340,235 460,225 C560,217 640,255 760,300 C860,335 940,390 1080,470 L1080,470 L140,470 Z"
+        fill="url(#curveStroke)" fill-opacity="0.10"/>
+
+  <!-- glowing nodes along the curve marking key tenor points, echoing the
+       Heston-cover node style -->
+  <g filter="url(#strongGlow)">
+    <circle cx="140" cy="470" r="4" fill="#4fd6ff"/>
+    <circle cx="300" cy="300" r="4.5" fill="#4fd6ff"/>
+    <circle cx="460" cy="225" r="5" fill="#08a9a2"/>
+    <circle cx="640" cy="258" r="4.5" fill="#08a9a2"/>
+    <circle cx="820" cy="318" r="4.5" fill="#8b5cf6"/>
+    <circle cx="1000" cy="418" r="4" fill="#8b5cf6"/>
+    <circle cx="1080" cy="470" r="4" fill="#8b5cf6"/>
+  </g>
+  <g fill="#ffffff">
+    <circle cx="140" cy="470" r="2.4"/>
+    <circle cx="300" cy="300" r="2.6"/>
+    <circle cx="460" cy="225" r="3"/>
+    <circle cx="640" cy="258" r="2.6"/>
+    <circle cx="820" cy="318" r="2.6"/>
+    <circle cx="1000" cy="418" r="2.4"/>
+    <circle cx="1080" cy="470" r="2.4"/>
+  </g>
+
+  <!-- scattered faint particles for depth, matching the Heston cover's dust-field look -->
+  <g fill="#bcd4ff">
+    <circle cx="220" cy="210" r="1.6" fill-opacity="0.5"/>
+    <circle cx="380" cy="160" r="1.3" fill-opacity="0.4"/>
+    <circle cx="520" cy="140" r="1.8" fill-opacity="0.45"/>
+    <circle cx="700" cy="180" r="1.4" fill-opacity="0.35"/>
+    <circle cx="900" cy="230" r="1.7" fill-opacity="0.4"/>
+    <circle cx="960" cy="330" r="1.3" fill-opacity="0.3"/>
+    <circle cx="260" cy="380" r="1.4" fill-opacity="0.3"/>
+    <circle cx="760" cy="400" r="1.5" fill-opacity="0.35"/>
   </g>
 </svg>
