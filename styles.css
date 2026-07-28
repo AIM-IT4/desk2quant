@@ -1640,6 +1640,35 @@ body.d2q-reference .footer .logo-img {
     line-height: 1.35;
 }
 
+.card-detail-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.card-detail-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+}
+
+.card-detail-link:focus-visible {
+    outline: none;
+}
+
+.product-card:focus-within {
+    border-color: var(--d2q-teal);
+    box-shadow: 0 0 0 3px rgba(8, 169, 162, 0.18), var(--d2q-shadow);
+}
+
+.product-card .share-btn,
+.product-card .blog-card-share,
+.product-card .product-buy-button {
+    position: relative;
+    z-index: 2;
+}
+
 .product-description {
     margin: 0;
     color: var(--d2q-muted);

@@ -1352,6 +1352,30 @@ function formatPrice(priceObj) {
     return `${priceObj.currency.symbol}${priceObj.amount.toLocaleString()}`;
 }
 
+function getBlogHref(blog) {
+    const identifier = blog.slug
+        ? `slug=${encodeURIComponent(blog.slug)}`
+        : `id=${encodeURIComponent(blog.id)}`;
+    return `blog.html?${identifier}`;
+}
+
+function copyBlogCardLink(button, blogHref) {
+    const shareUrl = new URL(blogHref, window.location.href).href;
+    const showCopiedState = () => {
+        button.innerHTML = '<i class="fas fa-check"></i>';
+        setTimeout(() => { button.innerHTML = '<i class="fas fa-share-alt"></i>'; }, 1500);
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareUrl)
+            .then(showCopiedState)
+            .catch(() => window.prompt('Copy this link:', shareUrl));
+        return;
+    }
+
+    window.prompt('Copy this link:', shareUrl);
+}
+
 // Load and display blogs from Supabase
 async function loadBlogsFromSupabase() {
     try {
@@ -1381,17 +1405,10 @@ async function loadBlogsFromSupabase() {
         data.forEach(blog => {
             const date = new Date(blog.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-            const card = document.createElement('div');
+            const blogHref = getBlogHref(blog);
+            const card = document.createElement('article');
             card.className = 'product-card reveal-up';
-            card.style.cursor = 'pointer';
-            card.onclick = () => {
-                // Navigate to blog page with slug for full reading experience
-                if (blog.slug) {
-                    window.location.href = `blog.html?slug=${blog.slug}`;
-                } else {
-                    window.openBlogModal(blog.id);
-                }
-            };
+            card.dataset.detailHref = blogHref;
 
             const imageHtml = blog.cover_image_url
                 ? `<div class="product-image" style="height:200px; padding:0; overflow:hidden;"><img src="${blog.cover_image_url}" alt="${blog.title || 'Blog post cover image'}" style="width:100%; height:100%; object-fit:cover; transition:transform 0.5s ease;"></div>`
@@ -1401,13 +1418,13 @@ async function loadBlogsFromSupabase() {
                 ${imageHtml}
                 <div class="product-content">
                     <div style="font-size:0.85em; color:var(--primary); margin-bottom:5px;">${date}</div>
-                    <h3 class="product-title" style="margin-bottom:10px;">${blog.title}</h3>
+                    <h3 class="product-title" style="margin-bottom:10px;"><a class="card-detail-link" href="${blogHref}">${blog.title}</a></h3>
                     <p class="product-description" style="margin-bottom:15px;">${blog.excerpt || ''}</p>
                     <div style="margin-top:auto; display:flex; align-items:center; justify-content:space-between;">
                         <span style="color:var(--text-color); font-weight:600; font-size:0.9em; display:flex; align-items:center; gap:5px;">
                             Read Article <i class="fas fa-arrow-right" style="font-size:0.8em;"></i>
                         </span>
-                        <div style="display:flex; gap:6px;" onclick="event.stopPropagation();">
+                        <div style="display:flex; gap:6px;">
                             <button onclick="navigator.clipboard.writeText('${window.location.origin}/blog.html?slug=${blog.slug}').then(()=>{this.innerHTML='<i class=\\'fas fa-check\\'></i>';setTimeout(()=>this.innerHTML='<i class=\\'fas fa-share-alt\\'></i>',1500)})" title="Copy share link" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); color:var(--text-muted); width:30px; height:30px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.8em; transition:all 0.2s;">
                                 <i class="fas fa-share-alt"></i>
                             </button>
@@ -1415,6 +1432,15 @@ async function loadBlogsFromSupabase() {
                     </div>
                 </div>
             `;
+            const shareButton = card.querySelector('button[title="Copy share link"]');
+            if (shareButton) {
+                shareButton.removeAttribute('onclick');
+                shareButton.classList.add('blog-card-share');
+                shareButton.addEventListener('click', event => {
+                    event.preventDefault();
+                    copyBlogCardLink(shareButton, blogHref);
+                });
+            }
             blogGrid.appendChild(card);
             if (window.revealObserver) window.revealObserver.observe(card);
         });
@@ -1647,7 +1673,7 @@ async function displaySupabaseProducts(products) {
         }
 
         for (const product of items) {
-            const productCard = document.createElement('div');
+            const productCard = document.createElement('article');
             const isTargetLaunch = product.id === '6b78550d-e130-41d1-9409-92335ce82a6c';
             const isBestseller = VERIFIED_BESTSELLER_IDS.includes(product.id);
             productCard.className = isTargetLaunch ? 'product-card reveal-up highlighted-product' : 'product-card reveal-up';
@@ -1667,17 +1693,8 @@ async function displaySupabaseProducts(products) {
             const btnText = isFree ? 'Download' : 'Buy Now';
 
             const visual = getProductCardVisual(product.name);
-            const productHref = `${window.location.pathname.includes('-test') ? 'product-test.html' : 'product.html'}?id=${product.id}`;
-            productCard.setAttribute('role', 'link');
-            productCard.setAttribute('tabindex', '0');
-            productCard.setAttribute('aria-label', `Preview ${product.name}`);
-            productCard.addEventListener('click', () => { window.location.href = productHref; });
-            productCard.addEventListener('keydown', event => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    window.location.href = productHref;
-                }
-            });
+            const productHref = `${window.location.pathname.includes('-test') ? 'product-test.html' : 'product.html'}?id=${encodeURIComponent(product.id)}`;
+            productCard.dataset.detailHref = productHref;
 
             // Handle sanitized description
             const rawDesc = product.description || '';
@@ -1724,7 +1741,7 @@ async function displaySupabaseProducts(products) {
                     <span class="reference-cover-label">${visual.label}</span>
                 </div>
                 <div class="product-content">
-                    <h3 class="product-title">${product.name} <button class="share-btn" onclick="event.stopPropagation();copyProductLink('${product.id}')" title="Copy share link" aria-label="Copy share link for ${product.name}" style="background:none;border:none;color:var(--d2q-muted);cursor:pointer;font-size:0.75em;margin-left:6px;transition:color 0.2s;vertical-align:middle;"><i class="fas fa-share-alt"></i></button></h3>
+                    <h3 class="product-title"><a class="card-detail-link" href="${productHref}">${product.name}</a> <button class="share-btn" type="button" onclick="event.preventDefault();copyProductLink('${product.id}')" title="Copy share link" aria-label="Copy share link for ${product.name}" style="background:none;border:none;color:var(--d2q-muted);cursor:pointer;font-size:0.75em;margin-left:6px;transition:color 0.2s;vertical-align:middle;"><i class="fas fa-share-alt"></i></button></h3>
                     <div class="product-description">${truncateText(stripMarkdown(displayDesc.replace(/<[^>]*>?/gm, '')), 250)}</div>
                     <div class="product-footer">
                         <div class="product-card-price-row">
@@ -3428,18 +3445,18 @@ function displayBlogs(blogs) {
     }
 
     blogs.forEach(blog => {
-        const div = document.createElement('div');
-        div.className = 'product-card blog-card';
-        div.style.cursor = 'pointer';
-        div.onclick = () => openBlogModal(blog.id);
+        const blogHref = getBlogHref(blog);
+        const card = document.createElement('article');
+        card.className = 'product-card blog-card';
+        card.dataset.detailHref = blogHref;
 
-        div.innerHTML = `
+        card.innerHTML = `
             <div class="product-image" style="padding:0; aspect-ratio:16/9; overflow:hidden; background:#1e293b;">
                 ${blog.cover_image_url ? `<img src="${blog.cover_image_url}" alt="${blog.title || 'Blog post cover image'}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:gray;"><i class="fas fa-newspaper fa-3x"></i></div>`}
                 <div class="product-badge" style="background:#8b5cf6;">ARTICLE</div>
             </div>
             <div class="product-content" style="display:flex; flex-direction:column;">
-                <h3 class="product-title">${blog.title}</h3>
+                <h3 class="product-title"><a class="card-detail-link" href="${blogHref}">${blog.title}</a></h3>
                 <p class="product-description" style="flex:1; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">${blog.excerpt || ''}</p>
                 <div class="product-footer" style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">
                      <span style="font-size:0.85em; color:var(--text-muted);">${new Date(blog.created_at).toLocaleDateString()}</span>
@@ -3447,7 +3464,7 @@ function displayBlogs(blogs) {
                 </div>
             </div>
         `;
-        grid.appendChild(div);
+        grid.appendChild(card);
     });
 }
 
@@ -3549,6 +3566,91 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+const BLOG_INDEX_SEO = Object.freeze({
+    title: 'Blog & Articles | Desk2Quant',
+    description: 'Read expert articles on quant finance, algorithms, market microstructure, career advice, and technical interview preparation from Desk2Quant.',
+    url: 'https://desk2quant.vercel.app/blog.html',
+    image: 'https://desk2quant.vercel.app/assets/images/desk2quant-logo.png'
+});
+
+function setBlogMetaContent(id, content) {
+    const element = document.getElementById(id);
+    if (element) element.setAttribute('content', content);
+}
+
+function getBlogDescription(blog) {
+    const container = document.createElement('div');
+    container.innerHTML = blog.excerpt || '';
+    const text = (container.textContent || '').replace(/\s+/g, ' ').trim();
+    return text.slice(0, 160) || BLOG_INDEX_SEO.description;
+}
+
+function updateBlogSEO(blog) {
+    const canonicalUrl = new URL(getBlogHref(blog), BLOG_INDEX_SEO.url).href;
+    const title = `${blog.title} | Desk2Quant`;
+    const description = getBlogDescription(blog);
+    const image = blog.cover_image_url || BLOG_INDEX_SEO.image;
+
+    document.title = title;
+    document.getElementById('b-meta-canonical')?.setAttribute('href', canonicalUrl);
+    setBlogMetaContent('b-meta-description', description);
+    setBlogMetaContent('b-meta-og-type', 'article');
+    setBlogMetaContent('b-meta-og-url', canonicalUrl);
+    setBlogMetaContent('b-meta-og-title', title);
+    setBlogMetaContent('b-meta-og-description', description);
+    setBlogMetaContent('b-meta-og-image', image);
+    setBlogMetaContent('b-meta-twitter-title', title);
+    setBlogMetaContent('b-meta-twitter-description', description);
+    setBlogMetaContent('b-meta-twitter-image', image);
+
+    const structuredData = {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: blog.title,
+        description,
+        image: [image],
+        url: canonicalUrl,
+        mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
+        author: { '@type': 'Person', name: 'Amit Kumar Jha' },
+        publisher: { '@type': 'Organization', name: 'Desk2Quant' }
+    };
+    if (blog.created_at) structuredData.datePublished = blog.created_at;
+
+    const jsonLd = document.getElementById('b-article-jsonld');
+    if (jsonLd) jsonLd.textContent = JSON.stringify(structuredData);
+}
+
+function resetBlogSEO() {
+    const canonical = document.getElementById('b-meta-canonical');
+    if (!canonical) return;
+
+    document.title = BLOG_INDEX_SEO.title;
+    canonical.setAttribute('href', BLOG_INDEX_SEO.url);
+    setBlogMetaContent('b-meta-description', BLOG_INDEX_SEO.description);
+    setBlogMetaContent('b-meta-og-type', 'website');
+    setBlogMetaContent('b-meta-og-url', BLOG_INDEX_SEO.url);
+    setBlogMetaContent('b-meta-og-title', BLOG_INDEX_SEO.title);
+    setBlogMetaContent('b-meta-og-description', BLOG_INDEX_SEO.description);
+    setBlogMetaContent('b-meta-og-image', BLOG_INDEX_SEO.image);
+    setBlogMetaContent('b-meta-twitter-title', BLOG_INDEX_SEO.title);
+    setBlogMetaContent('b-meta-twitter-description', BLOG_INDEX_SEO.description);
+    setBlogMetaContent('b-meta-twitter-image', BLOG_INDEX_SEO.image);
+
+    const jsonLd = document.getElementById('b-article-jsonld');
+    if (jsonLd) jsonLd.textContent = '';
+}
+
+function closeBlogModal() {
+    const modal = document.getElementById('blogModal');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
+    window._currentBlog = null;
+    history.replaceState(null, '', window.location.pathname);
+    resetBlogSEO();
+}
+
 // Global scope for HTML access
 window.openBlogModal = async function (id) {
     const modal = document.getElementById('blogModal');
@@ -3567,18 +3669,18 @@ window.openBlogModal = async function (id) {
             document.getElementById('blogModalTitle').textContent = data.title;
             document.getElementById('blogModalMeta').textContent = new Date(data.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
             document.getElementById('blogModalContent').innerHTML = data.content;
+            updateBlogSEO(data);
 
             // Store current blog info for sharing
             window._currentBlog = {
+                id: data.id,
                 title: data.title,
                 slug: data.slug,
                 excerpt: data.excerpt || ''
             };
 
             // Update URL without reload for deep linking
-            if (data.slug) {
-                history.replaceState(null, '', `?slug=${data.slug}`);
-            }
+            history.replaceState(null, '', getBlogHref(data));
 
             // Trigger MathJax to render equations in the new content
             // Wait for content to be fully inserted, then typeset
@@ -3613,12 +3715,12 @@ window.openBlogModal = async function (id) {
 // --- BLOG SHARING ---
 window.shareBlog = function (platform) {
     const blog = window._currentBlog;
-    if (!blog || !blog.slug) {
+    if (!blog || (!blog.slug && !blog.id)) {
         alert('No article is currently open.');
         return;
     }
 
-    const shareUrl = `${window.location.origin}/blog.html?slug=${blog.slug}`;
+    const shareUrl = new URL(getBlogHref(blog), BLOG_INDEX_SEO.url).href;
     const shareTitle = blog.title;
     const shareText = `${blog.title} — ${blog.excerpt.substring(0, 100)}`;
 
@@ -3673,23 +3775,41 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 // --- BLOG DEEP LINK SUPPORT ---
-// If URL has ?slug=xxx, auto-open that blog post
+// If the URL identifies a published article, auto-open that blog post.
 document.addEventListener('DOMContentLoaded', function () {
     const params = new URLSearchParams(window.location.search);
     const slug = params.get('slug');
-    if (slug && window.supabaseClient) {
-        // Wait for Supabase to be ready, then fetch blog by slug
-        setTimeout(async () => {
-            try {
-                const { data } = await window.supabaseClient.from('blogs').select('id').eq('slug', slug).single();
-                if (data && data.id) {
-                    window.openBlogModal(data.id);
-                }
-            } catch (e) {
-                console.error('Deep link blog load failed:', e);
+    const id = params.get('id');
+    const lookup = slug ? { field: 'slug', value: slug } : id ? { field: 'id', value: id } : null;
+    if (!lookup) return;
+
+    let attempts = 0;
+    const openDeepLinkedBlog = async () => {
+        if (!window.supabaseClient) {
+            attempts += 1;
+            if (attempts <= 20) {
+                setTimeout(openDeepLinkedBlog, 100);
+            } else {
+                console.error('Deep link blog load failed: Supabase did not initialize.');
             }
-        }, 500);
-    }
+            return;
+        }
+
+        try {
+            const { data, error } = await window.supabaseClient
+                .from('blogs')
+                .select('id')
+                .eq(lookup.field, lookup.value)
+                .eq('is_published', true)
+                .single();
+            if (error) throw error;
+            if (data?.id) window.openBlogModal(data.id);
+        } catch (error) {
+            console.error('Deep link blog load failed:', error);
+        }
+    };
+
+    openDeepLinkedBlog();
 });
 
 // Initialize Listeners
@@ -3698,20 +3818,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const blogClose = document.getElementById('blogModalClose');
     if (blogClose) {
-        blogClose.onclick = () => {
-            const m = document.getElementById('blogModal');
-            m.classList.remove('active');
-            m.style.display = 'none';
-            window._currentBlog = null;
-            history.replaceState(null, '', window.location.pathname);
-        }
+        blogClose.onclick = closeBlogModal;
     }
 
     window.addEventListener('click', (e) => {
         const m = document.getElementById('blogModal');
         if (e.target === m || (m && e.target.classList.contains('modal-overlay'))) {
-            m.classList.remove('active');
-            m.style.display = 'none';
+            closeBlogModal();
         }
     });
 });
