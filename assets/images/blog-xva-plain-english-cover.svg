@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06275b"/>
+      <stop offset="58%" stop-color="#0a3476"/>
+      <stop offset="100%" stop-color="#08a9a2"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="38%" r="65%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+
+  <!-- faint grid texture -->
+  <g stroke="#ffffff" stroke-opacity="0.05" stroke-width="1">
+    <line x1="0" y1="120" x2="1200" y2="120"/>
+    <line x1="0" y1="240" x2="1200" y2="240"/>
+    <line x1="0" y1="360" x2="1200" y2="360"/>
+    <line x1="0" y1="480" x2="1200" y2="480"/>
+    <line x1="200" y1="0" x2="200" y2="630"/>
+    <line x1="400" y1="0" x2="400" y2="630"/>
+    <line x1="600" y1="0" x2="600" y2="630"/>
+    <line x1="800" y1="0" x2="800" y2="630"/>
+    <line x1="1000" y1="0" x2="1000" y2="630"/>
+  </g>
+
+  <!-- layered rings: risk-free core price, with XVA adjustments stacked around it -->
+  <g fill="none" stroke="#ffffff">
+    <circle cx="600" cy="320" r="200" stroke-opacity="0.14" stroke-width="2"/>
+    <circle cx="600" cy="320" r="160" stroke-opacity="0.22" stroke-width="2"/>
+    <circle cx="600" cy="320" r="120" stroke-opacity="0.32" stroke-width="2"/>
+    <circle cx="600" cy="320" r="80" stroke-opacity="0.5" stroke-width="2"/>
+    <circle cx="600" cy="320" r="40" fill="#08a9a2" fill-opacity="0.9" stroke="none"/>
+  </g>
+
+  <!-- ring labels -->
+  <g font-family="Arial, sans-serif" fill="#ffffff" text-anchor="middle">
+    <text x="600" y="326" font-size="15" font-weight="700" fill="#06275b">PV</text>
+    <text x="600" y="260" font-size="14" fill-opacity="0.85">CVA</text>
+    <text x="600" y="200" font-size="14" fill-opacity="0.7">MVA</text>
+    <text x="600" y="140" font-size="14" fill-opacity="0.55">KVA</text>
+  </g>
+</svg>
