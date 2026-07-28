@@ -160,6 +160,40 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // --------------------------------
+    // Nav "Tools" Dropdown (desktop click/keyboard + mobile flat expand)
+    // --------------------------------
+    document.querySelectorAll('.nav-dropdown').forEach((dropdown) => {
+        const toggle = dropdown.querySelector('.nav-dropdown-toggle');
+        if (!toggle) return;
+
+        toggle.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const isOpen = dropdown.classList.toggle('is-open');
+            toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+
+        // Close when a menu link is chosen (relevant on mobile flat expand)
+        dropdown.querySelectorAll('.nav-dropdown-menu a').forEach((link) => {
+            link.addEventListener('click', () => {
+                dropdown.classList.remove('is-open');
+                toggle.setAttribute('aria-expanded', 'false');
+                if (navLinks) navLinks.classList.remove('mobile-active');
+            });
+        });
+    });
+
+    // Close any open dropdown when clicking outside it
+    document.addEventListener('click', (e) => {
+        document.querySelectorAll('.nav-dropdown.is-open').forEach((dropdown) => {
+            if (!dropdown.contains(e.target)) {
+                dropdown.classList.remove('is-open');
+                dropdown.querySelector('.nav-dropdown-toggle')?.setAttribute('aria-expanded', 'false');
+            }
+        });
+    });
+
+    // --------------------------------
     // Smooth Scrolling for Navigation
     // --------------------------------
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
