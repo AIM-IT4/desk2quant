@@ -167,6 +167,10 @@ export default async function handler(req, res) {
                     customerPhone,
                     customerCountry,
                     productName,
+                    // Razorpay's own capture timestamp (epoch seconds) -- used as the
+                    // authoritative created_at so the row's date is never dependent on
+                    // Supabase/Postgres session timezone quirks.
+                    paymentCreatedAt: payment.created_at,
                     downloadLink: payment.notes?.download_link || '',
                     SUPABASE_URL,
                     SUPABASE_KEY,
@@ -294,9 +298,18 @@ async function grantDrivePermission(clientEmail, privateKey, fileId, customerEma
 export async function handleProductPurchase(data) {
     const {
         paymentId, amount, inrAmount, currency, customerEmail, customerName, customerPhone, customerCountry, productName,
+        paymentCreatedAt,
         downloadLink: checkoutDownloadLink,
         SUPABASE_URL, SUPABASE_KEY, BREVO_API_KEY, ADMIN_EMAIL, SENDER_EMAIL, SENDER_NAME
     } = data;
+
+    // Prefer Razorpay's own capture timestamp (its epoch seconds are always
+    // real UTC) over letting Postgres stamp its own now() default, which has
+    // been observed storing purchases.created_at ~5.5h in the past due to a
+    // timezone-handling bug on that column/table.
+    const isoCreatedAt = (typeof paymentCreatedAt === 'number' && paymentCreatedAt > 0)
+        ? new Date(paymentCreatedAt * 1000).toISOString()
+        : null;
 
     console.log(`Processing product purchase: ${productName} for ${customerEmail}`);
 
@@ -451,7 +464,8 @@ export async function handleProductPurchase(data) {
                     source: 'webhook',
                     customer_country: customerCountry,
                     inr_amount: inrAmount,
-                    download_link: downloadLink
+                    download_link: downloadLink,
+                    ...(isoCreatedAt ? { created_at: isoCreatedAt } : {})
                 })
             });
             if (insertResp.ok) {

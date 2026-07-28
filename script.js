@@ -2321,7 +2321,11 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
                     currency: currency || 'INR',
                     payment_id: paymentId,
                     source: 'frontend',
-                    download_link: downloadLink
+                    download_link: downloadLink,
+                    // Explicit UTC timestamp from the browser clock -- the purchases
+                    // table's created_at DEFAULT has been observed storing timestamps
+                    // ~5.5h in the past (timezone-handling bug), so don't rely on it.
+                    created_at: new Date().toISOString()
                 }).then(() => console.log('✅ Purchase logged to Supabase')).catch(err => console.error('❌ Failed to log purchase:', err));
             }
 
@@ -3880,7 +3884,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     currency: 'INR',
                     payment_id: 'LEAD_' + Date.now(),
                     source: 'lead_capture',
-                    download_link: downloadLink
+                    download_link: downloadLink,
+                    created_at: new Date().toISOString()
                 }).then(() => console.log('✅ Lead logged to Supabase')).catch(err => console.error('❌ Failed to log lead:', err));
             }
 

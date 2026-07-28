@@ -1782,6 +1782,10 @@ Brief Q&A"></textarea>
 
                         if (response.ok && data.success) {
                             console.log('Password correct, logging in...');
+                            // Kept in memory only (never persisted to storage) so the
+                            // live-Razorpay revenue lookup can re-authenticate itself;
+                            // that endpoint re-validates the password server-side anyway.
+                            window.__adminSessionPwd = pwd;
                             document.getElementById('loginOverlay').style.display = 'none';
                             document.getElementById('adminLayout').style.display = 'flex';
 
@@ -3295,6 +3299,32 @@ Desk2Quant
                     return Array.from(byPayment.values());
                 }
 
+                // Pulls revenue directly from Razorpay's own Payments API for a given
+                // unix-second window. This is the source of truth for the headline
+                // revenue card — it is immune to the purchases table's known data-
+                // quality issues (duplicate rows, a created_at column that has been
+                // observed storing times ~5.5h in the past, and stale inr_amount
+                // snapshots on historical rows). Falls back to null on any failure so
+                // callers can gracefully use the Supabase-derived figure instead.
+                async function fetchLiveRazorpayRevenue(fromUnix, toUnix) {
+                    try {
+                        const pwd = window.__adminSessionPwd;
+                        if (!pwd) return null;
+                        const resp = await fetch('/api/admin-auth', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ password: pwd, action: 'revenue', from: fromUnix, to: toUnix })
+                        });
+                        if (!resp.ok) return null;
+                        const data = await resp.json();
+                        if (!data.success) return null;
+                        return data; // { totalInr, count, byDay, products }
+                    } catch (e) {
+                        console.warn('Live Razorpay revenue lookup failed, falling back to Supabase-derived figures:', e);
+                        return null;
+                    }
+                }
+
                 function formatCurrency(amount, currency = 'INR') {
                     const code = (currency || 'INR').toUpperCase();
                     try {
@@ -3390,9 +3420,11 @@ Desk2Quant
 
                         let previousBookingsQuery = null;
                         let previousPurchasesQuery = null;
+                        let periodRangeForLiveLookup = null; // { startOfPeriod, endOfPeriod } for Razorpay live pull
 
                         if (!isAllTime) {
                             const { startOfPeriod, endOfPeriod, startOfPrevious, endOfPrevious } = getDynamicDateRanges(days);
+                            periodRangeForLiveLookup = { startOfPeriod, endOfPeriod };
                             
                             currentBookingsQuery = currentBookingsQuery
                                 .gte('created_at', startOfPeriod)
@@ -3456,11 +3488,32 @@ Desk2Quant
                         };
 
                         // Period Metrics
-                        const currentTotalNorm = (currentPeriodBookings?.reduce((s, b) => s + (b.service_price || 0), 0) || 0) +
-                            cleanCurrentPurchases.reduce((s, p) => s + normalizeToINR(p.amount, p.currency, p.inr_amount), 0);
+                        const currentBookingsRevenue = currentPeriodBookings?.reduce((s, b) => s + (b.service_price || 0), 0) || 0;
+                        const previousBookingsRevenue = previousPeriodBookings?.reduce((s, b) => s + (b.service_price || 0), 0) || 0;
 
-                        const previousTotalNorm = (previousPeriodBookings?.reduce((s, b) => s + (b.service_price || 0), 0) || 0) +
-                            cleanPreviousPurchases.reduce((s, p) => s + normalizeToINR(p.amount, p.currency, p.inr_amount), 0);
+                        let currentPurchasesRevenue = cleanCurrentPurchases.reduce((s, p) => s + normalizeToINR(p.amount, p.currency, p.inr_amount), 0);
+                        let previousPurchasesRevenue = cleanPreviousPurchases.reduce((s, p) => s + normalizeToINR(p.amount, p.currency, p.inr_amount), 0);
+                        let liveRevenueSource = false; // used to label the UI when the live pull succeeded
+
+                        // For period views (not All Time), the Supabase purchases table's
+                        // created_at column has been observed silently excluding real recent
+                        // sales (a timezone bug shifted stored timestamps ~5.5h into the
+                        // past). Prefer Razorpay's own Payments API for the purchases
+                        // portion of the period total whenever we can reach it — it isn't
+                        // affected by that bug. Bookings stay Supabase-sourced since that
+                        // table's created_at does not show the same corruption.
+                        if (!isAllTime && periodRangeForLiveLookup) {
+                            const fromUnix = Math.floor(new Date(periodRangeForLiveLookup.startOfPeriod).getTime() / 1000);
+                            const toUnix = Math.floor(new Date(periodRangeForLiveLookup.endOfPeriod).getTime() / 1000);
+                            const live = await fetchLiveRazorpayRevenue(fromUnix, toUnix);
+                            if (live) {
+                                currentPurchasesRevenue = live.totalInr;
+                                liveRevenueSource = true;
+                            }
+                        }
+
+                        const currentTotalNorm = currentBookingsRevenue + currentPurchasesRevenue;
+                        const previousTotalNorm = previousBookingsRevenue + previousPurchasesRevenue;
 
                         const currentSalesCount = cleanCurrentPurchases.length;
                         const previousSalesCount = cleanPreviousPurchases.length;
@@ -3515,7 +3568,9 @@ Desk2Quant
                         }
 
                         const primaryTotal = `₹${Math.round(displayTotal).toLocaleString()}`;
-                        const subLabel = isAllTime ? 'Lifetime total (all currencies → ₹)' : 'Period total (approx. conversion)';
+                        const subLabel = isAllTime
+                            ? 'Lifetime total (all currencies → ₹)'
+                            : (liveRevenueSource ? 'Period total (live from Razorpay)' : 'Period total (approx. conversion)');
 
                         const finalHtml = `
                                     <div style="display:flex;align-items:baseline;gap:8px">

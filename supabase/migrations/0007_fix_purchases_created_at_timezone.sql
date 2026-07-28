@@ -1,0 +1,42 @@
+-- Migration 0007: Fix purchases.created_at timezone corruption
+--
+-- Bug: purchases.created_at has been silently storing timestamps ~5.5 hours
+-- (India Standard Time offset) EARLIER than the real event time. Confirmed
+-- live by inserting a test row at a known real UTC instant and observing the
+-- stored created_at land 5.5h in the past. The bookings table (using the
+-- same DEFAULT expression per migration 0001) does NOT show this bug, which
+-- means purchases' actual live column default in the database has drifted
+-- from timezone('utc', now()) to something session-timezone-dependent
+-- (classic Postgres trap: a *naive* timestamp gets reinterpreted using the
+-- connection's session timezone when written into a timestamptz column).
+--
+-- This corrupts every "last N days" dashboard filter that relies on
+-- created_at, because real recent sales can appear to be outside the
+-- window when they are not.
+--
+-- Fix: force the default back to a timezone-safe expression and repair
+-- existing rows by adding back the 5.5-hour gap wherever created_at is
+-- default-derived (i.e. no reliable payment_id-based ground truth exists
+-- inside Postgres itself -- this migration only fixes the COLUMN DEFAULT
+-- going forward; historical row correction should be done via a one-off
+-- script cross-referencing Razorpay's Payments API, not blindly here,
+-- since not every row's error is guaranteed to be exactly 5.5h).
+
+-- Force a timezone-safe default: now() is already tz-aware (returns
+-- "timestamptz"), so storing it directly avoids the naive-timestamp
+-- reinterpretation trap that timezone('utc', now()) can fall into when
+-- the session/database timezone setting isn't UTC. (Deliberately NOT using
+-- ALTER DATABASE ... SET timezone here -- that requires superuser rights
+-- Supabase's hosted SQL Editor role does not have, and would fail/abort
+-- this whole script.)
+ALTER TABLE public.purchases
+  ALTER COLUMN created_at SET DEFAULT now();
+
+-- Note: run this in the Supabase SQL Editor. After running it, verify by
+-- inserting a throwaway row via the REST API and confirming created_at
+-- matches the real wall-clock UTC time within a second or two, e.g.:
+--   insert into public.purchases (customer_email, product_name, amount, payment_id, source)
+--   values ('tz-check@example.com', 'TZ_CHECK', 1, 'TZ_CHECK_123', 'debug_test');
+--   select created_at from public.purchases where payment_id = 'TZ_CHECK_123';
+--   -- then delete it:
+--   delete from public.purchases where payment_id = 'TZ_CHECK_123';
