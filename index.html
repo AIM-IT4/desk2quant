@@ -1095,6 +1095,12 @@
                 </div>
 
                 <div class="products-toolbar">
+                    <div class="products-search" role="search">
+                        <label for="productSearchInput" class="sr-only">Search products</label>
+                        <i class="fas fa-search" aria-hidden="true"></i>
+                        <input type="search" id="productSearchInput" placeholder="Search products..."
+                            autocomplete="off" spellcheck="false" aria-controls="productsGrid">
+                    </div>
                     <div class="products-filter">
                         <button class="filter-btn active" data-filter="all">All</button>
                         <button class="filter-btn" data-filter="notes">Notes & PDFs</button>
@@ -1111,7 +1117,11 @@
                     </div>
                 </div>
 
-                <div class="products-grid">
+                <p class="product-search-empty" id="productSearchEmpty" role="status" aria-live="polite" hidden>
+                    No products match your search.
+                </p>
+
+                <div class="products-grid" id="productsGrid">
                     <!-- Skeleton loading cards (replaced by JS) -->
                     <div class="skeleton-card">
                         <div class="skeleton-image"></div>

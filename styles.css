@@ -1389,6 +1389,48 @@ body.d2q-reference .footer .logo-img {
     margin-bottom: 0;
 }
 
+.products-search {
+    position: relative;
+    width: min(300px, 100%);
+}
+
+.products-search i {
+    position: absolute;
+    top: 50%;
+    left: 16px;
+    color: var(--text-muted);
+    pointer-events: none;
+    transform: translateY(-50%);
+}
+
+.products-search input {
+    width: 100%;
+    padding: 10px 16px 10px 42px;
+    background: var(--bg-glass);
+    border: 1px solid var(--border-subtle);
+    border-radius: 100px;
+    color: var(--text-primary);
+    font: inherit;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.products-search input::placeholder {
+    color: var(--text-muted);
+}
+
+.products-search input:hover,
+.products-search input:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+    outline: none;
+}
+
+.product-search-empty {
+    margin: -24px 0 40px;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
 .products-sort {
     display: flex;
     align-items: center;
@@ -1424,6 +1466,10 @@ body.d2q-reference .footer .logo-img {
         flex-direction: column;
         align-items: stretch;
         gap: 16px;
+    }
+
+    .products-search {
+        width: 100%;
     }
 
     .products-sort {

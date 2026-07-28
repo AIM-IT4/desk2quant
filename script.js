@@ -186,27 +186,41 @@ document.addEventListener('DOMContentLoaded', function () {
     // Navbar Background Scroll Listener replaced by class-based toggle at top of file
 
     // --------------------------------
-    // Product Filtering
+    // Product Filtering and Search
     // --------------------------------
     const filterBtns = document.querySelectorAll('.filter-btn');
+    const productSearchInput = document.getElementById('productSearchInput');
 
-    // Applies the currently-active category filter to all rendered product cards.
-    // Exposed globally so the sort control can re-apply the filter after a re-render.
+    // Applies the active category and search query to all rendered product cards.
+    // Exposed globally so sorting can re-apply both after a re-render.
     window.applyActiveProductFilter = function () {
         const activeBtn = document.querySelector('.filter-btn.active');
         const filter = activeBtn ? activeBtn.dataset.filter : 'all';
+        const query = productSearchInput ? productSearchInput.value.trim().toLowerCase() : '';
         // Query live: product cards are rendered asynchronously from Supabase
         // after DOMContentLoaded, so a NodeList captured at init time would
         // still be empty skeleton cards.
         const productCards = document.querySelectorAll('#products .product-card');
+        let visibleCount = 0;
+
         productCards.forEach(card => {
-            if (filter === 'all' || card.dataset.category === filter) {
+            const matchesCategory = filter === 'all' || card.dataset.category === filter;
+            const searchableText = card.dataset.searchText || card.textContent.toLowerCase();
+            const matchesSearch = !query || searchableText.includes(query);
+
+            if (matchesCategory && matchesSearch) {
                 card.style.display = 'block';
                 card.style.animation = 'fadeIn 0.3s ease';
+                visibleCount += 1;
             } else {
                 card.style.display = 'none';
             }
         });
+
+        const emptyState = document.getElementById('productSearchEmpty');
+        if (emptyState) {
+            emptyState.hidden = productCards.length === 0 || visibleCount > 0;
+        }
     };
 
     filterBtns.forEach(btn => {
@@ -216,6 +230,10 @@ document.addEventListener('DOMContentLoaded', function () {
             window.applyActiveProductFilter();
         });
     });
+
+    if (productSearchInput) {
+        productSearchInput.addEventListener('input', window.applyActiveProductFilter);
+    }
 
     // --------------------------------
     // Product Sorting
@@ -1609,6 +1627,9 @@ async function displaySupabaseProducts(products) {
             // Handle sanitized description
             const rawDesc = product.description || '';
             const displayDesc = (rawDesc === '<p><br></p>') ? '' : rawDesc;
+            const searchableDescription = stripMarkdown(displayDesc.replace(/<[^>]*>?/gm, ''));
+            productCard.dataset.searchText =
+                [product.name, searchableDescription, visual.label, visual.tag].join(' ').toLowerCase();
 
             // Store price info on the card for modal use
             productCard.dataset.localPrice = JSON.stringify(localPrice);
