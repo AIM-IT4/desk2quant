@@ -2373,20 +2373,29 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
             orderData = await orderRes.json();
         } else {
             const errText = await orderRes.text();
-            console.warn('⚠️ Order creation failed, proceeding without order_id:', errText);
+            console.error('❌ Order creation failed:', errText);
         }
     } catch (orderErr) {
-        console.warn('⚠️ Could not create order (network error), proceeding without order_id:', orderErr);
+        console.error('❌ Could not create order (network error):', orderErr);
+    }
+
+    // SECURITY: never fall back to a client-computed amount/no-order_id
+    // checkout -- that was the original vulnerability (Razorpay Checkout
+    // opened without a server order_id accepts whatever amount the browser
+    // sends). If the server couldn't verify the price, stop here instead.
+    if (!orderData || !orderData.order_id) {
+        alert('⚠️ Could not start secure checkout. Please refresh the page and try again, or contact support if this keeps happening.');
+        return;
     }
 
     // Build Razorpay checkout options
     const options = {
         key: RAZORPAY_KEY_ID,
-        amount: orderData ? orderData.amount : Math.round(amount * 100),
-        currency: orderData ? orderData.currency : currency.toUpperCase(),
+        amount: orderData.amount,
+        currency: orderData.currency,
         name: 'Desk2Quant',
         description: productName,
-        order_id: orderData ? orderData.order_id : undefined,
+        order_id: orderData.order_id,
         handler: function (response) {
             const paymentId = response.razorpay_payment_id;
             const customerEmail = (userDetails && userDetails.email) ? userDetails.email : prompt('Enter your email to receive the download link:');
@@ -3175,20 +3184,28 @@ async function initSessionPayment(description, amount, customerEmail, currency =
             orderData = await orderRes.json();
         } else {
             const errText = await orderRes.text();
-            console.warn('⚠️ Session order creation failed, proceeding without order_id:', errText);
+            console.error('❌ Session order creation failed:', errText);
         }
     } catch (orderErr) {
-        console.warn('⚠️ Could not create session order (network error), proceeding without order_id:', orderErr);
+        console.error('❌ Could not create session order (network error):', orderErr);
+    }
+
+    // SECURITY: never fall back to a client-computed amount/no-order_id
+    // checkout -- see initRazorpayCheckout for why. Stop instead of opening
+    // an unverified checkout.
+    if (!orderData || !orderData.order_id) {
+        alert('⚠️ Could not start secure checkout. Please refresh the page and try again, or contact support if this keeps happening.');
+        return;
     }
 
     // Open Razorpay checkout
     const options = {
         key: RAZORPAY_KEY_ID,
-        amount: orderData ? orderData.amount : Math.round(amount * 100),
-        currency: orderData ? orderData.currency : currency.toUpperCase(),
+        amount: orderData.amount,
+        currency: orderData.currency,
         name: 'Desk2Quant',
         description: description || 'Mentorship Session',
-        order_id: orderData ? orderData.order_id : undefined,
+        order_id: orderData.order_id,
         handler: function (response) {
             const paymentId = response.razorpay_payment_id;
             handleSessionPaymentSuccess({ payment_id: paymentId });
