@@ -1747,7 +1747,7 @@
             }
         }
 
-        window.initiatePayment = function () {
+        window.initiatePayment = async function () {
             userName = document.getElementById('user-name').value.trim();
             userEmail = document.getElementById('user-email').value.trim();
 
@@ -1763,10 +1763,45 @@
                 return;
             }
 
+            // SECURITY: the checkout amount is now created server-side by
+            // create-order.js from a fixed duration->price catalog (lib/pricing.js),
+            // not from `selectedPrice`, which is just a plain page-scope JS variable
+            // previously editable in devtools before clicking Pay.
+            const startBtn = document.getElementById('btn-start');
+            const originalBtnHtml = startBtn ? startBtn.innerHTML : null;
+            if (startBtn) { startBtn.disabled = true; startBtn.innerHTML = 'Preparing checkout...'; }
+
+            let orderData = null;
+            try {
+                const orderRes = await fetch('/api/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        currency: 'INR',
+                        notes: { type: 'interview', duration_minutes: String(selectedDuration) }
+                    })
+                });
+                if (orderRes.ok) {
+                    orderData = await orderRes.json();
+                } else {
+                    const errText = await orderRes.text();
+                    console.error('Order creation failed:', errText);
+                    alert('Could not start checkout. Please try again.');
+                    return;
+                }
+            } catch (err) {
+                console.error('Order creation network error:', err);
+                alert('Could not reach payment server. Please check your connection and try again.');
+                return;
+            } finally {
+                if (startBtn) { startBtn.disabled = false; startBtn.innerHTML = originalBtnHtml; }
+            }
+
             const options = {
                 "key": RAZORPAY_KEY_ID,
-                "amount": selectedPrice * 100, // Amount in paise
-                "currency": "INR",
+                "amount": orderData.amount,
+                "currency": orderData.currency,
+                "order_id": orderData.order_id,
                 "name": "Desk2Quant AI Interview",
                 "description": `${selectedDuration} Min Mock Interview Session`,
                 "image": "assets/images/desk2quant-logo.png",
@@ -1852,6 +1887,7 @@
                     email: userEmail,
                     name: userName,
                     paymentId: paymentId,
+                    durationMinutes: selectedDuration,
                     interviewerGender: interviewerGender
                 });
 

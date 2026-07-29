@@ -43,8 +43,49 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Server configuration error: Missing API Key' });
     }
 
-    const { action, messages, topic, difficulty, paymentId, email, name, interviewerGender } = req.body;
+    const { action, messages, topic, difficulty, paymentId, durationMinutes, email, name, interviewerGender } = req.body;
     console.log('Action:', action, 'Topic:', topic, 'Gender:', interviewerGender);
+
+    // SECURITY: verify the payment is real/captured/matches the claimed
+    // duration before starting a paid interview. Previously `paymentId` was
+    // accepted and merely logged -- never checked against Razorpay -- so a
+    // fabricated/unrelated paymentId (or none at all) still started the
+    // paid session for free.
+    if (action === 'start' && Number(durationMinutes) > 10) {
+        const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
+        const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
+        if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+            return res.status(500).json({ error: 'Payment gateway not configured on server' });
+        }
+        if (!paymentId || String(paymentId).startsWith('FREE_TRIAL_')) {
+            return res.status(402).json({ error: 'Payment required for this interview duration' });
+        }
+        try {
+            const { getExpectedInterviewOrder, isWithinTolerance } = await import('../lib/pricing.js');
+            const authHeader = 'Basic ' + Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64');
+            const payResp = await fetch(`https://api.razorpay.com/v1/payments/${paymentId}`, {
+                headers: { Authorization: authHeader }
+            });
+            if (!payResp.ok) {
+                return res.status(402).json({ error: 'Payment not found or invalid' });
+            }
+            const payment = await payResp.json();
+            if (payment.status !== 'captured') {
+                return res.status(402).json({ error: `Payment not captured (status: ${payment.status})` });
+            }
+            const expected = await getExpectedInterviewOrder(durationMinutes, payment.currency);
+            const capturedMajor = ['JPY', 'KRW', 'VND'].includes(String(payment.currency).toUpperCase())
+                ? payment.amount
+                : payment.amount / 100;
+            if (!expected.ok || !isWithinTolerance(capturedMajor, expected.amountMajor)) {
+                console.error('🚨 Interview payment amount mismatch:', { paymentId, durationMinutes, capturedMajor, expected });
+                return res.status(402).json({ error: 'Payment amount does not match the selected interview duration' });
+            }
+        } catch (err) {
+            console.error('Interview payment verification error:', err.message);
+            return res.status(500).json({ error: 'Could not verify payment. Please try again.' });
+        }
+    }
 
     // Determine interviewer persona based on gender
     const isFemale = interviewerGender === 'female';

@@ -124,15 +124,44 @@ export default async function handler(req, res) {
         // 2. Resolve product name + link from payment/order notes
         let productName = payment.notes?.product_name;
         let downloadLink = payment.notes?.download_link || '';
-        if ((!productName || !downloadLink) && payment.order_id) {
+        let productId = payment.notes?.product_id || null;
+        let couponCode = payment.notes?.coupon_code || null;
+        let orderNotes = null;
+        if ((!productName || !downloadLink || !productId) && payment.order_id) {
             const orderResp = await fetch(`https://api.razorpay.com/v1/orders/${payment.order_id}`, {
                 headers: { Authorization: authHeader }
             });
             if (orderResp.ok) {
                 const order = await orderResp.json();
-                productName = productName || order.notes?.product_name;
-                downloadLink = downloadLink || order.notes?.download_link || '';
+                orderNotes = order.notes || {};
+                productName = productName || orderNotes.product_name;
+                downloadLink = downloadLink || orderNotes.download_link || '';
+                productId = productId || orderNotes.product_id || null;
+                couponCode = couponCode || orderNotes.coupon_code || null;
             }
+        }
+
+        // SECURITY: re-verify the captured amount against the real product
+        // price before granting access -- this endpoint is a public fallback
+        // for when the webhook fails, so it needs the same price-tamper guard
+        // razorpay-webhook.js has (see lib/pricing.js).
+        if (productId) {
+            try {
+                const { getExpectedProductOrder, isWithinTolerance } = await import('../lib/pricing.js');
+                const expected = await getExpectedProductOrder(productId, payment.currency, couponCode);
+                const capturedMajor = ['JPY', 'KRW', 'VND'].includes(String(payment.currency).toUpperCase())
+                    ? payment.amount
+                    : payment.amount / 100;
+                if (expected.ok && !isWithinTolerance(capturedMajor, expected.amountMajor)) {
+                    console.error('🚨 grant-access: underpayment detected, refusing to grant:', { paymentId, productId, capturedMajor, expected });
+                    return res.status(402).json({ error: 'Captured amount does not match the product price. This purchase has been flagged for review.' });
+                }
+            } catch (err) {
+                console.error('grant-access price verification error:', err.message);
+                return res.status(500).json({ error: 'Could not verify payment amount. Please try again or contact support.' });
+            }
+        } else {
+            console.warn('⚠️ grant-access: no product_id on payment/order notes; cannot verify price for:', productName, '(paymentId:', paymentId, ') — legacy checkout path');
         }
 
         // 3. Fallback: look up link in Supabase products by name

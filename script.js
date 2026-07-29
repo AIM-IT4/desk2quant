@@ -486,6 +486,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 modalPriceEl.style.color = '';
                 window.currentDiscountedPrice = discounted;
                 window.isCouponApplied = true;
+                // Remember the exact code the customer typed so checkout can send it
+                // to create-order.js for server-side re-verification of the discount.
+                window.activeModalCoupon.appliedCode = inputCodeUpper;
 
                 if (feedbackEl) {
                     feedbackEl.textContent = `Coupon applied! ${discount}% OFF — ${displayPrice}`;
@@ -1853,6 +1856,9 @@ window.openProductModal = async function (id) {
         window.currentProductInrPrice = product.price;
         window.currentProductLocalPrice = localPrice;
         window.currentProductIsLocalCurrency = isLocalCurrency;
+        // Needed so checkout can ask the server to verify the real price by
+        // ID instead of trusting a client-computed amount (see create-order.js).
+        window.currentProductId = product.id;
 
         document.getElementById('modalTitle').textContent = product.name;
         document.getElementById('modalDescription').innerHTML = product.description || 'Premium digital product.';
@@ -2289,7 +2295,12 @@ async function fetchProductLinks() {
     }
 }
 
-async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAmountForLogging = null, userDetails = null) {
+async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAmountForLogging = null, userDetails = null, orderMeta = null) {
+    // orderMeta: { productId, couponCode } -- lets create-order.js look up the
+    // REAL price server-side instead of trusting `amount`, which is only used
+    // here for the free-product check and as a display/logging fallback.
+    const productId = orderMeta && orderMeta.productId ? orderMeta.productId : null;
+    const couponCode = orderMeta && orderMeta.couponCode ? orderMeta.couponCode : null;
     const downloadLink = PRODUCT_DOWNLOAD_LINKS[productName] || '';
 
     // Handle FREE products (0 value) - skip payment, go directly to download
@@ -2345,6 +2356,8 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
         const orderNotes = {
             type: 'product',
             product_name: productName,
+            product_id: productId,
+            coupon_code: couponCode,
             download_link: downloadLink,
             customer_name: userDetails ? userDetails.name : '',
             customer_email: userDetails ? userDetails.email : '',
@@ -2724,6 +2737,9 @@ if (modalPayBtn) {
                         phone: udPhone,
                         country: window.userCountryCode || 'Unknown',
                         inr_amount: String(logAmountInr)
+                    }, {
+                        productId: window.currentProductId || null,
+                        couponCode: (window.activeModalCoupon && window.activeModalCoupon.appliedCode) || null
                     });
                 }
             };
@@ -2731,7 +2747,10 @@ if (modalPayBtn) {
             console.error('User details modal not found, falling back to direct checkout');
             document.getElementById('productModal').classList.remove('active');
             document.body.style.overflow = '';
-            initRazorpayCheckout(productName, payAmount, payCurrency, logAmountInr);
+            initRazorpayCheckout(productName, payAmount, payCurrency, logAmountInr, null, {
+                productId: window.currentProductId || null,
+                couponCode: (window.activeModalCoupon && window.activeModalCoupon.appliedCode) || null
+            });
         }
     });
 } else {
@@ -3081,6 +3100,9 @@ if (bookingForm) {
             email,
             phone,
             sessionType: sessionInfo.name,
+            // Needed so create-order.js/webhook can verify the real session price
+            // by ID instead of trusting the client-computed amount.
+            sessionId: sessionInfo.id || null,
             duration: sessionInfo.duration,
             price: Math.round(logAmountInr), // Store INR price in DB
             pay_currency: payCurrency, // Store actual payment currency for email display
@@ -3131,6 +3153,7 @@ async function initSessionPayment(description, amount, customerEmail, currency =
     try {
         const orderNotes = {
             type: 'session',
+            session_id: bookingData ? bookingData.sessionId : null,
             customer_name: bookingData ? bookingData.name : '',
             customer_email: customerEmail,
             session_name: bookingData ? bookingData.sessionType : '',

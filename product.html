@@ -1107,6 +1107,9 @@
 
                             // Update Button
                             buyBtn.innerHTML = `<i class="fas fa-credit-card"></i> Buy Now - ${priceDisplay}`;
+                            // Remember the exact code so checkout can send it to
+                            // create-order.js for server-side re-verification.
+                            buyBtn.dataset.couponCode = code.toUpperCase();
 
                             // Success Feedback
                             feedbackMsg.textContent = `Coupon '${code}' applied! ${discount}% OFF applied successfully.`;
@@ -1145,7 +1148,10 @@
                             checkoutCurrency = buyBtn.dataset.currency;
                         }
 
-                        window.initRazorpayCheckout(product.name, checkoutPrice, checkoutCurrency, loggingPrice);
+                        window.initRazorpayCheckout(product.name, checkoutPrice, checkoutCurrency, loggingPrice, null, {
+                            productId: product.id,
+                            couponCode: buyBtn.dataset.couponCode || null
+                        });
                     } else {
                         alert('Payment system loading... please try again.');
                     }
@@ -1244,6 +1250,9 @@
                                     name: name,
                                     email: email,
                                     phone: phone // Optional, can be empty
+                                }, {
+                                    productId: product.id,
+                                    couponCode: buyBtn.dataset.couponCode || null
                                 });
                             } else {
                                 alert('Payment system loading... please try again.');

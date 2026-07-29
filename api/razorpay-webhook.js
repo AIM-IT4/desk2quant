@@ -5,6 +5,7 @@
 import crypto from 'crypto';
 import { createJitsiMeetingLink } from '../lib/jitsi.js';
 import { queuePostPurchaseRecommendation } from '../lib/recommendationQueue.js';
+import { getExpectedProductOrder, getExpectedSessionOrder, isWithinTolerance } from '../lib/pricing.js';
 
 // Disable Vercel body parsing so we can read the raw stream for signature verification
 export const config = {
@@ -167,6 +168,8 @@ export default async function handler(req, res) {
                     customerPhone,
                     customerCountry,
                     productName,
+                    productId: payment.notes?.product_id || null,
+                    couponCode: payment.notes?.coupon_code || null,
                     // Razorpay's own capture timestamp (epoch seconds) -- used as the
                     // authoritative created_at so the row's date is never dependent on
                     // Supabase/Postgres session timezone quirks.
@@ -298,6 +301,7 @@ async function grantDrivePermission(clientEmail, privateKey, fileId, customerEma
 export async function handleProductPurchase(data) {
     const {
         paymentId, amount, inrAmount, currency, customerEmail, customerName, customerPhone, customerCountry, productName,
+        productId, couponCode,
         paymentCreatedAt,
         downloadLink: checkoutDownloadLink,
         SUPABASE_URL, SUPABASE_KEY, BREVO_API_KEY, ADMIN_EMAIL, SENDER_EMAIL, SENDER_NAME
@@ -312,6 +316,36 @@ export async function handleProductPurchase(data) {
         : null;
 
     console.log(`Processing product purchase: ${productName} for ${customerEmail}`);
+
+    // ── Price-tamper guard ──────────────────────────────────────────────────
+    // Defense in depth: create-order.js already computes the charge amount
+    // server-side, but a captured payment can technically originate from
+    // anywhere (a client can open Razorpay Checkout directly with arbitrary
+    // notes/amount, bypassing create-order.js entirely). So independently
+    // re-derive the real minimum acceptable INR price here, from productId,
+    // and refuse to grant access if what was actually captured falls short.
+    let underpaymentFlag = null;
+    if (productId) {
+        try {
+            const expected = await getExpectedProductOrder(productId, currency, couponCode);
+            if (expected.ok && !isWithinTolerance(inrAmount, expected.amountInr)) {
+                underpaymentFlag = {
+                    expectedInr: expected.amountInr,
+                    capturedInr: inrAmount,
+                    discountPercent: expected.discountPercent
+                };
+                console.error('🚨 UNDERPAYMENT DETECTED — refusing to grant access:', {
+                    paymentId, productName, productId, ...underpaymentFlag
+                });
+            } else if (!expected.ok) {
+                console.warn('⚠️ Could not verify product price (product_id missing/unmatched); proceeding without price check:', productId, expected.error);
+            }
+        } catch (err) {
+            console.error('⚠️ Price verification error (proceeding without hard block):', err.message);
+        }
+    } else {
+        console.warn('⚠️ No product_id on payment notes; cannot verify price for:', productName, '(paymentId:', paymentId, ') — legacy checkout path, review manually if suspicious');
+    }
 
     const PRODUCT_DOWNLOAD_LINKS = {
         'Quant Interview Problem Book (1000+ Problems with solutions)': 'https://drive.google.com/uc?export=download&id=1sp48XJi8VZt5ufw4o6pHgg_EwBA0nkVJ',
@@ -420,7 +454,11 @@ export async function handleProductPurchase(data) {
     let fallbackToManualInfo = false;
     const driveFileId = extractDriveFileId(downloadLink);
 
-    if (driveFileId) {
+    // Do NOT grant Drive access or reveal the download link when the
+    // captured amount fell short of the verified price (see price-tamper
+    // guard above). The purchase is still logged (flagged) so it shows up
+    // for manual review instead of silently disappearing.
+    if (driveFileId && !underpaymentFlag) {
         const GOOGLE_SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
         const GOOGLE_PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY;
 
@@ -461,10 +499,12 @@ export async function handleProductPurchase(data) {
                     amount: Math.round(amount),
                     currency: currency || 'INR',
                     payment_id: paymentId,
-                    source: 'webhook',
+                    // Flag underpaid purchases distinctly so they surface for manual
+                    // review instead of looking like a normal fulfilled sale.
+                    source: underpaymentFlag ? 'webhook_price_mismatch' : 'webhook',
                     customer_country: customerCountry,
                     inr_amount: inrAmount,
-                    download_link: downloadLink,
+                    download_link: underpaymentFlag ? null : downloadLink,
                     ...(isoCreatedAt ? { created_at: isoCreatedAt } : {})
                 })
             });
@@ -479,7 +519,7 @@ export async function handleProductPurchase(data) {
         }
     }
 
-    if (BREVO_API_KEY && customerEmail) {
+    if (BREVO_API_KEY && customerEmail && !underpaymentFlag) {
         const customerHtml = `
             <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
                 <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
@@ -580,7 +620,41 @@ export async function handleProductPurchase(data) {
         }
     }
 
-    if (BREVO_API_KEY) {
+    if (BREVO_API_KEY && underpaymentFlag) {
+        // Distinct alert so the underpayment is impossible to miss/confuse
+        // with a normal sale notification.
+        try {
+            const alertHtml = `
+                <div style="font-family: Arial, sans-serif; padding: 20px; color: #1a1a1a;">
+                    <h2 style="color: #991b1b;">🚨 Underpaid purchase attempt blocked</h2>
+                    <p>A payment was captured for <strong>${productName}</strong> but the amount fell short of the verified price. Access/download link were <strong>NOT</strong> granted.</p>
+                    <table style="border-collapse: collapse;">
+                        <tr><td style="padding:4px 10px;color:#666;">Customer</td><td style="padding:4px 10px;">${customerName} (${customerEmail})</td></tr>
+                        <tr><td style="padding:4px 10px;color:#666;">Payment ID</td><td style="padding:4px 10px;">${paymentId}</td></tr>
+                        <tr><td style="padding:4px 10px;color:#666;">Captured (INR)</td><td style="padding:4px 10px;">${underpaymentFlag.capturedInr}</td></tr>
+                        <tr><td style="padding:4px 10px;color:#666;">Expected minimum (INR)</td><td style="padding:4px 10px;">${underpaymentFlag.expectedInr}</td></tr>
+                        <tr><td style="padding:4px 10px;color:#666;">Coupon used</td><td style="padding:4px 10px;">${couponCode || 'none'} (${underpaymentFlag.discountPercent}% resolved)</td></tr>
+                    </table>
+                    <p>If this was a legitimate discount our pricing rules don't know about, grant access manually and consider updating lib/pricing.js.</p>
+                </div>
+            `;
+            await fetch('https://api.brevo.com/v3/smtp/email', {
+                method: 'POST',
+                headers: { 'accept': 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
+                body: JSON.stringify({
+                    sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+                    to: ADMIN_EMAIL.split(',').map(email => ({ email: email.trim() })).filter(item => item.email),
+                    subject: `🚨 Underpayment blocked: ${productName}`,
+                    htmlContent: alertHtml,
+                    textContent: `Underpaid purchase blocked.\nProduct: ${productName}\nCustomer: ${customerName} (${customerEmail})\nPaymentId: ${paymentId}\nCaptured INR: ${underpaymentFlag.capturedInr}\nExpected min INR: ${underpaymentFlag.expectedInr}\nCoupon: ${couponCode || 'none'}`
+                })
+            });
+        } catch (err) {
+            console.error('Error sending underpayment alert email:', err);
+        }
+    }
+
+    if (BREVO_API_KEY && !underpaymentFlag) {
         const adminHtml = `
             <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
                 <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
@@ -651,9 +725,11 @@ export async function handleProductPurchase(data) {
     // This is a fast, AWAITED insert into a durable queue table (recommendation_emails)
     // instead of a fire-and-forget Brevo call — the actual send happens out-of-band via
     // api/reminders.js's existing cron sweep, so it survives this function being torn down.
-    // Skip if the customer bought the Complete Bundle (nothing more to upsell)
+    // Skip if the customer bought the Complete Bundle (nothing more to upsell),
+    // and skip entirely for underpaid/blocked purchases -- don't reward a
+    // price-tamper attempt with a follow-up discount coupon.
     const isBundle = productName.toLowerCase().includes('complete') && productName.toLowerCase().includes('bundle');
-    if (!isBundle && customerEmail) {
+    if (!isBundle && customerEmail && !underpaymentFlag) {
         try {
             await queuePostPurchaseRecommendation({
                 customerEmail, customerName, purchasedProductName: productName,
@@ -685,6 +761,37 @@ async function handleSessionBooking(data) {
     const customerPhone = notes.customer_phone || '';
     const customerMessage = notes.customer_message || '';
     const meetLink = createJitsiMeetingLink(paymentId, customerName, RAZORPAY_WEBHOOK_SECRET);
+
+    // ── Price-tamper guard (mirrors handleProductPurchase) ──────────────────
+    // Session bookings hit the same create-order.js endpoint, so the same
+    // client-controlled-amount risk applies. Re-derive the real minimum
+    // price from session_id and refuse to auto-confirm/send the meeting
+    // link if what was captured falls short.
+    let underpaymentFlag = null;
+    const sessionId = notes.session_id || null;
+    const couponCode = notes.coupon_code || null;
+    if (sessionId) {
+        try {
+            const expected = await getExpectedSessionOrder(sessionId, currency, couponCode);
+            const capturedInr = parseFloat(notes.inr_amount) || amount;
+            if (expected.ok && !isWithinTolerance(capturedInr, expected.amountInr)) {
+                underpaymentFlag = {
+                    expectedInr: expected.amountInr,
+                    capturedInr,
+                    discountPercent: expected.discountPercent
+                };
+                console.error('🚨 UNDERPAYMENT DETECTED on session booking — flagging for review:', {
+                    paymentId, sessionName, sessionId, ...underpaymentFlag
+                });
+            } else if (!expected.ok) {
+                console.warn('⚠️ Could not verify session price (session_id missing/unmatched); proceeding without price check:', sessionId, expected.error);
+            }
+        } catch (err) {
+            console.error('⚠️ Session price verification error (proceeding without hard block):', err.message);
+        }
+    } else {
+        console.warn('⚠️ No session_id on payment notes; cannot verify price for booking:', sessionName, '(paymentId:', paymentId, ') — legacy checkout path, review manually if suspicious');
+    }
 
     let displayTime = sessionTime;
     if (displayTime !== 'TBD' && !displayTime.toLowerCase().match(/am|pm/)) {
@@ -742,9 +849,12 @@ async function handleSessionBooking(data) {
                 booking_date: sessionDate,
                 booking_time: sessionTime,
                 message: customerMessage,
-                status: 'upcoming',
+                // Underpaid bookings land as 'pending' (not auto-confirmed 'upcoming')
+                // so they surface for manual review instead of silently granting a
+                // session at a tampered price; the meet link is withheld too.
+                status: underpaymentFlag ? 'pending' : 'upcoming',
                 payment_id: paymentId,
-                meet_link: meetLink,
+                meet_link: underpaymentFlag ? null : meetLink,
                 customer_country: notes.customer_country || notes.country || 'Unknown'
             })
         });
@@ -759,8 +869,10 @@ async function handleSessionBooking(data) {
         console.error('Error logging booking to Supabase:', err);
     }
 
-    // 3. Send confirmation email to customer via Brevo
-    if (BREVO_API_KEY && customerEmail) {
+    // 3. Send confirmation email to customer via Brevo (withheld if the
+    // captured amount didn't meet the verified price -- see price-tamper
+    // guard above; an admin alert is sent instead, further down).
+    if (BREVO_API_KEY && customerEmail && !underpaymentFlag) {
         const customerHtml = `
             <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
                 <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
@@ -844,8 +956,42 @@ async function handleSessionBooking(data) {
         }
     }
 
+    // 3b. If underpaid, alert the admin distinctly instead of the normal
+    // "New Booking Received" email, so it's clear the booking needs review
+    // and wasn't auto-confirmed.
+    if (BREVO_API_KEY && underpaymentFlag) {
+        try {
+            const alertHtml = `
+                <div style="font-family: Arial, sans-serif; padding: 20px; color: #1a1a1a;">
+                    <h2 style="color: #991b1b;">🚨 Underpaid session booking blocked</h2>
+                    <p>A payment was captured for <strong>${sessionName}</strong> but the amount fell short of the verified price. The booking was logged as <strong>pending</strong> (not auto-confirmed) and no meeting link was sent.</p>
+                    <table style="border-collapse: collapse;">
+                        <tr><td style="padding:4px 10px;color:#666;">Customer</td><td style="padding:4px 10px;">${customerName} (${customerEmail})</td></tr>
+                        <tr><td style="padding:4px 10px;color:#666;">Payment ID</td><td style="padding:4px 10px;">${paymentId}</td></tr>
+                        <tr><td style="padding:4px 10px;color:#666;">Captured (INR)</td><td style="padding:4px 10px;">${underpaymentFlag.capturedInr}</td></tr>
+                        <tr><td style="padding:4px 10px;color:#666;">Expected minimum (INR)</td><td style="padding:4px 10px;">${underpaymentFlag.expectedInr}</td></tr>
+                        <tr><td style="padding:4px 10px;color:#666;">Coupon used</td><td style="padding:4px 10px;">${couponCode || 'none'} (${underpaymentFlag.discountPercent}% resolved)</td></tr>
+                    </table>
+                </div>
+            `;
+            await fetch('https://api.brevo.com/v3/smtp/email', {
+                method: 'POST',
+                headers: { 'accept': 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
+                body: JSON.stringify({
+                    sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+                    to: ADMIN_EMAIL.split(',').map(email => ({ email: email.trim() })).filter(item => item.email),
+                    subject: `🚨 Underpayment blocked: ${sessionName}`,
+                    htmlContent: alertHtml,
+                    textContent: `Underpaid session booking blocked.\nSession: ${sessionName}\nCustomer: ${customerName} (${customerEmail})\nPaymentId: ${paymentId}\nCaptured INR: ${underpaymentFlag.capturedInr}\nExpected min INR: ${underpaymentFlag.expectedInr}\nCoupon: ${couponCode || 'none'}`
+                })
+            });
+        } catch (err) {
+            console.error('Error sending session underpayment alert email:', err);
+        }
+    }
+
     // 4. Send admin notification email
-    if (BREVO_API_KEY) {
+    if (BREVO_API_KEY && !underpaymentFlag) {
         const adminHtml = `
             <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
                 <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
@@ -922,8 +1068,9 @@ async function handleSessionBooking(data) {
     }
 
     // 📧 Queue a personalised recommendation email after session booking (see comment
-    // in handleProductPurchase above — same durable-queue approach).
-    if (customerEmail) {
+    // in handleProductPurchase above — same durable-queue approach). Skipped for
+    // underpaid/blocked bookings for the same reason as the product path.
+    if (customerEmail && !underpaymentFlag) {
         try {
             await queuePostPurchaseRecommendation({
                 customerEmail, customerName, purchasedProductName: sessionName,

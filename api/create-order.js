@@ -1,13 +1,17 @@
 // Create Razorpay Order with Instant Capture
 // POST /api/create-order
-// Body: { amount (major units), currency, notes }
+// Body: { currency, notes: { type: 'product'|'session', product_id | session_id, coupon_code? } }
 // Returns: { order_id, amount, currency }
+//
+// SECURITY: the order amount is now ALWAYS computed server-side from the
+// real product/session price (see lib/pricing.js) plus any legitimately
+// resolved coupon discount. The client no longer gets to dictate the
+// charged amount -- it used to (via a raw `amount` field), which let anyone
+// pay any amount for any product (proven live via test-payment.html).
+// The client's `amount`/`inr_amount` fields, if sent, are only used for
+// display/logging in `notes` and are never trusted for pricing.
 
-const ZERO_DECIMAL_CURRENCIES = new Set(['JPY', 'KRW', 'VND']);
-
-function getSubunitMultiplier(currencyCode = 'INR') {
-    return ZERO_DECIMAL_CURRENCIES.has(String(currencyCode).toUpperCase()) ? 1 : 100;
-}
+import { getExpectedProductOrder, getExpectedSessionOrder, getExpectedInterviewOrder, getSubunitMultiplier } from '../lib/pricing.js';
 
 export default async function handler(req, res) {
     // CORS headers for frontend calls
@@ -32,27 +36,60 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { amount, currency = 'INR', notes = {} } = req.body;
+        const { currency = 'INR', notes = {} } = req.body || {};
+        const type = notes.type;
 
-        if (!amount || amount <= 0) {
-            return res.status(400).json({ error: 'Invalid amount' });
+        let expected;
+        if (type === 'product') {
+            expected = await getExpectedProductOrder(notes.product_id, currency, notes.coupon_code);
+        } else if (type === 'session') {
+            expected = await getExpectedSessionOrder(notes.session_id, currency, notes.coupon_code);
+        } else if (type === 'interview') {
+            expected = await getExpectedInterviewOrder(notes.duration_minutes, currency);
+        } else {
+            return res.status(400).json({ error: 'notes.type must be "product", "session", or "interview", with matching id/duration fields' });
         }
 
-        // Convert amount to smallest currency unit (paise/cents)
-        const multiplier = getSubunitMultiplier(currency);
-        const amountInSubunits = Math.round(amount * multiplier);
+        if (!expected.ok) {
+            console.warn('⚠️ create-order rejected:', expected.error, '| notes:', notes);
+            return res.status(400).json({ error: expected.error });
+        }
+
+        // Convert the server-computed major-unit amount to the smallest
+        // currency unit (paise/cents) Razorpay expects.
+        const multiplier = getSubunitMultiplier(expected.currency);
+        const amountInSubunits = Math.round(expected.amountMajor * multiplier);
+
+        if (amountInSubunits <= 0) {
+            return res.status(400).json({ error: 'Computed amount is invalid' });
+        }
 
         // Create order via Razorpay Orders API
         const authHeader = 'Basic ' + Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64');
 
+        // Persist the server-verified pricing basis in notes so the webhook
+        // can independently re-check the captured amount later (defense in
+        // depth -- see razorpay-webhook.js).
         const orderPayload = {
             amount: amountInSubunits,
-            currency: currency.toUpperCase(),
+            currency: expected.currency,
             payment_capture: 1, // ✅ INSTANT CAPTURE — payment is captured immediately on authorization
-            notes: notes
+            notes: {
+                ...notes,
+                verified_inr_amount: String(expected.amountInr),
+                verified_discount_percent: String(expected.discountPercent)
+            }
         };
 
-        console.log('📦 Creating Razorpay order:', { amount, currency, amountInSubunits });
+        console.log('📦 Creating Razorpay order:', {
+            type,
+            product_id: notes.product_id,
+            session_id: notes.session_id,
+            coupon_code: notes.coupon_code || null,
+            serverAmountMajor: expected.amountMajor,
+            currency: expected.currency,
+            amountInSubunits
+        });
 
         const response = await fetch('https://api.razorpay.com/v1/orders', {
             method: 'POST',
