@@ -1045,42 +1045,32 @@
                         } else if (inputCodeUpper && (inputCodeUpper === expected20Code || inputCodeUpper === hardcoded20)) {
                             isValid = true;
                             appliedDiscount = 20;
-                        } else if (inputCodeUpper && /^[A-Z]+20$/.test(inputCodeUpper)) {
-                            // Personalised post-purchase coupon (e.g. VENKAT20). These are only
-                            // valid for the specific customer they were issued to — verify
-                            // server-side against recommendation_emails via a RPC that never
-                            // exposes the underlying table (see migration 0006).
+                        } else if (inputCodeUpper && /^[A-Z]{3,40}20$/.test(inputCodeUpper)) {
+                            // Personalised post-purchase coupon (e.g. VENKAT20). Verified
+                            // server-side by exact issued code against recommendation_emails
+                            // via an RPC that never exposes the underlying table (see
+                            // migrations 0006/0008). No email prompt — the code itself is the
+                            // credential.
                             this.disabled = true;
                             const originalBtnText = this.textContent;
                             this.textContent = 'Checking...';
 
-                            const ownerEmail = (prompt('This is a personalised code. Enter the email it was sent to:') || '').trim();
-
-                            this.disabled = false;
-                            this.textContent = originalBtnText;
-
-                            if (!ownerEmail) {
-                                feedbackMsg.textContent = 'Email is required to verify a personalised coupon.';
-                                feedbackMsg.style.color = '#ef4444';
-                                return;
-                            }
-
                             try {
-                                const rpcResp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/validate_recommendation_coupon`, {
+                                const rpcResp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/validate_recommendation_coupon_code`, {
                                     method: 'POST',
                                     headers: {
                                         'apikey': SUPABASE_KEY,
                                         'Authorization': `Bearer ${SUPABASE_KEY}`,
                                         'Content-Type': 'application/json'
                                     },
-                                    body: JSON.stringify({ p_email: ownerEmail, p_code: inputCodeUpper })
+                                    body: JSON.stringify({ p_code: inputCodeUpper })
                                 });
                                 const discountResult = rpcResp.ok ? await rpcResp.json() : null;
                                 if (discountResult) {
                                     isValid = true;
                                     appliedDiscount = discountResult;
                                 } else {
-                                    feedbackMsg.textContent = 'This code isn\'t valid for that email.';
+                                    feedbackMsg.textContent = 'This coupon code is not valid.';
                                     feedbackMsg.style.color = '#ef4444';
                                     return;
                                 }
@@ -1089,6 +1079,9 @@
                                 feedbackMsg.textContent = 'Could not verify coupon right now. Please try again.';
                                 feedbackMsg.style.color = '#ef4444';
                                 return;
+                            } finally {
+                                this.disabled = false;
+                                this.textContent = originalBtnText;
                             }
                         }
 
