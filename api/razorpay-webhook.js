@@ -187,6 +187,12 @@ export default async function handler(req, res) {
                 await handleSessionBooking({
                     paymentId,
                     amount,
+                    // Same authoritative INR figure used for product purchases above
+                    // (Razorpay's own base_amount/base_currency, not the client-stamped
+                    // notes.inr_amount) -- the price-tamper guard inside
+                    // handleSessionBooking must check the REAL captured amount, not a
+                    // client-controlled note.
+                    inrAmount,
                     currency,
                     customerEmail,
                     notes: payment.notes,
@@ -747,7 +753,7 @@ export async function handleProductPurchase(data) {
 // Handle session booking - send email and log to Supabase
 async function handleSessionBooking(data) {
     const {
-        paymentId, amount, currency, customerEmail, notes,
+        paymentId, amount, inrAmount, currency, customerEmail, notes,
         SUPABASE_URL, SUPABASE_KEY, BREVO_API_KEY, ADMIN_EMAIL, SENDER_EMAIL, SENDER_NAME,
         RAZORPAY_WEBHOOK_SECRET
     } = data;
@@ -773,7 +779,11 @@ async function handleSessionBooking(data) {
     if (sessionId) {
         try {
             const expected = await getExpectedSessionOrder(sessionId, currency, couponCode);
-            const capturedInr = parseFloat(notes.inr_amount) || amount;
+            // Use Razorpay's own authoritative INR figure (base_amount/base_currency,
+            // computed by the caller) -- NOT notes.inr_amount, which is a
+            // client-stamped value at checkout time and must never be trusted for
+            // a security check.
+            const capturedInr = (typeof inrAmount === 'number' && !Number.isNaN(inrAmount)) ? inrAmount : amount;
             if (expected.ok && !isWithinTolerance(capturedInr, expected.amountInr)) {
                 underpaymentFlag = {
                     expectedInr: expected.amountInr,
