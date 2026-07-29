@@ -422,6 +422,59 @@ document.addEventListener('DOMContentLoaded', function () {
                 isValid = true;
                 appliedDiscount = 20;
                 window.activeModalCoupon.percent = 20; // Ensure checkout button uses 20%
+            } else if (inputCodeUpper && /^[A-Z]{3,40}20$/.test(inputCodeUpper)) {
+                // Personalised post-purchase/post-booking coupon (e.g. AYAN20). These
+                // are only valid for the specific customer they were issued to —
+                // verify server-side against recommendation_emails via an RPC that
+                // never exposes the underlying table (see migration 0006), same check
+                // product.html uses for its own checkout.
+                this.disabled = true;
+                const originalBtnText = this.textContent;
+                this.textContent = 'Checking...';
+
+                const ownerEmail = (prompt('This is a personalised code. Enter the email it was sent to:') || '').trim();
+
+                this.disabled = false;
+                this.textContent = originalBtnText;
+
+                if (!ownerEmail) {
+                    if (feedbackEl) {
+                        feedbackEl.textContent = 'Email is required to verify a personalised coupon.';
+                        feedbackEl.style.color = '#ef4444';
+                    }
+                    return;
+                }
+
+                try {
+                    const rpcResp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/validate_recommendation_coupon`, {
+                        method: 'POST',
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ p_email: ownerEmail, p_code: inputCodeUpper })
+                    });
+                    const discountResult = rpcResp.ok ? await rpcResp.json() : null;
+                    if (discountResult) {
+                        isValid = true;
+                        appliedDiscount = discountResult;
+                        window.activeModalCoupon.percent = discountResult;
+                    } else {
+                        if (feedbackEl) {
+                            feedbackEl.textContent = "This code isn't valid for that email.";
+                            feedbackEl.style.color = '#ef4444';
+                        }
+                        return;
+                    }
+                } catch (err) {
+                    console.error('Coupon verification failed:', err);
+                    if (feedbackEl) {
+                        feedbackEl.textContent = 'Could not verify coupon right now. Please try again.';
+                        feedbackEl.style.color = '#ef4444';
+                    }
+                    return;
+                }
             }
 
             if (isValid) {
