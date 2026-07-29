@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quant Desk Simulator | Desk2Quant</title>
+    <title>Quant Desk Simulator & Interview Sprint | Desk2Quant</title>
     <meta name="description"
-        content="Investigate realistic quant desk failures in pricing, P&L and model validation. Run tests, diagnose root causes and earn an evidence-based scorecard.">
+        content="Investigate realistic quant desk failures, then practise explaining your diagnosis in a timed interview sprint. Run tests, defend root causes and earn an evidence-based scorecard.">
     <meta name="keywords"
         content="quant finance simulator, model validation training, P&L explain, quant interview practice, Monte Carlo Greeks, yield curve bootstrapping">
     <meta name="theme-color" content="#071019">
@@ -16,7 +16,7 @@
     <meta property="og:url" content="https://desk2quant.vercel.app/desk-simulator.html">
     <meta property="og:title" content="Desk2Quant Desk Simulator">
     <meta property="og:description"
-        content="The number is broken. The desk is waiting. Investigate realistic quant incidents and defend your diagnosis.">
+        content="The number is broken. The desk is waiting. Investigate realistic quant incidents or take the ten-minute interview sprint.">
     <meta property="og:image"
         content="https://desk2quant.vercel.app/assets/images/desk-simulator-og.png">
     <meta property="og:image:width" content="1731">
@@ -27,7 +27,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Desk2Quant Desk Simulator">
     <meta name="twitter:description"
-        content="Investigate realistic pricing, risk and model-validation incidents. Free launch beta.">
+        content="Investigate realistic pricing, risk and model-validation incidents, with a timed interview sprint for quant prep.">
     <meta name="twitter:image"
         content="https://desk2quant.vercel.app/assets/images/desk-simulator-og.png">
 
@@ -46,7 +46,7 @@
             "@type": "SoftwareApplication",
             "name": "Desk2Quant Desk Simulator",
             "url": "https://desk2quant.vercel.app/desk-simulator.html",
-            "description": "An educational simulator for practising investigation of realistic quantitative-finance pricing, P&L and model-validation incidents.",
+            "description": "An educational simulator for practising quantitative-finance incident investigation and timed interview handoffs.",
             "applicationCategory": "EducationalApplication",
             "operatingSystem": "Web",
             "isAccessibleForFree": true,
@@ -76,6 +76,7 @@
             </a>
             <nav class="nav-links" aria-label="Desk Simulator navigation">
                 <a href="#cases">Incidents</a>
+                <a href="#modes">Modes</a>
                 <a href="#how-it-works">How it works</a>
                 <a href="#faq">FAQ</a>
             </nav>
@@ -96,12 +97,13 @@
                     <div class="hero-copy">
                         <div class="eyebrow">
                             <span class="status-dot"></span>
-                            Free launch beta · no signup
+                            New · Interview Sprint is live · no signup
                         </div>
                         <h1>Your first day on the quant desk starts with a <span>broken number.</span></h1>
                         <p class="hero-lede">
                             Investigate realistic pricing, risk and model-validation incidents. Inspect the evidence,
-                            run controlled tests and defend a diagnosis that can survive review.
+                            run controlled tests and defend a diagnosis that can survive review — or practise the same
+                            judgement under a ten-minute interview clock.
                         </p>
                         <div class="hero-actions">
                             <button class="button button-primary button-large" id="heroStartButton" type="button">
@@ -112,7 +114,7 @@
                         </div>
                         <div class="hero-facts" aria-label="Product highlights">
                             <span><strong>4</strong> desk incidents</span>
-                            <span><strong>100%</strong> evidence-based scoring</span>
+                            <span><strong>10m</strong> interview sprint</span>
                             <span><strong>0</strong> signup walls</span>
                         </div>
                     </div>
@@ -167,6 +169,52 @@
                                 <span>Build an evidence trail before the 09:00 sign-off.</span>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section mode-section" id="modes">
+                <div class="container">
+                    <div class="section-heading split-heading">
+                        <div>
+                            <span class="section-kicker">Choose your edge</span>
+                            <h2>Practice the desk. Then face the interview.</h2>
+                        </div>
+                        <p class="section-heading-note">One case library, two ways to build judgement.</p>
+                    </div>
+                    <div class="mode-grid">
+                        <article class="mode-card mode-card-core">
+                            <div class="mode-card-top">
+                                <span class="mode-tag">CORE PRACTICE</span>
+                                <span class="mode-duration">12–18 MIN</span>
+                            </div>
+                            <h3>Desk investigation</h3>
+                            <p>Work the incident like a desk quant: inspect artefacts, spend your evidence budget,
+                                and leave a defensible root-cause trail.</p>
+                            <ul class="mode-list">
+                                <li>Unlimited time to learn the workflow</li>
+                                <li>Full worked debrief after submission</li>
+                                <li>Progress saved on this device</li>
+                            </ul>
+                            <button class="button button-ghost-dark" id="deskModeButton" type="button"
+                                data-launch-mode="desk">Start desk mode <span aria-hidden="true">→</span></button>
+                        </article>
+                        <article class="mode-card mode-card-interview">
+                            <div class="mode-card-top">
+                                <span class="mode-tag">NEW · INTERVIEW SPRINT</span>
+                                <span class="mode-duration">10 MIN</span>
+                            </div>
+                            <h3>Make the call under pressure.</h3>
+                            <p>A timed interviewer is waiting. Prioritise the next test, explain your reasoning, and
+                                deliver a concise handoff before the clock runs out.</p>
+                            <ul class="mode-list">
+                                <li>10-minute interview clock</li>
+                                <li>Communication scored alongside diagnosis</li>
+                                <li>Replay the same case to improve your path</li>
+                            </ul>
+                            <button class="button button-primary" id="interviewModeButton" type="button"
+                                data-launch-mode="interview">Start interview sprint <span aria-hidden="true">→</span></button>
+                        </article>
                     </div>
                 </div>
             </section>
@@ -352,8 +400,17 @@
                 <div class="workspace-case">
                     <span id="workspaceCaseNumber">INCIDENT 01</span>
                     <strong id="workspaceCaseTitle">The Missing Vega</strong>
+                    <span class="workspace-mode-badge" id="workspaceModeBadge">DESK MODE</span>
                 </div>
                 <div class="workspace-status">
+                    <div class="interview-timer" id="interviewTimer" hidden aria-live="polite">
+                        <span>Interview clock</span>
+                        <strong id="timerValue">10:00</strong>
+                        <div class="timer-track" role="progressbar" aria-label="Interview time remaining"
+                            aria-valuemin="0" aria-valuemax="600" aria-valuenow="600">
+                            <i id="timerProgress"></i>
+                        </div>
+                    </div>
                     <div class="workspace-budget">
                         <span>Investigation budget</span>
                         <strong id="budgetValue">100</strong>
@@ -415,6 +472,14 @@
                         <div class="brief-callout">
                             <span>YOUR MANDATE</span>
                             <p id="mandateText"></p>
+                        </div>
+                        <div class="interview-prompt" id="interviewPromptCard" hidden>
+                            <div class="interview-prompt-heading">
+                                <span>INTERVIEWER PROMPT</span>
+                                <strong id="interviewPromptLabel">Your first answer</strong>
+                            </div>
+                            <p id="interviewPromptText"></p>
+                            <small>Use the briefing note in your final handoff to answer clearly and concisely.</small>
                         </div>
                         <div class="panel-actions">
                             <span>Read the brief, then inspect the available evidence.</span>
@@ -505,7 +570,7 @@
                                     <output for="confidenceRange" id="confidenceOutput">3 / 5</output>
                                 </div>
                                 <label class="note-label" for="handoffNote">
-                                    Briefing note <span>optional · saved only on this device</span>
+                                    Briefing note <span id="handoffNoteHint">optional · saved only on this device</span>
                                 </label>
                                 <textarea id="handoffNote" name="note" rows="5" maxlength="1200"
                                     placeholder="Summarise the causal evidence, remediation and any residual uncertainty..."></textarea>
@@ -546,6 +611,7 @@
                         </div>
                         <div class="result-title">
                             <span id="resultCaseLabel">INCIDENT 01 COMPLETE</span>
+                            <small class="result-mode" id="resultMode">DESK MODE</small>
                             <h1 id="resultBand">Desk ready</h1>
                             <p id="resultMessage"></p>
                         </div>

@@ -77,3 +77,12 @@ test('responsive, keyboard and reduced-motion foundations are present', () => {
     assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
     assert.match(css, /:focus-visible/);
 });
+
+test('Interview Sprint is a discoverable second practice mode', () => {
+    assert.match(html, /id="interviewModeButton"/);
+    assert.match(html, /data-launch-mode="interview"/);
+    assert.match(html, /id="interviewTimer"/);
+    assert.match(html, /id="interviewPromptCard"/);
+    assert.match(controller, /tickInterviewClock/);
+    assert.match(controller, /Communication/);
+});

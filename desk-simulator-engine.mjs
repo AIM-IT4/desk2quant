@@ -1,13 +1,23 @@
 import { simulatorMeta } from './desk-simulator-data.mjs';
 
 const STARTING_BUDGET = 100;
+const INTERVIEW_TIME_LIMIT_SECONDS = 10 * 60;
 
-export function createSession(scenario) {
+export function createSession(scenario, options = {}) {
+    const mode = options.mode === 'interview' ? 'interview' : 'desk';
+    const timeLimitSeconds = mode === 'interview'
+        ? Math.max(60, Number(options.timeLimitSeconds) || INTERVIEW_TIME_LIMIT_SECONDS)
+        : null;
+
     return {
         scenarioId: scenario.id,
+        mode,
         startedAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         budget: STARTING_BUDGET,
+        timeLimitSeconds,
+        remainingSeconds: timeLimitSeconds,
+        timedOut: false,
         testsRun: [],
         testResults: [],
         artifactsViewed: [],
@@ -16,7 +26,52 @@ export function createSession(scenario) {
     };
 }
 
+export function normalizeSession(scenario, value) {
+    if (!value || typeof value !== 'object' || value.scenarioId !== scenario.id) {
+        return createSession(scenario);
+    }
+
+    const mode = value.mode === 'interview' ? 'interview' : 'desk';
+    const fallback = createSession(scenario, { mode });
+    const remainingSeconds = mode === 'interview'
+        ? Math.max(0, Math.min(
+            fallback.timeLimitSeconds,
+            Number.isFinite(value.remainingSeconds) ? value.remainingSeconds : fallback.timeLimitSeconds
+        ))
+        : null;
+
+    return {
+        ...fallback,
+        ...value,
+        mode,
+        timeLimitSeconds: fallback.timeLimitSeconds,
+        remainingSeconds,
+        timedOut: Boolean(value.timedOut) || (mode === 'interview' && remainingSeconds === 0),
+        testsRun: Array.isArray(value.testsRun) ? value.testsRun : [],
+        testResults: Array.isArray(value.testResults) ? value.testResults : [],
+        artifactsViewed: Array.isArray(value.artifactsViewed) ? value.artifactsViewed : []
+    };
+}
+
+export function tickInterviewClock(session, seconds = 1) {
+    if (!session || session.mode !== 'interview' || session.score || session.timedOut) {
+        return session;
+    }
+
+    const remainingSeconds = Math.max(0, (Number(session.remainingSeconds) || 0) - Math.max(1, seconds));
+    return {
+        ...session,
+        remainingSeconds,
+        timedOut: remainingSeconds === 0,
+        updatedAt: new Date().toISOString()
+    };
+}
+
 export function runInvestigationTest(scenario, session, testId) {
+    if (session.timedOut) {
+        return { session, error: 'The interview clock has expired. Submit your handoff now.' };
+    }
+
     const test = scenario.tests.find((item) => item.id === testId);
     if (!test) {
         return { session, error: 'That investigation is unavailable.' };
@@ -89,9 +144,21 @@ function calculateEvidenceScore(scenario, session) {
 function calculateEfficiencyScore(session, evidencePoints) {
     if (evidencePoints === 0) return 0;
     const harmfulCount = session.testResults.filter((result) => result.signal === 'harmful').length;
-    const base = Math.max(0, Math.min(10, Math.round((session.budget - 35) / 2)));
+    const maximum = session.mode === 'interview' ? 5 : 10;
+    const denominator = session.mode === 'interview' ? 4 : 2;
+    const base = Math.max(0, Math.min(maximum, Math.round((session.budget - 35) / denominator)));
     const evidenceFactor = Math.min(1, evidencePoints / 20);
     return Math.max(0, Math.round((base - harmfulCount * 2) * evidenceFactor));
+}
+
+function calculateCommunicationScore(session, submission) {
+    if (session.mode !== 'interview') return 0;
+    const noteLength = String(submission.note || '').trim().length;
+    if (noteLength >= 160) return 5;
+    if (noteLength >= 100) return 4;
+    if (noteLength >= 70) return 3;
+    if (noteLength >= 40) return 1;
+    return 0;
 }
 
 export function scoreDiagnosis(scenario, session, submission) {
@@ -113,6 +180,7 @@ export function scoreDiagnosis(scenario, session, submission) {
         3
     );
     const efficiencyPoints = calculateEfficiencyScore(session, evidencePoints);
+    const communicationPoints = calculateCommunicationScore(session, submission);
     const total = Math.max(
         0,
         Math.min(
@@ -121,7 +189,8 @@ export function scoreDiagnosis(scenario, session, submission) {
                 remediationPoints +
                 evidencePoints +
                 controlPoints +
-                efficiencyPoints
+                efficiencyPoints +
+                communicationPoints
         )
     );
 
@@ -143,6 +212,7 @@ export function scoreDiagnosis(scenario, session, submission) {
             evidence: evidencePoints,
             controls: controlPoints,
             efficiency: efficiencyPoints,
+            communication: communicationPoints,
             band: getScoreBand(total)
         }
     };
@@ -203,6 +273,9 @@ export function recordCompletedSession(progress, session) {
     const normalized = normalizeProgress(progress);
     const previous = normalized.scenarios[session.scenarioId] || {};
     const bestScore = Math.max(Number(previous.bestScore) || 0, session.score.total);
+    const mode = session.mode === 'interview' ? 'interview' : 'desk';
+    const modeBestKey = `${mode}BestScore`;
+    const modeAttemptsKey = `${mode}Attempts`;
 
     return {
         ...normalized,
@@ -212,6 +285,9 @@ export function recordCompletedSession(progress, session) {
                 bestScore,
                 lastScore: session.score.total,
                 attempts: (Number(previous.attempts) || 0) + 1,
+                lastMode: mode,
+                [modeBestKey]: Math.max(Number(previous[modeBestKey]) || 0, session.score.total),
+                [modeAttemptsKey]: (Number(previous[modeAttemptsKey]) || 0) + 1,
                 completedAt: new Date().toISOString()
             }
         },

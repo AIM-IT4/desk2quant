@@ -6,9 +6,11 @@ import {
     getUnlockedArtifactIds,
     markArtifactViewed,
     normalizeProgress,
+    normalizeSession,
     recordCompletedSession,
     runInvestigationTest,
-    scoreDiagnosis
+    scoreDiagnosis,
+    tickInterviewClock
 } from './desk-simulator-engine.mjs';
 
 const ACTIVE_SESSION_KEY = `${simulatorMeta.storageKey}.active`;
@@ -33,6 +35,7 @@ let currentSession = null;
 let activeTab = 'brief';
 let lastArtifactTrigger = null;
 let toastTimer = null;
+let interviewTimerHandle = null;
 
 const elements = {
     landingView: document.getElementById('landingView'),
@@ -46,6 +49,10 @@ const elements = {
     progressSummary: document.getElementById('progressSummary'),
     workspaceCaseNumber: document.getElementById('workspaceCaseNumber'),
     workspaceCaseTitle: document.getElementById('workspaceCaseTitle'),
+    workspaceModeBadge: document.getElementById('workspaceModeBadge'),
+    interviewTimer: document.getElementById('interviewTimer'),
+    timerValue: document.getElementById('timerValue'),
+    timerProgress: document.getElementById('timerProgress'),
     incidentDesk: document.getElementById('incidentDesk'),
     incidentObjective: document.getElementById('incidentObjective'),
     briefList: document.getElementById('briefList'),
@@ -53,6 +60,9 @@ const elements = {
     briefHeadline: document.getElementById('briefHeadline'),
     briefBody: document.getElementById('briefBody'),
     mandateText: document.getElementById('mandateText'),
+    interviewPromptCard: document.getElementById('interviewPromptCard'),
+    interviewPromptLabel: document.getElementById('interviewPromptLabel'),
+    interviewPromptText: document.getElementById('interviewPromptText'),
     metricGrid: document.getElementById('metricGrid'),
     channelMessages: document.getElementById('channelMessages'),
     messageCount: document.getElementById('messageCount'),
@@ -82,6 +92,7 @@ const elements = {
     resultScore: document.getElementById('resultScore'),
     scoreRing: document.getElementById('scoreRing'),
     resultCaseLabel: document.getElementById('resultCaseLabel'),
+    resultMode: document.getElementById('resultMode'),
     resultBand: document.getElementById('resultBand'),
     resultMessage: document.getElementById('resultMessage'),
     resultBestScore: document.getElementById('resultBestScore'),
@@ -97,7 +108,8 @@ const elements = {
     simLeadForm: document.getElementById('simLeadForm'),
     simLeadEmail: document.getElementById('simLeadEmail'),
     simLeadSubmit: document.getElementById('simLeadSubmit'),
-    simLeadNote: document.getElementById('simLeadNote')
+    simLeadNote: document.getElementById('simLeadNote'),
+    handoffNoteHint: document.getElementById('handoffNoteHint')
 };
 
 init();
@@ -108,13 +120,28 @@ function init() {
 
     const routedCaseId = getCaseIdFromHash();
     if (routedCaseId && scenarios.some((scenario) => scenario.id === routedCaseId)) {
-        openScenario(routedCaseId, { updateHistory: false, fresh: false });
+        openScenario(routedCaseId, {
+            updateHistory: false,
+            fresh: false,
+            mode: getModeFromHash()
+        });
     }
 }
 
 function bindEvents() {
     ['navStartButton', 'heroStartButton', 'finalStartButton'].forEach((id) => {
-        document.getElementById(id)?.addEventListener('click', () => openScenario(scenarios[0].id));
+        document.getElementById(id)?.addEventListener('click', (event) => {
+            const mode = event.currentTarget.dataset.launchMode === 'interview' ? 'interview' : 'desk';
+            openScenario(scenarios[0].id, { mode, fresh: mode === 'interview' });
+        });
+    });
+
+    document.querySelectorAll('[data-launch-mode]').forEach((button) => {
+        if (['navStartButton', 'heroStartButton', 'finalStartButton'].includes(button.id)) return;
+        button.addEventListener('click', () => {
+            const mode = button.dataset.launchMode === 'interview' ? 'interview' : 'desk';
+            openScenario(scenarios[0].id, { mode, fresh: mode === 'interview' });
+        });
     });
 
     elements.caseGrid.addEventListener('click', (event) => {
@@ -178,7 +205,11 @@ function bindEvents() {
         const caseId = getCaseIdFromHash();
         if (caseId && scenarios.some((scenario) => scenario.id === caseId)) {
             if (currentScenario?.id !== caseId || elements.workspaceView.hidden) {
-                openScenario(caseId, { updateHistory: false, fresh: false });
+                openScenario(caseId, {
+                    updateHistory: false,
+                    fresh: false,
+                    mode: getModeFromHash()
+                });
             }
             return;
         }
@@ -196,6 +227,9 @@ function renderCaseLibrary() {
             const scoreMarkup = saved?.completedAt
                 ? `<div class="case-score"><span>BEST SCORE</span><strong>${saved.bestScore}</strong></div>`
                 : '';
+            const interviewMarkup = saved?.interviewBestScore
+                ? `<span class="case-interview-score">SPRINT ${saved.interviewBestScore}</span>`
+                : '';
             const actionLabel = saved?.completedAt ? 'Retry incident' : 'Start incident';
             const statusText = saved?.completedAt
                 ? `${saved.attempts} attempt${saved.attempts === 1 ? '' : 's'}`
@@ -208,6 +242,7 @@ function renderCaseLibrary() {
                         <span class="case-level">${escapeHtml(scenario.level)}</span>
                     </div>
                     ${scoreMarkup}
+                    ${interviewMarkup}
                     <div class="case-card-icon" aria-hidden="true">${escapeHtml(icons[index])}</div>
                     <h3>${escapeHtml(scenario.title)}</h3>
                     <p class="case-desk">${escapeHtml(scenario.desk)} · ${escapeHtml(scenario.discipline)}</p>
@@ -237,10 +272,10 @@ function renderCaseLibrary() {
 }
 
 function openScenario(id, options = {}) {
-    const { updateHistory = true, fresh = false } = options;
+    const { updateHistory = true, fresh = false, mode = 'desk' } = options;
     currentScenario = getScenarioById(id);
-    const restoredSession = fresh ? null : loadActiveSession(currentScenario.id);
-    currentSession = restoredSession || createSession(currentScenario);
+    const restoredSession = fresh ? null : loadActiveSession(currentScenario.id, mode);
+    currentSession = restoredSession || createSession(currentScenario, { mode });
     activeTab = 'brief';
 
     if (fresh) clearActiveSession();
@@ -255,13 +290,17 @@ function openScenario(id, options = {}) {
     elements.resultView.hidden = true;
     document.body.classList.add('workspace-open');
     switchTab(restoredSession?.testsRun?.length ? 'tests' : 'brief', { focus: false });
+    startInterviewClock();
     window.scrollTo({ top: 0, behavior: 'auto' });
 
-    if (updateHistory && getCaseIdFromHash() !== currentScenario.id) {
+    if (
+        updateHistory &&
+        (getCaseIdFromHash() !== currentScenario.id || getModeFromHash() !== currentSession.mode)
+    ) {
         history.pushState(
-            { caseId: currentScenario.id },
+            { caseId: currentScenario.id, mode: currentSession.mode },
             '',
-            `${window.location.pathname}${window.location.search}#case=${encodeURIComponent(currentScenario.id)}`
+            `${window.location.pathname}${window.location.search}#case=${encodeURIComponent(currentScenario.id)}${currentSession.mode === 'interview' ? '&mode=interview' : ''}`
         );
     }
 
@@ -273,6 +312,7 @@ function openScenario(id, options = {}) {
 function showLanding(options = {}) {
     const { updateHistory = true, scrollToCases = true } = options;
     persistActiveSession();
+    stopInterviewClock();
     closeArtifact();
     currentScenario = null;
     currentSession = null;
@@ -300,6 +340,10 @@ function renderWorkspace() {
 
     elements.workspaceCaseNumber.textContent = `INCIDENT ${currentScenario.number}`;
     elements.workspaceCaseTitle.textContent = currentScenario.title;
+    elements.workspaceModeBadge.textContent = currentSession.mode === 'interview'
+        ? 'INTERVIEW SPRINT'
+        : 'DESK MODE';
+    elements.workspaceModeBadge.dataset.mode = currentSession.mode;
     elements.incidentDesk.textContent = currentScenario.desk;
     elements.incidentObjective.textContent = currentScenario.objective;
     elements.briefEyebrow.textContent = currentScenario.opening.eyebrow;
@@ -343,10 +387,28 @@ function renderWorkspace() {
         )
         .join('');
 
+    renderInterviewPrompt();
+
     renderEvidence();
     renderTests();
     renderDiagnosisChoices();
     updateWorkspaceStatus();
+}
+
+function renderInterviewPrompt() {
+    const interview = currentSession?.mode === 'interview';
+    elements.interviewPromptCard.hidden = !interview;
+    if (!interview) {
+        elements.handoffNoteHint.textContent = 'optional · saved only on this device';
+        return;
+    }
+
+    elements.interviewPromptLabel.textContent = currentSession.timedOut
+        ? 'Clock stopped · deliver your handoff'
+        : 'Your first answer';
+    elements.interviewPromptText.textContent =
+        `The interviewer wants your next move on “${currentScenario.shortTitle}”. State the break in one sentence, name the first discriminating test, and explain the safest remediation.`;
+    elements.handoffNoteHint.textContent = 'required in Interview Sprint · 40 characters minimum';
 }
 
 function renderEvidence() {
@@ -386,7 +448,8 @@ function renderTests() {
     elements.testGrid.innerHTML = currentScenario.tests
         .map((test) => {
             const completed = currentSession.testsRun.includes(test.id);
-            const unavailable = !completed && currentSession.budget < test.cost;
+            const unavailable = !completed && (currentSession.timedOut || currentSession.budget < test.cost);
+            const unavailableLabel = currentSession.timedOut ? 'Clock expired' : 'Budget unavailable';
             return `
                 <button class="test-card${completed ? ' completed' : ''}" type="button"
                     data-test-id="${escapeHtml(test.id)}" ${completed || unavailable ? 'disabled' : ''}>
@@ -424,8 +487,9 @@ function renderTests() {
     const decisiveCount = currentScenario.answer.decisiveTests.filter((id) =>
         currentSession.testsRun.includes(id)
     ).length;
-    elements.diagnosisReadiness.textContent =
-        decisiveCount === 0
+    elements.diagnosisReadiness.textContent = currentSession.timedOut
+        ? 'Clock expired. Submit the strongest handoff you can defend.'
+        : decisiveCount === 0
             ? 'No decisive evidence collected yet.'
             : decisiveCount < currentScenario.answer.decisiveTests.length
                 ? 'You have partial causal evidence. Another decisive test may strengthen the diagnosis.'
@@ -661,6 +725,7 @@ function switchTab(tab, options = {}) {
 
 function updateWorkspaceStatus() {
     if (!currentSession) return;
+    updateInterviewClock();
     elements.budgetValue.textContent = String(currentSession.budget);
     const base = tabProgress[activeTab];
     const testBonus = activeTab === 'tests'
@@ -672,6 +737,57 @@ function updateWorkspaceStatus() {
     elements.workspaceProgressLabel.textContent = base.label;
     elements.workspaceProgressBar.setAttribute('aria-valuenow', String(value));
     elements.workspaceProgressFill.style.width = `${value}%`;
+}
+
+function startInterviewClock() {
+    stopInterviewClock();
+    if (!currentSession || currentSession.mode !== 'interview' || currentSession.score) {
+        updateInterviewClock();
+        return;
+    }
+
+    updateInterviewClock();
+    interviewTimerHandle = window.setInterval(() => {
+        if (!currentSession || currentSession.mode !== 'interview' || currentSession.score) {
+            stopInterviewClock();
+            return;
+        }
+
+        currentSession = tickInterviewClock(currentSession);
+        persistActiveSession();
+        updateInterviewClock();
+        renderInterviewPrompt();
+
+        if (currentSession.timedOut) {
+            stopInterviewClock();
+            renderTests();
+            updateWorkspaceStatus();
+            switchTab('diagnose');
+            showToast('The interview clock is up. Submit your handoff with the evidence you have.');
+            elements.liveRegion.textContent = 'Interview time expired. Submit your handoff now.';
+        }
+    }, 1000);
+}
+
+function stopInterviewClock() {
+    if (interviewTimerHandle) window.clearInterval(interviewTimerHandle);
+    interviewTimerHandle = null;
+}
+
+function updateInterviewClock() {
+    const interview = currentSession?.mode === 'interview';
+    elements.interviewTimer.hidden = !interview;
+    if (!interview) return;
+
+    const total = Math.max(1, Number(currentSession.timeLimitSeconds) || 600);
+    const remaining = Math.max(0, Number(currentSession.remainingSeconds) || 0);
+    const minutes = Math.floor(remaining / 60).toString().padStart(2, '0');
+    const seconds = (remaining % 60).toString().padStart(2, '0');
+    elements.timerValue.textContent = `${minutes}:${seconds}`;
+    elements.timerProgress.style.width = `${Math.round((remaining / total) * 100)}%`;
+    elements.interviewTimer.classList.toggle('urgent', remaining <= 120 && remaining > 0);
+    elements.interviewTimer.classList.toggle('expired', remaining === 0);
+    elements.interviewTimer.querySelector('[role="progressbar"]')?.setAttribute('aria-valuenow', String(remaining));
 }
 
 function submitDiagnosis(event) {
@@ -691,6 +807,9 @@ function submitDiagnosis(event) {
     const missing = [];
     if (!submission.rootCause) missing.push('a primary root cause');
     if (!submission.fix) missing.push('an immediate remediation');
+    if (currentSession.mode === 'interview' && submission.note.trim().length < 40) {
+        missing.push('a handoff note of at least 40 characters');
+    }
     if (missing.length) {
         elements.formError.textContent = `Select ${missing.join(' and ')} before submitting.`;
         elements.formError.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -709,6 +828,7 @@ function submitDiagnosis(event) {
 function renderResult() {
     const score = currentSession.score;
     const saved = progress.scenarios[currentScenario.id];
+    stopInterviewClock();
     elements.workspaceShell.hidden = true;
     elements.resultView.hidden = false;
 
@@ -726,6 +846,9 @@ function renderResult() {
     elements.resultScore.textContent = String(score.total);
     elements.scoreRing.style.setProperty('--score-angle', `${score.total * 3.6}deg`);
     elements.resultCaseLabel.textContent = `INCIDENT ${currentScenario.number} COMPLETE`;
+    elements.resultMode.textContent = currentSession.mode === 'interview'
+        ? 'INTERVIEW SPRINT · 10 MINUTES'
+        : 'DESK MODE · SELF-PACED';
     elements.resultBand.textContent = score.band.label;
     elements.resultMessage.textContent = score.band.message;
     elements.resultBestScore.textContent = `Best ${saved.bestScore} · Attempt ${saved.attempts}`;
@@ -736,7 +859,10 @@ function renderResult() {
         ['Remediation', score.remediation, 20],
         ['Evidence', score.evidence, 20],
         ['Controls', score.controls, 15],
-        ['Efficiency', score.efficiency, 10]
+        ['Efficiency', score.efficiency, currentSession.mode === 'interview' ? 5 : 10],
+        ...(currentSession.mode === 'interview'
+            ? [['Communication', score.communication, 5]]
+            : [])
     ];
     elements.scoreBreakdown.innerHTML = rows
         .map(
@@ -770,6 +896,15 @@ function renderResult() {
     const rootCorrect = currentSession.submission.rootCause === currentScenario.answer.rootCause;
     const evidenceTone =
         decisiveRun.length === currentScenario.answer.decisiveTests.length ? 'good' : 'missed';
+    const communicationReview = currentSession.mode === 'interview'
+        ? `
+            <article class="evidence-review-item ${score.communication >= 4 ? 'good' : 'missed'}">
+                <span>Interview handoff</span>
+                <strong>${score.communication} / 5 communication points</strong>
+                <p>${score.communication >= 4 ? 'Your note gives the interviewer a concise causal story and next action.' : 'Use a short structure: break → first test → evidence → safe remediation.'}</p>
+            </article>
+        `
+        : '';
 
     elements.evidenceReviewGrid.innerHTML = `
         <article class="evidence-review-item ${rootCorrect ? 'good' : 'missed'}">
@@ -787,6 +922,7 @@ function renderResult() {
             <strong>${correctControls.length} / ${currentScenario.answer.controls.length} selected</strong>
             <p>${correctControls.length === currentScenario.answer.controls.length ? 'Your controls address both detection and prevention.' : 'The control set leaves part of the failure path exposed.'}</p>
         </article>
+        ${communicationReview}
     `;
 
     const index = scenarios.findIndex((scenario) => scenario.id === currentScenario.id);
@@ -911,10 +1047,10 @@ async function submitSimLead(event) {
 async function shareResult() {
     if (!currentScenario || !currentSession?.score) return;
     const shareUrl = new URL('desk-simulator.html', window.location.href);
-    shareUrl.hash = `case=${currentScenario.id}`;
+    shareUrl.hash = `case=${currentScenario.id}&mode=${currentSession.mode}`;
     const shareText =
         `I scored ${currentSession.score.total}/100 on “${currentScenario.title}” ` +
-        `in the Desk2Quant Desk Simulator. Can you diagnose the incident?`;
+        `${currentSession.mode === 'interview' ? 'in an Interview Sprint' : 'in the Desk2Quant Desk Simulator'}. Can you diagnose the incident?`;
     const shareData = {
         title: 'Desk2Quant Desk Simulator',
         text: shareText,
@@ -948,6 +1084,11 @@ function getCaseIdFromHash() {
     }
 }
 
+function getModeFromHash() {
+    const match = window.location.hash.match(/(?:^#|&)mode=([^&]+)/);
+    return match?.[1] === 'interview' ? 'interview' : 'desk';
+}
+
 function loadProgress() {
     try {
         const raw = localStorage.getItem(simulatorMeta.storageKey);
@@ -977,7 +1118,7 @@ function persistActiveSession() {
     }
 }
 
-function loadActiveSession(scenarioId) {
+function loadActiveSession(scenarioId, expectedMode = 'desk') {
     try {
         const raw = sessionStorage.getItem(ACTIVE_SESSION_KEY);
         if (!raw) return null;
@@ -985,12 +1126,12 @@ function loadActiveSession(scenarioId) {
         if (
             parsed?.scenarioId !== scenarioId ||
             parsed?.session?.scenarioId !== scenarioId ||
-            parsed?.session?.score ||
-            !Array.isArray(parsed?.session?.testsRun)
+            parsed?.session?.score
         ) {
             return null;
         }
-        return parsed.session;
+        const normalized = normalizeSession({ id: scenarioId }, parsed.session);
+        return normalized.mode === expectedMode ? normalized : null;
     } catch {
         return null;
     }

@@ -7,9 +7,11 @@ import {
     createSession,
     getProgressSummary,
     getUnlockedArtifactIds,
+    normalizeSession,
     recordCompletedSession,
     runInvestigationTest,
-    scoreDiagnosis
+    scoreDiagnosis,
+    tickInterviewClock
 } from '../desk-simulator-engine.mjs';
 
 test('scenario definitions have unique IDs and valid answer references', () => {
@@ -116,4 +118,48 @@ test('completed progress records best score, attempts and summary', () => {
     const summary = getProgressSummary(progress, scenarios);
     assert.equal(summary.completed, 1);
     assert.equal(summary.total, 4);
+});
+
+test('Interview Sprint sessions keep a real clock and stop investigations after timeout', () => {
+    const scenario = scenarios[0];
+    const session = createSession(scenario, { mode: 'interview' });
+    assert.equal(session.mode, 'interview');
+    assert.equal(session.timeLimitSeconds, 600);
+    assert.equal(session.remainingSeconds, 600);
+
+    const nearlyExpired = tickInterviewClock(session, 599);
+    assert.equal(nearlyExpired.remainingSeconds, 1);
+    const expired = tickInterviewClock(nearlyExpired, 1);
+    assert.equal(expired.timedOut, true);
+    assert.equal(expired.remainingSeconds, 0);
+    assert.match(
+        runInvestigationTest(scenario, expired, scenario.tests[0].id).error,
+        /clock has expired/i
+    );
+    assert.equal(normalizeSession(scenario, expired).timedOut, true);
+});
+
+test('Interview Sprint scoring rewards a concise evidence-backed handoff without exceeding 100', () => {
+    const scenario = scenarios[0];
+    let session = createSession(scenario, { mode: 'interview' });
+    [...scenario.answer.decisiveTests, ...scenario.answer.supportingTests].forEach((testId) => {
+        session = runInvestigationTest(scenario, session, testId).session;
+    });
+
+    const completed = scoreDiagnosis(scenario, session, {
+        rootCause: scenario.answer.rootCause,
+        contributors: scenario.answer.contributors,
+        fix: scenario.answer.fix,
+        controls: scenario.answer.controls,
+        confidence: 4,
+        note: 'The P&L break is a stale volatility node after the alias change. I would compare timestamps first, then run a controlled revaluation and repair the feed before sign-off.'
+    });
+
+    assert.equal(completed.score.communication, 5);
+    assert.equal(completed.score.efficiency, 5);
+    assert.equal(completed.score.total, 100);
+
+    const progress = recordCompletedSession(createEmptyProgress(), completed);
+    assert.equal(progress.scenarios[scenario.id].interviewBestScore, 100);
+    assert.equal(progress.scenarios[scenario.id].interviewAttempts, 1);
 });
