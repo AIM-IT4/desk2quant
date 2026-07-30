@@ -117,6 +117,12 @@ body.d2q-launchzone .gradient-text {
     -webkit-text-fill-color: currentColor !important;
 }
 
+/* Keeps short compound terms like "1-on-1" from breaking mid-hyphen onto
+   two lines on narrow viewports. */
+body.d2q-launchzone .no-wrap {
+    white-space: nowrap;
+}
+
 /* ----- Promo strip ----- */
 body.d2q-launchzone .promo-banner {
     min-height: 34px;

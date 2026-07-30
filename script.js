@@ -4676,6 +4676,32 @@ window.applyCartItemCoupon = async function (productId) {
 
     if (!code) return;
 
+    // Items added to the cart before this feature shipped (or added from a
+    // product list that hadn't loaded coupon columns yet) may be missing
+    // productCouponCode/productDiscountPercent. Backfill from the live product
+    // list -- and if it isn't loaded yet, fetch the single product record --
+    // so "invalid coupon" isn't shown for a genuinely valid product coupon.
+    if (!item.productCouponCode) {
+        const source = window.allProducts || window.allPaidProducts || [];
+        let liveProduct = source.find((p) => p.id === productId);
+        if (!liveProduct && window.supabaseClient) {
+            try {
+                const { data } = await window.supabaseClient
+                    .from('products')
+                    .select('coupon_code, discount_percentage')
+                    .eq('id', productId)
+                    .single();
+                liveProduct = data;
+            } catch (err) {
+                console.error('Cart coupon: failed to look up product for coupon info:', err);
+            }
+        }
+        if (liveProduct) {
+            item.productCouponCode = liveProduct.coupon_code || '';
+            item.productDiscountPercent = liveProduct.discount_percentage || 0;
+        }
+    }
+
     const result = await resolveCartCouponDiscount(item, code);
     if (result.valid) {
         item.couponCode = code.toUpperCase();
@@ -4860,6 +4886,11 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('User details modal not found; cannot start cart checkout');
             return;
         }
+
+        // The cart drawer sits above the user-details modal (z-index 2101 vs
+        // 2000), so it must be closed here -- not just after form submit --
+        // otherwise the drawer visually covers the form the whole time it's open.
+        closeCartDrawer();
 
         mainUserModal.style.display = 'flex';
         if (mainUserClose) mainUserClose.onclick = function () { mainUserModal.style.display = 'none'; };
