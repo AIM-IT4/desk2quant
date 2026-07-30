@@ -340,6 +340,21 @@ body.d2q-launchzone .salary-header {
     border-color: var(--lz-ink) !important;
 }
 
+/* The playground title uses a gradient-fill effect (background-clip: text)
+   that assumes a light page background. On the dark banner here it needs
+   a light, flat fill instead so it doesn't wash out to near-invisible. */
+body.d2q-launchzone .playground-header h1 {
+    background: none !important;
+    -webkit-background-clip: initial !important;
+    background-clip: initial !important;
+    -webkit-text-fill-color: currentColor !important;
+    color: #f1f6f8 !important;
+}
+
+body.d2q-launchzone .playground-header p {
+    color: #b8c2c8 !important;
+}
+
 /* Desk Simulator: keep application contrast, share the editorial geometry. */
 body.d2q-launchzone .site-nav {
     background: rgba(247, 247, 243, 0.96);
@@ -380,6 +395,7 @@ body.d2q-launchzone .hero-layout {
     z-index: 1;
     width: min(100%, var(--lz-container));
     max-width: var(--lz-container);
+    padding-inline: var(--lz-gutter);
 }
 
 body.d2q-launchzone .hero-copy h1 {
@@ -660,7 +676,8 @@ body.d2q-launchzone .product-info #coupon-section { order: 6; }
 body.d2q-launchzone .product-info .action-buttons { order: 7; }
 body.d2q-launchzone .product-info .product-description-full { order: 8; }
 /* Desk Simulator header and terminal contrast corrections. */
-body.d2q-launchzone .site-nav .brand img {
+body.d2q-launchzone .site-nav .brand img,
+body.d2q-launchzone .site-footer .footer-brand img {
     display: block;
     flex: 0 0 40px;
     width: 40px;
@@ -706,6 +723,36 @@ body.d2q-launchzone .hero-copy h1 {
 
 body.d2q-launchzone .hero-product h2 {
     color: #f1f6f8 !important;
+}
+
+/* Dark-background sections: the sitewide h1-h4 rule defaults to ink,
+   which is invisible against these panels. Restore the light text
+   the simulator's own component styles intend. */
+body.d2q-launchzone .method-section h2,
+body.d2q-launchzone .method-grid h3,
+body.d2q-launchzone .workspace h1,
+body.d2q-launchzone .workspace h2,
+body.d2q-launchzone .result-view h1,
+body.d2q-launchzone .result-view h2,
+body.d2q-launchzone .artifact-dialog h2 {
+    color: #f1f6f8 !important;
+}
+
+/* Site footer: also a dark panel — the sitewide link/muted-text rules
+   default to ink, which is invisible against it. Restore the soft/muted
+   light tones the simulator's own footer styles intend. */
+body.d2q-launchzone .site-footer .footer-brand span,
+body.d2q-launchzone .site-footer .footer-links a {
+    color: #b4c2c9 !important;
+}
+
+body.d2q-launchzone .site-footer .footer-grid p,
+body.d2q-launchzone .site-footer .footer-bottom {
+    color: #7f919b !important;
+}
+
+body.d2q-launchzone .site-footer .footer-links a:hover {
+    color: #55e1c4 !important;
 }
 
 @media (max-width: 800px) {
@@ -827,4 +874,4 @@ body.d2q-launchzone .mode-card-interview .button {
     background: var(--lz-white) !important;
     border-color: var(--lz-white) !important;
 }
-
+

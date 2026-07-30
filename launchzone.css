@@ -37,7 +37,7 @@ body.d2q-launchzone {
     --accent-primary: var(--lz-ink);
     --accent-secondary: var(--lz-signal);
     --accent-tertiary: var(--lz-warning);
-    --accent-gradient: none;
+    --accent-gradient: linear-gradient(135deg, var(--lz-ink) 0%, var(--lz-ink-soft) 55%, var(--lz-signal) 100%);
     --border-subtle: var(--lz-line);
     --border-light: var(--lz-line);
     --border-rim: var(--lz-line);
@@ -1301,4 +1301,4 @@ body.d2q-launchzone .theme-toggle {
         justify-content: center;
     }
 }
-
+
