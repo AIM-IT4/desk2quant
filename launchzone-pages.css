@@ -760,6 +760,17 @@ body.d2q-launchzone .site-footer .footer-links a:hover {
         gap: 0;
     }
 }
+
+/* The desk simulator's compact .site-nav header has no hamburger/toggle to
+   reveal .nav-links again once collapsed, unlike the sitewide .navbar. The
+   generic launchzone rule above forces display:flex at all widths, which
+   wraps the links into the header at narrow viewports with no way to open
+   them. Restore the simulator's own "hide entirely below 900px" behavior. */
+@media (max-width: 900px) {
+    body.d2q-launchzone .site-nav .nav-links {
+        display: none;
+    }
+}
 /* Standalone editorial listing heroes. */
 body.d2q-launchzone .editorial-list-page {
     width: min(100%, 1100px);
