@@ -786,12 +786,14 @@ async function handleCartPurchase(data) {
         ? new Date(paymentCreatedAt * 1000).toISOString()
         : null;
 
+    // Format is "productId:qty:couponCode" per item (couponCode may be empty),
+    // mirroring the per-item coupon support in the cart drawer.
     const parsedItems = String(cartItemsRaw || '')
         .split(',')
         .filter(Boolean)
-        .map((pair) => {
-            const [productId, qtyStr] = pair.split(':');
-            return { productId, quantity: Math.max(1, parseInt(qtyStr, 10) || 1) };
+        .map((triple) => {
+            const [productId, qtyStr, itemCouponCode] = triple.split(':');
+            return { productId, quantity: Math.max(1, parseInt(qtyStr, 10) || 1), couponCode: itemCouponCode || null };
         })
         .filter((item) => item.productId);
 
@@ -806,7 +808,7 @@ async function handleCartPurchase(data) {
     let underpaymentFlag = null;
     try {
         const expected = await getExpectedCartOrder(
-            parsedItems.map((i) => ({ product_id: i.productId, quantity: i.quantity })),
+            parsedItems.map((i) => ({ product_id: i.productId, quantity: i.quantity, coupon_code: i.couponCode })),
             currency,
             couponCode
         );

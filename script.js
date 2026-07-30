@@ -4588,6 +4588,116 @@ function updateCartBadge(cart) {
     badge.hidden = count === 0;
 }
 
+// Same campaign-code map used by the single-product modal coupon handler
+// (kept in sync with the COUPON_MAP_20 defined there and in lib/pricing.js
+// server-side) so per-item cart coupons resolve identically.
+const CART_COUPON_MAP_20 = {
+    'quantitative finance for absolute beginners': 'BEGINNER20',
+    'common mistakes in quant interviews': 'MISTAKES20',
+    'quant interview problem book': 'PROBLEMS20',
+    'greek explainer lab': 'GLAB20',
+    'quant models for each asset class master pack': 'MODELS20',
+    'the stochastic calculus visual lab': 'STOCHLAB20',
+    'complete quant ats friendly resume': 'RESUME20',
+    'mental math & market intuition for quants': 'MENTALMATH20',
+    'python for quants': 'PYTHON20',
+    'derivatives products & pricing master pack': 'DERIVATIVE20',
+    'statistics & econometrics for quants': 'STATS20',
+    'pnl attribution & desk diagnostics for quants': 'PNL20',
+    'equity models': 'EQUITIES20',
+    'interest rate models': 'RATES20',
+    'machine learning for quants': 'ML20',
+    'stochastic calculus for quants': 'STOCHASTIC20',
+    'linear algebra & differential equations for quants': 'LADE20',
+    'ultimate industry grade quant project pack': 'PROJECT20',
+    'greeks,vols,ycurves,numerical meth./mc & xva guide': 'DESK20',
+    'credit models': 'CREDITS20',
+    'sql for quant interviews': 'SQL20',
+    'regulatory & risk frameworks for quants': 'RISK20',
+    'probability theory for quants': 'PROBABILITY20',
+    'fx models': 'FXD20',
+    'c++ for quants': 'CPP20',
+    'r for risk quants': 'R20',
+    'fixed income math & bond pricing': 'FIXEDINCOME20',
+    'exotic options pricing guide': 'EXOTICS20'
+};
+
+// Client-side coupon resolution for a single cart line item -- mirrors the
+// single-product modal's coupon logic (product.coupon_code, VASUDHA30,
+// BUNDLE15/*15, campaign *20 codes, personalised AYAN20-style codes verified
+// via RPC). This is only used for instant UI feedback; the real discount is
+// always re-verified server-side in lib/pricing.js before charging.
+async function resolveCartCouponDiscount(item, inputCode) {
+    const inputCodeUpper = String(inputCode || '').trim().toUpperCase();
+    if (!inputCodeUpper) return { valid: false, percent: 0 };
+
+    if (item.productCouponCode && inputCodeUpper === String(item.productCouponCode).toUpperCase()) {
+        return { valid: true, percent: item.productDiscountPercent || 0 };
+    }
+    if (inputCodeUpper === 'VASUDHA30') return { valid: true, percent: 30 };
+    if (inputCodeUpper === 'BUNDLE15' || inputCodeUpper.endsWith('15')) return { valid: true, percent: 15 };
+
+    const expected20Code = item.productCouponCode ? String(item.productCouponCode).replace('10', '20').toUpperCase() : null;
+    const productName = String(item.name || '').toLowerCase().trim();
+    const mapKey = Object.keys(CART_COUPON_MAP_20).find((k) => productName.includes(k));
+    const hardcoded20 = mapKey ? CART_COUPON_MAP_20[mapKey].toUpperCase() : null;
+    if (inputCodeUpper === expected20Code || inputCodeUpper === hardcoded20) return { valid: true, percent: 20 };
+
+    if (/^[A-Z]{3,40}20$/.test(inputCodeUpper)) {
+        try {
+            const rpcResp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/validate_recommendation_coupon_code`, {
+                method: 'POST',
+                headers: {
+                    apikey: SUPABASE_KEY,
+                    Authorization: `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ p_code: inputCodeUpper })
+            });
+            const result = rpcResp.ok ? await rpcResp.json() : null;
+            if (typeof result === 'number' && result > 0) return { valid: true, percent: result };
+        } catch (err) {
+            console.error('Cart coupon verification failed:', err);
+        }
+    }
+
+    return { valid: false, percent: 0 };
+}
+
+window.applyCartItemCoupon = async function (productId) {
+    const cart = getCart();
+    const item = cart.find((i) => i.id === productId);
+    if (!item) return;
+
+    const input = document.getElementById(`cart-coupon-${productId}`);
+    const feedback = document.getElementById(`cart-coupon-feedback-${productId}`);
+    const code = input ? input.value.trim() : '';
+    if (feedback) { feedback.textContent = ''; feedback.style.color = ''; }
+
+    if (!code) return;
+
+    const result = await resolveCartCouponDiscount(item, code);
+    if (result.valid) {
+        item.couponCode = code.toUpperCase();
+        item.discountPercent = result.percent;
+        saveCart(cart);
+        renderCartDrawer();
+    } else if (feedback) {
+        feedback.textContent = 'Invalid coupon for this item';
+        feedback.style.color = '#ef4444';
+    }
+};
+
+window.removeCartItemCoupon = function (productId) {
+    const cart = getCart();
+    const item = cart.find((i) => i.id === productId);
+    if (!item) return;
+    item.couponCode = '';
+    item.discountPercent = 0;
+    saveCart(cart);
+    renderCartDrawer();
+};
+
 // Adds a product to the cart by ID, looking up its details from the already
 // loaded product list (window.allProducts / window.allPaidProducts) so no
 // extra network round-trip is needed.
@@ -4604,7 +4714,20 @@ window.addToCart = function (productId) {
     if (existing) {
         existing.quantity += 1;
     } else {
-        cart.push({ id: product.id, name: product.name, price: product.price, enablePpp: !!product.enable_ppp, quantity: 1 });
+        cart.push({
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            enablePpp: !!product.enable_ppp,
+            quantity: 1,
+            // Per-item coupon state (applied in the cart drawer). productCouponCode/
+            // productDiscountPercent carry this product's own coupon_code column
+            // so resolveCartCouponDiscount can validate a typed code against it.
+            productCouponCode: product.coupon_code || '',
+            productDiscountPercent: product.discount_percentage || 0,
+            couponCode: '',
+            discountPercent: 0
+        });
     }
     saveCart(cart);
     renderCartDrawer();
@@ -4657,12 +4780,24 @@ async function renderCartDrawer() {
     let totalCurrency = null;
     let rows = '';
     for (const item of cart) {
-        const lineTotalInr = item.price * item.quantity;
+        const discountPercent = item.discountPercent || 0;
+        const unitDiscountedInr = Math.max(0, item.price * (100 - discountPercent) / 100);
+        const lineTotalInr = unitDiscountedInr * item.quantity;
+        const lineOriginalInr = item.price * item.quantity;
         totalInr += lineTotalInr;
         const localLine = await convertPrice(lineTotalInr, window.userCountryCode, item.enablePpp);
         const isLocal = localLine.currency.code !== 'INR';
         totalLocalAmount += localLine.amount;
         totalCurrency = localLine.currency;
+
+        const priceHtml = discountPercent > 0
+            ? `<span class="cart-item-price-original">${isLocal ? '' : '₹' + lineOriginalInr}</span><span class="cart-item-price">${isLocal ? formatPrice(localLine) : '₹' + lineTotalInr}</span>`
+            : `<span class="cart-item-price">${isLocal ? formatPrice(localLine) : '₹' + lineTotalInr}</span>`;
+
+        const couponHtml = item.couponCode
+            ? `<div class="cart-item-coupon applied"><span><i class="fas fa-tag"></i> ${item.couponCode} — ${discountPercent}% off</span><button type="button" onclick="window.removeCartItemCoupon('${item.id}')" aria-label="Remove coupon">&times;</button></div>`
+                : `<div class="cart-item-coupon"><input type="text" id="cart-coupon-${item.id}" placeholder="Coupon code" autocomplete="off"><button type="button" onclick="window.applyCartItemCoupon('${item.id}')">Apply</button></div><p class="cart-item-coupon-feedback" id="cart-coupon-feedback-${item.id}"></p>`;
+
         rows += `
             <li class="cart-item-row" data-id="${item.id}">
                 <div class="cart-item-info">
@@ -4672,9 +4807,10 @@ async function renderCartDrawer() {
                         <span class="cart-qty-value">${item.quantity}</span>
                         <button type="button" class="cart-qty-btn" onclick="window.setCartItemQuantity('${item.id}', ${item.quantity + 1})" aria-label="Increase quantity">+</button>
                     </div>
+                    ${couponHtml}
                 </div>
                 <div class="cart-item-side">
-                    <span class="cart-item-price">${isLocal ? formatPrice(localLine) : '₹' + lineTotalInr}</span>
+                    ${priceHtml}
                     <button type="button" class="cart-item-remove" onclick="window.removeFromCart('${item.id}')" aria-label="Remove ${item.name} from cart"><i class="fas fa-trash"></i></button>
                 </div>
             </li>`;
@@ -4776,7 +4912,7 @@ async function initCartCheckout(cart, userDetails) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 currency,
-                items: cart.map((item) => ({ product_id: item.id, quantity: item.quantity })),
+                items: cart.map((item) => ({ product_id: item.id, quantity: item.quantity, coupon_code: item.couponCode || null })),
                 notes: {
                     type: 'cart',
                     customer_name: userDetails.name,

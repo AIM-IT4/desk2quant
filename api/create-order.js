@@ -80,12 +80,13 @@ export default async function handler(req, res) {
             verified_discount_percent: String(expected.discountPercent || 0)
         };
 
-        // For carts, store a compact "id:qty,id:qty" summary (Razorpay note
-        // values are capped at 256 chars) instead of full product objects --
-        // the webhook re-fetches names/download links from Supabase by ID.
+        // For carts, store a compact "id:qty:coupon,id:qty:coupon" summary
+        // (Razorpay note values are capped at 256 chars) instead of full product
+        // objects -- the webhook re-fetches names/download links from Supabase
+        // by ID, and re-verifies each line's coupon via the same coupon field.
         if (type === 'cart') {
             orderNotes.cart_items = expected.lineItems
-                .map((li) => `${li.productId}:${li.quantity}`)
+                .map((li) => `${li.productId}:${li.quantity}:${li.couponCode || ''}`)
                 .join(',');
             orderNotes.cart_item_count = String(expected.lineItems.length);
         }

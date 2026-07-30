@@ -478,6 +478,89 @@ body.d2q-launchzone .cart-item-price {
     white-space: nowrap;
 }
 
+body.d2q-launchzone .cart-item-price-original {
+    color: var(--lz-muted);
+    font-family: var(--lz-font-mono);
+    font-size: 11.5px;
+    text-decoration: line-through;
+    white-space: nowrap;
+}
+
+body.d2q-launchzone .cart-item-coupon {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+body.d2q-launchzone .cart-item-coupon input {
+    width: 100%;
+    max-width: 130px;
+    padding: 6px 8px;
+    color: var(--lz-ink);
+    background: var(--lz-paper);
+    border: 1px solid var(--lz-line-strong);
+    border-radius: 3px;
+    font-family: var(--lz-font-mono);
+    font-size: 12px;
+}
+
+body.d2q-launchzone .cart-item-coupon input:focus {
+    outline: none;
+    border-color: var(--lz-signal);
+}
+
+body.d2q-launchzone .cart-item-coupon button {
+    padding: 6px 10px;
+    color: var(--lz-ink);
+    background: var(--lz-white);
+    border: 1px solid var(--lz-ink);
+    border-radius: 3px;
+    font-family: var(--lz-font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+body.d2q-launchzone .cart-item-coupon button:hover {
+    color: var(--lz-white);
+    background: var(--lz-signal);
+    border-color: var(--lz-signal);
+}
+
+body.d2q-launchzone .cart-item-coupon.applied {
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: rgba(11, 127, 121, 0.08);
+    border: 1px solid var(--lz-signal);
+    border-radius: 3px;
+}
+
+body.d2q-launchzone .cart-item-coupon.applied span {
+    color: var(--lz-signal);
+    font-family: var(--lz-font-mono);
+    font-size: 11.5px;
+    font-weight: 700;
+}
+
+body.d2q-launchzone .cart-item-coupon.applied button {
+    padding: 0;
+    color: var(--lz-muted);
+    background: transparent;
+    border: none;
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+body.d2q-launchzone .cart-item-coupon-feedback {
+    margin: 6px 0 0;
+    font-size: 11.5px;
+}
+
 body.d2q-launchzone .cart-item-remove {
     color: var(--lz-danger);
     background: transparent;
