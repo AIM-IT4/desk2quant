@@ -181,9 +181,11 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="launchzone.css?v=1">
+    <link rel="stylesheet" href="launchzone-pages.css?v=1">
 </head>
 
-<body>
+<body class="d2q-launchzone">
     <script>
         // Load config.js if it exists, otherwise gracefully fallback
         (function () {
@@ -302,6 +304,7 @@
             document.getElementById(`${lang}-section`).classList.add('active');
         }
     </script>
+    <script src="ui-components.js?v=1" defer></script>
 </body>
 
 </html>

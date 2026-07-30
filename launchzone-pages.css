@@ -1,0 +1,888 @@
+/* Desk2Quant editorial-grid page and tool adaptations. */
+
+body.d2q-launchzone .legal-main,
+body.d2q-launchzone .faq-main {
+    width: min(100% - (2 * var(--lz-gutter)), 1040px);
+    max-width: 1040px;
+    margin: clamp(64px, 8vw, 112px) auto;
+}
+
+body.d2q-launchzone .legal-hero,
+body.d2q-launchzone .faq-hero {
+    margin-bottom: 48px;
+    padding: clamp(34px, 6vw, 72px);
+    background-color: var(--lz-white) !important;
+    background-image:
+        linear-gradient(to right, rgba(9, 9, 9, 0.055) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(9, 9, 9, 0.055) 1px, transparent 1px) !important;
+    background-size: 32px 32px !important;
+    border: 1px solid var(--lz-ink);
+    border-radius: 4px;
+}
+
+body.d2q-launchzone .legal-hero h1,
+body.d2q-launchzone .faq-hero h1 {
+    margin-bottom: 20px;
+    font-size: clamp(3.1rem, 7vw, 6.4rem);
+    line-height: 0.94;
+    letter-spacing: -0.07em;
+}
+
+body.d2q-launchzone .legal-hero-sub,
+body.d2q-launchzone .faq-hero-sub {
+    max-width: 700px;
+    color: var(--lz-muted);
+    font-size: 17px;
+    line-height: 1.7;
+}
+
+body.d2q-launchzone .legal-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    border: 1px solid var(--lz-line);
+    border-radius: 3px;
+    font-family: var(--lz-font-mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+body.d2q-launchzone .legal-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    margin-top: 28px;
+}
+
+body.d2q-launchzone .legal-meta-pill {
+    margin-left: -1px;
+    padding: 9px 12px;
+    background: var(--lz-white);
+    border: 1px solid var(--lz-line-strong);
+    border-radius: 0;
+    font-family: var(--lz-font-mono);
+    font-size: 10px;
+}
+
+body.d2q-launchzone .legal-toc {
+    margin-bottom: 32px;
+    padding: 24px;
+    background: var(--lz-ink);
+    border: 1px solid var(--lz-ink);
+    border-radius: 4px;
+}
+
+body.d2q-launchzone .legal-toc,
+body.d2q-launchzone .legal-toc a,
+body.d2q-launchzone .legal-toc-title {
+    color: var(--lz-white);
+}
+
+body.d2q-launchzone .legal-toc-title {
+    font-family: var(--lz-font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+body.d2q-launchzone .legal-section {
+    margin: 0;
+    padding: clamp(30px, 5vw, 52px);
+    background: var(--lz-white);
+    border: 1px solid var(--lz-line);
+    border-bottom: 0;
+    border-radius: 0;
+}
+
+body.d2q-launchzone .legal-section:last-of-type {
+    border-bottom: 1px solid var(--lz-line);
+}
+
+body.d2q-launchzone .legal-section h2 {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    font-size: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+body.d2q-launchzone .legal-section-number {
+    color: var(--lz-muted);
+    font-family: var(--lz-font-mono);
+    font-size: 12px;
+}
+
+body.d2q-launchzone .legal-section-number::before {
+    content: "0";
+}
+
+body.d2q-launchzone .legal-callout {
+    background: #fff8d8;
+}
+
+body.d2q-launchzone .legal-contact-item {
+    background: var(--lz-paper);
+    border: 1px solid var(--lz-line);
+    border-radius: 3px;
+}
+
+/* FAQ */
+body.d2q-launchzone .faq-eyebrow {
+    font-family: var(--lz-font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+body.d2q-launchzone .faq-eyebrow::before {
+    content: "// ";
+}
+
+body.d2q-launchzone .faq-accordion {
+    overflow: hidden;
+    border: 1px solid var(--lz-line);
+    border-radius: 4px;
+}
+
+body.d2q-launchzone .faq-item {
+    margin: 0;
+    border: 0 !important;
+    border-bottom: 1px solid var(--lz-line) !important;
+    border-radius: 0 !important;
+}
+
+body.d2q-launchzone .faq-item:last-child {
+    border-bottom: 0 !important;
+}
+
+body.d2q-launchzone .faq-item summary {
+    padding: 24px;
+    font-weight: 700;
+}
+
+body.d2q-launchzone .faq-item[open] summary {
+    color: var(--lz-white);
+    background: var(--lz-ink);
+}
+
+body.d2q-launchzone .faq-item-body {
+    padding: 24px;
+}
+
+body.d2q-launchzone .faq-cta {
+    margin-top: 38px;
+    padding: clamp(30px, 5vw, 54px);
+    color: var(--lz-white);
+    background: var(--lz-ink);
+    border: 1px solid var(--lz-ink);
+    border-radius: 4px;
+}
+
+body.d2q-launchzone .faq-cta h2,
+body.d2q-launchzone .faq-cta p {
+    color: var(--lz-white);
+}
+
+body.d2q-launchzone .faq-cta-btn {
+    border: 1px solid var(--lz-white);
+    border-radius: 3px;
+}
+
+body.d2q-launchzone .faq-cta-primary {
+    color: var(--lz-ink);
+    background: var(--lz-white);
+}
+
+body.d2q-launchzone .faq-cta-secondary {
+    color: var(--lz-white);
+    background: transparent;
+}
+
+/* Standalone listing pages */
+body.d2q-launchzone > .section-container,
+body.d2q-launchzone > .container {
+    width: min(100%, var(--lz-container));
+    max-width: var(--lz-container);
+    margin-inline: auto !important;
+    padding: clamp(64px, 8vw, 112px) var(--lz-gutter) !important;
+}
+
+body.d2q-launchzone > .section-container > .section-header,
+body.d2q-launchzone > .container > .section-header {
+    padding: clamp(32px, 5vw, 58px);
+    background-color: var(--lz-white);
+    background-image:
+        linear-gradient(to right, rgba(9, 9, 9, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(9, 9, 9, 0.05) 1px, transparent 1px);
+    background-size: 32px 32px;
+    border: 1px solid var(--lz-ink);
+    border-radius: 4px;
+}
+
+body.d2q-launchzone .section-tag {
+    color: var(--lz-ink);
+    font-family: var(--lz-font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+body.d2q-launchzone .section-tag::before {
+    content: "// ";
+}
+
+body.d2q-launchzone .section-title {
+    font-size: clamp(3rem, 7vw, 6.4rem) !important;
+    line-height: 0.95;
+    letter-spacing: -0.07em;
+}
+
+body.d2q-launchzone .section-subtitle {
+    max-width: 720px;
+    color: var(--lz-muted);
+    font-size: 17px;
+    line-height: 1.7;
+}
+
+body.d2q-launchzone .testimonials-page-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin-bottom: 34px;
+    overflow: hidden;
+    border: 1px solid var(--lz-line);
+    border-radius: 4px;
+}
+
+body.d2q-launchzone .ratings-summary-card {
+    padding: 26px;
+    background: var(--lz-white);
+    border: 0;
+    border-right: 1px solid var(--lz-line);
+    border-radius: 0;
+    box-shadow: none;
+}
+
+body.d2q-launchzone .ratings-summary-card:last-child {
+    border-right: 0;
+}
+
+body.d2q-launchzone .summary-value {
+    font-family: var(--lz-font-mono);
+}
+
+body.d2q-launchzone .filter-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    margin-bottom: 30px;
+}
+
+body.d2q-launchzone .filter-buttons .filter-btn {
+    margin-left: -1px;
+    border-radius: 0;
+}
+
+/* Resources and blog */
+body.d2q-launchzone #resourcesGrid,
+body.d2q-launchzone #blog-grid,
+body.d2q-launchzone #blogGrid {
+    gap: 18px !important;
+}
+
+body.d2q-launchzone #resourcesGrid > article,
+body.d2q-launchzone #blog-grid > article,
+body.d2q-launchzone #blogGrid > article {
+    background: var(--lz-white) !important;
+    border: 1px solid var(--lz-line) !important;
+    border-radius: 4px;
+}
+
+/* My bookings */
+body.d2q-launchzone .search-box,
+body.d2q-launchzone .no-bookings,
+body.d2q-launchzone .reschedule-form,
+body.d2q-launchzone .meet-link {
+    background: var(--lz-white) !important;
+    border: 1px solid var(--lz-line) !important;
+    border-radius: 4px !important;
+    box-shadow: none !important;
+}
+
+body.d2q-launchzone .booking-header {
+    border-bottom: 1px solid var(--lz-line);
+}
+
+body.d2q-launchzone .booking-status,
+body.d2q-launchzone .detail-item {
+    border-radius: 2px !important;
+    font-family: var(--lz-font-mono);
+}
+
+/* Salary and playground tools */
+body.d2q-launchzone .salary-shell,
+body.d2q-launchzone .salary-card,
+body.d2q-launchzone .salary-panel,
+body.d2q-launchzone .playground-container,
+body.d2q-launchzone .editor-panel,
+body.d2q-launchzone .output-panel {
+    border-color: var(--lz-line) !important;
+    border-radius: 4px !important;
+    box-shadow: none !important;
+}
+
+body.d2q-launchzone .playground-header,
+body.d2q-launchzone .salary-header {
+    background: var(--lz-ink) !important;
+    border-color: var(--lz-ink) !important;
+}
+
+/* The playground title uses a gradient-fill effect (background-clip: text)
+   that assumes a light page background. On the dark banner here it needs
+   a light, flat fill instead so it doesn't wash out to near-invisible. */
+body.d2q-launchzone .playground-header h1 {
+    background: none !important;
+    -webkit-background-clip: initial !important;
+    background-clip: initial !important;
+    -webkit-text-fill-color: currentColor !important;
+    color: #f1f6f8 !important;
+}
+
+body.d2q-launchzone .playground-header p {
+    color: #b8c2c8 !important;
+}
+
+/* Desk Simulator: keep application contrast, share the editorial geometry. */
+body.d2q-launchzone .site-nav {
+    background: rgba(247, 247, 243, 0.96);
+    border-bottom: 1px solid var(--lz-line);
+    box-shadow: none;
+}
+
+body.d2q-launchzone .site-nav .brand,
+body.d2q-launchzone .site-nav .nav-links a {
+    color: var(--lz-ink);
+}
+
+body.d2q-launchzone .site-nav .nav-inner {
+    width: min(100%, var(--lz-container));
+    max-width: var(--lz-container);
+}
+
+body.d2q-launchzone .button {
+    border-radius: 3px !important;
+    box-shadow: none !important;
+}
+
+body.d2q-launchzone .button-primary {
+    color: var(--lz-white) !important;
+    background: var(--lz-ink) !important;
+    border-color: var(--lz-ink) !important;
+}
+
+body.d2q-launchzone .button-ghost,
+body.d2q-launchzone .button-ghost-dark {
+    color: var(--lz-ink) !important;
+    background: var(--lz-white) !important;
+    border-color: var(--lz-ink) !important;
+}
+
+body.d2q-launchzone .hero-layout {
+    position: relative;
+    z-index: 1;
+    width: min(100%, var(--lz-container));
+    max-width: var(--lz-container);
+    padding-inline: var(--lz-gutter);
+}
+
+body.d2q-launchzone .hero-copy h1 {
+    color: var(--lz-ink);
+    font-size: clamp(3.6rem, 7.5vw, 7.2rem);
+    line-height: 0.92;
+    letter-spacing: -0.075em;
+}
+
+body.d2q-launchzone .hero-copy .hero-lede,
+body.d2q-launchzone .hero-facts {
+    color: var(--lz-muted);
+}
+
+body.d2q-launchzone .hero-product {
+    border: 1px solid var(--lz-ink);
+    border-radius: 4px;
+    box-shadow: 8px 8px 0 var(--lz-ink);
+}
+
+body.d2q-launchzone .mode-grid,
+body.d2q-launchzone .case-grid,
+body.d2q-launchzone .method-grid {
+    gap: 16px;
+}
+
+body.d2q-launchzone .mode-card,
+body.d2q-launchzone .case-card,
+body.d2q-launchzone .method-card,
+body.d2q-launchzone .rubric-card {
+    border: 1px solid var(--lz-line) !important;
+    border-radius: 4px !important;
+    box-shadow: none !important;
+}
+
+body.d2q-launchzone .section-kicker,
+body.d2q-launchzone .mode-tag,
+body.d2q-launchzone .mode-duration,
+body.d2q-launchzone .panel-label {
+    font-family: var(--lz-font-mono);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+/* Interview setup and report dialog */
+body.d2q-launchzone .setup-screen {
+    padding-top: 70px;
+}
+
+body.d2q-launchzone .setup-hero {
+    max-width: 980px;
+    margin-inline: auto;
+}
+
+body.d2q-launchzone .setup-card {
+    max-width: 900px;
+    margin-inline: auto;
+    padding: clamp(28px, 5vw, 54px);
+}
+
+body.d2q-launchzone .features-row {
+    max-width: 900px;
+    margin-inline: auto;
+}
+
+body.d2q-launchzone .scorecard-box {
+    max-width: 920px;
+}
+
+@media (max-width: 900px) {
+    body.d2q-launchzone .testimonials-page-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    body.d2q-launchzone .ratings-summary-card:nth-child(2) {
+        border-right: 0;
+    }
+
+    body.d2q-launchzone .ratings-summary-card:nth-child(-n + 2) {
+        border-bottom: 1px solid var(--lz-line);
+    }
+}
+
+@media (max-width: 620px) {
+    body.d2q-launchzone .legal-main,
+    body.d2q-launchzone .faq-main {
+        width: min(100% - 28px, 1040px);
+        margin-block: 32px 56px;
+    }
+
+    body.d2q-launchzone .legal-hero,
+    body.d2q-launchzone .faq-hero {
+        padding: 28px 22px;
+    }
+
+    body.d2q-launchzone .legal-section {
+        padding: 28px 22px;
+    }
+
+    body.d2q-launchzone .testimonials-page-stats {
+        grid-template-columns: 1fr;
+    }
+
+    body.d2q-launchzone .ratings-summary-card {
+        border-right: 0;
+        border-bottom: 1px solid var(--lz-line);
+    }
+
+    body.d2q-launchzone .ratings-summary-card:last-child {
+        border-bottom: 0;
+    }
+
+    body.d2q-launchzone .hero-product {
+        box-shadow: 4px 4px 0 var(--lz-ink);
+    }
+}
+
+/* Final shell alignment and announcement bar. */
+body.d2q-launchzone .promo-announcement-bar {
+    position: relative;
+    z-index: 1200;
+    min-height: 44px;
+    padding: 7px var(--lz-gutter) !important;
+    color: var(--lz-white) !important;
+    background: var(--lz-ink) !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--lz-ink) !important;
+    box-shadow: none !important;
+}
+
+body.d2q-launchzone .promo-announcement-bar .promo-content {
+    display: flex;
+    width: min(100%, var(--lz-container));
+    min-height: 30px;
+    margin-inline: auto;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    color: var(--lz-white);
+    font-family: var(--lz-font-mono);
+    font-size: 10px;
+    letter-spacing: 0.025em;
+}
+
+body.d2q-launchzone .promo-announcement-bar .promo-tag,
+body.d2q-launchzone .promo-announcement-bar .promo-code-box {
+    padding: 4px 7px;
+    color: var(--lz-ink);
+    background: var(--lz-warning);
+    border: 1px solid var(--lz-warning);
+    border-radius: 2px;
+    font-family: var(--lz-font-mono);
+    letter-spacing: 0.06em;
+}
+
+body.d2q-launchzone .promo-announcement-bar .btn-promo-cta {
+    min-height: 30px;
+    padding: 6px 12px;
+    color: var(--lz-ink) !important;
+    background: var(--lz-white) !important;
+    border-color: var(--lz-white) !important;
+    font-size: 10px;
+    white-space: nowrap;
+}
+
+body.d2q-launchzone .promo-announcement-bar .promo-close-btn {
+    right: 14px;
+    color: var(--lz-white);
+}
+
+body.d2q-launchzone .navbar {
+    padding: 0 !important;
+}
+
+body.d2q-launchzone .navbar .logo-img {
+    width: auto !important;
+    max-width: 180px !important;
+    height: 34px !important;
+}
+
+body.d2q-launchzone .hero-content {
+    display: flex;
+    flex-direction: column;
+}
+
+body.d2q-launchzone .hero-badge { order: 1; align-self: center; }
+body.d2q-launchzone .hero-headline { order: 2; }
+body.d2q-launchzone .hero-subcopy { order: 3; }
+body.d2q-launchzone .hero-proof-row { order: 4; }
+body.d2q-launchzone .hero-cta { order: 5; }
+body.d2q-launchzone .hero-stats { order: 6; }
+
+body.d2q-launchzone main > section.lead-capture {
+    color: var(--lz-white);
+    background: var(--lz-ink) !important;
+}
+
+@media (max-width: 800px) {
+    body.d2q-launchzone .promo-announcement-bar .promo-content {
+        justify-content: flex-start;
+        padding-right: 34px;
+        overflow: hidden;
+    }
+
+    body.d2q-launchzone .promo-announcement-bar .promo-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    body.d2q-launchzone .promo-announcement-bar .promo-coupon {
+        display: none;
+    }
+}
+
+@media (max-width: 520px) {
+    body.d2q-launchzone .promo-announcement-bar .promo-text {
+        display: none;
+    }
+
+    body.d2q-launchzone .promo-announcement-bar .promo-content {
+        justify-content: center;
+    }
+}
+/* Product-detail readability and above-the-fold conversion. */
+body.d2q-launchzone .hero {
+    padding-top: clamp(64px, 7vw, 104px);
+}
+
+body.d2q-launchzone .promo-announcement-bar .promo-content {
+    flex-wrap: nowrap !important;
+}
+
+body.d2q-launchzone .product-page-container {
+    align-items: flex-start;
+}
+
+body.d2q-launchzone .product-detail-card {
+    align-items: start;
+}
+
+body.d2q-launchzone .product-info {
+    position: static !important;
+    top: auto !important;
+}
+
+body.d2q-launchzone .product-description-full {
+    max-height: 310px;
+    margin-bottom: 24px;
+    padding: 18px 18px 18px 0;
+    overflow-y: auto;
+    border-block: 1px solid var(--lz-line);
+    scrollbar-color: var(--lz-ink) var(--lz-paper);
+    scrollbar-width: thin;
+}
+
+body.d2q-launchzone .product-info h1 {
+    color: var(--lz-ink) !important;
+    background: none !important;
+    font-family: var(--lz-font-sans) !important;
+    font-size: clamp(2.35rem, 4vw, 4.6rem) !important;
+    line-height: 0.98 !important;
+    letter-spacing: -0.06em !important;
+    -webkit-text-fill-color: currentColor !important;
+}
+
+@media (max-width: 760px) {
+    body.d2q-launchzone .product-description-full {
+        max-height: 250px;
+    }
+}
+body.d2q-launchzone .product-info {
+    display: flex;
+    flex-direction: column;
+}
+
+body.d2q-launchzone .product-info #coupon-section { order: 6; }
+body.d2q-launchzone .product-info .action-buttons { order: 7; }
+body.d2q-launchzone .product-info .product-description-full { order: 8; }
+/* Desk Simulator header and terminal contrast corrections. */
+body.d2q-launchzone .site-nav .brand img,
+body.d2q-launchzone .site-footer .footer-brand img {
+    display: block;
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 12px;
+    content: url("assets/images/desk2quant-mark.svg?v=1");
+}
+
+body.d2q-launchzone .site-nav .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-weight: 780;
+}
+
+body.d2q-launchzone .site-nav .brand-product {
+    padding-left: 9px;
+    border-left: 1px solid var(--lz-line);
+    font-family: var(--lz-font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+body.d2q-launchzone .site-nav .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+body.d2q-launchzone .site-nav .nav-links a {
+    padding: 8px 2px;
+    font-size: 13px;
+    font-weight: 620;
+}
+
+body.d2q-launchzone .hero-copy h1 {
+    font-size: clamp(3.3rem, 5.8vw, 6rem);
+    line-height: 0.94;
+}
+
+body.d2q-launchzone .hero-product h2 {
+    color: #f1f6f8 !important;
+}
+
+/* Dark-background sections: the sitewide h1-h4 rule defaults to ink,
+   which is invisible against these panels. Restore the light text
+   the simulator's own component styles intend. */
+body.d2q-launchzone .method-section h2,
+body.d2q-launchzone .method-grid h3,
+body.d2q-launchzone .workspace h1,
+body.d2q-launchzone .workspace h2,
+body.d2q-launchzone .result-view h1,
+body.d2q-launchzone .result-view h2,
+body.d2q-launchzone .artifact-dialog h2 {
+    color: #f1f6f8 !important;
+}
+
+/* Site footer: also a dark panel — the sitewide link/muted-text rules
+   default to ink, which is invisible against it. Restore the soft/muted
+   light tones the simulator's own footer styles intend. */
+body.d2q-launchzone .site-footer .footer-brand span,
+body.d2q-launchzone .site-footer .footer-links a {
+    color: #b4c2c9 !important;
+}
+
+body.d2q-launchzone .site-footer .footer-grid p,
+body.d2q-launchzone .site-footer .footer-bottom {
+    color: #7f919b !important;
+}
+
+body.d2q-launchzone .site-footer .footer-links a:hover {
+    color: #55e1c4 !important;
+}
+
+@media (max-width: 800px) {
+    body.d2q-launchzone .site-nav .nav-links {
+        gap: 0;
+    }
+}
+
+/* The desk simulator's compact .site-nav header has no hamburger/toggle to
+   reveal .nav-links again once collapsed, unlike the sitewide .navbar. The
+   generic launchzone rule above forces display:flex at all widths, which
+   wraps the links into the header at narrow viewports with no way to open
+   them. Restore the simulator's own "hide entirely below 900px" behavior. */
+@media (max-width: 900px) {
+    body.d2q-launchzone .site-nav .nav-links {
+        display: none;
+    }
+}
+/* Standalone editorial listing heroes. */
+body.d2q-launchzone .editorial-list-page {
+    width: min(100%, 1100px);
+    min-height: 70vh;
+    padding-top: clamp(72px, 9vw, 126px) !important;
+    padding-bottom: clamp(72px, 9vw, 126px) !important;
+}
+
+body.d2q-launchzone .editorial-page-hero,
+body.d2q-launchzone .editorial-list-page > .editorial-page-kicker,
+body.d2q-launchzone .editorial-list-page > .editorial-page-title,
+body.d2q-launchzone .editorial-list-page > .editorial-page-subtitle {
+    position: relative;
+    z-index: 1;
+}
+
+body.d2q-launchzone .editorial-page-kicker {
+    display: block;
+    margin-bottom: 18px;
+    font-family: var(--lz-font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+body.d2q-launchzone .editorial-page-kicker::before {
+    content: "// ";
+}
+
+body.d2q-launchzone .editorial-page-title {
+    max-width: 940px;
+    margin: 0 0 24px !important;
+    font-size: clamp(3.5rem, 8vw, 7.2rem) !important;
+    line-height: 0.93;
+    letter-spacing: -0.075em;
+}
+
+body.d2q-launchzone .editorial-page-subtitle {
+    max-width: 720px;
+    color: var(--lz-muted) !important;
+    font-size: 17px !important;
+    line-height: 1.7;
+}
+
+body.d2q-launchzone .site-nav .nav-inner {
+    padding-inline: 18px;
+    box-sizing: border-box;
+}
+
+body.d2q-launchzone .hero-product,
+body.d2q-launchzone .hero-product small,
+body.d2q-launchzone .hero-product dt,
+body.d2q-launchzone .hero-product dd,
+body.d2q-launchzone .hero-product .tests-preview div,
+body.d2q-launchzone .hero-product .terminal-command {
+    color: #bed0d5;
+}
+/* Desk simulator: high-contrast mode selection */
+body.d2q-launchzone .mode-card {
+    min-height: 390px;
+    padding: clamp(28px, 3vw, 42px);
+}
+
+body.d2q-launchzone .mode-card-core {
+    color: var(--lz-ink);
+    background: var(--lz-white);
+    border-color: var(--lz-line-strong) !important;
+    box-shadow: 7px 7px 0 var(--lz-ink) !important;
+}
+
+body.d2q-launchzone .mode-card-core h3 {
+    color: var(--lz-ink) !important;
+}
+
+body.d2q-launchzone .mode-card-core .mode-tag,
+body.d2q-launchzone .mode-card-core .mode-duration {
+    color: #5b5c56;
+}
+
+body.d2q-launchzone .mode-card-core p,
+body.d2q-launchzone .mode-card-core .mode-list {
+    color: #444640;
+}
+
+body.d2q-launchzone .mode-card-interview {
+    color: var(--lz-white);
+    border-color: #071019 !important;
+    box-shadow: 7px 7px 0 var(--lz-signal) !important;
+}
+
+body.d2q-launchzone .mode-card-interview h3 {
+    color: var(--lz-white) !important;
+}
+
+body.d2q-launchzone .mode-card-interview p {
+    color: #c4d2d5;
+}
+
+body.d2q-launchzone .mode-card-interview .mode-list {
+    color: #eef7f7;
+}
+
+body.d2q-launchzone .mode-card-core .button {
+    color: var(--lz-white) !important;
+    background: var(--lz-ink) !important;
+    border-color: var(--lz-ink) !important;
+}
+
+body.d2q-launchzone .mode-card-interview .button {
+    color: var(--lz-ink) !important;
+    background: var(--lz-white) !important;
+    border-color: var(--lz-white) !important;
+}
+

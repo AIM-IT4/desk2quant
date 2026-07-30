@@ -373,7 +373,7 @@ img {
 
 .hero-lede {
     max-width: 630px;
-    margin: 28px 0 0;
+    margin: clamp(24px, 4vw, 40px) 0 0;
     color: var(--text-soft);
     font-size: clamp(1rem, 1.5vw, 1.14rem);
     line-height: 1.75;
@@ -406,6 +406,34 @@ img {
 .hero-facts strong {
     color: var(--text);
     font-size: 0.94rem;
+}
+
+.product-hunt-review {
+    display: flex;
+    margin-top: 24px;
+}
+
+.product-hunt-review a {
+    display: inline-flex;
+    border-radius: 8px;
+    transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.product-hunt-review a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.14);
+}
+
+.product-hunt-review a:focus-visible {
+    outline: 3px solid var(--teal);
+    outline-offset: 4px;
+}
+
+.product-hunt-review img {
+    display: block;
+    width: 250px;
+    max-width: 100%;
+    height: auto;
 }
 
 .hero-product {
