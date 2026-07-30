@@ -38,7 +38,39 @@
     <link
         href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="desk-simulator.css?v=1">
+    <link rel="stylesheet" href="desk-simulator.css?v=2">
+    <style>
+        /* Scoped contrast hotfix for the light mode-selection section. */
+        .mode-section {
+            color: var(--paper-text);
+        }
+
+        .mode-section .section-heading-note {
+            color: var(--paper-soft);
+        }
+
+        .mode-card-core {
+            color: var(--paper-text);
+        }
+
+        .mode-card-core .mode-tag,
+        .mode-card-core .mode-duration,
+        .mode-card-core p,
+        .mode-card-core .mode-list {
+            color: var(--paper-soft);
+        }
+
+        .mode-card-core .button-ghost-dark {
+            color: var(--paper-text);
+            border-color: var(--line-dark);
+        }
+
+        .mode-card-core .button-ghost-dark:hover {
+            color: var(--ink);
+            border-color: var(--teal-dark);
+            background: rgba(27, 141, 122, 0.08);
+        }
+    </style>
 
     <script type="application/ld+json">
         {
@@ -115,7 +147,7 @@
                             <a class="button button-ghost button-large" href="#cases">Explore all incidents</a>
                         </div>
                         <div class="hero-facts" aria-label="Product highlights">
-                            <span><strong>4</strong> desk incidents</span>
+                            <span><strong>8</strong> desk incidents</span>
                             <span><strong>10m</strong> interview sprint</span>
                             <span><strong>0</strong> signup walls</span>
                         </div>
@@ -237,7 +269,7 @@
                             <h2>Learn by finding what failed.</h2>
                         </div>
                         <div class="progress-summary" id="progressSummary" aria-live="polite">
-                            <span class="progress-number" id="progressCompleted">0 / 4</span>
+                            <span class="progress-number" id="progressCompleted">0 / 8</span>
                             <span>incidents completed on this device</span>
                         </div>
                     </div>
