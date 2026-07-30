@@ -74,7 +74,7 @@
     <meta property="og:title" content="Desk2Quant | Expert Quant Mentorship & Digital Resources">
     <meta property="og:description"
         content="1-on-1 mentorship from industry expert. Master quantitative finance, derivatives pricing, XVA models, and crack quant interviews.">
-    <meta property="og:image" content="https://desk2quant.vercel.app/assets/images/desk2quant-logo.png?v=3">
+    <meta property="og:image" content="https://desk2quant.vercel.app/assets/images/desk2quant-editorial-og.jpg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
 
@@ -85,7 +85,7 @@
     <meta property="twitter:description"
         content="1-on-1 mentorship from industry expert. Master quantitative finance and crack quant interviews.">
     <meta property="twitter:image"
-        content="https://desk2quant.vercel.app/assets/images/desk2quant-logo.png?v=3">
+        content="https://desk2quant.vercel.app/assets/images/desk2quant-editorial-og.jpg">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -104,9 +104,11 @@
     <link rel="stylesheet" href="salary-styles.css">
 
 
+    <link rel="stylesheet" href="launchzone.css?v=1">
+    <link rel="stylesheet" href="launchzone-pages.css?v=1">
 </head>
 
-<body class="d2q-reference">
+<body class="d2q-reference d2q-launchzone">
     <!-- Skip Navigation (Accessibility) -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
 
@@ -114,7 +116,7 @@
     <div id="launchPromoBanner" class="promo-announcement-bar">
         <div class="promo-content">
             <span class="promo-tag">NEW RELEASE</span>
-            <span class="promo-text">🔥 <strong>Numerical Methods for Quants: The Master Field Manual</strong> is now live! Spanning 93 pages with TikZ vector diagrams & codes.</span>
+            <span class="promo-text"><strong>Numerical Methods for Quants</strong> — 93-page field manual with runnable code.</span>
             <span class="promo-coupon">Use code <strong class="promo-code-box">LAUNCH15</strong> at checkout for <strong>15% OFF</strong>!</span>
             <button class="btn btn-promo-cta" onclick="triggerPromoModal()">Claim Discount</button>
         </div>
@@ -167,20 +169,20 @@
                 <div class="hero-content">
                     <div class="hero-badge">
                         <span class="badge-dot"></span>
-                        Available for 1-on-1 Sessions
+                        Practitioner-built quant training
                     </div>
                     <h1 class="hero-headline" id="heroHeadline"
-                        aria-label="Desk-ready quant prep for interviews, pricing, and risk">
-                        Desk-ready quant prep for <span class="gradient-text">interviews, pricing, and risk</span>
+                        aria-label="Learn the models. Think like the desk.">
+                        Learn the models. <span class="gradient-text">Think like the desk.</span>
                     </h1>
                     <p class="subheadline hero-subcopy">
-                        Pick a path, preview the material, and practice with resources built around pricing,
-                        risk, model validation, Python, C++, and quant interviews.
+                        Build technical depth, investigate realistic failures, and defend your reasoning
+                        under the same pressure expected in quant interviews and desk conversations.
                     </p>
                     <div class="hero-proof-row" aria-label="Desk2Quant highlights">
-                        <span><i class="fas fa-file-lines"></i> Preview before buying</span>
-                        <span><i class="fas fa-terminal"></i> Scripts and playbooks</span>
-                        <span><i class="fas fa-user-check"></i> Desk-first guidance</span>
+                        <span><i class="fas fa-chart-line"></i> Pricing &amp; risk</span>
+                        <span><i class="fas fa-terminal"></i> Python &amp; C++</span>
+                        <span><i class="fas fa-user-check"></i> Interview pressure</span>
                     </div>
                     <div class="hero-stats">
                         <div class="stat-item">
@@ -197,9 +199,9 @@
                         </div>
                     </div>
                     <div class="hero-cta reveal-up delay-200">
-                        <a href="#products" class="btn btn-primary">Explore Products <i
+                        <a href="desk-simulator.html" class="btn btn-primary">Enter Desk Simulator <i
                                 class="fas fa-arrow-right"></i></a>
-                        <a href="#services" class="btn btn-secondary">Book a Session</a>
+                        <a href="#products" class="btn btn-secondary">Explore Products</a>
                     </div>
                 </div>
                 <div class="hero-visual reveal-up delay-300">
@@ -930,7 +932,7 @@
     </main>
 
     <!-- Footer -->
-            
+
 
 
         <footer class="footer">
@@ -1095,119 +1097,7 @@
         })();
     </script>
 
-    <script>
-        (function () {
-            const headline = document.getElementById('heroHeadline');
-            if (!headline || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-            const phrases = [
-                [
-                    { text: 'Desk-ready quant prep for ', gradient: false, curly: false },
-                    { text: 'interviews, pricing, and risk', gradient: false, curly: true }
-                ],
-                [
-                    { text: 'Preview products before ', gradient: false, curly: false },
-                    { text: 'you buy', gradient: false, curly: true }
-                ],
-                [
-                    { text: 'Build confidence with ', gradient: false, curly: false },
-                    { text: 'desk-first quant resources', gradient: false, curly: true }
-                ]
-            ];
-
-            const charsFor = phrase => phrase.flatMap(segment =>
-                [...segment.text].map(ch => ({ 
-                    ch, 
-                    gradient: segment.gradient,
-                    curly: segment.curly 
-                }))
-            );
-
-            let phraseIndex = 0;
-            let chars = charsFor(phrases[phraseIndex]);
-            let charIndex = 0;
-            let deleting = false;
-
-            const typeDelay = 50;
-            const deleteDelay = 30;
-            const pauseEnd = 2400;
-            const pauseStart = 500;
-
-            let cursorVisible = true;
-
-            function render(showCursor) {
-                let html = '';
-                let inGradient = false;
-                let inCurly = false;
-
-                for (let i = 0; i < charIndex; i++) {
-                    const item = chars[i];
-                    
-                    if (item.gradient && !inGradient) {
-                        html += '<span class="gradient-text">';
-                        inGradient = true;
-                    } else if (!item.gradient && inGradient) {
-                        html += '</span>';
-                        inGradient = false;
-                    }
-
-                    if (item.curly && !inCurly) {
-                        html += '<span class="curly-text">';
-                        inCurly = true;
-                    } else if (!item.curly && inCurly) {
-                        html += '</span>';
-                        inCurly = false;
-                    }
-                    
-                    html += item.ch;
-                }
-
-                if (inGradient) html += '</span>';
-                if (inCurly) html += '</span>';
-                headline.innerHTML = html + (showCursor !== false ? '<span class="typewriter-cursor">|</span>' : '');
-            }
-
-            function tick() {
-                render(cursorVisible);
-
-                if (deleting) {
-                    if (charIndex > 0) {
-                        charIndex--;
-                        setTimeout(tick, deleteDelay);
-                        return;
-                    }
-
-                    deleting = false;
-                    phraseIndex = (phraseIndex + 1) % phrases.length;
-                    chars = charsFor(phrases[phraseIndex]);
-                    cursorVisible = false;
-                    render(false);
-                    setTimeout(function() {
-                        cursorVisible = true;
-                        tick();
-                    }, pauseStart);
-                    return;
-                }
-
-                if (charIndex < chars.length) {
-                    charIndex++;
-                    setTimeout(tick, typeDelay);
-                    return;
-                }
-
-                deleting = true;
-                cursorVisible = false;
-                render(false);
-                setTimeout(function() {
-                    cursorVisible = true;
-                    tick();
-                }, pauseEnd);
-            }
-
-            render(true);
-            setTimeout(tick, pauseStart);
-        })();
-    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <script src="salary-seed.js" defer></script>
@@ -1266,7 +1156,7 @@
         <div class="success-modal-overlay" onclick="closeSuccessModal()"></div>
         <div class="success-modal-card">
             <button class="success-modal-close" onclick="closeSuccessModal()" aria-label="Close payment success modal">&times;</button>
-            
+
             <div class="success-modal-header">
                 <div class="success-icon-wrapper">
                     <i class="fas fa-check-circle"></i>
@@ -1274,15 +1164,15 @@
                 <h2>Payment Successful!</h2>
                 <p class="success-subtitle">We have sent the download details to your email (please check your spam/junk folder as well).</p>
             </div>
-            
+
             <div class="download-action-box">
                 <a id="successDownloadBtn" href="#" target="_blank" class="btn btn-primary btn-success-download">
                     <i class="fas fa-download"></i> Download Your Product
                 </a>
             </div>
-            
+
             <div class="success-modal-divider"></div>
-            
+
             <div class="cross-sell-section">
                 <h3>Complete Your Arsenal</h3>
                 <p class="cross-sell-subtitle">Frequently bought together with your purchase:</p>
@@ -1292,6 +1182,7 @@
             </div>
         </div>
     </div>
+    <script src="ui-components.js?v=1" defer></script>
 </body>
 
 </html>

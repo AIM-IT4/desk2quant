@@ -22,8 +22,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="salary-styles.css">
+    <link rel="stylesheet" href="launchzone.css?v=1">
+    <link rel="stylesheet" href="launchzone-pages.css?v=1">
 </head>
-<body class="d2q-reference">
+<body class="d2q-reference d2q-launchzone">
     <div class="scroll-progress" id="scrollProgress"></div>
     <!-- Navigation -->
     <nav class="navbar scrolled">
@@ -301,5 +303,6 @@
         const sb=document.getElementById('scrollTopBtn');
         if(sb){window.addEventListener('scroll',()=>{sb.classList.toggle('visible',window.scrollY>600);});sb.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));}
     </script>
+    <script src="ui-components.js?v=1" defer></script>
 </body>
 </html>

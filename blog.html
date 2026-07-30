@@ -30,9 +30,11 @@
         };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+    <link rel="stylesheet" href="launchzone.css?v=1">
+    <link rel="stylesheet" href="launchzone-pages.css?v=1">
 </head>
 
-<body>
+<body class="d2q-launchzone">
     <nav class="navbar">
         <div class="nav-container">
             <a href="index.html" class="logo"
@@ -44,10 +46,11 @@
         </div>
     </nav>
 
-    <main style="max-width: 800px; margin: 100px auto 60px; padding: 0 20px;">
-        <h1 style="margin-bottom: 40px;">Blog & Articles</h1>
+    <main class="editorial-list-page" style="max-width: 980px; margin: 0 auto; padding: 0 20px;">
+        <span class="editorial-page-kicker">Research &amp; field notes</span>
+        <h1 class="editorial-page-title">Blog &amp; Articles</h1>
 
-        <p style="color: var(--text-muted); margin-bottom: 40px;">
+        <p class="editorial-page-subtitle" style="color: var(--text-muted); margin-bottom: 40px;">
             Insights, tutorials, and career advice from years of quantitative finance experience.
         </p>
 
@@ -135,6 +138,7 @@
         })();
     </script>
     <script src="script.js"></script>
+    <script src="ui-components.js?v=1" defer></script>
 </body>
 
 </html>
