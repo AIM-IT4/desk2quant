@@ -781,6 +781,21 @@ body.d2q-launchzone .product-card:focus-within {
     box-shadow: 5px 5px 0 var(--lz-ink) !important;
 }
 
+body.d2q-launchzone .product-catalog-error {
+    grid-column: 1 / -1;
+    padding: clamp(28px, 4vw, 48px);
+    text-align: center;
+    background: var(--lz-white);
+    border: 1px solid var(--lz-line-strong);
+}
+
+body.d2q-launchzone .product-catalog-error h3 {
+    margin-bottom: 8px;
+}
+
+body.d2q-launchzone .product-catalog-error p {
+    margin-bottom: 18px;
+}
 body.d2q-launchzone .product-image {
     height: 190px;
     background-color: #151515;
