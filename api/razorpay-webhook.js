@@ -5,7 +5,7 @@
 import crypto from 'crypto';
 import { createJitsiMeetingLink } from '../lib/jitsi.js';
 import { queuePostPurchaseRecommendation } from '../lib/recommendationQueue.js';
-import { getExpectedProductOrder, getExpectedSessionOrder, isWithinTolerance } from '../lib/pricing.js';
+import { getExpectedProductOrder, getExpectedSessionOrder, getExpectedCartOrder, isWithinTolerance } from '../lib/pricing.js';
 
 // Disable Vercel body parsing so we can read the raw stream for signature verification
 export const config = {
@@ -156,7 +156,28 @@ export default async function handler(req, res) {
 
             console.log('Payment captured:', { paymentId, amount, inrAmount, customerEmail, customerCountry, productName, productType });
 
-            if (productType === 'product' && productName) {
+            if (productType === 'cart') {
+                // Handle multi-item cart checkout
+                await handleCartPurchase({
+                    paymentId,
+                    amount,
+                    inrAmount,
+                    currency,
+                    customerEmail,
+                    customerName,
+                    customerPhone,
+                    customerCountry,
+                    cartItemsRaw: payment.notes?.cart_items || '',
+                    couponCode: payment.notes?.coupon_code || null,
+                    paymentCreatedAt: payment.created_at,
+                    SUPABASE_URL,
+                    SUPABASE_KEY,
+                    BREVO_API_KEY,
+                    ADMIN_EMAIL,
+                    SENDER_EMAIL,
+                    SENDER_NAME
+                });
+            } else if (productType === 'product' && productName) {
                 // Handle product purchase
                 await handleProductPurchase({
                     paymentId,
@@ -747,6 +768,250 @@ export async function handleProductPurchase(data) {
         }
     } else if (isBundle) {
         console.log('⏭️ Skipping recommendation for bundle purchase');
+    }
+}
+
+// Handle a multi-item cart checkout: verify total price, fetch each
+// product's download link, share Drive access, log one purchases row per
+// item, and send a single combined confirmation email (instead of one email
+// per product).
+async function handleCartPurchase(data) {
+    const {
+        paymentId, amount, inrAmount, currency, customerEmail, customerName, customerPhone, customerCountry,
+        cartItemsRaw, couponCode, paymentCreatedAt,
+        SUPABASE_URL, SUPABASE_KEY, BREVO_API_KEY, ADMIN_EMAIL, SENDER_EMAIL, SENDER_NAME
+    } = data;
+
+    const isoCreatedAt = (typeof paymentCreatedAt === 'number' && paymentCreatedAt > 0)
+        ? new Date(paymentCreatedAt * 1000).toISOString()
+        : null;
+
+    const parsedItems = String(cartItemsRaw || '')
+        .split(',')
+        .filter(Boolean)
+        .map((pair) => {
+            const [productId, qtyStr] = pair.split(':');
+            return { productId, quantity: Math.max(1, parseInt(qtyStr, 10) || 1) };
+        })
+        .filter((item) => item.productId);
+
+    if (parsedItems.length === 0) {
+        console.error('Cart webhook: no items parsed from cart_items note:', cartItemsRaw);
+        return;
+    }
+
+    console.log(`Processing cart purchase: ${parsedItems.length} item(s) for ${customerEmail}`);
+
+    // Price-tamper guard (defense in depth, mirrors handleProductPurchase).
+    let underpaymentFlag = null;
+    try {
+        const expected = await getExpectedCartOrder(
+            parsedItems.map((i) => ({ product_id: i.productId, quantity: i.quantity })),
+            currency,
+            couponCode
+        );
+        if (expected.ok && !isWithinTolerance(inrAmount, expected.amountInr)) {
+            underpaymentFlag = { expectedInr: expected.amountInr, capturedInr: inrAmount };
+            console.error('🚨 UNDERPAYMENT DETECTED (cart) — refusing to grant access:', { paymentId, ...underpaymentFlag });
+        } else if (!expected.ok) {
+            console.warn('⚠️ Could not verify cart price; proceeding without price check:', expected.error);
+        }
+    } catch (err) {
+        console.error('⚠️ Cart price verification error (proceeding without hard block):', err.message);
+    }
+
+    // Idempotency: skip if this payment was already fully processed.
+    try {
+        const existingResp = await fetch(
+            `${SUPABASE_URL}/rest/v1/purchases?payment_id=eq.${paymentId}&source=eq.webhook_cart&select=id`,
+            { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+        );
+        if (existingResp.ok) {
+            const existing = await existingResp.json();
+            if (existing && existing.length > 0) {
+                console.log('Cart payment already processed by webhook:', paymentId);
+                return;
+            }
+        }
+    } catch (err) {
+        console.error('Error checking existing cart purchase:', err);
+    }
+
+    // Fetch each product's name + file_url, then share Drive access.
+    const lineResults = [];
+    for (const item of parsedItems) {
+        let name = item.productId;
+        let fileUrl = '';
+        try {
+            const resp = await fetch(
+                `${SUPABASE_URL}/rest/v1/products?id=eq.${encodeURIComponent(item.productId)}&select=name,file_url`,
+                { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+            );
+            if (resp.ok) {
+                const rows = await resp.json();
+                if (rows && rows[0]) {
+                    name = rows[0].name || name;
+                    fileUrl = rows[0].file_url || '';
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching cart product details:', item.productId, err.message);
+        }
+
+        let downloadLink = fileUrl || '#';
+        let hasSharedSecurely = false;
+        const driveFileId = extractDriveFileId(downloadLink);
+
+        if (driveFileId && !underpaymentFlag) {
+            const GOOGLE_SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+            const GOOGLE_PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY;
+            if (GOOGLE_SERVICE_ACCOUNT_EMAIL && GOOGLE_PRIVATE_KEY) {
+                try {
+                    await grantDrivePermission(GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, driveFileId, customerEmail);
+                    hasSharedSecurely = true;
+                } catch (err) {
+                    console.error(`❌ Failed to share Drive item for cart line "${name}": ${err.message}`);
+                }
+                const isFolder = downloadLink.includes('/folders/') || downloadLink.includes('/drive/folders/');
+                downloadLink = isFolder
+                    ? `https://drive.google.com/drive/folders/${driveFileId}?usp=drivesdk`
+                    : `https://drive.google.com/file/d/${driveFileId}/view?usp=drivesdk`;
+            }
+        }
+
+        lineResults.push({ productId: item.productId, name, quantity: item.quantity, downloadLink, hasSharedSecurely });
+    }
+
+    // Log one purchases row per line item, sharing the same payment_id so
+    // admin views can group them, but each keeping its own product_name.
+    try {
+        const rows = lineResults.map((line) => ({
+            customer_email: customerEmail,
+            product_name: line.name,
+            amount: Math.round(amount / lineResults.length), // even split for reporting; total is exact
+            currency: currency || 'INR',
+            payment_id: paymentId,
+            source: underpaymentFlag ? 'webhook_price_mismatch' : 'webhook_cart',
+            customer_country: customerCountry,
+            inr_amount: Math.round(inrAmount / lineResults.length),
+            download_link: underpaymentFlag ? null : line.downloadLink,
+            ...(isoCreatedAt ? { created_at: isoCreatedAt } : {})
+        }));
+        const insertResp = await fetch(`${SUPABASE_URL}/rest/v1/purchases`, {
+            method: 'POST',
+            headers: {
+                apikey: SUPABASE_KEY,
+                Authorization: `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json',
+                Prefer: 'return=minimal'
+            },
+            body: JSON.stringify(rows)
+        });
+        if (insertResp.ok) {
+            console.log(`✅ Cart purchase logged to Supabase (${rows.length} line items). PaymentId:`, paymentId);
+        } else {
+            const errBody = await insertResp.text();
+            console.error('❌ SUPABASE CART INSERT FAILED. Status:', insertResp.status, '| Body:', errBody, '| PaymentId:', paymentId);
+        }
+    } catch (err) {
+        console.error('❌ Error logging cart purchase to Supabase (network):', err.message, '| PaymentId:', paymentId);
+    }
+
+    // Single combined confirmation email listing every item + its link.
+    if (BREVO_API_KEY && customerEmail && !underpaymentFlag) {
+        const itemsHtml = lineResults.map((line) => `
+                            <tr>
+                                <td style="padding:10px 0;border-bottom:1px solid #e5e5e5;">
+                                    <strong>${line.name}</strong>${line.quantity > 1 ? ` &times; ${line.quantity}` : ''}<br>
+                                    <a href="${line.downloadLink}" style="color:#2563eb;text-decoration:underline;font-size:13px;">Download / View Resource</a>
+                                </td>
+                            </tr>`).join('');
+        const customerHtml = `
+            <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
+                <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                    <div style="background-color: #1a1a1a; padding: 20px; text-align: center;">
+                        <span style="color: #ffffff; font-size: 24px; font-weight: bold; letter-spacing: 1px;">Desk2Quant</span>
+                    </div>
+                    <div style="padding: 30px;">
+                        <p style="font-size: 16px; margin-bottom: 20px;">Hi <strong>${customerName}</strong>, thank you for your order of ${lineResults.length} item${lineResults.length > 1 ? 's' : ''} from Desk2Quant.</p>
+                        <div style="background: #f9f8f4; padding: 20px; border-radius: 6px; margin-bottom: 20px;">
+                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0;">Your Order</p>
+                            <table style="width:100%;border-collapse:collapse;">${itemsHtml}</table>
+                            <p style="margin-top:16px;font-size:14px;"><strong>Total paid:</strong> ${currency} ${amount}</p>
+                        </div>
+                        <div style="background: #f9f8f4; padding: 20px; border-radius: 6px;">
+                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0;">Order Details</p>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                                <tr><td style="padding: 5px 0; color: #666; width: 30%;">Email</td><td style="padding: 5px 0;"><a href="mailto:${customerEmail}" style="color:#2563eb;text-decoration:none;">${customerEmail}</a></td></tr>
+                                <tr><td style="padding: 5px 0; color: #666;">Payment ID</td><td style="padding: 5px 0;">${paymentId}</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div style="background-color: #1a1a1a; padding: 25px 20px; text-align: center; color: #888; font-size: 12px;">
+                        <p style="margin: 0 0 10px 0;">Sent by Desk2Quant</p>
+                        <p style="margin: 0;">Have an issue? Reply to this email.</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        try {
+            const emailResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
+                method: 'POST',
+                headers: { accept: 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
+                body: JSON.stringify({
+                    sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+                    to: [{ email: customerEmail, name: customerName }],
+                    subject: `Your Order (${lineResults.length} item${lineResults.length > 1 ? 's' : ''}): Desk2Quant`,
+                    htmlContent: customerHtml,
+                    textContent: `Hi ${customerName},\n\nThank you for your order!\n\n${lineResults.map((l) => `${l.name}: ${l.downloadLink}`).join('\n')}\n\nTotal: ${currency} ${amount}\nPayment ID: ${paymentId}\n\nSent by Desk2Quant`
+                })
+            });
+            if (emailResponse.ok) {
+                console.log(`Cart confirmation email sent to ${customerEmail}`);
+            } else {
+                console.error('Brevo Error (Cart Email):', emailResponse.status, await emailResponse.text());
+            }
+        } catch (err) {
+            console.error('Error sending cart confirmation email:', err);
+        }
+    }
+
+    if (BREVO_API_KEY && !underpaymentFlag) {
+        try {
+            const adminHtml = `
+                <div style="font-family: Arial, sans-serif; padding: 20px; color: #1a1a1a;">
+                    <h2>New Cart Sale (${lineResults.length} items)</h2>
+                    <p><strong>${customerName}</strong> (${customerEmail}) just purchased:</p>
+                    <ul>${lineResults.map((l) => `<li>${l.name}${l.quantity > 1 ? ` × ${l.quantity}` : ''}</li>`).join('')}</ul>
+                    <p>Total: ${currency} ${amount} | Payment ID: ${paymentId}</p>
+                </div>
+            `;
+            await fetch('https://api.brevo.com/v3/smtp/email', {
+                method: 'POST',
+                headers: { accept: 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
+                body: JSON.stringify({
+                    sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+                    to: ADMIN_EMAIL.split(',').map((email) => ({ email: email.trim() })).filter((item) => item.email),
+                    subject: `New Cart Sale: ${lineResults.length} item(s)`,
+                    htmlContent: adminHtml,
+                    textContent: `New cart sale.\n${customerName} (${customerEmail})\nItems: ${lineResults.map((l) => l.name).join(', ')}\nTotal: ${currency} ${amount}\nPaymentId: ${paymentId}`
+                })
+            });
+        } catch (err) {
+            console.error('Error sending cart admin notification:', err);
+        }
+    }
+
+    if (customerEmail && !underpaymentFlag && lineResults.length > 0) {
+        try {
+            await queuePostPurchaseRecommendation({
+                customerEmail, customerName, purchasedProductName: lineResults[0].name,
+                trigger: 'product_purchase',
+                SUPABASE_URL, SUPABASE_KEY
+            });
+        } catch (err) {
+            console.error('Failed to queue post-purchase recommendation (cart):', err);
+        }
     }
 }
 

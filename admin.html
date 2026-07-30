@@ -9,7 +9,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
         rel="stylesheet">
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -66,36 +66,37 @@
     </script>
     <style>
         :root {
-            /* Colors - Light Theme */
-            --bg-primary: #f8fafc;
+            /* Colors — LaunchZone editorial palette (ink/paper/signal), matching
+               the rest of the site's redesign (launchzone.css) instead of the
+               old glassy SaaS-dashboard look this panel previously carried. */
+            --bg-primary: #f7f7f3;
             --bg-secondary: #ffffff;
-            --bg-tertiary: #f1f5f9;
-            --bg-card: rgba(255, 255, 255, 0.9);
-            --bg-glass: rgba(0, 0, 0, 0.05);
+            --bg-tertiary: #f1f1ea;
+            --bg-card: #ffffff;
+            --bg-glass: rgba(9, 9, 9, 0.04);
 
             /* Text Colors */
-            --text-primary: #0f172a;
-            --text-secondary: #475569;
-            --text-muted: #64748b;
+            --text-primary: #090909;
+            --text-secondary: #242424;
+            --text-muted: #666761;
 
-            /* Accents — matches the live site's real brand (styles.css), not the
-               old rose/blue palette this panel previously carried on its own. */
-            --accent-primary: #06275b;
-            --accent-secondary: #08a9a2;
-            --accent-gradient: linear-gradient(135deg, #06275b 0%, #0a3476 58%, #08a9a2 100%);
+            /* Accents — the LaunchZone ink + signal teal used site-wide. */
+            --accent-primary: #090909;
+            --accent-secondary: #0b7f79;
+            --accent-gradient: linear-gradient(135deg, #090909 0%, #242424 58%, #0b7f79 100%);
 
-            /* Borders */
-            --border-subtle: rgba(0, 0, 0, 0.08);
-            --border-light: rgba(0, 0, 0, 0.12);
-            --border-rim: rgba(0, 0, 0, 0.15);
+            /* Borders — flat ink hairlines instead of soft translucent grays. */
+            --border-subtle: #d8d8d1;
+            --border-light: #a7a79f;
+            --border-rim: #090909;
 
-            /* Radius */
-            --radius-md: 12px;
-            --radius-lg: 20px;
+            /* Radius — sharp editorial corners, not rounded SaaS pills. */
+            --radius-md: 3px;
+            --radius-lg: 6px;
             --radius-pill: 100px;
 
-            /* Shadows */
-            --shadow-glow: 0 0 20px rgba(0, 0, 0, 0.1);
+            /* Shadows — flat offset ink shadow, LaunchZone's signature. */
+            --shadow-glow: 4px 4px 0 rgba(9, 9, 9, 0.12);
 
             /* Legacy variables for compatibility */
             --primary: var(--accent-primary);
@@ -111,6 +112,10 @@
 
             /* Sidebar */
             --sidebar-width: 260px;
+
+            /* Fonts — same editorial mono/sans pairing as launchzone.css */
+            --lz-font-sans: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --lz-font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
         }
 
         body {
@@ -286,34 +291,20 @@
         }
 
         h1 {
-            background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: var(--text-primary);
+            font-weight: 700;
+            letter-spacing: -0.01em;
             margin-bottom: 8px;
         }
 
         .card {
             background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
+            border: 1px solid var(--border-rim);
             border-radius: var(--radius-lg);
             padding: 30px;
             margin-bottom: 30px;
             position: relative;
-            overflow: hidden;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-        }
-
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--primary), transparent);
-            opacity: 0.5;
+            box-shadow: var(--shadow-glow);
         }
 
         .form-group {
@@ -331,41 +322,42 @@
         textarea,
         select {
             width: 100%;
-            padding: 14px 16px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-subtle);
-            border-radius: 12px;
+            padding: 13px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
             color: var(--text-primary);
-            /* FIXED: Use variable instead of hardcoded white */
             font-family: inherit;
             box-sizing: border-box;
-            transition: all 0.3s ease;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
 
         input:focus,
-        textarea:focus {
+        textarea:focus,
+        select:focus {
             outline: none;
-            border-color: var(--accent-primary);
-            background: var(--bg-card);
+            border-color: var(--accent-secondary);
+            box-shadow: 0 0 0 1px var(--accent-secondary);
         }
 
         button {
-            background: #ffffff;
-            border: none;
-            color: #000000;
-            padding: 14px 32px;
-            border-radius: var(--radius-pill);
-            font-weight: 600;
+            background: var(--text-primary);
+            border: 1px solid var(--border-rim);
+            color: #ffffff;
+            padding: 13px 32px;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            font-family: inherit;
+            letter-spacing: 0.01em;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
             width: 100%;
             font-size: 0.9375rem;
         }
 
         button:hover:not(:disabled) {
-            transform: scale(1.02);
-            background: #f8fafc;
-            box-shadow: 0 0 50px rgba(255, 255, 255, 0.15);
+            background: var(--accent-secondary);
+            border-color: var(--accent-secondary);
         }
 
         button.btn-secondary {
@@ -375,8 +367,9 @@
         }
 
         button.btn-secondary:hover:not(:disabled) {
-            background: rgba(0, 0, 0, 0.05);
+            background: var(--bg-glass);
             border-color: var(--border-rim);
+            color: var(--text-primary);
         }
 
         button:disabled {
@@ -675,7 +668,11 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(248, 250, 252, 0.95);
+            background: var(--bg-primary);
+            background-image:
+                linear-gradient(to right, rgba(9, 9, 9, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(9, 9, 9, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -684,16 +681,22 @@
 
         /* Forced Login Styles to prevent visibility issues */
         #loginBtn {
-            background: #0f172a;
+            background: var(--text-primary);
             color: #ffffff;
-            border: 1px solid transparent;
+            border: 1px solid var(--border-rim);
+            border-radius: var(--radius-md);
             margin-top: 10px;
         }
 
+        #loginBtn:hover {
+            background: var(--accent-secondary);
+            border-color: var(--accent-secondary);
+        }
+
         #adminPassword {
-            background: #ffffff;
-            color: #0f172a;
-            border: 1px solid #e2e8f0;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-light);
         }
 
         #adminPassword::placeholder {
@@ -748,17 +751,14 @@
 <body>
 
     <!-- Login Overlay -->
-    <div id="loginOverlay" style="background: rgba(248, 250, 252, 0.98) !important;">
-        <div class="card"
-            style="width: 320px; text-align: center; background: #ffffff !important; border: 1px solid rgba(0,0,0,0.12) !important; color: #0f172a !important;">
+    <div id="loginOverlay">
+        <div class="card" style="width: 320px; text-align: center;">
             <img src="assets/images/desk2quant-logo.png?v=3" alt="Desk2Quant" style="height: 36px; width: auto; margin-bottom: 20px;">
-            <h2 style="color: #0f172a !important; margin-bottom: 20px;">Admin Access</h2>
+            <h2 style="color: var(--text-primary); margin-bottom: 20px;">Admin Access</h2>
             <div class="form-group">
-                <input type="password" id="adminPassword" placeholder="Enter Password"
-                    style="background: #f8fafc !important; color: #0f172a !important; border: 1px solid rgba(0,0,0,0.12) !important; outline: none; padding: 12px; border-radius: 8px; width: 100%; box-sizing: border-box;">
+                <input type="password" id="adminPassword" placeholder="Enter Password">
             </div>
-            <button id="loginBtn" onclick="checkPassword()"
-                style="background: var(--accent-gradient) !important; color: white !important; border: none !important; margin-top: 10px; width: 100%; padding: 12px; border-radius: 100px; font-weight: 700; cursor: pointer;">Login</button>
+            <button id="loginBtn" onclick="checkPassword()" style="margin-top: 10px;">Login</button>
         </div>
     </div>
 

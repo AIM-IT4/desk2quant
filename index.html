@@ -150,6 +150,10 @@
                 <li><a href="#" class="nav-cta" onclick="event.preventDefault(); document.getElementById('bookingForm').scrollIntoView({behavior:'smooth'});">Book Now</a></li>
             </ul>
             <div class="nav-actions">
+                <button class="cart-trigger-btn" id="cartTriggerBtn" type="button" aria-label="Open cart" aria-haspopup="dialog">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-count-badge" id="cartCountBadge" hidden>0</span>
+                </button>
                 <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open mobile menu">
                     <i class="fas fa-bars"></i>
                 </button>
@@ -300,6 +304,21 @@
                     <h2 class="section-headline">Personalized <span class="gradient-text">1-on-1 Sessions</span></h2>
                     <p class="subheadline">Practical, practitioner-led sessions designed to bridge the gap between
                         theory and the desk.</p>
+                </div>
+
+                <div class="mentor-strip reveal-up">
+                    <div class="mentor-strip-image">
+                        <img src="assets/images/me_img.png" alt="Amit Kumar Jha" loading="lazy"
+                            onerror="this.src='assets/images/profile-placeholder.svg'; this.onerror=null;">
+                    </div>
+                    <div class="mentor-strip-body">
+                        <p class="mentor-strip-name">Amit Kumar Jha</p>
+                        <p class="mentor-strip-title">Quant Developer | Model Risk Quant | Mentor</p>
+                        <p class="mentor-strip-credentials">IIT Jodhpur Alumnus &bull; IIT Madras PhD Dropout &bull;
+                            Leading Investment Bank</p>
+                        <p class="mentor-strip-note">You're booking time directly with me &mdash; not a rotating pool of
+                            tutors. Every session below is run personally.</p>
+                    </div>
                 </div>
 
                 <div class="services-grid">
@@ -1044,6 +1063,28 @@
             </div>
         </div>
     </div>
+
+    <!-- Shopping Cart Drawer -->
+    <div class="cart-drawer-overlay" id="cartDrawerOverlay"></div>
+    <aside class="cart-drawer" id="cartDrawer" role="dialog" aria-modal="true" aria-label="Shopping cart">
+        <div class="cart-drawer-header">
+            <h3><i class="fas fa-shopping-cart"></i> Your Cart</h3>
+            <button class="cart-drawer-close" id="cartDrawerClose" aria-label="Close cart"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="cart-drawer-body" id="cartDrawerBody">
+            <p class="cart-empty-state" id="cartEmptyState">Your cart is empty. Add products to buy them together in one checkout.</p>
+            <ul class="cart-items-list" id="cartItemsList"></ul>
+        </div>
+        <div class="cart-drawer-footer" id="cartDrawerFooter" hidden>
+            <div class="cart-total-row">
+                <span>Total</span>
+                <span id="cartTotalDisplay">₹0</span>
+            </div>
+            <button class="btn btn-primary btn-full" id="cartCheckoutBtn" type="button">
+                <i class="fas fa-lock"></i> Checkout
+            </button>
+        </div>
+    </aside>
 
     <!-- User Details Modal (Main Page) -->
     <div id="user-details-modal"

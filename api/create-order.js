@@ -11,7 +11,7 @@
 // The client's `amount`/`inr_amount` fields, if sent, are only used for
 // display/logging in `notes` and are never trusted for pricing.
 
-import { getExpectedProductOrder, getExpectedSessionOrder, getExpectedInterviewOrder, getSubunitMultiplier } from '../lib/pricing.js';
+import { getExpectedProductOrder, getExpectedSessionOrder, getExpectedInterviewOrder, getExpectedCartOrder, getSubunitMultiplier } from '../lib/pricing.js';
 
 export default async function handler(req, res) {
     // CORS headers for frontend calls
@@ -46,8 +46,12 @@ export default async function handler(req, res) {
             expected = await getExpectedSessionOrder(notes.session_id, currency, notes.coupon_code);
         } else if (type === 'interview') {
             expected = await getExpectedInterviewOrder(notes.duration_minutes, currency);
+        } else if (type === 'cart') {
+            // items are passed outside `notes` (req.body.items) to avoid Razorpay's
+            // notes value-size limits; notes only carries the coupon + a summary.
+            expected = await getExpectedCartOrder(req.body?.items, currency, notes.coupon_code);
         } else {
-            return res.status(400).json({ error: 'notes.type must be "product", "session", or "interview", with matching id/duration fields' });
+            return res.status(400).json({ error: 'notes.type must be "product", "session", "interview", or "cart", with matching id/duration/items fields' });
         }
 
         if (!expected.ok) {
@@ -70,21 +74,34 @@ export default async function handler(req, res) {
         // Persist the server-verified pricing basis in notes so the webhook
         // can independently re-check the captured amount later (defense in
         // depth -- see razorpay-webhook.js).
+        const orderNotes = {
+            ...notes,
+            verified_inr_amount: String(expected.amountInr),
+            verified_discount_percent: String(expected.discountPercent || 0)
+        };
+
+        // For carts, store a compact "id:qty,id:qty" summary (Razorpay note
+        // values are capped at 256 chars) instead of full product objects --
+        // the webhook re-fetches names/download links from Supabase by ID.
+        if (type === 'cart') {
+            orderNotes.cart_items = expected.lineItems
+                .map((li) => `${li.productId}:${li.quantity}`)
+                .join(',');
+            orderNotes.cart_item_count = String(expected.lineItems.length);
+        }
+
         const orderPayload = {
             amount: amountInSubunits,
             currency: expected.currency,
             payment_capture: 1, // ✅ INSTANT CAPTURE — payment is captured immediately on authorization
-            notes: {
-                ...notes,
-                verified_inr_amount: String(expected.amountInr),
-                verified_discount_percent: String(expected.discountPercent)
-            }
+            notes: orderNotes
         };
 
         console.log('📦 Creating Razorpay order:', {
             type,
             product_id: notes.product_id,
             session_id: notes.session_id,
+            cart_items: orderNotes.cart_items || null,
             coupon_code: notes.coupon_code || null,
             serverAmountMajor: expected.amountMajor,
             currency: expected.currency,

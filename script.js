@@ -1891,7 +1891,10 @@ async function displaySupabaseProducts(products) {
                             <div class="product-price-action">${originalPriceDisplay}</div>
                             <span class="product-reference-tag">${isFree ? 'Free resource' : visual.tag}</span>
                         </div>
-                        <button class="btn product-buy-button" type="button" onclick="event.stopPropagation();openProductModal('${product.id}')" aria-label="${btnText} ${product.name}">${btnText}</button>
+                        <div class="product-action-row">
+                            ${!isFree ? `<button class="cart-add-btn" type="button" onclick="event.stopPropagation();window.addToCart('${product.id}')" title="Add to cart" aria-label="Add ${product.name} to cart"><i class="fas fa-plus"></i></button>` : ''}
+                            <button class="btn product-buy-button" type="button" onclick="event.stopPropagation();openProductModal('${product.id}')" aria-label="${btnText} ${product.name}">${btnText}</button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -4480,10 +4483,18 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
     window.showSuccessModal = async function (purchasedName, downloadLink) {
         console.log('🏆 Triggering Purchase Success Modal for:', purchasedName);
 
-        // 1. Set the main download button
+        // 1. Set the main download button. Cart checkouts pass '#' since a
+        // multi-item order has one download link per product (sent by email),
+        // not a single link -- hide the button in that case instead of
+        // pointing it nowhere useful.
         const dlBtn = document.getElementById('successDownloadBtn');
         if (dlBtn) {
-            dlBtn.href = downloadLink;
+            if (downloadLink && downloadLink !== '#') {
+                dlBtn.href = downloadLink;
+                dlBtn.style.display = '';
+            } else {
+                dlBtn.style.display = 'none';
+            }
         }
 
         // 2. Identify the strategy keys
@@ -4547,3 +4558,280 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
         }
     };
 })();
+
+// ================================
+// SHOPPING CART (multi-item checkout, alongside single-item Buy Now)
+// ================================
+const CART_STORAGE_KEY = 'qm_cart_v1';
+
+function getCart() {
+    try {
+        const stored = JSON.parse(localStorage.getItem(CART_STORAGE_KEY));
+        return Array.isArray(stored) ? stored : [];
+    } catch (_) {
+        return [];
+    }
+}
+
+function saveCart(cart) {
+    try {
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+    } catch (_) { /* quota exceeded */ }
+    updateCartBadge(cart);
+}
+
+function updateCartBadge(cart) {
+    const badge = document.getElementById('cartCountBadge');
+    if (!badge) return;
+    const count = (cart || getCart()).reduce((sum, item) => sum + item.quantity, 0);
+    badge.textContent = String(count);
+    badge.hidden = count === 0;
+}
+
+// Adds a product to the cart by ID, looking up its details from the already
+// loaded product list (window.allProducts / window.allPaidProducts) so no
+// extra network round-trip is needed.
+window.addToCart = function (productId) {
+    const source = window.allProducts || window.allPaidProducts || [];
+    const product = source.find((p) => p.id === productId);
+    if (!product) {
+        console.error('addToCart: product not found in loaded list:', productId);
+        return;
+    }
+
+    const cart = getCart();
+    const existing = cart.find((item) => item.id === productId);
+    if (existing) {
+        existing.quantity += 1;
+    } else {
+        cart.push({ id: product.id, name: product.name, price: product.price, enablePpp: !!product.enable_ppp, quantity: 1 });
+    }
+    saveCart(cart);
+    renderCartDrawer();
+    flashCartBadge();
+};
+
+window.removeFromCart = function (productId) {
+    const cart = getCart().filter((item) => item.id !== productId);
+    saveCart(cart);
+    renderCartDrawer();
+};
+
+window.setCartItemQuantity = function (productId, quantity) {
+    const cart = getCart();
+    const item = cart.find((i) => i.id === productId);
+    if (!item) return;
+    item.quantity = Math.max(1, Math.min(20, Math.round(quantity)));
+    saveCart(cart);
+    renderCartDrawer();
+};
+
+function flashCartBadge() {
+    const badge = document.getElementById('cartCountBadge');
+    if (!badge) return;
+    badge.classList.add('cart-badge-bump');
+    setTimeout(() => badge.classList.remove('cart-badge-bump'), 350);
+}
+
+async function renderCartDrawer() {
+    const cart = getCart();
+    const list = document.getElementById('cartItemsList');
+    const emptyState = document.getElementById('cartEmptyState');
+    const footer = document.getElementById('cartDrawerFooter');
+    const totalDisplay = document.getElementById('cartTotalDisplay');
+    if (!list) return;
+
+    updateCartBadge(cart);
+
+    if (cart.length === 0) {
+        list.innerHTML = '';
+        if (emptyState) emptyState.hidden = false;
+        if (footer) footer.hidden = true;
+        return;
+    }
+    if (emptyState) emptyState.hidden = true;
+    if (footer) footer.hidden = false;
+
+    let totalInr = 0;
+    let totalLocalAmount = 0;
+    let totalCurrency = null;
+    let rows = '';
+    for (const item of cart) {
+        const lineTotalInr = item.price * item.quantity;
+        totalInr += lineTotalInr;
+        const localLine = await convertPrice(lineTotalInr, window.userCountryCode, item.enablePpp);
+        const isLocal = localLine.currency.code !== 'INR';
+        totalLocalAmount += localLine.amount;
+        totalCurrency = localLine.currency;
+        rows += `
+            <li class="cart-item-row" data-id="${item.id}">
+                <div class="cart-item-info">
+                    <p class="cart-item-name">${item.name}</p>
+                    <div class="cart-item-qty-controls">
+                        <button type="button" class="cart-qty-btn" onclick="window.setCartItemQuantity('${item.id}', ${item.quantity - 1})" aria-label="Decrease quantity">−</button>
+                        <span class="cart-qty-value">${item.quantity}</span>
+                        <button type="button" class="cart-qty-btn" onclick="window.setCartItemQuantity('${item.id}', ${item.quantity + 1})" aria-label="Increase quantity">+</button>
+                    </div>
+                </div>
+                <div class="cart-item-side">
+                    <span class="cart-item-price">${isLocal ? formatPrice(localLine) : '₹' + lineTotalInr}</span>
+                    <button type="button" class="cart-item-remove" onclick="window.removeFromCart('${item.id}')" aria-label="Remove ${item.name} from cart"><i class="fas fa-trash"></i></button>
+                </div>
+            </li>`;
+    }
+    list.innerHTML = rows;
+
+    if (totalDisplay) {
+        totalDisplay.textContent = (totalCurrency && totalCurrency.code !== 'INR')
+            ? formatPrice({ amount: Math.round(totalLocalAmount), currency: totalCurrency })
+            : '₹' + totalInr;
+    }
+    window.currentCartTotalInr = totalInr;
+}
+
+function openCartDrawer() {
+    document.getElementById('cartDrawer')?.classList.add('active');
+    document.getElementById('cartDrawerOverlay')?.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    renderCartDrawer();
+}
+
+function closeCartDrawer() {
+    document.getElementById('cartDrawer')?.classList.remove('active');
+    document.getElementById('cartDrawerOverlay')?.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    updateCartBadge();
+
+    document.getElementById('cartTriggerBtn')?.addEventListener('click', openCartDrawer);
+    document.getElementById('cartDrawerClose')?.addEventListener('click', closeCartDrawer);
+    document.getElementById('cartDrawerOverlay')?.addEventListener('click', closeCartDrawer);
+
+    document.getElementById('cartCheckoutBtn')?.addEventListener('click', function () {
+        const cart = getCart();
+        if (cart.length === 0) return;
+
+        // Reuse the same user-details modal the single-item Buy Now flow uses,
+        // so cart checkout collects name/email/phone the same way.
+        const mainUserModal = document.getElementById('user-details-modal');
+        const mainUserForm = document.getElementById('main-user-details-form');
+        const mainUserClose = document.getElementById('main-ud-close');
+        if (!mainUserModal || !mainUserForm) {
+            console.error('User details modal not found; cannot start cart checkout');
+            return;
+        }
+
+        mainUserModal.style.display = 'flex';
+        mainUserClose.onclick = function () { mainUserModal.style.display = 'none'; };
+
+        mainUserForm.onsubmit = function (e) {
+            e.preventDefault();
+            const udName = document.getElementById('main-ud-name').value.trim();
+            const udEmail = document.getElementById('main-ud-email').value.trim();
+            const udPhone = document.getElementById('main-ud-phone').value.trim();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!udName || !udEmail || !emailRegex.test(udEmail)) {
+                alert('❌ Please fill in required fields with a valid email');
+                return;
+            }
+
+            mainUserModal.style.display = 'none';
+            closeCartDrawer();
+
+            initCartCheckout(cart, {
+                name: udName,
+                email: udEmail,
+                phone: udPhone,
+                country: window.userCountryCode || 'Unknown'
+            });
+        };
+    });
+});
+
+// Multi-item checkout: creates ONE server-verified Razorpay order covering
+// every cart line item, then clears the cart and shows a single success
+// screen listing every purchased product -- this is the "single checkout
+// flow" that replaces buying items one by one when using the cart.
+async function initCartCheckout(cart, userDetails) {
+    if (typeof Razorpay === 'undefined') {
+        alert('⏳ Loading payment system...\nPlease wait and try again in a couple seconds.');
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        document.head.appendChild(script);
+        return;
+    }
+
+    const currency = (window.userLocalPrice && window.userLocalPrice.currency.code !== 'INR')
+        ? window.userLocalPrice.currency.code
+        : 'INR';
+
+    let orderData = null;
+    try {
+        const orderRes = await fetch('/api/create-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                currency,
+                items: cart.map((item) => ({ product_id: item.id, quantity: item.quantity })),
+                notes: {
+                    type: 'cart',
+                    customer_name: userDetails.name,
+                    customer_email: userDetails.email,
+                    customer_phone: userDetails.phone,
+                    customer_country: userDetails.country
+                }
+            })
+        });
+        if (orderRes.ok) {
+            orderData = await orderRes.json();
+        } else {
+            console.error('❌ Cart order creation failed:', await orderRes.text());
+        }
+    } catch (err) {
+        console.error('❌ Could not create cart order (network error):', err);
+    }
+
+    if (!orderData || !orderData.order_id) {
+        alert('⚠️ Could not start secure checkout. Please refresh the page and try again, or contact support if this keeps happening.');
+        return;
+    }
+
+    const options = {
+        key: RAZORPAY_KEY_ID,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'Desk2Quant',
+        description: `${cart.length} item${cart.length > 1 ? 's' : ''}: ${cart.map((i) => i.name).slice(0, 3).join(', ')}${cart.length > 3 ? '…' : ''}`,
+        order_id: orderData.order_id,
+        handler: function (response) {
+            // Purchase logging + confirmation email are handled server-side by
+            // the Razorpay webhook (handleCartPurchase) -- mirrors the single
+            // product flow, which avoids duplicate emails/rows from the client.
+            saveCart([]);
+            renderCartDrawer();
+
+            if (typeof window.showSuccessModal === 'function') {
+                window.showSuccessModal(`${cart.length} item${cart.length > 1 ? 's' : ''}`, '#');
+            } else {
+                alert('🎉 Payment Successful!\n\nCheck your email for your download links.\n\nIMPORTANT: Please check your Spam/Junk folder.');
+            }
+        },
+        modal: {
+            ondismiss: function () {
+                console.log('Cart checkout closed by user');
+            }
+        },
+        prefill: {
+            name: userDetails.name,
+            email: userDetails.email,
+            contact: userDetails.phone
+        },
+        theme: { color: '#e95836' }
+    };
+
+    const razorpay = new Razorpay(options);
+    razorpay.open();
+}
+window.initCartCheckout = initCartCheckout;
