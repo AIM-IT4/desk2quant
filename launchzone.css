@@ -894,6 +894,10 @@ body.d2q-launchzone .form-card {
     box-shadow: none;
 }
 
+body.d2q-launchzone .contact-form {
+    border: 0;
+}
+
 /* ----- Tables and tool panels ----- */
 body.d2q-launchzone table {
     overflow: hidden;
