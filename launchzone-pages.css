@@ -765,3 +765,60 @@ body.d2q-launchzone .hero-product .tests-preview div,
 body.d2q-launchzone .hero-product .terminal-command {
     color: #bed0d5;
 }
+/* Desk simulator: high-contrast mode selection */
+body.d2q-launchzone .mode-card {
+    min-height: 390px;
+    padding: clamp(28px, 3vw, 42px);
+}
+
+body.d2q-launchzone .mode-card-core {
+    color: var(--lz-ink);
+    background: var(--lz-white);
+    border-color: var(--lz-line-strong) !important;
+    box-shadow: 7px 7px 0 var(--lz-ink) !important;
+}
+
+body.d2q-launchzone .mode-card-core h3 {
+    color: var(--lz-ink) !important;
+}
+
+body.d2q-launchzone .mode-card-core .mode-tag,
+body.d2q-launchzone .mode-card-core .mode-duration {
+    color: #5b5c56;
+}
+
+body.d2q-launchzone .mode-card-core p,
+body.d2q-launchzone .mode-card-core .mode-list {
+    color: #444640;
+}
+
+body.d2q-launchzone .mode-card-interview {
+    color: var(--lz-white);
+    border-color: #071019 !important;
+    box-shadow: 7px 7px 0 var(--lz-signal) !important;
+}
+
+body.d2q-launchzone .mode-card-interview h3 {
+    color: var(--lz-white) !important;
+}
+
+body.d2q-launchzone .mode-card-interview p {
+    color: #c4d2d5;
+}
+
+body.d2q-launchzone .mode-card-interview .mode-list {
+    color: #eef7f7;
+}
+
+body.d2q-launchzone .mode-card-core .button {
+    color: var(--lz-white) !important;
+    background: var(--lz-ink) !important;
+    border-color: var(--lz-ink) !important;
+}
+
+body.d2q-launchzone .mode-card-interview .button {
+    color: var(--lz-ink) !important;
+    background: var(--lz-white) !important;
+    border-color: var(--lz-white) !important;
+}
+
