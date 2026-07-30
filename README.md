@@ -1,82 +1,84 @@
-# Desk2Quant - Expert Quant Mentorship Platform
+# Desk2Quant
 
-A comprehensive platform for booking 1-on-1 mentorship sessions and purchasing digital resources (Notes, Guides) for aspiring quantitative finance professionals.
+Desk2Quant is a quantitative-finance learning and mentorship platform with interactive resources, booking workflows and digital-product delivery.
 
-## 🚀 Features
+## Features
 
--   **Mentorship Booking System**: Custom 1-on-1 session booking with dynamic time slots (30-min intervals) and conflict detection.
--   **Digital Product Store**: Purchase crash courses, interview guides, and utility tools directly.
--   **Free Resources**: Direct access to free study materials and cheat sheets.
--   **Payment Integration**: Secure payments via **Razorpay** (supports international cards & multi-currency).
--   **Automated Emails**: Instant booking confirmations and product delivery via **Brevo** (formerly Sendinblue).
--   **Admin Panel**:
-    -   View upcoming and past bookings.
-    -   Approve/Reject rescheduling requests.
-    -   Analytics dashboard (Revenue, Total Bookings).
-    -   Secure file uploading for digital products.
--   **Dynamic Content**: All products and sessions are managed via **Supabase**.
--   **Professional UI**: Dark-themed, responsive design with glassmorphism effects.
+- Mentorship booking with dynamic time slots and conflict detection
+- Digital-resource catalogue and purchase flow
+- Free quantitative-finance learning resources
+- Razorpay payment integration
+- Brevo transactional-email integration
+- Supabase-backed bookings, products and session data
+- Administrative workflows for bookings, rescheduling and analytics
+- Responsive browser-based interface
 
-## 🛠️ Tech Stack
+## Technology
 
--   **Frontend**: HTML5, CSS3 (Custom Variables), JavaScript (Vanilla ES6+).
--   **Backend / Database**: **Supabase** (PostgreSQL) for booking data, product management, and file storage.
--   **Payments**: **Razorpay** Payment Gateway (supports international cards & multi-currency).
--   **Email Service**: **Brevo** (SMTP/API) for transactional emails.
--   **Hosting**: Vercel (Front-end).
+- Frontend: HTML5, CSS3 and vanilla JavaScript
+- Database and storage: Supabase/PostgreSQL
+- Payments: Razorpay
+- Transactional email: Brevo
+- Hosting: Vercel
 
-## 📂 Project Structure
+## Repository structure
 
+The application is served from the repository root. Key files include:
+
+```text
+.
+├── index.html
+├── admin.html
+├── my-bookings.html
+├── resources.html
+├── styles.css
+├── script.js
+├── api/
+├── assets/
+├── scripts/
+├── ARCHITECTURE.md
+└── PROJECT_GUIDE.md
 ```
-website/
-├── index.html        # Main Landing Page (Booking & Products)
-├── admin.html        # Admin Dashboard (Protected)
-├── my-bookings.html  # Customer Booking Management
-├── styles.css        # Global Styles & Design System
-├── script.js         # Core Logic (Booking, Payments, Emails)
-├── config.js         # Configuration (Supabase Keys - Not tracked)
-├── assets/           # Images and static assets
-└── README.md         # Project Documentation
-```
 
-## ⚙️ Setup & Configuration
+The exact structure evolves with the application. See [`ARCHITECTURE.md`](ARCHITECTURE.md) and [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md) for implementation details.
 
-### 1. Supabase Setup
-This project uses Supabase for database and storage.
-1.  Create a project on [Supabase](https://supabase.com).
-2.  Run the provided SQL scripts in the SQL Editor to set up tables (`bookings`, `products`, `sessions`).
-3.  Add your Supabase URL and Anon Key to `config.js` or environment variables.
-
-### 2. Razorpay Integration
-1.  Create an account on [Razorpay](https://dashboard.razorpay.com).
-2.  Generate API Keys (Key ID + Key Secret) from Settings → API Keys.
-3.  Set `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, and `RAZORPAY_WEBHOOK_SECRET` in Vercel environment variables.
-4.  For international payments, enable "International Cards" in Razorpay Dashboard → Settings → Payments.
-5.  Set up the webhook endpoint in Razorpay Dashboard → Settings → Webhooks:
-    - URL: `https://your-domain.vercel.app/api/razorpay-webhook`
-    - Events: `payment.captured`
-
-### 3. Email Automation (Brevo)
-1.  Sign up on [Brevo](https://brevo.com).
-2.  Get your API Key.
-3.  Configure the email sending logic in `script.js` (currently using client-side API call or serverless function for security recommended in production).
-
-### 4. Running Locally
-Simply open `index.html` in your browser or use a live server extension.
+## Local setup
 
 ```bash
-# Clone the repository
-git clone https://github.com/AIM-IT4/quant-mentor.git
-
-# Navigate to directory
-cd quant-mentor/website
-
-# Open in browser (e.g., using python simple server)
+git clone https://github.com/AIM-IT4/desk2quant.git
+cd desk2quant
 python -m http.server 8000
 ```
 
-## 🔐 Admin Access
-The `admin.html` page implements a basic client-side passcode check. For production, ensure strictly secure authentication via Supabase Auth is enabled or `admin.html` is protected by edge functions.
+Then open `http://localhost:8000` in a browser.
 
----
-**Desk2Quant** &copy; 2026. All rights reserved.
+## Configuration
+
+### Supabase
+
+1. Create a Supabase project.
+2. Apply the repository's SQL migrations or setup scripts.
+3. Configure the Supabase project URL and public client key using the project's supported configuration mechanism.
+4. Keep service-role keys and other privileged credentials on the server side only.
+
+### Razorpay
+
+1. Create Razorpay API credentials.
+2. Store secret values in server-side or deployment environment variables.
+3. Configure the payment webhook for the required payment events.
+4. Verify webhook signatures before updating bookings or fulfilling digital products.
+
+### Brevo
+
+Configure transactional-email credentials through server-side environment variables or protected serverless functions. Do not expose private API keys in browser JavaScript.
+
+## Security notes
+
+- The Supabase anonymous key may be used client-side only with appropriate Row Level Security policies.
+- Administrative access should use Supabase Auth or another server-verified authentication mechanism.
+- Payment and email secrets must never be committed to the repository or embedded in client-side code.
+- Production deployments should validate payment webhooks and authorization on every privileged operation.
+
+## Project status
+
+Desk2Quant is an actively developed product repository rather than a general-purpose open-source library. The source is publicly visible for transparency and portfolio demonstration; reuse rights are governed by the repository's applicable copyright and licence notices.
