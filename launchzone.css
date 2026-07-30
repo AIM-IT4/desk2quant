@@ -1121,6 +1121,39 @@ body.d2q-launchzone .footer-bottom {
     border-top: 1px solid #383834;
 }
 
+body.d2q-launchzone .footer-product-hunt {
+    display: flex;
+    width: fit-content;
+    margin-top: 24px;
+    padding: 5px;
+    background: var(--lz-white);
+    border-radius: 10px;
+}
+
+body.d2q-launchzone .footer-product-hunt a,
+body.d2q-launchzone .footer-product-hunt img {
+    display: block;
+}
+
+body.d2q-launchzone .footer-product-hunt a {
+    border-radius: 6px;
+    transition: transform 160ms ease;
+}
+
+body.d2q-launchzone .footer-product-hunt a:hover {
+    transform: translateY(-2px);
+}
+
+body.d2q-launchzone .footer-product-hunt a:focus-visible {
+    outline: 3px solid var(--lz-signal);
+    outline-offset: 4px;
+}
+
+body.d2q-launchzone .footer-product-hunt img {
+    width: 250px;
+    max-width: 100%;
+    height: auto;
+}
 /* ----- Floating controls ----- */
 body.d2q-launchzone .floating-btn,
 body.d2q-launchzone .back-to-top,
