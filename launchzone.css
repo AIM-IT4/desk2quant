@@ -169,11 +169,11 @@ body.d2q-launchzone .logo {
 
 body.d2q-launchzone .navbar .logo {
     min-height: 46px;
-    padding: 7px 12px;
-    color: var(--lz-white);
-    background: var(--lz-ink);
-    border: 1px solid var(--lz-ink);
-    border-radius: 3px;
+    padding: 0;
+    color: var(--lz-ink);
+    background: transparent;
+    border: 0;
+    border-radius: 0;
 }
 
 body.d2q-launchzone .logo-img {
@@ -182,13 +182,32 @@ body.d2q-launchzone .logo-img {
     object-fit: contain;
 }
 
-body.d2q-launchzone .navbar .logo-img {
-    height: 30px;
+body.d2q-launchzone .navbar .logo-mark {
+    display: inline-flex;
+    flex: 0 0 62px;
+    width: 62px;
+    height: 42px;
+    overflow: hidden;
+    background: var(--lz-ink);
+    border-radius: 3px;
+}
+
+body.d2q-launchzone .navbar .logo-mark .logo-img {
+    display: block !important;
+    flex: none;
+    width: auto !important;
+    max-width: none !important;
+    height: 42px !important;
+    object-fit: contain;
+    object-position: left center;
     filter: brightness(0) invert(1);
 }
 
 body.d2q-launchzone .navbar .logo-text {
-    display: none;
+    display: inline !important;
+    color: var(--lz-ink) !important;
+    font-weight: 700;
+    letter-spacing: -0.035em;
 }
 
 body.d2q-launchzone .logo-text {
