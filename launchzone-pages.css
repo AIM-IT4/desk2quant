@@ -661,7 +661,13 @@ body.d2q-launchzone .product-info .action-buttons { order: 7; }
 body.d2q-launchzone .product-info .product-description-full { order: 8; }
 /* Desk Simulator header and terminal contrast corrections. */
 body.d2q-launchzone .site-nav .brand img {
-    display: none;
+    display: block;
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 12px;
+    content: url("assets/images/desk2quant-mark.svg?v=1");
 }
 
 body.d2q-launchzone .site-nav .brand {

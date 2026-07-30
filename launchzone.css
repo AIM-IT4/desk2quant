@@ -184,23 +184,23 @@ body.d2q-launchzone .logo-img {
 
 body.d2q-launchzone .navbar .logo-mark {
     display: inline-flex;
-    flex: 0 0 62px;
-    width: 62px;
+    flex: 0 0 42px;
+    width: 42px;
     height: 42px;
     overflow: hidden;
-    background: var(--lz-ink);
-    border-radius: 10px;
+    background: transparent;
+    border-radius: 12px;
 }
 
 body.d2q-launchzone .navbar .logo-mark .logo-img {
     display: block !important;
     flex: none;
-    width: auto !important;
-    max-width: none !important;
+    width: 42px !important;
+    max-width: 42px !important;
     height: 42px !important;
-    object-fit: contain;
-    object-position: left center;
-    filter: brightness(0) invert(1);
+    object-fit: cover;
+    object-position: center;
+    filter: none;
 }
 
 body.d2q-launchzone .navbar .logo-text {
@@ -1297,3 +1297,4 @@ body.d2q-launchzone .theme-toggle {
         justify-content: center;
     }
 }
+

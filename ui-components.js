@@ -177,12 +177,16 @@
 
     function initialiseFavicon() {
         document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]').forEach(function (link) {
-            link.setAttribute('href', 'assets/images/desk2quant-favicon.svg?v=1');
+            link.setAttribute('href', 'assets/images/desk2quant-favicon.svg?v=2');
             link.setAttribute('type', 'image/svg+xml');
         });
     }
 
     function initialiseBrandMarks() {
+        document.querySelectorAll('.logo-img').forEach(function (image) {
+            image.setAttribute('src', 'assets/images/desk2quant-mark.svg?v=1');
+        });
+
         document.querySelectorAll('.navbar .logo-img').forEach(function (image) {
             if (image.parentElement && image.parentElement.classList.contains('logo-mark')) {
                 return;
@@ -268,3 +272,4 @@
         initialiseComponents();
     }
 }());
+
