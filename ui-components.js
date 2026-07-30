@@ -175,6 +175,20 @@
         }
     }
 
+    function initialiseBrandMarks() {
+        document.querySelectorAll('.navbar .logo-img').forEach(function (image) {
+            if (image.parentElement && image.parentElement.classList.contains('logo-mark')) {
+                return;
+            }
+
+            const mark = document.createElement('span');
+            mark.className = 'logo-mark';
+            mark.setAttribute('aria-hidden', 'true');
+            image.parentNode.insertBefore(mark, image);
+            mark.appendChild(image);
+        });
+    }
+
     function markCurrentNavigation() {
         const currentPath = window.location.pathname.split('/').pop() || 'index.html';
         document.querySelectorAll('.navbar a[href], .footer a[href]').forEach(function (link) {
@@ -191,6 +205,7 @@
     }
 
     function initialiseComponents() {
+        initialiseBrandMarks();
         markCurrentNavigation();
 
         document.querySelectorAll(MODAL_SELECTOR).forEach(function (modal) {
