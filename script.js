@@ -4713,24 +4713,26 @@ document.addEventListener('DOMContentLoaded', function () {
         const cart = getCart();
         if (cart.length === 0) return;
 
-        // Reuse the same user-details modal the single-item Buy Now flow uses,
-        // so cart checkout collects name/email/phone the same way.
+        // Reuse whichever user-details modal/form this page has for its
+        // single-item Buy Now flow, so cart checkout collects name/email/phone
+        // the same way. index.html uses main-ud-* ids; product.html uses ud-* ids.
         const mainUserModal = document.getElementById('user-details-modal');
-        const mainUserForm = document.getElementById('main-user-details-form');
-        const mainUserClose = document.getElementById('main-ud-close');
+        const mainUserForm = document.getElementById('main-user-details-form') || document.getElementById('user-details-form');
+        const idPrefix = document.getElementById('main-user-details-form') ? 'main-ud-' : 'ud-';
+        const mainUserClose = document.getElementById(idPrefix + 'close');
         if (!mainUserModal || !mainUserForm) {
             console.error('User details modal not found; cannot start cart checkout');
             return;
         }
 
         mainUserModal.style.display = 'flex';
-        mainUserClose.onclick = function () { mainUserModal.style.display = 'none'; };
+        if (mainUserClose) mainUserClose.onclick = function () { mainUserModal.style.display = 'none'; };
 
         mainUserForm.onsubmit = function (e) {
             e.preventDefault();
-            const udName = document.getElementById('main-ud-name').value.trim();
-            const udEmail = document.getElementById('main-ud-email').value.trim();
-            const udPhone = document.getElementById('main-ud-phone').value.trim();
+            const udName = document.getElementById(idPrefix + 'name').value.trim();
+            const udEmail = document.getElementById(idPrefix + 'email').value.trim();
+            const udPhone = document.getElementById(idPrefix + 'phone').value.trim();
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!udName || !udEmail || !emailRegex.test(udEmail)) {
                 alert('❌ Please fill in required fields with a valid email');

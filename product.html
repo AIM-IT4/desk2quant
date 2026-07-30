@@ -662,6 +662,10 @@
                 <li><a href="/?scrollTo=bookingForm" class="nav-cta">Book Session</a></li>
             </ul>
             <div class="nav-actions">
+                <button class="cart-trigger-btn" id="cartTriggerBtn" type="button" aria-label="Open cart" aria-haspopup="dialog">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-count-badge" id="cartCountBadge" hidden>0</span>
+                </button>
                 <button class="mobile-menu-btn" id="mobileMenuBtn">
                     <i class="fas fa-bars"></i>
                 </button>
@@ -709,6 +713,9 @@
                 <div class="action-buttons">
                     <button id="buy-btn" class="btn btn-primary" style="padding: 16px 40px; font-size: 1.1rem;">
                         <i class="fas fa-shopping-cart"></i> Buy Now
+                    </button>
+                    <button id="p-cart-add-btn" class="cart-add-btn" type="button" title="Add to cart" aria-label="Add to cart" style="display:none;">
+                        <i class="fas fa-plus"></i>
                     </button>
                     <a href="index.html#products" class="btn btn-secondary">
                         Browse More
@@ -917,6 +924,10 @@
                 // SEO: set per-product title/description/canonical/OG/Twitter/JSON-LD
                 updateProductSEO(product, id);
 
+                // Make this product available to the shared cart module (addToCart
+                // looks it up by id from window.allProducts / window.allPaidProducts).
+                window.allProducts = [product];
+
                 // Populate UI
                 document.getElementById('p-title').textContent = product.name;
 
@@ -964,6 +975,17 @@
                     }
                     priceEl.innerHTML = `${originalPriceDisplay}${priceText}`;
                     buyBtn.innerHTML = `<i class="fas fa-credit-card"></i> Buy Now - ${priceText}`;
+
+                    // Reveal the add-to-cart "+" button for paid products so
+                    // shoppers can add this item to a combined multi-item checkout
+                    // instead of only buying it alone via the Buy Now button.
+                    const cartAddBtn = document.getElementById('p-cart-add-btn');
+                    if (cartAddBtn) {
+                        cartAddBtn.style.display = '';
+                        cartAddBtn.onclick = function () {
+                            window.addToCart(product.id);
+                        };
+                    }
 
                     // Add Coupon UI if price > 0
                     const couponContainer = document.createElement('div');
@@ -2076,6 +2098,28 @@
             document.getElementById('error-content').style.display = 'block';
         }
     </script>
+
+    <!-- Shopping Cart Drawer -->
+    <div class="cart-drawer-overlay" id="cartDrawerOverlay"></div>
+    <aside class="cart-drawer" id="cartDrawer" role="dialog" aria-modal="true" aria-label="Shopping cart">
+        <div class="cart-drawer-header">
+            <h3><i class="fas fa-shopping-cart"></i> Your Cart</h3>
+            <button class="cart-drawer-close" id="cartDrawerClose" aria-label="Close cart"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="cart-drawer-body" id="cartDrawerBody">
+            <p class="cart-empty-state" id="cartEmptyState">Your cart is empty. Add products to buy them together in one checkout.</p>
+            <ul class="cart-items-list" id="cartItemsList"></ul>
+        </div>
+        <div class="cart-drawer-footer" id="cartDrawerFooter" hidden>
+            <div class="cart-total-row">
+                <span>Total</span>
+                <span id="cartTotalDisplay">₹0</span>
+            </div>
+            <button class="btn btn-primary btn-full" id="cartCheckoutBtn" type="button">
+                <i class="fas fa-lock"></i> Checkout
+            </button>
+        </div>
+    </aside>
 
     <!-- User Details Modal (Product Page) -->
     <div id="user-details-modal"
