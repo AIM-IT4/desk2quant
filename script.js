@@ -897,6 +897,12 @@ let exchangeRatesTimestamp = null;
 const RATES_CACHE_DURATION = 3600000; // 1 hour in milliseconds
 const RATES_CACHE_KEY = 'qm_exchange_rates';
 
+// Cache for detected country (persisted to localStorage) — avoids the slow
+// sequential IP-geolocation lookup chain on every repeat page load, which was
+// the main cause of products/sessions taking a while to appear.
+const COUNTRY_CACHE_DURATION = 86400000; // 24 hours in milliseconds
+const COUNTRY_CACHE_KEY = 'qm_user_country';
+
 // Try immediately, retry briefly if SDK not yet loaded (e.g. slow network)
 if (!initSupabaseAndLoad()) {
     let retries = 0;
@@ -930,6 +936,19 @@ async function getUserCountry() {
         window.userCountryCode = userCountryCode;
         return userCountryCode;
     }
+
+    // Check localStorage for a country detected on a previous visit — skips the
+    // slow sequential IP-lookup chain below on repeat loads (instant instead of
+    // up to several seconds across multiple API attempts).
+    try {
+        const stored = JSON.parse(localStorage.getItem(COUNTRY_CACHE_KEY));
+        if (stored && stored.code && (Date.now() - stored.ts) < COUNTRY_CACHE_DURATION) {
+            userCountryCode = stored.code;
+            window.userCountryCode = userCountryCode;
+            console.log('📍 Using cached country (age:', Math.round((Date.now() - stored.ts) / 60000), 'minutes):', userCountryCode);
+            return userCountryCode;
+        }
+    } catch (_) { /* ignore parse errors */ }
 
     const fetchWithTimeout = async (url, timeout = 5000) => {
         const controller = new AbortController();
@@ -1014,6 +1033,12 @@ async function getUserCountry() {
 
     console.log('User country detected:', userCountryCode);
     window.userCountryCode = userCountryCode;
+
+    // Persist to localStorage so the next page load can skip the lookup entirely.
+    try {
+        localStorage.setItem(COUNTRY_CACHE_KEY, JSON.stringify({ code: userCountryCode, ts: Date.now() }));
+    } catch (_) { /* quota exceeded */ }
+
     return userCountryCode;
 }
 
@@ -1584,12 +1609,41 @@ function buildProductCatalogJsonLd(products) {
     script.textContent = JSON.stringify(jsonLd);
 }
 
+// Stale-while-revalidate cache for products/sessions: render the last known
+// list instantly from localStorage, then silently refresh from Supabase in the
+// background and re-render only if the data actually changed.
+const PRODUCTS_CACHE_KEY = 'qm_products_cache';
+const SESSIONS_CACHE_KEY = 'qm_sessions_cache';
+
+function readListCache(key) {
+    try {
+        const stored = JSON.parse(localStorage.getItem(key));
+        if (stored && Array.isArray(stored.data)) return stored.data;
+    } catch (_) { /* ignore parse errors */ }
+    return null;
+}
+
+function writeListCache(key, data) {
+    try {
+        localStorage.setItem(key, JSON.stringify({ data, ts: Date.now() }));
+    } catch (_) { /* quota exceeded */ }
+}
+
 // Load and display products from Supabase
 async function loadProductsFromSupabase(prefetchPromise) {
     try {
         if (!window.supabaseClient) {
             console.error('Supabase client not initialized');
             return;
+        }
+
+        // Instant paint from last known cache while the fresh query runs in the background.
+        const cached = readListCache(PRODUCTS_CACHE_KEY);
+        if (cached && cached.length > 0) {
+            console.log('⚡ Rendering ' + cached.length + ' cached products instantly');
+            window.allProducts = cached;
+            await displaySupabaseProducts(cached);
+            buildProductCatalogJsonLd(cached);
         }
 
         // Fire Supabase query immediately
@@ -1623,10 +1677,19 @@ async function loadProductsFromSupabase(prefetchPromise) {
         }
 
         if (data && data.length > 0) {
-            console.log('📦 Loading ' + data.length + ' products from Supabase');
-            window.allProducts = data;
-            await displaySupabaseProducts(data);
-            buildProductCatalogJsonLd(data);
+            writeListCache(PRODUCTS_CACHE_KEY, data);
+            // Skip the re-render if the fresh data is identical to what's already
+            // painted from cache — avoids a visible flicker on repeat visits.
+            const unchanged = cached && cached.length > 0 && JSON.stringify(cached) === JSON.stringify(data);
+            if (!unchanged) {
+                console.log('📦 Loading ' + data.length + ' products from Supabase');
+                window.allProducts = data;
+                await displaySupabaseProducts(data);
+                buildProductCatalogJsonLd(data);
+            } else {
+                console.log('✅ Products already up to date (cache matched)');
+                window.allProducts = data;
+            }
         }
     } catch (err) {
         console.error('Failed to load products:', err);
@@ -1934,6 +1997,15 @@ async function loadSessionsFromSupabase(prefetchPromise) {
             return;
         }
 
+        // Instant paint from last known cache while the fresh query runs in the background.
+        const cachedSessions = readListCache(SESSIONS_CACHE_KEY);
+        if (cachedSessions && cachedSessions.length > 0) {
+            console.log('⚡ Rendering ' + cachedSessions.length + ' cached sessions instantly');
+            window.dynamicSessions = cachedSessions;
+            await updateServicesSection(cachedSessions);
+            await updateBookingForm(cachedSessions);
+        }
+
         // Fire Supabase query immediately
         const queryPromise = window.supabaseClient
             .from('sessions')
@@ -1966,11 +2038,17 @@ async function loadSessionsFromSupabase(prefetchPromise) {
         }
 
         if (data && data.length > 0) {
-            console.log('🎯 Loading ' + data.length + ' sessions from Supabase');
-            // Store sessions globally for booking form reference
-            window.dynamicSessions = data;
-            await updateServicesSection(data);
-            await updateBookingForm(data);
+            writeListCache(SESSIONS_CACHE_KEY, data);
+            const unchanged = cachedSessions && cachedSessions.length > 0 && JSON.stringify(cachedSessions) === JSON.stringify(data);
+            if (!unchanged) {
+                console.log('🎯 Loading ' + data.length + ' sessions from Supabase');
+                window.dynamicSessions = data;
+                await updateServicesSection(data);
+                await updateBookingForm(data);
+            } else {
+                console.log('✅ Sessions already up to date (cache matched)');
+                window.dynamicSessions = data;
+            }
         }
     } catch (err) {
         console.error('Failed to load sessions:', err);
