@@ -189,7 +189,7 @@ body.d2q-launchzone .navbar .logo-mark {
     height: 42px;
     overflow: hidden;
     background: var(--lz-ink);
-    border-radius: 3px;
+    border-radius: 10px;
 }
 
 body.d2q-launchzone .navbar .logo-mark .logo-img {
