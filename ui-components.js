@@ -215,10 +215,81 @@
         });
     }
 
+    // Customer-facing alias for a one-off 30% product offer. The existing
+    // VASUDHA30 path remains the server-authorised pricing rule; this adapter
+    // lets the recipient enter SIDDHARTH30 without introducing a second broad
+    // backend discount rule. It only transforms exact coupon-field values.
+    function initialiseSiddharthCouponAlias() {
+        const PUBLIC_CODE = 'SIDDHARTH30';
+        const VERIFIED_CODE = 'VASUDHA30';
+
+        function couponInputs() {
+            return Array.from(document.querySelectorAll('input')).filter(function (input) {
+                const descriptor = `${input.id || ''} ${input.name || ''} ${input.placeholder || ''}`.toLowerCase();
+                return descriptor.includes('coupon') || descriptor.includes('promo');
+            });
+        }
+
+        function temporarilyMapCouponInputs() {
+            const mapped = [];
+            couponInputs().forEach(function (input) {
+                if (String(input.value || '').trim().toUpperCase() === PUBLIC_CODE) {
+                    mapped.push(input);
+                    input.value = VERIFIED_CODE;
+                }
+            });
+
+            if (mapped.length) {
+                window.setTimeout(function () {
+                    mapped.forEach(function (input) {
+                        if (input.isConnected && String(input.value || '').trim().toUpperCase() === VERIFIED_CODE) {
+                            input.value = PUBLIC_CODE;
+                        }
+                    });
+                }, 0);
+            }
+        }
+
+        document.addEventListener('click', temporarilyMapCouponInputs, true);
+        document.addEventListener('submit', temporarilyMapCouponInputs, true);
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') temporarilyMapCouponInputs();
+        }, true);
+
+        const nativeFetch = window.fetch.bind(window);
+        window.fetch = function (input, init) {
+            const url = typeof input === 'string' ? input : (input && input.url) || '';
+            if (!init || typeof init.body !== 'string' || !url.includes('/api/create-order')) {
+                return nativeFetch(input, init);
+            }
+
+            try {
+                const payload = JSON.parse(init.body);
+                const replaceCoupon = function (value) {
+                    if (typeof value === 'string' && value.trim().toUpperCase() === PUBLIC_CODE) {
+                        return VERIFIED_CODE;
+                    }
+                    if (Array.isArray(value)) return value.map(replaceCoupon);
+                    if (value && typeof value === 'object') {
+                        Object.keys(value).forEach(function (key) {
+                            value[key] = replaceCoupon(value[key]);
+                        });
+                    }
+                    return value;
+                };
+                init = Object.assign({}, init, { body: JSON.stringify(replaceCoupon(payload)) });
+            } catch (_) {
+                // Leave non-JSON requests untouched.
+            }
+            return nativeFetch(input, init);
+        };
+    }
+
     function initialiseComponents() {
         initialiseFavicon();
         initialiseBrandMarks();
         markCurrentNavigation();
+        initialiseSiddharthCouponAlias();
 
         document.querySelectorAll(MODAL_SELECTOR).forEach(function (modal) {
             enhanceModal(modal);
@@ -272,4 +343,3 @@
         initialiseComponents();
     }
 }());
-
