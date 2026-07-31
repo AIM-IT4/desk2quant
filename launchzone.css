@@ -989,6 +989,23 @@ body.d2q-launchzone .section-header .subheadline {
     text-align: left;
 }
 
+/* The mentorship headline ("Personalized 1-on-1 Sessions") is long enough
+   that on wide desktop screens (where our screenshot tooling, capped at
+   1040px, never reproduces it) the clamped font-size grows large enough
+   that the phrase no longer fits on one line inside the default 900px cap.
+   It then wraps to a short orphan second line, leaving a large empty
+   gutter to its right. Widen the cap so the phrase fits on one line up to
+   much wider viewports; text-wrap: balance (inherited from
+   .section-headline) still guarantees an even split as a fallback on any
+   viewport where it still needs to wrap, instead of a lonely short line. */
+body.d2q-launchzone .services .section-header {
+    max-width: 1180px;
+}
+
+body.d2q-launchzone .services .section-headline {
+    max-width: 1180px;
+}
+
 /* ----- Numbered pathways ----- */
 body.d2q-launchzone .home-flow {
     padding: 0;
