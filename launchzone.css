@@ -117,12 +117,6 @@ body.d2q-launchzone .gradient-text {
     -webkit-text-fill-color: currentColor !important;
 }
 
-/* Keeps short compound terms like "1-on-1" from breaking mid-hyphen onto
-   two lines on narrow viewports. */
-body.d2q-launchzone .no-wrap {
-    white-space: nowrap;
-}
-
 /* ----- Promo strip ----- */
 body.d2q-launchzone .promo-banner {
     min-height: 34px;
@@ -1588,10 +1582,16 @@ body.d2q-launchzone .theme-toggle {
     body.d2q-launchzone .hero-cta {
         display: grid;
         grid-template-columns: 1fr;
+        justify-items: center;
         width: 100%;
     }
 
+    /* styles.css caps .hero-cta .btn at max-width:320px on narrow viewports,
+       which leaves the grid cell wider than the button; without an explicit
+       justify-self the leftover space collapses to the right, so the button
+       hugs the left edge instead of centering. */
     body.d2q-launchzone .hero-cta .btn {
+        justify-self: center;
         width: 100%;
     }
 
