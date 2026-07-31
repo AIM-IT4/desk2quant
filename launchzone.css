@@ -1006,6 +1006,15 @@ body.d2q-launchzone .services .section-headline {
     max-width: 1180px;
 }
 
+/* Same wrap-gap issue as the mentorship headline above, but for the
+   "Share Your Experience" review-form heading (.section-title in
+   launchzone-pages.css, used here on index.html): widen its container so
+   the phrase fits on one line at common desktop widths instead of
+   dumping a short orphan word onto its own line. */
+body.d2q-launchzone .review-section .section-header {
+    max-width: 1180px;
+}
+
 /* ----- Numbered pathways ----- */
 body.d2q-launchzone .home-flow {
     padding: 0;

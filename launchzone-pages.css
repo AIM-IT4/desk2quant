@@ -238,6 +238,12 @@ body.d2q-launchzone .section-title {
     font-size: clamp(3rem, 7vw, 6.4rem) !important;
     line-height: 0.95;
     letter-spacing: -0.07em;
+    /* Without this, a heading whose greedy wrap doesn't fit on one line at
+       real desktop widths (font-size grows past 100px there) can dump a
+       short orphan word onto its own second line, leaving a large empty
+       gutter beside it -- e.g. "Share Your Experience" on wide screens.
+       balance guarantees an even split whenever it does need to wrap. */
+    text-wrap: balance;
 }
 
 body.d2q-launchzone .section-subtitle {
