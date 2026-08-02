@@ -5020,9 +5020,26 @@ async function initCartCheckout(cart, userDetails) {
         description: `${cart.length} item${cart.length > 1 ? 's' : ''}: ${cart.map((i) => i.name).slice(0, 3).join(', ')}${cart.length > 3 ? '…' : ''}`,
         order_id: orderData.order_id,
         handler: function (response) {
-            // Purchase logging + confirmation email are handled server-side by
-            // the Razorpay webhook (handleCartPurchase) -- mirrors the single
-            // product flow, which avoids duplicate emails/rows from the client.
+            const paymentId = response.razorpay_payment_id;
+            const customerEmail = (userDetails && userDetails.email) ? userDetails.email : null;
+
+            // Grant Drive/download access server-side as a fast fallback in case
+            // the Razorpay webhook is slow or fails -- mirrors the same safety
+            // net the single product flow has (grant-access.js is idempotent,
+            // so this never double-grants/double-emails on top of the webhook).
+            if (customerEmail) {
+                fetch("/api/grant-access", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ payment_id: paymentId, email: customerEmail })
+                }).then(r => r.json())
+                    .then(d => console.log("grant-access (cart):", d.success ? "ok" : (d.error || "no grant needed")))
+                    .catch(err => console.warn("grant-access (cart) call failed:", err));
+            }
+
+            // Purchase logging + confirmation email are primarily handled
+            // server-side by the Razorpay webhook (handleCartPurchase); the
+            // call above is just a fast fallback, not a duplicate path.
             saveCart([]);
             renderCartDrawer();
 
