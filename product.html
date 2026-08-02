@@ -809,7 +809,9 @@
     <!-- Scripts -->
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <!-- Razorpay Checkout: loaded on demand by loadRazorpaySdk() in script.js -->
+    <link rel="dns-prefetch" href="https://checkout.razorpay.com">
+    <link rel="preconnect" href="https://checkout.razorpay.com" crossorigin>
 
     <script>
         document.addEventListener('DOMContentLoaded', async function () {

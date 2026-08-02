@@ -75,7 +75,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const scrollTopBtn = document.getElementById('scrollTopBtn');
 
     if (navbar) {
-        window.addEventListener('scroll', () => {
+        // Scroll handler is rAF-throttled and passive: it previously ran on every
+        // scroll event and read scrollHeight each time (forcing layout), which added
+        // avoidable jank. Behaviour is unchanged - only the scheduling.
+        let __scrollTicking = false;
+        const __onScroll = () => {
             if (window.scrollY > 20) {
                 navbar.classList.add('scrolled');
             } else {
@@ -86,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (scrollProgress) {
                 const scrollTop = window.scrollY;
                 const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-                const scrollPercent = (scrollTop / docHeight) * 100;
+                const scrollPercent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
                 scrollProgress.style.width = scrollPercent + '%';
             }
 
@@ -98,7 +102,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     scrollTopBtn.classList.remove('visible');
                 }
             }
-        });
+            __scrollTicking = false;
+        };
+        window.addEventListener('scroll', () => {
+            if (!__scrollTicking) {
+                __scrollTicking = true;
+                requestAnimationFrame(__onScroll);
+            }
+        }, { passive: true });
+        __onScroll();
     }
 
     // Scroll-to-top click handler
@@ -917,6 +929,37 @@ if (!initSupabaseAndLoad()) {
         }
     }, 50);
 }
+
+// ================================
+// RAZORPAY LAZY LOADER
+// The checkout SDK used to be a blocking <script> on every page. It boots an
+// iframe immediately and then streams ~220 chunk files in the background while
+// the visitor is just reading the page, which caused long main-thread tasks and
+// visible scroll stutter. We now fetch it on first checkout intent instead.
+// ================================
+let __razorpaySdkPromise = null;
+function loadRazorpaySdk() {
+    if (typeof window.Razorpay !== 'undefined') return Promise.resolve();
+    if (__razorpaySdkPromise) return __razorpaySdkPromise;
+
+    __razorpaySdkPromise = new Promise((resolve, reject) => {
+        const existing = document.querySelector('script[src*="checkout.razorpay.com"]');
+        if (existing) {
+            existing.addEventListener('load', () => resolve());
+            existing.addEventListener('error', () => reject(new Error('Razorpay SDK failed to load')));
+            if (typeof window.Razorpay !== 'undefined') resolve();
+            return;
+        }
+        const el = document.createElement('script');
+        el.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        el.async = true;
+        el.onload = () => resolve();
+        el.onerror = () => { __razorpaySdkPromise = null; reject(new Error('Razorpay SDK failed to load')); };
+        document.head.appendChild(el);
+    });
+    return __razorpaySdkPromise;
+}
+window.loadRazorpaySdk = loadRazorpaySdk;
 
 async function getUserCountry() {
     try {
@@ -2538,6 +2581,7 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
         }
     };
 
+    await loadRazorpaySdk();
     const razorpay = new Razorpay(options);
     razorpay.open();
 }
@@ -3307,6 +3351,7 @@ async function initSessionPayment(description, amount, customerEmail, currency =
     };
 
     try {
+        await loadRazorpaySdk();
         const razorpay = new Razorpay(options);
         razorpay.open();
     } catch (e) {
@@ -5000,6 +5045,7 @@ async function initCartCheckout(cart, userDetails) {
         theme: { color: '#e95836' }
     };
 
+    await loadRazorpaySdk();
     const razorpay = new Razorpay(options);
     razorpay.open();
 }

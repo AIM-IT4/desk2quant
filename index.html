@@ -1117,7 +1117,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <!-- Razorpay Checkout Script -->
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <!-- Razorpay Checkout: loaded on demand by loadRazorpaySdk() in script.js -->
+    <link rel="dns-prefetch" href="https://checkout.razorpay.com">
+    <link rel="preconnect" href="https://checkout.razorpay.com" crossorigin>
 
     <!-- Config file (contains API keys - not tracked by git, auto-generated on Vercel) -->
     <script>
