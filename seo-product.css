@@ -1,0 +1,45 @@
+/* Styling for build-time generated SEO product pages. */
+.seo-doc {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 48px 20px 80px;
+    line-height: 1.7;
+}
+.seo-crumbs {
+    font-size: 0.875rem;
+    opacity: 0.75;
+    margin-bottom: 28px;
+}
+.seo-crumbs a { text-decoration: none; }
+.seo-crumbs a:hover { text-decoration: underline; }
+.seo-crumbs span { margin: 0 4px; }
+.seo-doc h1 {
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    line-height: 1.2;
+    margin: 0 0 12px;
+}
+.seo-doc h2 {
+    font-size: 1.25rem;
+    margin: 40px 0 12px;
+}
+.seo-price { font-size: 1.05rem; opacity: 0.85; margin: 0 0 24px; }
+.seo-doc img { max-width: 100%; height: auto; border-radius: 10px; }
+.seo-cta-row { margin: 28px 0; }
+.seo-cta {
+    display: inline-block;
+    padding: 14px 28px;
+    border-radius: 10px;
+    font-weight: 600;
+    text-decoration: none;
+    background: #2563eb;
+    color: #fff;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+.seo-cta:hover { background: #1d4ed8; transform: translateY(-1px); }
+.seo-doc ul { padding-left: 1.25rem; }
+.seo-doc li { margin-bottom: 10px; }
+.seo-list li span { opacity: 0.75; }
+@media (prefers-reduced-motion: reduce) {
+    .seo-cta { transition: none; }
+    .seo-cta:hover { transform: none; }
+}

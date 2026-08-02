@@ -6,5 +6,8 @@ Disallow: /test-payment.html
 Disallow: /email-preview.html
 Disallow: /email-preview-all.html
 Disallow: /my-bookings.html
+Disallow: /index-test.html
+Disallow: /product-test.html
+Disallow: /emailjs_template.html
 
 Sitemap: https://desk2quant.vercel.app/sitemap.xml
