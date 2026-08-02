@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Your First 90 Days as a Quant">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="55%" stop-color="#132a4d"/>
+      <stop offset="100%" stop-color="#1e3a8a"/>
+    </linearGradient>
+    <linearGradient id="line" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#7dd3fc"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <g opacity="0.10" stroke="#93c5fd" stroke-width="1">
+    <path d="M0 160h1200M0 300h1200M0 440h1200"/>
+    <path d="M200 0v630M480 0v630M760 0v630M1040 0v630"/>
+  </g>
+  <polyline points="90,470 250,430 400,455 560,360 720,300 880,235 1050,165"
+            fill="none" stroke="url(#line)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="#38bdf8">
+    <circle cx="250" cy="430" r="8"/><circle cx="560" cy="360" r="8"/>
+    <circle cx="880" cy="235" r="8"/><circle cx="1050" cy="165" r="10"/>
+  </g>
+  <text x="90" y="180" font-family="Inter,Segoe UI,Helvetica,Arial,sans-serif" font-size="30" font-weight="600" fill="#7dd3fc" letter-spacing="3">DESK2QUANT</text>
+  <text x="90" y="268" font-family="Inter,Segoe UI,Helvetica,Arial,sans-serif" font-size="62" font-weight="800" fill="#ffffff">Your First 90 Days</text>
+  <text x="90" y="340" font-family="Inter,Segoe UI,Helvetica,Arial,sans-serif" font-size="62" font-weight="800" fill="#ffffff">as a Quant</text>
+  <text x="90" y="392" font-family="Inter,Segoe UI,Helvetica,Arial,sans-serif" font-size="27" font-weight="400" fill="#cbd5e1">What nobody tells you before day one</text>
+  <g font-family="Inter,Segoe UI,Helvetica,Arial,sans-serif" font-size="20" font-weight="600" fill="#7dd3fc" opacity="0.85">
+    <text x="200" y="560">Month 1 &middot; Trace</text>
+    <text x="520" y="560">Month 2 &middot; Explain</text>
+    <text x="860" y="560">Month 3 &middot; Defend</text>
+  </g>
+</svg>
