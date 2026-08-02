@@ -26,8 +26,8 @@
   <text x="90" y="340" font-family="Inter,Segoe UI,Helvetica,Arial,sans-serif" font-size="62" font-weight="800" fill="#ffffff">as a Quant</text>
   <text x="90" y="392" font-family="Inter,Segoe UI,Helvetica,Arial,sans-serif" font-size="27" font-weight="400" fill="#cbd5e1">What nobody tells you before day one</text>
   <g font-family="Inter,Segoe UI,Helvetica,Arial,sans-serif" font-size="20" font-weight="600" fill="#7dd3fc" opacity="0.85">
-    <text x="200" y="560">Month 1 &middot; Trace</text>
-    <text x="520" y="560">Month 2 &middot; Explain</text>
-    <text x="860" y="560">Month 3 &middot; Defend</text>
+    <text x="200" y="560">Month 1 · Trace</text>
+    <text x="520" y="560">Month 2 · Explain</text>
+    <text x="860" y="560">Month 3 · Defend</text>
   </g>
 </svg>
