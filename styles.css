@@ -3635,14 +3635,6 @@ body {
     display: grid;
     grid-template-columns: 1fr 1.3fr;
 }
-@media (max-width: 640px) {
-    .promo-popup-grid {
-        grid-template-columns: 1fr;
-    }
-    .promo-popup-image-side {
-        display: none;
-    }
-}
 .promo-popup-image-side {
     background: var(--bg-tertiary);
     padding: 40px;
@@ -3794,6 +3786,45 @@ body {
 }
 .popup-footer-note i {
     color: var(--d2q-teal);
+}
+
+/* --- Promo popup: mobile fit (single column, image hidden, scrollable) --- */
+@media (max-width: 640px) {
+    .promo-popup-grid {
+        grid-template-columns: 1fr;
+    }
+    .promo-popup-image-side {
+        display: none;
+    }
+    .promo-popup-card {
+        width: 100%;
+        max-height: calc(100dvh - 20px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+    }
+    .promo-popup-info-side {
+        padding: 28px 20px 24px;
+        justify-content: flex-start;
+    }
+    .promo-popup-info-side h2 {
+        font-size: 1.25rem;
+        line-height: 1.25;
+    }
+    .popup-desc {
+        font-size: 0.875rem;
+        line-height: 1.5;
+    }
+    .popup-action-buttons {
+        flex-direction: column;
+    }
+    .popup-action-buttons .btn {
+        width: 100%;
+    }
+    .promo-popup-close {
+        right: 12px;
+        top: 12px;
+    }
 }
 
 /* Bestseller ribbon, driven by verified real purchase counts */
