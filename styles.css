@@ -4102,3 +4102,210 @@ body {
 .badge-dot {
     background: #166534;
 }
+
+/* ==========================================================================
+   404 page
+   ========================================================================== */
+.notfound-page {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 100px 20px 80px;
+    text-align: center;
+}
+
+.notfound-code {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 4.5rem;
+    font-weight: 700;
+    line-height: 1;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.notfound-title {
+    margin: 16px 0 12px;
+    font-size: 1.6rem;
+}
+
+.notfound-body {
+    margin: 0 auto 32px;
+    max-width: 460px;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+.notfound-actions {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 48px;
+}
+
+.notfound-links {
+    display: flex;
+    gap: 10px 28px;
+    justify-content: center;
+    flex-wrap: wrap;
+    list-style: none;
+    margin: 0 0 40px;
+    padding: 28px 0 0;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.notfound-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+}
+
+.notfound-links a:hover {
+    color: var(--accent-primary);
+}
+
+.notfound-help {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.notfound-help a {
+    color: var(--accent-primary);
+}
+
+@media (max-width: 600px) {
+    .notfound-page {
+        padding: 70px 20px 60px;
+    }
+
+    .notfound-code {
+        font-size: 3.5rem;
+    }
+
+    .notfound-actions .btn {
+        width: 100%;
+    }
+}
+
+/* ==========================================================================
+   Products load error state
+   Painted by showProductsLoadError() in script.js when Supabase can't be
+   reached. displaySupabaseProducts() clears the grid before fetching, so
+   without this the visitor sees an empty store and assumes nothing is for sale.
+   ========================================================================== */
+.products-load-error {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 48px 24px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+}
+
+.products-load-error-title {
+    margin: 0 0 10px;
+    font-size: 1.15rem;
+    color: var(--text-primary);
+}
+
+.products-load-error-body {
+    margin: 0 auto 24px;
+    max-width: 420px;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.products-load-error-retry {
+    background: var(--accent-gradient, var(--accent-primary));
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 28px;
+    min-height: 44px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.products-load-error-retry:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.products-load-error-retry:disabled {
+    opacity: 0.6;
+    cursor: default;
+    transform: none;
+}
+
+/* ==========================================================================
+   Touch targets - WCAG 2.5.5 (44x44 CSS px minimum)
+   These icon buttons were 34-40px square. min-* is used rather than editing
+   each rule's width/height so the visual box stays put and only the tappable
+   area grows; the flex centering already on them keeps the glyph centred.
+   ========================================================================== */
+.mobile-menu-btn,
+.modal-close,
+.promo-close-btn,
+.promo-popup-close,
+.success-modal-close,
+.social-link,
+.footer-social a,
+#blogShareBar button {
+    min-width: 44px;
+    min-height: 44px;
+}
+
+/* ==========================================================================
+   Reduced motion
+   Users with vestibular disorders (and anyone who set the OS toggle) get a
+   static site: transforms and animations collapse instead of moving. Opacity
+   fades are kept at their end state so nothing is left invisible.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    /* Elements that animate in from a translated/scaled start would be stuck
+       off-position once the animation is neutered, so pin them to their
+       finished state. */
+    .reveal-up,
+    .reveal-up.revealed,
+    .modal.active .modal-content,
+    .promo-popup-modal.active .promo-popup-card,
+    .success-modal.active .success-modal-content,
+    .qm-toast {
+        opacity: 1;
+        transform: none;
+    }
+
+    /* Purely decorative looping motion is switched off entirely. */
+    .badge-dot,
+    .pulse,
+    .floating,
+    .shimmer,
+    .skeleton-line,
+    .skeleton-btn {
+        animation: none !important;
+    }
+
+    html {
+        scroll-behavior: auto;
+    }
+}

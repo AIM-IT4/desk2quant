@@ -1,4 +1,31 @@
 ﻿// ================================
+// DEBUG LOGGING
+// ================================
+// Production consoles were carrying ~90 emoji-tagged progress lines
+// ("Rendering N cached products", "Triggering Purchase Success Modal", and
+// friends), which is noise for anyone who opens devtools and leaks internal
+// flow detail. Gated behind an explicit opt-in instead of deleted, so the
+// same breadcrumbs are still available when debugging a live issue:
+//   localStorage.setItem("qm_debug", "1")  -- or load with ?debug=1
+// console.warn/console.error are deliberately untouched: real problems
+// should always surface.
+const QM_DEBUG = (function () {
+    try {
+        if (localStorage.getItem('qm_debug') === '1') return true;
+    } catch (e) { /* private mode / storage disabled */ }
+    try {
+        return new URLSearchParams(location.search).has('debug');
+    } catch (e) {
+        return false;
+    }
+})();
+
+function qmLog(...args) {
+    if (QM_DEBUG) console.log(...args);
+}
+window.qmLog = qmLog;
+
+// ================================
 // TOAST NOTIFICATIONS
 // ================================
 // Replaces window.alert() on the payment/checkout paths. Native alerts are
@@ -107,7 +134,7 @@ async function sendEmailWithBrevo(to, subject, htmlContent, textContent) {
         const data = await response.json();
 
         if (response.ok && data.success) {
-            console.log('✅ Email sent successfully via Secure API.', { to });
+            qmLog('✅ Email sent successfully via Secure API.', { to });
             return { success: true };
         } else {
             console.error('❌ Email sending error:', data.error);
@@ -122,7 +149,7 @@ async function sendEmailWithBrevo(to, subject, htmlContent, textContent) {
 // Send Notification to Admin
 async function sendAdminNotification(subject, htmlContent, textContent) {
     const ADMIN_EMAIL = 'jha.8@alumni.iitj.ac.in';
-    console.log('📧 Sending Admin Notification to:', ADMIN_EMAIL);
+    qmLog('📧 Sending Admin Notification to:', ADMIN_EMAIL);
     return sendEmailWithBrevo(ADMIN_EMAIL, subject, htmlContent, textContent);
 }
 
@@ -155,7 +182,7 @@ function truncateText(text, maxLen) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    console.log('🚀 DOM loaded, initializing all components...');
+    qmLog('🚀 DOM loaded, initializing all components...');
 
     const navbar = document.querySelector('.navbar');
     const scrollProgress = document.getElementById('scrollProgress');
@@ -255,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function () {
             icon.classList.toggle('fa-bars');
             icon.classList.toggle('fa-times');
         });
-        console.log('✅ Mobile navigation initialized');
+        qmLog('✅ Mobile navigation initialized');
     }
 
     // --------------------------------
@@ -407,7 +434,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Open modal when product button is clicked
     document.querySelectorAll('.btn-product').forEach(btn => {
         btn.addEventListener('click', function () {
-            console.log('🖱️ Product button clicked:', this.dataset.product);
+            qmLog('🖱️ Product button clicked:', this.dataset.product);
             const product = this.dataset.product;
             const price = this.dataset.price;
 
@@ -438,7 +465,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             modal.classList.add('active');
             document.body.style.overflow = 'hidden';
-            console.log('✅ Modal opened for:', product);
+            qmLog('✅ Modal opened for:', product);
         });
     });
 
@@ -791,8 +818,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // --------------------------------
     // Console welcome message
     // --------------------------------
-    console.log('%c Desk2Quant ', 'background: linear-gradient(135deg, #6366f1, #a855f7); color: white; font-size: 20px; padding: 10px 20px; border-radius: 8px;');
-    console.log('%c Expert Quant Mentorship & Digital Resources ', 'color: #a855f7; font-size: 14px;');
+    qmLog('%c Desk2Quant ', 'background: linear-gradient(135deg, #6366f1, #a855f7); color: white; font-size: 20px; padding: 10px 20px; border-radius: 8px;');
+    qmLog('%c Expert Quant Mentorship & Digital Resources ', 'color: #a855f7; font-size: 14px;');
 
     // ================================
     // HERO PARTICLE ANIMATION
@@ -951,9 +978,9 @@ function initSupabaseAndLoad() {
             // Initialize if not already done
             if (!window.supabaseClient) {
                 window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                console.log('✅ Supabase initialized');
+                qmLog('✅ Supabase initialized');
             } else {
-                console.log('✅ Supabase already initialized');
+                qmLog('✅ Supabase already initialized');
             }
 
             // Pre-fetch country & exchange rates in parallel (non-blocking)
@@ -973,7 +1000,7 @@ function initSupabaseAndLoad() {
             const urlParams = new URLSearchParams(window.location.search);
             const productId = urlParams.get('id') || urlParams.get('product');
             if (productId) {
-                console.log('🔗 Direct link detected for product:', productId);
+                qmLog('🔗 Direct link detected for product:', productId);
                 // small delay to let products load
                 setTimeout(() => window.openProductModal(productId), 1500);
             }
@@ -982,7 +1009,7 @@ function initSupabaseAndLoad() {
         return false; // SDK not yet available
     } catch (e) {
         console.error('Supabase initialization failed:', e);
-        console.log('⚠️ Continuing without Supabase - using default links');
+        qmLog('⚠️ Continuing without Supabase - using default links');
         return true; // don't retry on error
     }
 }
@@ -1011,7 +1038,7 @@ if (!initSupabaseAndLoad()) {
             clearInterval(retryInterval);
             if (retries >= 60) {
                 console.error('❌ Supabase SDK not loaded after 3s');
-                console.log('⚠️ Continuing without Supabase - using default links');
+                qmLog('⚠️ Continuing without Supabase - using default links');
             }
         }
     }, 50);
@@ -1055,7 +1082,7 @@ async function getUserCountry() {
         if (urlCountry && urlCountry.length === 2) {
             userCountryCode = urlCountry.toUpperCase();
             window.userCountryCode = userCountryCode;
-            console.log('Using country from URL override:', userCountryCode);
+            qmLog('Using country from URL override:', userCountryCode);
             return userCountryCode;
         }
     } catch (e) {
@@ -1075,7 +1102,7 @@ async function getUserCountry() {
         if (stored && stored.code && (Date.now() - stored.ts) < COUNTRY_CACHE_DURATION) {
             userCountryCode = stored.code;
             window.userCountryCode = userCountryCode;
-            console.log('📍 Using cached country (age:', Math.round((Date.now() - stored.ts) / 60000), 'minutes):', userCountryCode);
+            qmLog('📍 Using cached country (age:', Math.round((Date.now() - stored.ts) / 60000), 'minutes):', userCountryCode);
             return userCountryCode;
         }
     } catch (_) { /* ignore parse errors */ }
@@ -1099,7 +1126,7 @@ async function getUserCountry() {
 
         for (const svc of services) {
             try {
-                console.log('Trying IP service:', svc.url);
+                qmLog('Trying IP service:', svc.url);
                 const resp = await fetchWithTimeout(svc.url, 5000);
                 const code = svc.parse(resp);
                 if (code) {
@@ -1161,7 +1188,7 @@ async function getUserCountry() {
         }
     }
 
-    console.log('User country detected:', userCountryCode);
+    qmLog('User country detected:', userCountryCode);
     window.userCountryCode = userCountryCode;
 
     // Persist to localStorage so the next page load can skip the lookup entirely.
@@ -1387,7 +1414,7 @@ async function fetchExchangeRates() {
     if (exchangeRatesCache && exchangeRatesTimestamp) {
         const age = Date.now() - exchangeRatesTimestamp;
         if (age < RATES_CACHE_DURATION) {
-            console.log('💱 Using cached exchange rates (age:', Math.round(age / 60000), 'minutes)');
+            qmLog('💱 Using cached exchange rates (age:', Math.round(age / 60000), 'minutes)');
             return exchangeRatesCache;
         }
     }
@@ -1398,7 +1425,7 @@ async function fetchExchangeRates() {
         if (stored && stored.rates && (Date.now() - stored.ts) < RATES_CACHE_DURATION) {
             exchangeRatesCache = stored.rates;
             exchangeRatesTimestamp = stored.ts;
-            console.log('💱 Using localStorage exchange rates (age:', Math.round((Date.now() - stored.ts) / 60000), 'minutes)');
+            qmLog('💱 Using localStorage exchange rates (age:', Math.round((Date.now() - stored.ts) / 60000), 'minutes)');
             return exchangeRatesCache;
         }
     } catch (_) { /* ignore parse errors */ }
@@ -1413,7 +1440,7 @@ async function fetchExchangeRates() {
 
         for (const apiUrl of apis) {
             try {
-                console.log('Trying exchange rate API:', apiUrl);
+                qmLog('Trying exchange rate API:', apiUrl);
                 const response = await fetch(apiUrl);
 
                 if (!response.ok) {
@@ -1422,7 +1449,7 @@ async function fetchExchangeRates() {
                 }
 
                 const data = await response.json();
-                console.log('📊 API Response:', apiUrl, data);
+                qmLog('📊 API Response:', apiUrl, data);
 
                 // Different APIs have different response formats
                 let rates = null;
@@ -1445,7 +1472,7 @@ async function fetchExchangeRates() {
                     try {
                         localStorage.setItem(RATES_CACHE_KEY, JSON.stringify({ rates, ts: exchangeRatesTimestamp }));
                     } catch (_) { /* quota exceeded */ }
-                    console.log('💱 Fetched fresh exchange rates from:', apiUrl);
+                    qmLog('💱 Fetched fresh exchange rates from:', apiUrl);
                     return rates;
                 }
             } catch (apiError) {
@@ -1457,7 +1484,7 @@ async function fetchExchangeRates() {
         throw new Error('All exchange rate APIs failed');
     } catch (error) {
         console.error('❌ Failed to fetch exchange rates:', error);
-        console.log('⚠️ Falling back to hardcoded rates (may be outdated)');
+        qmLog('⚠️ Falling back to hardcoded rates (may be outdated)');
         return getFallbackRates();
     }
 }
@@ -1560,7 +1587,7 @@ async function convertPrice(inrPrice, countryCode, enablePPP = false) {
 
     if (enablePPP && currency.code !== 'INR') {
         if (!isWeaker) {
-            // console.log(`📈 Applying PPP Multiplier (1.5x) for ${currency.code}`);
+            // qmLog(`📈 Applying PPP Multiplier (1.5x) for ${currency.code}`);
             convertedAmount = convertedAmount * 1.5;
             pppApplied = true;
         } else {
@@ -1760,17 +1787,61 @@ function writeListCache(key, data) {
 }
 
 // Load and display products from Supabase
+// Paints a retryable error state into the product grid. Called from every
+// bail-out in loadProductsFromSupabase: those used to just console.error and
+// return, but displaySupabaseProducts had already cleared the grid, so a
+// Supabase outage left the visitor staring at an empty store with no message
+// and no way to retry -- they assume there's nothing for sale and leave.
+// No-ops when products are already painted (e.g. from cache) so a failed
+// background refresh never replaces good content with an error.
+function showProductsLoadError() {
+    const grid = document.querySelector('#products .products-grid') || document.querySelector('.products-grid');
+    if (!grid) return;
+    if (grid.querySelector('.product-card')) return; // something real is already on screen
+    if (grid.querySelector('.products-load-error')) return; // don't stack
+
+    grid.innerHTML = '';
+    const box = document.createElement('div');
+    box.className = 'products-load-error';
+    box.setAttribute('role', 'alert');
+
+    const title = document.createElement('p');
+    title.className = 'products-load-error-title';
+    title.textContent = 'Could not load the catalogue';
+
+    const body = document.createElement('p');
+    body.className = 'products-load-error-body';
+    body.textContent = 'This is usually a temporary connection problem, not a problem with your device. Please try again.';
+
+    const retry = document.createElement('button');
+    retry.type = 'button';
+    retry.className = 'btn btn-primary products-load-error-retry';
+    retry.textContent = 'Try again';
+    retry.addEventListener('click', function () {
+        retry.disabled = true;
+        retry.textContent = 'Loading...';
+        loadProductsFromSupabase();
+    });
+
+    box.appendChild(title);
+    box.appendChild(body);
+    box.appendChild(retry);
+    grid.appendChild(box);
+}
+window.showProductsLoadError = showProductsLoadError;
+
 async function loadProductsFromSupabase(prefetchPromise) {
     try {
         if (!window.supabaseClient) {
             console.error('Supabase client not initialized');
+            showProductsLoadError();
             return;
         }
 
         // Instant paint from last known cache while the fresh query runs in the background.
         const cached = readListCache(PRODUCTS_CACHE_KEY);
         if (cached && cached.length > 0) {
-            console.log('⚡ Rendering ' + cached.length + ' cached products instantly');
+            qmLog('⚡ Rendering ' + cached.length + ' cached products instantly');
             window.allProducts = cached;
             await displaySupabaseProducts(cached);
             buildProductCatalogJsonLd(cached);
@@ -1796,6 +1867,7 @@ async function loadProductsFromSupabase(prefetchPromise) {
 
         if (queryResult.status === 'rejected') {
             console.error('Error loading products from Supabase:', queryResult.reason);
+            showProductsLoadError();
             return;
         }
 
@@ -1803,6 +1875,7 @@ async function loadProductsFromSupabase(prefetchPromise) {
 
         if (error) {
             console.error('Error loading products from Supabase:', error);
+            showProductsLoadError();
             return;
         }
 
@@ -1812,12 +1885,12 @@ async function loadProductsFromSupabase(prefetchPromise) {
             // painted from cache — avoids a visible flicker on repeat visits.
             const unchanged = cached && cached.length > 0 && JSON.stringify(cached) === JSON.stringify(data);
             if (!unchanged) {
-                console.log('📦 Loading ' + data.length + ' products from Supabase');
+                qmLog('📦 Loading ' + data.length + ' products from Supabase');
                 window.allProducts = data;
                 await displaySupabaseProducts(data);
                 buildProductCatalogJsonLd(data);
             } else {
-                console.log('✅ Products already up to date (cache matched)');
+                qmLog('✅ Products already up to date (cache matched)');
                 window.allProducts = data;
             }
         }
@@ -2133,7 +2206,7 @@ async function loadSessionsFromSupabase(prefetchPromise) {
         // Instant paint from last known cache while the fresh query runs in the background.
         const cachedSessions = readListCache(SESSIONS_CACHE_KEY);
         if (cachedSessions && cachedSessions.length > 0) {
-            console.log('⚡ Rendering ' + cachedSessions.length + ' cached sessions instantly');
+            qmLog('⚡ Rendering ' + cachedSessions.length + ' cached sessions instantly');
             window.dynamicSessions = cachedSessions;
             await updateServicesSection(cachedSessions);
             await updateBookingForm(cachedSessions);
@@ -2174,12 +2247,12 @@ async function loadSessionsFromSupabase(prefetchPromise) {
             writeListCache(SESSIONS_CACHE_KEY, data);
             const unchanged = cachedSessions && cachedSessions.length > 0 && JSON.stringify(cachedSessions) === JSON.stringify(data);
             if (!unchanged) {
-                console.log('🎯 Loading ' + data.length + ' sessions from Supabase');
+                qmLog('🎯 Loading ' + data.length + ' sessions from Supabase');
                 window.dynamicSessions = data;
                 await updateServicesSection(data);
                 await updateBookingForm(data);
             } else {
-                console.log('✅ Sessions already up to date (cache matched)');
+                qmLog('✅ Sessions already up to date (cache matched)');
                 window.dynamicSessions = data;
             }
         }
@@ -2192,7 +2265,7 @@ async function loadSessionsFromSupabase(prefetchPromise) {
 async function updateServicesSection(sessions) {
     const servicesContainer = document.querySelector('.services-grid');
     if (!servicesContainer) {
-        // console.log('Services container not found (likely on non-index page)');
+        // qmLog('Services container not found (likely on non-index page)');
         return;
     }
 
@@ -2283,7 +2356,7 @@ async function updateServicesSection(sessions) {
         }
     }
 
-    console.log('✅ Services section updated with ' + sessions.length + ' sessions');
+    qmLog('✅ Services section updated with ' + sessions.length + ' sessions');
 }
 
 // Update Booking Form with Dynamic Sessions
@@ -2297,7 +2370,7 @@ async function updateBookingForm(sessions) {
 
     // Check if elements exist (might be missing on admin page)
     if (!bookingForm || !bookingService || !bookingDate || !priceDisplay || !bookingPrice) {
-        // console.log('Booking form elements not found (likely on non-index page). Skipping init.');
+        // qmLog('Booking form elements not found (likely on non-index page). Skipping init.');
         return;
     }
 
@@ -2327,7 +2400,7 @@ async function updateBookingForm(sessions) {
         bookingSelect.appendChild(option);
     }
 
-    console.log('✅ Booking form updated with ' + sessions.length + ' sessions');
+    qmLog('✅ Booking form updated with ' + sessions.length + ' sessions');
 }
 
 // Default links (fallback) - will be updated from Supabase
@@ -2346,7 +2419,7 @@ async function fetchProductLinks() {
     try {
         if (!window.supabaseClient) {
             console.error('Supabase client not initialized');
-            console.log('📚 Using default download links');
+            qmLog('📚 Using default download links');
             return;
         }
 
@@ -2357,27 +2430,27 @@ async function fetchProductLinks() {
         if (error) {
             if (error.status === 401) {
                 console.error('❌ Supabase authentication failed (401): Invalid API key');
-                console.log('📚 Using default download links - check Supabase configuration');
+                qmLog('📚 Using default download links - check Supabase configuration');
             } else {
                 console.error('Error fetching Supabase products:', error);
             }
-            console.log('📚 Continuing with default download links');
+            qmLog('📚 Continuing with default download links');
             return;
         }
 
         if (data && data.length > 0) {
-            console.log('📚 Loaded ' + data.length + ' products from Supabase');
+            qmLog('📚 Loaded ' + data.length + ' products from Supabase');
             data.forEach(product => {
                 PRODUCT_DOWNLOAD_LINKS[product.name] = product.file_url;
                 // Log for debugging
-                console.log(`🔗 Link updated for: ${product.name} `);
+                qmLog(`🔗 Link updated for: ${product.name} `);
             });
         } else {
-            console.log('📚 No products found in Supabase, using default links');
+            qmLog('📚 No products found in Supabase, using default links');
         }
     } catch (err) {
         console.error('Failed to fetch product links:', err);
-        console.log('📚 Continuing with default download links');
+        qmLog('📚 Continuing with default download links');
     }
 
     // ---------------- Admin Panel Helpers ----------------
@@ -2519,7 +2592,7 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
 
     // Handle FREE products (0 value) - skip payment, go directly to download
     if (amount <= 0) {
-        console.log('🆓 Free product detected');
+        qmLog('🆓 Free product detected');
         if (releaseBtn) releaseBtn();
         if (downloadLink && downloadLink !== 'YOUR_DRIVE_LINK_HERE') {
             // Name/email come from the pre-checkout details form. If a page
@@ -2627,7 +2700,7 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ payment_id: paymentId, email: customerEmail })
                 }).then(r => r.json())
-                    .then(d => console.log('🔑 grant-access:', d.drive_access_granted ? 'Drive access granted' : (d.drive_error || 'no Drive grant needed')))
+                    .then(d => qmLog('🔑 grant-access:', d.drive_access_granted ? 'Drive access granted' : (d.drive_error || 'no Drive grant needed')))
                     .catch(err => console.warn('grant-access call failed:', err));
             }
 
@@ -2645,7 +2718,7 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
                     // table's created_at DEFAULT has been observed storing timestamps
                     // ~5.5h in the past (timezone-handling bug), so don't rely on it.
                     created_at: new Date().toISOString()
-                }).then(() => console.log('✅ Purchase logged to Supabase')).catch(err => console.error('❌ Failed to log purchase:', err));
+                }).then(() => qmLog('✅ Purchase logged to Supabase')).catch(err => console.error('❌ Failed to log purchase:', err));
             }
 
             // NOTE: purchase emails (customer + admin) are sent server-side by
@@ -2664,7 +2737,7 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
         },
         modal: {
             ondismiss: function () {
-                console.log('Razorpay checkout closed by user');
+                qmLog('Razorpay checkout closed by user');
                 if (releaseBtn) releaseBtn();
             }
         },
@@ -2701,10 +2774,10 @@ window.initRazorpayCheckout = initRazorpayCheckout;
  * Free tier: 300 emails/day = 9,000/month
  */
 async function sendProductEmail(customerEmail, productName, paymentId, downloadLink, customerName = 'Customer', amount = '', currency = 'INR') {
-    console.log('📧 sendProductEmail called with:', customerEmail);
+    qmLog('📧 sendProductEmail called with:', customerEmail);
 
     // Send to CUSTOMER via Brevo backend
-    console.log('📧 Attempting to send via Brevo secure API...');
+    qmLog('📧 Attempting to send via Brevo secure API...');
 
     const htmlContent = `
             <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
@@ -2780,7 +2853,7 @@ ${BUSINESS_NAME}`;
         );
 
         if (result.success) {
-            console.log('✅ Brevo SUCCESS: Email sent to', customerEmail);
+            qmLog('✅ Brevo SUCCESS: Email sent to', customerEmail);
         } else {
             console.error('❌ Brevo FAILED:', result.error);
         }
@@ -2845,7 +2918,7 @@ New Product Purchase:
         `;
 
         await sendAdminNotification(`Sale: ${productName} - ${customerName}`, adminHtml, adminEmailBody);
-        console.log('✅ Admin notified of product purchase.');
+        qmLog('✅ Admin notified of product purchase.');
     } catch (adminErr) {
         console.error('⚠️ Admin notification failed:', adminErr);
     }
@@ -2855,14 +2928,14 @@ New Product Purchase:
 const modalPayBtn = document.getElementById('modalPayBtn');
 
 if (modalPayBtn) {
-    console.log('✅ Pay button found, attaching listener');
+    qmLog('✅ Pay button found, attaching listener');
     modalPayBtn.addEventListener('click', function (e) {
         e.preventDefault();
-        console.log('🖱️ Pay button clicked');
+        qmLog('🖱️ Pay button clicked');
 
         const productName = document.getElementById('modalTitle').textContent;
         const priceText = document.getElementById('modalPrice').textContent;
-        console.log('Payment Request:', { productName, priceText });
+        qmLog('Payment Request:', { productName, priceText });
 
         // Default to INR basics
         // FIX: Check for undefined/null explicitly because 0 is falsy but valid
@@ -2882,7 +2955,7 @@ if (modalPayBtn) {
         if (window.currentProductIsLocalCurrency && window.currentProductLocalPrice) {
             payAmount = window.currentProductLocalPrice.amount;
             payCurrency = window.currentProductLocalPrice.currency.code;
-            console.log(`🌍 International Mode: Paying ${payCurrency} ${payAmount} (INR ${logAmountInr} tracked in backend)`);
+            qmLog(`🌍 International Mode: Paying ${payCurrency} ${payAmount} (INR ${logAmountInr} tracked in backend)`);
         }
 
         // CHECK 2: Coupon Applied?
@@ -2900,7 +2973,7 @@ if (modalPayBtn) {
             const logDiscountValue = (originalLogAmount * discountPercent) / 100;
             logAmountInr = originalLogAmount - logDiscountValue;
 
-            console.log('🎟️ Coupon applied:', {
+            qmLog('🎟️ Coupon applied:', {
                 percent: discountPercent,
                 originalPay: originalPayAmount,
                 finalPay: payAmount,
@@ -2917,7 +2990,7 @@ if (modalPayBtn) {
         payAmount = parseFloat(payAmount.toFixed(2));
         logAmountInr = Math.round(logAmountInr); // Database stores integer INR
 
-        console.log('🚀 Final Payment Config:', { payAmount, payCurrency, logAmountInr });
+        qmLog('🚀 Final Payment Config:', { payAmount, payCurrency, logAmountInr });
 
         if (isNaN(payAmount)) {
             showToast('Could not read the price. Please refresh the page and try again.', 'error');
@@ -2971,7 +3044,7 @@ if (modalPayBtn) {
                     document.getElementById('productModal').classList.remove('active');
                     document.body.style.overflow = '';
 
-                    console.log('Calling initRazorpayCheckout with User Details...');
+                    qmLog('Calling initRazorpayCheckout with User Details...');
                     // Submit button is locked while /api/create-order is in
                     // flight so a double submit can't open two orders.
                     const submitBtn = mainUserForm.querySelector('button[type="submit"], input[type="submit"]');
@@ -3052,7 +3125,7 @@ const bookingPrice = document.getElementById('bookingPrice');
 const priceDisplay = document.getElementById('priceDisplay');
 
 if (bookingForm) {
-    console.log('✅ Booking form found, initializing...');
+    qmLog('✅ Booking form found, initializing...');
 
     // Set minimum date to tomorrow
     const tomorrow = new Date();
@@ -3148,7 +3221,7 @@ if (bookingForm) {
                                 hour12: true
                             });
                         });
-                        console.log('📅 Existing bookings for ' + dateValue + ' (DB raw -> formatted):', bookingsData, existingBookings);
+                        qmLog('📅 Existing bookings for ' + dateValue + ' (DB raw -> formatted):', bookingsData, existingBookings);
                     }
 
                     // --- NEW: Check for Blocked Date Ranges ---
@@ -3161,7 +3234,7 @@ if (bookingForm) {
                     if (blockedError) {
                         console.error('Error checking blocked dates:', blockedError);
                     } else if (blockedData && blockedData.length > 0) {
-                        console.log('🚫 This date is blocked:', dateValue);
+                        qmLog('🚫 This date is blocked:', dateValue);
                         timeSelect.innerHTML = '<option value="" disabled>Mentorship Unavailable Today</option>';
                         timeSelect.disabled = false;
                         return;
@@ -3261,7 +3334,7 @@ if (bookingForm) {
     // Handle form submission
     bookingForm.addEventListener('submit', async function (e) {
         e.preventDefault();
-        console.log('🚀 Booking form submitted!'); // Debug log
+        qmLog('🚀 Booking form submitted!'); // Debug log
 
         const name = document.getElementById('bookingName').value;
         const email = document.getElementById('bookingEmail').value;
@@ -3331,7 +3404,7 @@ if (bookingForm) {
                 if (localPrice.currency.code !== 'INR') {
                     payAmount = localPrice.amount;
                     payCurrency = localPrice.currency.code;
-                    console.log(`🌍 Booking International: Paying ${payCurrency} ${payAmount} (INR ${logAmountInr} tracked in backend)`);
+                    qmLog(`🌍 Booking International: Paying ${payCurrency} ${payAmount} (INR ${logAmountInr} tracked in backend)`);
                 }
             }
         } catch (e) {
@@ -3387,7 +3460,7 @@ async function initSessionPayment(description, amount, customerEmail, currency =
 
     // Initialize Razorpay SDK
     if (typeof Razorpay === 'undefined') {
-        console.log('❌ Razorpay SDK not loaded');
+        qmLog('❌ Razorpay SDK not loaded');
         showToast('❌ Payment system not available. Please refresh the page.', 'error', 0);
         return;
     }
@@ -3447,7 +3520,7 @@ async function initSessionPayment(description, amount, customerEmail, currency =
         },
         modal: {
             ondismiss: function () {
-                console.log('Razorpay session checkout closed by user');
+                qmLog('Razorpay session checkout closed by user');
             }
         },
         prefill: {
@@ -3506,12 +3579,12 @@ async function fulfillFreeSessionBooking(response) {
             return;
         }
 
-        console.log('📧 Booking object:', booking);
-        console.log('📧 Email to send to:', booking.email);
+        qmLog('📧 Booking object:', booking);
+        qmLog('📧 Email to send to:', booking.email);
 
         // Generate unique meeting link for this booking
         const uniqueMeetLink = generateFreeSessionLink();
-        console.log('🔗 Generated unique meeting link:', uniqueMeetLink);
+        qmLog('🔗 Generated unique meeting link:', uniqueMeetLink);
 
         // ===== STEP 0: DEDUP CHECK (prevent webhook + client-side double-fire) =====
         if (window.supabaseClient) {
@@ -3522,7 +3595,7 @@ async function fulfillFreeSessionBooking(response) {
                     .eq('payment_id', paymentId)
                     .limit(1);
                 if (existing && existing.length > 0) {
-                    console.log('ℹ️ Booking already exists for payment', paymentId, '— skipping duplicate client-side insert');
+                    qmLog('ℹ️ Booking already exists for payment', paymentId, '— skipping duplicate client-side insert');
                     alert(`✅ Booking already confirmed!\nPayment ID: ${paymentId}\nCheck your email for details.`);
                     try { localStorage.removeItem('pendingBooking'); } catch (e) { }
                     return;
@@ -3531,9 +3604,9 @@ async function fulfillFreeSessionBooking(response) {
         }
 
         // ===== STEP 1: SEND CUSTOMER EMAIL FIRST (HIGHEST PRIORITY) =====
-        console.log('📧 Sending session confirmation to customer:', booking.email);
+        qmLog('📧 Sending session confirmation to customer:', booking.email);
 
-        console.log('📧 Sending customer email securely via API...');
+        qmLog('📧 Sending customer email securely via API...');
 
         const htmlContent = `
             <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
@@ -3608,7 +3681,7 @@ ${BUSINESS_NAME}`;
             );
 
             if (result.success) {
-                console.log('✅ Session confirmation SUCCESS via Brevo');
+                qmLog('✅ Session confirmation SUCCESS via Brevo');
             } else {
                 console.error('❌ Brevo session email FAILED:', result.error);
             }
@@ -3617,7 +3690,7 @@ ${BUSINESS_NAME}`;
         }
 
         // ===== STEP 2: STORE IN SUPABASE (SECONDARY) =====
-        console.log('📋 Attempting to store booking in Supabase...');
+        qmLog('📋 Attempting to store booking in Supabase...');
         if (window.supabaseClient) {
             try {
                 const { data, error } = await window.supabaseClient
@@ -3643,7 +3716,7 @@ ${BUSINESS_NAME}`;
                 if (error) {
                     console.error('❌ Supabase insert failed:', error);
                 } else {
-                    console.log('✅ Booking stored in Supabase:', data);
+                    qmLog('✅ Booking stored in Supabase:', data);
                 }
             } catch (error) {
                 console.error('❌ Error storing booking in database:', error);
@@ -3775,7 +3848,7 @@ Thank you for booking!`);
 // --- BLOG & RESOURCES LOGIC ---
 
 async function loadBlogs() {
-    console.log('📰 Attempting to load blogs from Supabase...');
+    qmLog('📰 Attempting to load blogs from Supabase...');
     if (!window.supabaseClient) {
         console.error('❌ Supabase client not ready for blogs');
         return;
@@ -3786,7 +3859,7 @@ async function loadBlogs() {
             console.error('❌ Error fetching blogs:', error);
             return;
         }
-        console.log(`📰 Blogs fetched: ${data?.length || 0} published articles found.`);
+        qmLog(`📰 Blogs fetched: ${data?.length || 0} published articles found.`);
         if (data) displayBlogs(data);
     } catch (e) { console.error('Blog load error', e); }
 }
@@ -3830,9 +3903,9 @@ async function loadApprovedTestimonials() {
     const grid = document.getElementById('approved-testimonials-grid');
     if (!grid) return;
 
-    console.log('📣 Loading approved testimonials...');
+    qmLog('📣 Loading approved testimonials...');
     if (!window.supabaseClient) {
-        console.log('⚠️ Supabase not available for testimonials');
+        qmLog('⚠️ Supabase not available for testimonials');
         return;
     }
 
@@ -3848,7 +3921,7 @@ async function loadApprovedTestimonials() {
             return;
         }
 
-        console.log(`✅ Loaded ${data?.length || 0} approved testimonials`);
+        qmLog(`✅ Loaded ${data?.length || 0} approved testimonials`);
         displayApprovedTestimonials(data || []);
     } catch (e) {
         console.error('Testimonials load error:', e);
@@ -4043,14 +4116,14 @@ window.openBlogModal = async function (id) {
             // Wait for content to be fully inserted, then typeset
             if (window.MathJax) {
                 window.MathJax.typesetPromise([document.getElementById('blogModalContent')])
-                    .then(() => console.log('✅ MathJax rendering complete'))
+                    .then(() => qmLog('✅ MathJax rendering complete'))
                     .catch((err) => console.error('❌ MathJax error:', err));
             } else {
                 // MathJax not loaded yet, wait and retry
                 setTimeout(() => {
                     if (window.MathJax) {
                         window.MathJax.typesetPromise([document.getElementById('blogModalContent')])
-                            .then(() => console.log('✅ MathJax rendering complete (delayed)'))
+                            .then(() => qmLog('✅ MathJax rendering complete (delayed)'))
                             .catch((err) => console.error('❌ MathJax error:', err));
                     }
                 }, 100);
@@ -4239,7 +4312,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     source: 'lead_capture',
                     download_link: downloadLink,
                     created_at: new Date().toISOString()
-                }).then(() => console.log('✅ Lead logged to Supabase')).catch(err => console.error('❌ Failed to log lead:', err));
+                }).then(() => qmLog('✅ Lead logged to Supabase')).catch(err => console.error('❌ Failed to log lead:', err));
             }
 
             leadForm.style.display = 'none';
@@ -4302,7 +4375,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         return;
                     }
                 } else {
-                    console.log('Supabase not available, storing review locally:', data);
+                    qmLog('Supabase not available, storing review locally:', data);
                     let reviews = JSON.parse(localStorage.getItem('pendingReviews') || '[]');
                     reviews.push(data);
                     localStorage.setItem('pendingReviews', JSON.stringify(reviews));
@@ -4327,10 +4400,10 @@ window.copyProductLink = function (id) {
         return;
     }
     const safeId = String(id).trim(); // Ensure it is a clean string
-    console.log('🔗 copyProductLink called with ID:', safeId);
+    qmLog('🔗 copyProductLink called with ID:', safeId);
 
     const shareUrl = `${window.location.origin}/product.html?id=${safeId}`;
-    console.log('🔗 Generated Share URL:', shareUrl);
+    qmLog('🔗 Generated Share URL:', shareUrl);
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(shareUrl).then(() => {
@@ -4355,7 +4428,7 @@ async function sendTestimonialRequestEmail(bookingData) {
 
     if (!userEmail) return;
 
-    console.log('📧 Sending Testimonial Request securely via API to:', userEmail);
+    qmLog('📧 Sending Testimonial Request securely via API to:', userEmail);
 
     const testimonialLink = window.location.origin + '/index.html#testimonials'; // Point to testimonials section
     const customerName = userName || 'Valued Learner';
@@ -4404,7 +4477,7 @@ ${BUSINESS_NAME}`;
         );
 
         if (result.success) {
-            console.log('✅ Testimonial email sent successfully.');
+            qmLog('✅ Testimonial email sent successfully.');
             return true;
         } else {
             console.error('❌ Failed to send testimonial email:', result.error);
@@ -4423,7 +4496,7 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
 
 // --- LAUNCH PROMOTION CAMPAIGN LOGIC ---
 (function () {
-    console.log('🎉 Initializing Launch Promotion Campaign for Numerical Methods...');
+    qmLog('🎉 Initializing Launch Promotion Campaign for Numerical Methods...');
 
     // Expose promo functions globally so inline HTML onclick handlers can trigger them
     window.dismissPromoBanner = function (e) {
@@ -4556,7 +4629,7 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
 
 // --- PURCHASE SUCCESS & CROSS-SELL RECOMMENDATION SYSTEM ---
 (function () {
-    console.log('🛍️ Initializing Purchase Success & Cross-Sell Recommendation System...');
+    qmLog('🛍️ Initializing Purchase Success & Cross-Sell Recommendation System...');
 
     // Mapping for product categories to recommend complements
     const CROSS_SELL_STRATEGY = {
@@ -4694,7 +4767,7 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
     // an array of names so the cross-sell keyword match below still works (a
     // summary string like "2 items" can never match a strategy key).
     window.showSuccessModal = async function (purchasedName, downloadLink) {
-        console.log('🏆 Triggering Purchase Success Modal for:', purchasedName);
+        qmLog('🏆 Triggering Purchase Success Modal for:', purchasedName);
 
         // 1. Set the main download button. Cart checkouts pass '#' since a
         // multi-item order has one download link per product (sent by email),
@@ -5251,7 +5324,7 @@ async function runCartCheckout(cart, userDetails, releaseBtn) {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ payment_id: paymentId, email: customerEmail })
                 }).then(r => r.json())
-                    .then(d => console.log("grant-access (cart):", d.success ? "ok" : (d.error || "no grant needed")))
+                    .then(d => qmLog("grant-access (cart):", d.success ? "ok" : (d.error || "no grant needed")))
                     .catch(err => console.warn("grant-access (cart) call failed:", err));
             }
 
@@ -5273,7 +5346,7 @@ async function runCartCheckout(cart, userDetails, releaseBtn) {
         },
         modal: {
             ondismiss: function () {
-                console.log('Cart checkout closed by user');
+                qmLog('Cart checkout closed by user');
                 if (releaseBtn) releaseBtn();
             }
         },
