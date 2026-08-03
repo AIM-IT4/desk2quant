@@ -1,4 +1,91 @@
-﻿// --- Brevo Email Configuration (Global) ---
+﻿// ================================
+// TOAST NOTIFICATIONS
+// ================================
+// Replaces window.alert() on the payment/checkout paths. Native alerts are
+// unstyled, block the whole page, stack up, and on some mobile in-app
+// webviews behave unpredictably -- a bad fit for telling someone their
+// payment failed. Styles + container are injected from here so no page
+// markup or stylesheet has to change.
+(function () {
+    const TOAST_STYLES = `
+.qm-toast-container{position:fixed;top:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:10px;max-width:min(380px,calc(100vw - 40px));pointer-events:none}
+.qm-toast{pointer-events:auto;display:flex;align-items:flex-start;gap:10px;padding:14px 16px;border-radius:8px;background:#fff;color:#1a1a1a;box-shadow:0 6px 24px rgba(0,0,0,.16);border-left:4px solid #6b7280;font-family:inherit;font-size:14px;line-height:1.5;white-space:pre-line;opacity:0;transform:translateX(16px);transition:opacity .18s ease,transform .18s ease}
+.qm-toast.qm-toast-visible{opacity:1;transform:translateX(0)}
+.qm-toast-success{border-left-color:#16a34a}
+.qm-toast-error{border-left-color:#dc2626}
+.qm-toast-warning{border-left-color:#e95836}
+.qm-toast-message{flex:1}
+.qm-toast-close{flex-shrink:0;background:none;border:none;font-size:20px;line-height:1;cursor:pointer;color:#6b7280;padding:0 2px}
+.qm-toast-close:hover{color:#1a1a1a}
+@media(max-width:520px){.qm-toast-container{top:10px;right:10px;left:10px;max-width:none}}
+@media(prefers-reduced-motion:reduce){.qm-toast{transition:none}}
+`;
+
+    let container = null;
+
+    function ensureContainer() {
+        if (container && document.body.contains(container)) return container;
+        if (!document.getElementById('qm-toast-styles')) {
+            const style = document.createElement('style');
+            style.id = 'qm-toast-styles';
+            style.textContent = TOAST_STYLES;
+            document.head.appendChild(style);
+        }
+        container = document.createElement('div');
+        container.className = 'qm-toast-container';
+        // Announced politely so a screen reader hears checkout errors without
+        // the toast stealing focus mid-payment.
+        container.setAttribute('role', 'status');
+        container.setAttribute('aria-live', 'polite');
+        document.body.appendChild(container);
+        return container;
+    }
+
+    /**
+     * @param {string} message  Text to show (newlines preserved).
+     * @param {'info'|'success'|'error'|'warning'} type
+     * @param {number} duration  ms before auto-dismiss; 0 keeps it until closed.
+     */
+    window.showToast = function (message, type = 'info', duration = 6000) {
+        // If the DOM isn't ready yet there's nothing to attach to -- fall back
+        // rather than dropping the message silently.
+        if (!document.body) {
+            alert(message);
+            return;
+        }
+        const host = ensureContainer();
+        const toast = document.createElement('div');
+        toast.className = `qm-toast qm-toast-${type}`;
+
+        const text = document.createElement('div');
+        text.className = 'qm-toast-message';
+        text.textContent = message;
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'qm-toast-close';
+        closeBtn.setAttribute('aria-label', 'Dismiss notification');
+        closeBtn.innerHTML = '&times;';
+
+        let dismissed = false;
+        const dismiss = function () {
+            if (dismissed) return;
+            dismissed = true;
+            toast.classList.remove('qm-toast-visible');
+            setTimeout(() => toast.remove(), 200);
+        };
+        closeBtn.addEventListener('click', dismiss);
+
+        toast.appendChild(text);
+        toast.appendChild(closeBtn);
+        host.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.add('qm-toast-visible'));
+
+        if (duration > 0) setTimeout(dismiss, duration);
+        return dismiss;
+    };
+})();
+
+// --- Brevo Email Configuration (Global) ---
 // Now handled securely via Vercel backend.
 
 // Send email via secure backend API
@@ -2419,10 +2506,13 @@ async function fetchProductLinks() {
     }
 }
 
-async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAmountForLogging = null, userDetails = null, orderMeta = null) {
+async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAmountForLogging = null, userDetails = null, orderMeta = null, triggerBtn = null) {
     // orderMeta: { productId, couponCode } -- lets create-order.js look up the
     // REAL price server-side instead of trusting `amount`, which is only used
     // here for the free-product check and as a display/logging fallback.
+    // triggerBtn is locked while /api/create-order is in flight so a double
+    // click can't open two Razorpay orders for the same product.
+    const releaseBtn = lockCheckoutButton(triggerBtn);
     const productId = orderMeta && orderMeta.productId ? orderMeta.productId : null;
     const couponCode = orderMeta && orderMeta.couponCode ? orderMeta.couponCode : null;
     const downloadLink = PRODUCT_DOWNLOAD_LINKS[productName] || '';
@@ -2430,9 +2520,13 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
     // Handle FREE products (0 value) - skip payment, go directly to download
     if (amount <= 0) {
         console.log('🆓 Free product detected');
+        if (releaseBtn) releaseBtn();
         if (downloadLink && downloadLink !== 'YOUR_DRIVE_LINK_HERE') {
-            const customerName = (userDetails && userDetails.name) ? userDetails.name : (prompt('Enter your Name:') || 'Customer');
-            const customerEmail = (userDetails && userDetails.email) ? userDetails.email : prompt('Enter your email to receive the free download:');
+            // Name/email come from the pre-checkout details form. If a page
+            // reached here without them we just skip the confirmation email
+            // rather than blocking the download behind a native prompt().
+            const customerName = (userDetails && userDetails.name) ? userDetails.name : 'Customer';
+            const customerEmail = (userDetails && userDetails.email) ? userDetails.email : '';
 
             if (customerEmail && customerEmail.includes('@')) {
                 sendProductEmail(customerEmail, productName, 'FREE', downloadLink, customerName, 0, 'INR');
@@ -2440,37 +2534,31 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
             if (typeof window.showSuccessModal === 'function') {
                 window.showSuccessModal(productName, downloadLink);
             } else {
-                alert('🎉 Free Download!\n\nClick OK to download.');
+                showToast('🎉 Free download ready — opening it now.', 'success');
                 window.open(downloadLink, '_blank');
             }
         } else {
-            alert('⚠️ Download link not configured. Please contact support.');
+            showToast('⚠️ Download link not configured. Please contact support.', 'error', 0);
         }
         return;
     }
 
     // Validate key for paid products
     if (RAZORPAY_KEY_ID === 'YOUR_RAZORPAY_KEY_ID_HERE') {
-        alert('⚠️ Razorpay not configured!\n\nAdd your Razorpay Key ID in script.js');
+        if (releaseBtn) releaseBtn();
+        showToast('⚠️ Payment system is not configured. Please contact support.', 'error', 0);
         return;
     }
 
-    // Check Razorpay SDK loaded
-    if (typeof Razorpay === 'undefined') {
-        console.log('❌ Razorpay SDK not loaded, attempting to load...');
-        alert('⏳ Loading payment system...\nPlease wait and try again in 2 seconds.');
-
-        const script = document.createElement('script');
-        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-        script.onload = function () {
-            console.log('✅ Razorpay SDK loaded successfully');
-            alert('✅ Payment system loaded!\nPlease click "Buy Now" again.');
-        };
-        script.onerror = function () {
-            console.error('❌ Failed to load Razorpay SDK');
-            alert('❌ Unable to load payment system.\nPlease refresh the page and try again.');
-        };
-        document.head.appendChild(script);
+    // Load the Razorpay SDK if it isn't up yet. loadRazorpaySdk() dedupes
+    // concurrent calls, so we can just await it here instead of making the
+    // customer click "Buy Now" a second time.
+    try {
+        await loadRazorpaySdk();
+    } catch (err) {
+        console.error('❌ Failed to load Razorpay SDK:', err);
+        if (releaseBtn) releaseBtn();
+        showToast('❌ Unable to load the payment system. Please refresh the page and try again.', 'error', 0);
         return;
     }
 
@@ -2508,7 +2596,8 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
     // opened without a server order_id accepts whatever amount the browser
     // sends). If the server couldn't verify the price, stop here instead.
     if (!orderData || !orderData.order_id) {
-        alert('⚠️ Could not start secure checkout. Please refresh the page and try again, or contact support if this keeps happening.');
+        if (releaseBtn) releaseBtn();
+        showToast('⚠️ Could not start secure checkout. Please refresh the page and try again, or contact support if this keeps happening.', 'error', 0);
         return;
     }
 
@@ -2522,7 +2611,14 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
         order_id: orderData.order_id,
         handler: function (response) {
             const paymentId = response.razorpay_payment_id;
-            const customerEmail = (userDetails && userDetails.email) ? userDetails.email : prompt('Enter your email to receive the download link:');
+            // Prefer the email from the pre-checkout form, then whatever the
+            // customer entered in Razorpay's own form. Never prompt() here:
+            // this runs AFTER payment, native prompts are blocked in several
+            // mobile in-app webviews, and a cancel used to mean no
+            // grant-access call and no purchase row -- i.e. paid, no files.
+            const customerEmail = (userDetails && userDetails.email)
+                ? userDetails.email
+                : (response.email || (orderData.notes && orderData.notes.customer_email) || '');
 
             // Grant Drive access server-side (fallback if webhook fails)
             if (customerEmail) {
@@ -2559,16 +2655,17 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
                 if (typeof window.showSuccessModal === 'function') {
                     window.showSuccessModal(productName, downloadLink);
                 } else {
-                    alert('🎉 Payment Successful!\n\nCheck your email for the download link.\n\nIMPORTANT: Please check your Spam/Junk folder.\n\nClick OK to also open it now.');
+                    showToast('🎉 Payment successful! Check your email for the download link — including your Spam/Junk folder.', 'success', 0);
                     window.open(downloadLink, '_blank');
                 }
             } else {
-                alert('🎉 Payment Successful!\n\nDownload link not configured. Please contact support.');
+                showToast('🎉 Payment successful! Your download link is on its way by email. If it does not arrive, contact support with your payment ID.', 'success', 0);
             }
         },
         modal: {
             ondismiss: function () {
                 console.log('Razorpay checkout closed by user');
+                if (releaseBtn) releaseBtn();
             }
         },
         prefill: {
@@ -2581,9 +2678,19 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
         }
     };
 
-    await loadRazorpaySdk();
-    const razorpay = new Razorpay(options);
-    razorpay.open();
+    try {
+        await loadRazorpaySdk();
+        const razorpay = new Razorpay(options);
+        razorpay.open();
+    } catch (err) {
+        if (releaseBtn) releaseBtn();
+        console.error('❌ Could not open Razorpay checkout:', err);
+        showToast('⚠️ Could not open the payment window. Please refresh the page and try again.', 'error', 0);
+        return;
+    }
+    // Checkout is open -- let the trigger go live again so the customer isn't
+    // left with a dead button if they dismiss the overlay unusually.
+    if (releaseBtn) releaseBtn();
 }
 
 // Export for product-test.html
@@ -2813,13 +2920,13 @@ if (modalPayBtn) {
         console.log('🚀 Final Payment Config:', { payAmount, payCurrency, logAmountInr });
 
         if (isNaN(payAmount)) {
-            alert('Error parsing price. Please try again.');
+            showToast('Could not read the price. Please refresh the page and try again.', 'error');
             return;
         }
 
         // Allow 0 for free products, initiate checkout flow (handler will separate free vs paid)
         if (payAmount < 0) {
-            alert('Invalid price detected.');
+            showToast('Invalid price detected. Please refresh the page and try again.', 'error');
             return;
         }
 
@@ -2851,11 +2958,11 @@ if (modalPayBtn) {
                 // Email validation regex
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 if (!udName || !udEmail) {
-                    alert('❌ Please fill in required fields');
+                    showToast('❌ Please fill in the required fields.', 'error');
                     return;
                 }
                 if (!emailRegex.test(udEmail)) {
-                    alert('❌ Please enter a valid email address');
+                    showToast('❌ Please enter a valid email address.', 'error');
                     return;
                 }
 
@@ -2865,6 +2972,9 @@ if (modalPayBtn) {
                     document.body.style.overflow = '';
 
                     console.log('Calling initRazorpayCheckout with User Details...');
+                    // Submit button is locked while /api/create-order is in
+                    // flight so a double submit can't open two orders.
+                    const submitBtn = mainUserForm.querySelector('button[type="submit"], input[type="submit"]');
                     initRazorpayCheckout(productName, payAmount, payCurrency, logAmountInr, {
                         name: udName,
                         email: udEmail,
@@ -2874,7 +2984,7 @@ if (modalPayBtn) {
                     }, {
                         productId: window.currentProductId || null,
                         couponCode: (window.activeModalCoupon && window.activeModalCoupon.appliedCode) || null
-                    });
+                    }, submitBtn);
                 }
             };
         } else {
@@ -3162,7 +3272,7 @@ if (bookingForm) {
         const message = document.getElementById('bookingMessage').value || 'No specific message';
 
         if (!serviceValue || !date || !time) {
-            alert('Please fill in all required fields');
+            showToast('Please fill in all required fields.', 'error');
             return;
         }
 
@@ -3271,14 +3381,14 @@ async function initSessionPayment(description, amount, customerEmail, currency =
     }
 
     if (RAZORPAY_KEY_ID === 'YOUR_RAZORPAY_KEY_ID_HERE') {
-        alert('⚠️ Payment system not configured. Please contact the admin.');
+        showToast('⚠️ Payment system is not configured. Please contact support.', 'error', 0);
         return;
     }
 
     // Initialize Razorpay SDK
     if (typeof Razorpay === 'undefined') {
         console.log('❌ Razorpay SDK not loaded');
-        alert('❌ Payment system not available. Please refresh the page.');
+        showToast('❌ Payment system not available. Please refresh the page.', 'error', 0);
         return;
     }
 
@@ -3319,7 +3429,7 @@ async function initSessionPayment(description, amount, customerEmail, currency =
     // checkout -- see initRazorpayCheckout for why. Stop instead of opening
     // an unverified checkout.
     if (!orderData || !orderData.order_id) {
-        alert('⚠️ Could not start secure checkout. Please refresh the page and try again, or contact support if this keeps happening.');
+        showToast('⚠️ Could not start secure checkout. Please refresh the page and try again, or contact support if this keeps happening.', 'error', 0);
         return;
     }
 
@@ -3356,7 +3466,7 @@ async function initSessionPayment(description, amount, customerEmail, currency =
         razorpay.open();
     } catch (e) {
         console.error('Razorpay session checkout failed:', e);
-        alert('❌ Payment could not be processed.\n' + e.message + '\n\nPlease try again.');
+        showToast('❌ Payment could not be processed. ' + e.message + ' Please try again.', 'error', 0);
     }
 }
 
@@ -3370,7 +3480,7 @@ async function handleSessionPaymentSuccess(response) {
     // Keeping email/database work off the browser prevents duplicate confirmations.
     if (!String(paymentId).startsWith('FREE_SESSION_')) {
         try { localStorage.removeItem('pendingBooking'); } catch (e) { }
-        alert('Payment received! Your booking is being confirmed and your private session link will arrive by email shortly.');
+        showToast('✅ Payment received! Your booking is being confirmed and your private session link will arrive by email shortly.', 'success', 0);
         return;
     }
 
@@ -4517,14 +4627,72 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
         }
     };
 
+    // Keyboard/focus handling for the purchase success modal. Without this,
+    // tab moves through the page *behind* the overlay and screen readers are
+    // never told focus changed -- worst possible place for that is the screen
+    // confirming someone's payment.
+    let successModalLastFocus = null;
+    let successModalKeyHandler = null;
+
+    const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+    function trapSuccessModalFocus(modal) {
+        successModalLastFocus = document.activeElement;
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+
+        const focusables = () => Array.from(modal.querySelectorAll(FOCUSABLE))
+            .filter(el => el.offsetParent !== null || el === document.activeElement);
+
+        const first = focusables()[0];
+        if (first) first.focus();
+
+        successModalKeyHandler = function (e) {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                window.closeSuccessModal();
+                return;
+            }
+            if (e.key !== 'Tab') return;
+            const items = focusables();
+            if (items.length === 0) return;
+            const firstEl = items[0];
+            const lastEl = items[items.length - 1];
+            if (e.shiftKey && document.activeElement === firstEl) {
+                e.preventDefault();
+                lastEl.focus();
+            } else if (!e.shiftKey && document.activeElement === lastEl) {
+                e.preventDefault();
+                firstEl.focus();
+            }
+        };
+        document.addEventListener('keydown', successModalKeyHandler);
+    }
+
+    function releaseSuccessModalFocus() {
+        if (successModalKeyHandler) {
+            document.removeEventListener('keydown', successModalKeyHandler);
+            successModalKeyHandler = null;
+        }
+        if (successModalLastFocus && typeof successModalLastFocus.focus === 'function') {
+            successModalLastFocus.focus();
+        }
+        successModalLastFocus = null;
+    }
+
     window.closeSuccessModal = function () {
         const modal = document.getElementById('purchaseSuccessModal');
         if (modal) {
             modal.classList.remove('active');
+            modal.removeAttribute('aria-modal');
             document.body.style.overflow = '';
         }
+        releaseSuccessModalFocus();
     };
 
+    // `purchasedName` is the product name for single-item buys. Cart buys pass
+    // an array of names so the cross-sell keyword match below still works (a
+    // summary string like "2 items" can never match a strategy key).
     window.showSuccessModal = async function (purchasedName, downloadLink) {
         console.log('🏆 Triggering Purchase Success Modal for:', purchasedName);
 
@@ -4542,8 +4710,19 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
             }
         }
 
-        // 2. Identify the strategy keys
-        const nameLower = purchasedName.toLowerCase();
+        // 2. Open the modal NOW, before the cross-sell block below -- that
+        // block awaits convertPrice()/fetchExchangeRates() over the network,
+        // and if that hung or threw the customer had just paid and saw
+        // nothing at all. Recommendations are cosmetic; confirmation is not.
+        const modal = document.getElementById('purchaseSuccessModal');
+        if (modal) {
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            trapSuccessModalFocus(modal);
+        }
+
+        // 3. Identify the strategy keys
+        const nameLower = (Array.isArray(purchasedName) ? purchasedName.join(' ') : String(purchasedName || '')).toLowerCase();
         let strategy = CROSS_SELL_STRATEGY['default'];
 
         for (const [key, config] of Object.entries(CROSS_SELL_STRATEGY)) {
@@ -4554,34 +4733,36 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
             }
         }
 
-        // 3. Render recommendations
+        // 4. Render recommendations. Best-effort only -- the modal is already
+        // open, so a failed price conversion just means no cross-sell cards.
         const grid = document.getElementById('crossSellGrid');
         if (grid) {
             grid.innerHTML = '';
 
-            // Loop through the 2 target recommendations
-            for (const rec of strategy.recs) {
-                // Find matching product in globally loaded window.allProducts
-                let matchingProduct = null;
-                if (window.allProducts) {
-                    matchingProduct = window.allProducts.find(p =>
-                        p.name.toLowerCase().includes(rec.name.toLowerCase()) ||
-                        rec.name.toLowerCase().includes(p.name.toLowerCase())
-                    );
-                }
+            try {
+                // Loop through the 2 target recommendations
+                for (const rec of strategy.recs) {
+                    // Find matching product in globally loaded window.allProducts
+                    let matchingProduct = null;
+                    if (window.allProducts) {
+                        matchingProduct = window.allProducts.find(p =>
+                            p.name.toLowerCase().includes(rec.name.toLowerCase()) ||
+                            rec.name.toLowerCase().includes(p.name.toLowerCase())
+                        );
+                    }
 
-                // If not found in dynamic products, use default mock config or search by parts
-                const prodName = matchingProduct ? matchingProduct.name : rec.name;
-                const prodPrice = matchingProduct ? matchingProduct.price : 799;
-                const prodId = matchingProduct ? matchingProduct.id : '';
+                    // If not found in dynamic products, use default mock config or search by parts
+                    const prodName = matchingProduct ? matchingProduct.name : rec.name;
+                    const prodPrice = matchingProduct ? matchingProduct.price : 799;
+                    const prodId = matchingProduct ? matchingProduct.id : '';
 
-                // Convert price to local currency
-                const localPrice = await convertPrice(prodPrice, window.userCountryCode || 'IN');
-                const priceFormatted = formatPrice(localPrice);
+                    // Convert price to local currency
+                    const localPrice = await convertPrice(prodPrice, window.userCountryCode || 'IN');
+                    const priceFormatted = formatPrice(localPrice);
 
-                const card = document.createElement('div');
-                card.className = 'cross-sell-card';
-                card.innerHTML = `
+                    const card = document.createElement('div');
+                    card.className = 'cross-sell-card';
+                    card.innerHTML = `
                     <div class="cross-sell-card-header">
                         <h4 class="cross-sell-card-title">${prodName}</h4>
                         <p class="cross-sell-value-prop">${rec.valueProp}</p>
@@ -4591,16 +4772,13 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
                         ${prodId ? `<button class="btn btn-primary btn-cross-sell-buy" onclick="window.closeSuccessModal(); window.openProductModal('${prodId}');">Buy Now</button>` : ''}
                     </div>
                 `;
-                grid.appendChild(card);
+                    grid.appendChild(card);
+                }
+            } catch (err) {
+                console.error('Cross-sell render failed (purchase confirmation unaffected):', err);
             }
         }
 
-        // 4. Open the modal
-        const modal = document.getElementById('purchaseSuccessModal');
-        if (modal) {
-            modal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
     };
 })();
 
@@ -4947,30 +5125,69 @@ document.addEventListener('DOMContentLoaded', function () {
             const udPhone = document.getElementById(idPrefix + 'phone').value.trim();
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!udName || !udEmail || !emailRegex.test(udEmail)) {
-                alert('❌ Please fill in required fields with a valid email');
+                showToast('❌ Please fill in the required fields with a valid email address.', 'error');
                 return;
             }
 
             mainUserModal.style.display = 'none';
             closeCartDrawer();
 
+            // Pass the submit button so it stays disabled while
+            // /api/create-order is in flight -- a double submit here would
+            // otherwise open two Razorpay orders for the same cart.
+            const submitBtn = mainUserForm.querySelector('button[type="submit"], input[type="submit"]');
             initCartCheckout(cart, {
                 name: udName,
                 email: udEmail,
                 phone: udPhone,
                 country: window.userCountryCode || 'Unknown'
-            });
+            }, submitBtn);
         };
     });
 });
+
+// Guards a checkout trigger while an order is being created server-side.
+// Without this, the await on /api/create-order leaves the button live and a
+// double-click on a slow connection opens two Razorpay orders.
+// Returns a release() that restores the original label/state exactly once.
+function lockCheckoutButton(btn) {
+    if (!btn || btn.dataset.checkoutLocked === '1') return null;
+    const originalHtml = btn.innerHTML;
+    const originalDisabled = btn.disabled;
+    btn.dataset.checkoutLocked = '1';
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    btn.innerHTML = 'Starting secure checkout…';
+    let released = false;
+    return function release() {
+        if (released) return;
+        released = true;
+        delete btn.dataset.checkoutLocked;
+        btn.disabled = originalDisabled;
+        btn.removeAttribute('aria-busy');
+        btn.innerHTML = originalHtml;
+    };
+}
 
 // Multi-item checkout: creates ONE server-verified Razorpay order covering
 // every cart line item, then clears the cart and shows a single success
 // screen listing every purchased product -- this is the "single checkout
 // flow" that replaces buying items one by one when using the cart.
-async function initCartCheckout(cart, userDetails) {
+// `triggerBtn` is the button that started this, locked until Razorpay opens.
+async function initCartCheckout(cart, userDetails, triggerBtn = null) {
+    const releaseBtn = lockCheckoutButton(triggerBtn);
+    try {
+        return await runCartCheckout(cart, userDetails, releaseBtn);
+    } catch (err) {
+        if (releaseBtn) releaseBtn();
+        throw err;
+    }
+}
+
+async function runCartCheckout(cart, userDetails, releaseBtn) {
     if (typeof Razorpay === 'undefined') {
-        alert('⏳ Loading payment system...\nPlease wait and try again in a couple seconds.');
+        if (releaseBtn) releaseBtn();
+        showToast('⏳ Loading the payment system. Please try again in a couple of seconds.', 'warning');
         const script = document.createElement('script');
         script.src = 'https://checkout.razorpay.com/v1/checkout.js';
         document.head.appendChild(script);
@@ -5008,7 +5225,8 @@ async function initCartCheckout(cart, userDetails) {
     }
 
     if (!orderData || !orderData.order_id) {
-        alert('⚠️ Could not start secure checkout. Please refresh the page and try again, or contact support if this keeps happening.');
+        if (releaseBtn) releaseBtn();
+        showToast('⚠️ Could not start secure checkout. Please refresh the page and try again, or contact support if this keeps happening.', 'error', 0);
         return;
     }
 
@@ -5040,11 +5258,15 @@ async function initCartCheckout(cart, userDetails) {
             // Purchase logging + confirmation email are primarily handled
             // server-side by the Razorpay webhook (handleCartPurchase); the
             // call above is just a fast fallback, not a duplicate path.
+            // Snapshot names before saveCart([]) clears the drawer.
+            const purchasedNames = cart.map((i) => i.name);
             saveCart([]);
             renderCartDrawer();
 
             if (typeof window.showSuccessModal === 'function') {
-                window.showSuccessModal(`${cart.length} item${cart.length > 1 ? 's' : ''}`, '#');
+                // Pass the real product names (not a "2 items" summary) so the
+                // cross-sell keyword match can actually hit a strategy.
+                window.showSuccessModal(purchasedNames, '#');
             } else {
                 alert('🎉 Payment Successful!\n\nCheck your email for your download links.\n\nIMPORTANT: Please check your Spam/Junk folder.');
             }
@@ -5052,6 +5274,7 @@ async function initCartCheckout(cart, userDetails) {
         modal: {
             ondismiss: function () {
                 console.log('Cart checkout closed by user');
+                if (releaseBtn) releaseBtn();
             }
         },
         prefill: {
@@ -5062,8 +5285,18 @@ async function initCartCheckout(cart, userDetails) {
         theme: { color: '#e95836' }
     };
 
-    await loadRazorpaySdk();
-    const razorpay = new Razorpay(options);
-    razorpay.open();
+    try {
+        await loadRazorpaySdk();
+        const razorpay = new Razorpay(options);
+        razorpay.open();
+    } catch (err) {
+        if (releaseBtn) releaseBtn();
+        console.error('❌ Could not open Razorpay checkout:', err);
+        alert('⚠️ Could not open the payment window. Please refresh the page and try again.');
+        return;
+    }
+    // Razorpay is open now -- the trigger can go live again so the user isn't
+    // stuck with a dead button if they close the overlay in an unusual way.
+    if (releaseBtn) releaseBtn();
 }
 window.initCartCheckout = initCartCheckout;
