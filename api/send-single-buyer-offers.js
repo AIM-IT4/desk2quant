@@ -520,7 +520,7 @@ function buildCampaignEmail(purchasedProductName, recommendations, expiryStr) {
 
             <!-- Header -->
             <div style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%); border-radius:16px 16px 0 0; padding:40px 30px; text-align:center;">
-                <div style="font-size:28px; font-weight:800; color:#ffffff; letter-spacing:1px; margin-bottom:6px;">Desk2Quant</div>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 6px auto;"><tr><td style="padding-right:12px; vertical-align:middle;"><img src="https://desk2quant.vercel.app/assets/images/email-logo.png" width="40" height="40" alt="Desk2Quant" style="display:block; width:40px; height:40px; border:0; outline:none; text-decoration:none; background:#ffffff; border-radius:11px;"></td><td style="vertical-align:middle;"><span style="font-size:28px; font-weight:800; color:#ffffff; letter-spacing:1px;">Desk2Quant</span></td></tr></table>
                 <div style="font-size:13px; color:#a0aec0; letter-spacing:2px; text-transform:uppercase;">Exclusive Offer</div>
             </div>
 

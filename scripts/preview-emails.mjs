@@ -5,7 +5,12 @@
 // source and evaluates it against sample data, so what you see is the actual
 // shipped markup -- not a hand-copied approximation that can drift.
 //
-// Run: node scripts/preview-emails.mjs   ->   writes email-preview.html
+// Run: node scripts/preview-emails.mjs   ->   writes email-preview-generated.html
+//
+// The output name is deliberately NOT email-preview.html: that name was already
+// taken by a stale hand-written artifact, and writing over it meant a `git
+// checkout` of that path silently replaced a fresh preview with an outdated
+// design. The generated file is gitignored so the two can't be confused again.
 import { readFileSync, writeFileSync } from 'node:fs';
 
 // Sample values standing in for the template's interpolations. Anything the
@@ -29,16 +34,36 @@ const SAMPLE = {
     items: []
 };
 
-const FILES = ['api/razorpay-webhook.js', 'api/reminders.js'];
+// Every file that builds customer-facing email HTML. Keep this list complete:
+// an omission renders as "no such template" rather than an error, so a stale
+// list silently under-reports coverage. The three send-* promo files and
+// lib/recommendationEmail.js build their own headers separately from the two
+// api/ transactional files.
+const FILES = [
+    'api/razorpay-webhook.js',
+    'api/reminders.js',
+    'api/send-latest-products.js',
+    'api/send-promo-latest.js',
+    'api/send-single-buyer-offers.js',
+    'lib/recommendationEmail.js'
+];
 const BACKTICK = String.fromCharCode(96);
 const BACKSLASH = String.fromCharCode(92);
 
 function extractTemplates(src, file) {
     const found = [];
-    // Matches both `const customerHtml = \`` (razorpay-webhook.js) and bare
-    // reassignment `htmlBody = \`` (reminders.js, which declares `let subject,
-    // htmlBody` up front and assigns per branch).
-    const re = new RegExp('(?:const\\s+|let\\s+|var\\s+)?(\\w*[Hh]tml\\w*)\\s*=\\s*' + BACKTICK, 'g');
+    // Two shapes in this codebase:
+    //   1. `const customerHtml = \`` (api/razorpay-webhook.js) and bare
+    //      reassignment `htmlBody = \`` (api/reminders.js, which declares
+    //      `let subject, htmlBody` up front and assigns per branch).
+    //   2. `return \`` straight out of a build function (the send-* promo
+    //      files), where the markup is never bound to a variable at all.
+    // Missing shape 2 is what made an earlier run silently under-report the
+    // promo senders while still printing a plausible-looking template count.
+    const re = new RegExp(
+        '(?:(?:const\\s+|let\\s+|var\\s+)?(\\w*[Hh]tml\\w*)\\s*=|(return))\\s*' + BACKTICK,
+        'g'
+    );
     let m;
     while ((m = re.exec(src))) {
         // Walk to the matching closing backtick. These templates nest --
@@ -63,17 +88,43 @@ function extractTemplates(src, file) {
             k += 1;
         }
         if (k >= src.length) continue;
-        found.push({ file, name: m[1], body: src.slice(start, k) });
+        const body = src.slice(start, k);
+        // Both shapes over-match: `priceHtml` / `coverImg` are small inline
+        // fragments, not whole emails. Keep anything that opens its own
+        // top-level document/section -- that covers the branded card templates
+        // AND the plain admin alerts (a bare `<div>` wrapping an `<h2>`, no
+        // card wrapper). Filtering on the card wrapper alone silently dropped
+        // all five admin alerts.
+        const isEmail = /<!DOCTYPE|<body|max-width:\s*\d+px/i.test(body)
+            || /^\s*<div[^>]*font-family/i.test(body);
+        if (!isEmail) { re.lastIndex = k; continue; }
+        // For `return \`` matches, label by the nearest preceding function name.
+        let name = m[1];
+        if (!name) {
+            const decls = src.slice(0, m.index).match(/function\s+(\w+)/g);
+            name = decls ? decls[decls.length - 1].replace(/function\s+/, '') : 'return';
+        }
+        found.push({ file, name, body });
         re.lastIndex = k;
     }
     return found;
 }
 
+// Helpers the templates call. The literal is evaluated outside its module, so
+// the module's own functions aren't in scope -- without these the Proxy returns
+// a string for `escapeHtml` and the render dies on "not a function".
+const HELPERS = {
+    escapeHtml: (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    )),
+    stripHtml: (s) => String(s ?? '').replace(/<[^>]*>/g, '')
+};
+
 // Render by evaluating the literal with SAMPLE keys in scope. Unknown
 // identifiers resolve via a Proxy to their own name so a missing sample value
 // shows up as visible text instead of throwing.
 function render(body) {
-    const scope = new Proxy(SAMPLE, {
+    const scope = new Proxy({ ...SAMPLE, ...HELPERS }, {
         has: () => true,
         get: (t, k) => (k in t ? t[k] : (typeof k === 'string' ? `[${k}]` : undefined))
     });
@@ -85,10 +136,22 @@ function render(body) {
     }
 }
 
+// The templates point at the production URL, which 404s until the asset is
+// deployed -- so in a local preview the logo would render as a broken image and
+// look like a template bug. Swap in a base64 data URI for preview only.
+const LOGO_URL = 'https://desk2quant.vercel.app/assets/images/email-logo.png';
+const LOGO_DATA = 'data:image/png;base64,' + readFileSync('assets/images/email-logo.png').toString('base64');
+
 const templates = FILES.flatMap((f) => extractTemplates(readFileSync(f, 'utf8'), f));
+const failures = [];
 
 const sections = templates.map(({ file, name }, i) => {
-    const html = render(templates[i].body);
+    const html = render(templates[i].body).split(LOGO_URL).join(LOGO_DATA);
+    // A failed render previously showed only as small red text inside one
+    // section, which is easy to scroll past -- and did get scrolled past,
+    // making two logo-bearing templates look like they had no logo. Collect
+    // failures and exit non-zero instead.
+    if (html.includes('render failed:')) failures.push(`${file} -> ${name}`);
     return `
     <div style="max-width: 760px; margin: 0 auto 12px;">
       <p style="font: 600 13px Arial; color: #111; margin: 32px 0 4px;">${file} &rarr; ${name}</p>
@@ -98,7 +161,7 @@ const sections = templates.map(({ file, name }, i) => {
     </div>`;
 }).join('\n');
 
-writeFileSync('email-preview.html', `<!DOCTYPE html>
+writeFileSync('email-preview-generated.html', `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>Email template preview</title></head>
 <body style="margin:0; background:#eceae4; padding:24px 0; font-family:Arial,sans-serif;">
 <div style="max-width:760px; margin:0 auto 8px;">
@@ -110,3 +173,9 @@ ${sections}
 
 console.log(`rendered ${templates.length} templates:`);
 for (const t of templates) console.log(`  ${t.file} -> ${t.name}`);
+
+if (failures.length) {
+    console.error(`\n${failures.length} template(s) FAILED to render:`);
+    for (const f of failures) console.error(`  ${f}`);
+    process.exit(1);
+}
