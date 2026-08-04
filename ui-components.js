@@ -46,6 +46,10 @@
             Number(styles.opacity || 1) !== 0;
     }
 
+    function syncModalOpenClass() {
+        document.body.classList.toggle('modal-open', getVisibleModals().length > 0);
+    }
+
     function getVisibleModals() {
         return Array.from(document.querySelectorAll(MODAL_SELECTOR)).filter(isVisible);
     }
@@ -118,7 +122,15 @@
         }
 
         state.wasVisible = visible;
-        document.body.classList.toggle('modal-open', getVisibleModals().length > 0);
+        syncModalOpenClass();
+        // isVisible() reads computed opacity, so during a modal's CSS fade-out
+        // the element still measures as visible and 'modal-open' (which sets
+        // overflow: hidden on body) gets re-added. Nothing fires afterwards to
+        // clear it, so the page stayed unscrollable. Re-check once the
+        // transition finishes, and again on a short fallback timer for browsers
+        // or reduced-motion settings where transitionend never fires.
+        modal.addEventListener('transitionend', syncModalOpenClass, { once: true });
+        window.setTimeout(syncModalOpenClass, 450);
     }
 
     function closeModal(modal) {
