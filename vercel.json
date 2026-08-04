@@ -3,14 +3,25 @@
     "outputDirectory": ".",
     "redirects": [
         {
-            "source": "/:path*",
+            "source": "/",
             "has": [
                 {
                     "type": "host",
                     "value": "www.desk2quant.com"
                 }
             ],
-            "destination": "https://desk2quant.com/:path*",
+            "destination": "https://desk2quant.com/",
+            "permanent": true
+        },
+        {
+            "source": "/:path+",
+            "has": [
+                {
+                    "type": "host",
+                    "value": "www.desk2quant.com"
+                }
+            ],
+            "destination": "https://desk2quant.com/:path+",
             "permanent": true
         }
     ]
