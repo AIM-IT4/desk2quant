@@ -5,8 +5,8 @@
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_OhbTYIuMYgGgmKPQJ9W7RA_rhKyaad0';
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'jha.8@alumni.iitj.ac.in';
-const SENDER_EMAIL = process.env.SENDER_EMAIL || 'jha.8@alumni.iitj.ac.in';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'desk2quant@gmail.com';
+const SENDER_EMAIL = process.env.SENDER_EMAIL || 'desk2quant@gmail.com';
 const SENDER_NAME = process.env.SENDER_NAME || 'Desk2Quant';
 
 async function main() {

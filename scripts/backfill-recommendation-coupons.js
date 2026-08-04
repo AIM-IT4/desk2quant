@@ -24,7 +24,7 @@ const DRY_RUN = process.argv.includes('--dry-run');
 const TEST_PATTERNS = /test|sandbox|delete me|debug|remove after/i;
 const OWNER_EMAILS = new Set([
     'iitamit97@gmail.com',
-    'jha.8@alumni.iitj.ac.in',
+    'desk2quant@gmail.com',
     'jha.8@iitj.ac.in',
     'rashmijha1234567@gmail.com'
 ]);

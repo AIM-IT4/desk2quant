@@ -10,12 +10,12 @@ const mockEvent = {
                 id: 'pay_test_' + Date.now(),
                 amount: 49900, // INR 499.00
                 currency: 'INR',
-                email: 'jha.8@alumni.iitj.ac.in', // Sending to yourself for testing
+                email: 'desk2quant@gmail.com', // Sending to yourself for testing
                 notes: {
                     type: 'product',
                     product_name: 'Python for Quants',
                     customer_name: 'Test Customer',
-                    customer_email: 'jha.8@alumni.iitj.ac.in',
+                    customer_email: 'desk2quant@gmail.com',
                     customer_phone: '9999999999'
                 }
             }

@@ -206,7 +206,7 @@ async function sendEmail() {
                 'content-type': 'application/json'
             },
             body: JSON.stringify({
-                sender: { email: 'jha.8@alumni.iitj.ac.in', name: 'QuantMentor' },
+                sender: { email: 'desk2quant@gmail.com', name: 'QuantMentor' },
                 to: [{ email: customerEmail, name: customerName }],
                 subject: `📚 Handpicked Quant Resources + Special 30% Discount Code for You`,
                 htmlContent: htmlContent,

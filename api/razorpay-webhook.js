@@ -44,8 +44,8 @@ export default async function handler(req, res) {
     const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
     const SUPABASE_KEY = process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRudGFibXl1cmxybG5vYWpkbmphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMDEyNjUsImV4cCI6MjA4NTY3NzI2NX0.PYpNd_t_px09zi2d5WGjFVOB23sjb3ZPuAnxagYshe0';
     const BREVO_API_KEY = process.env.BREVO_API_KEY;
-    const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'jha.8@alumni.iitj.ac.in';
-    const SENDER_EMAIL = process.env.SENDER_EMAIL || 'jha.8@alumni.iitj.ac.in';
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'desk2quant@gmail.com';
+    const SENDER_EMAIL = process.env.SENDER_EMAIL || 'desk2quant@gmail.com';
     const SENDER_NAME = process.env.SENDER_NAME || 'Desk2Quant';
 
     // 1. Capture Raw Body for Signature Verification

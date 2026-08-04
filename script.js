@@ -148,7 +148,7 @@ async function sendEmailWithBrevo(to, subject, htmlContent, textContent) {
 
 // Send Notification to Admin
 async function sendAdminNotification(subject, htmlContent, textContent) {
-    const ADMIN_EMAIL = 'jha.8@alumni.iitj.ac.in';
+    const ADMIN_EMAIL = 'desk2quant@gmail.com';
     qmLog('📧 Sending Admin Notification to:', ADMIN_EMAIL);
     return sendEmailWithBrevo(ADMIN_EMAIL, subject, htmlContent, textContent);
 }
@@ -3080,7 +3080,7 @@ if (modalPayBtn) {
 // ================================
 
 // ⚠️ YOUR EMAIL - Where booking notifications will be sent
-const ADMIN_EMAIL = 'jha.8@alumni.iitj.ac.in';
+const ADMIN_EMAIL = 'desk2quant@gmail.com';
 
 // Paid-session links are created by the signed Razorpay webhook. Free sessions do not
 // trigger a payment webhook, so they receive an independently random Jitsi room here.

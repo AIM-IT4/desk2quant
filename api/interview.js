@@ -324,7 +324,7 @@ async function sendEmailReport(toEmail, toName, reportMarkdown) {
     };
 
     const body = {
-        sender: { email: 'jha.8@alumni.iitj.ac.in', name: 'Desk2Quant AI' },
+        sender: { email: 'desk2quant@gmail.com', name: 'Desk2Quant AI' },
         to: [{ email: toEmail, name: toName }],
         subject: 'Your AI Interview Scorecard 📊',
         htmlContent: htmlContent,

@@ -52,7 +52,7 @@ process.env.SUPABASE_KEY = process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5
 
 // Set up recipient/mock purchase details
 // Let's use an external test email to verify sharing permission grants
-const mockCustomerEmail = 'jha.8@alumni.iitj.ac.in';
+const mockCustomerEmail = 'desk2quant@gmail.com';
 const mockCustomerName = 'Amit Jha (Test)';
 const googleDriveFolderLink = 'https://drive.google.com/drive/folders/1348-cdCTCvQlzvdcArxA__4N6t0cIBy6?usp=drive_link';
 const testProductName = 'Complete Front Office & Risk Quant Professional Bundle (40+ PDFs & 60+ scripts)';
@@ -84,7 +84,7 @@ async function main() {
             SUPABASE_KEY: process.env.SUPABASE_KEY,
             BREVO_API_KEY: process.env.BREVO_API_KEY,
             ADMIN_EMAIL: 'drive-sharing-service@desk2quant.iam.gserviceaccount.com', // service account
-            SENDER_EMAIL: 'jha.8@alumni.iitj.ac.in',
+            SENDER_EMAIL: 'desk2quant@gmail.com',
             SENDER_NAME: 'Desk2Quant'
         });
 
