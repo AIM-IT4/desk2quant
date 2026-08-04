@@ -66,7 +66,8 @@ export default async function handler(req, res) {
     
         try {
             const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
-            const SUPABASE_KEY = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY;
+        const SUPABASE_KEY = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY
+            || 'sb_publishable_OhbTYIuMYgGgmKPQJ9W7RA_rhKyaad0';
             const catalog = await fetchCatalog(SUPABASE_URL, SUPABASE_KEY);
             const result = await askAdvisor({
                 groqKey: GROQ_API_KEY,
