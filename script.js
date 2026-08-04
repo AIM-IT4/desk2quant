@@ -2705,12 +2705,18 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
             }
 
             if (window.supabaseClient && customerEmail) {
+                // Revenue rows must be self-consistent: `amount` is the INR value
+                // (inrAmountForLogging), so `currency` must say INR -- not the
+                // display currency the buyer saw. Previously a EUR shopper's row
+                // stored { amount: 699, currency: 'EUR' }, i.e. an INR figure
+                // labelled EUR, which inflated any revenue-by-currency total.
                 const loggedAmount = inrAmountForLogging !== null ? inrAmountForLogging : ((currency === 'INR') ? amount : 0);
+                const loggedCurrency = inrAmountForLogging !== null ? 'INR' : (currency || 'INR');
                 window.supabaseClient.from('purchases').insert({
                     customer_email: customerEmail,
                     product_name: productName,
                     amount: Math.round(loggedAmount),
-                    currency: currency || 'INR',
+                    currency: loggedCurrency,
                     payment_id: paymentId,
                     source: 'frontend',
                     download_link: downloadLink,
