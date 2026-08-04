@@ -464,7 +464,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (couponInput) couponInput.value = '';
 
             modal.classList.add('active');
-            document.body.style.overflow = 'hidden';
+            document.body.style.overflowY = 'hidden';
             qmLog('✅ Modal opened for:', product);
         });
     });
@@ -647,7 +647,7 @@ document.addEventListener('DOMContentLoaded', function () {
         window.currentDiscountedPrice = undefined;
         window.activeModalCoupon = { code: '', percent: 0 };
         window.isCouponApplied = false;
-        document.body.style.overflow = '';
+        document.body.style.overflowY = '';
 
         const couponInput = document.getElementById('couponInput');
         const feedbackEl = document.getElementById('modalCouponFeedback');
@@ -2191,7 +2191,7 @@ window.openProductModal = async function (id) {
         if (couponInput) couponInput.value = '';
 
         modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
+        document.body.style.overflowY = 'hidden';
     } catch (err) { console.error(err); }
 };
 
@@ -3048,7 +3048,7 @@ if (modalPayBtn) {
                 if (udName && udEmail) {
                     mainUserModal.style.display = 'none';
                     document.getElementById('productModal').classList.remove('active');
-                    document.body.style.overflow = '';
+                    document.body.style.overflowY = '';
 
                     qmLog('Calling initRazorpayCheckout with User Details...');
                     // Submit button is locked while /api/create-order is in
@@ -3069,7 +3069,7 @@ if (modalPayBtn) {
         } else {
             console.error('User details modal not found, falling back to direct checkout');
             document.getElementById('productModal').classList.remove('active');
-            document.body.style.overflow = '';
+            document.body.style.overflowY = '';
             initRazorpayCheckout(productName, payAmount, payCurrency, logAmountInr, null, {
                 productId: window.currentProductId || null,
                 couponCode: (window.activeModalCoupon && window.activeModalCoupon.appliedCode) || null
@@ -4543,6 +4543,10 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
         }
 
         modal.classList.add('active');
+        // Own the scroll lock instead of relying on another modal's overlay
+        // handler to clear it. Use overflowY so the base `overflow-x: hidden`
+        // on body is never clobbered by a shorthand write.
+        document.body.style.overflowY = 'hidden';
         sessionStorage.setItem('launch_promo_shown', 'true');
     };
 
@@ -4550,6 +4554,7 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
         const modal = document.getElementById('launchPromoModal');
         if (modal) {
             modal.classList.remove('active');
+            document.body.style.overflowY = '';
         }
     };
 
@@ -4764,7 +4769,7 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
         if (modal) {
             modal.classList.remove('active');
             modal.removeAttribute('aria-modal');
-            document.body.style.overflow = '';
+            document.body.style.overflowY = '';
         }
         releaseSuccessModalFocus();
     };
@@ -4796,7 +4801,7 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
         const modal = document.getElementById('purchaseSuccessModal');
         if (modal) {
             modal.classList.add('active');
-            document.body.style.overflow = 'hidden';
+            document.body.style.overflowY = 'hidden';
             trapSuccessModalFocus(modal);
         }
 
@@ -5156,14 +5161,14 @@ async function renderCartDrawer() {
 function openCartDrawer() {
     document.getElementById('cartDrawer')?.classList.add('active');
     document.getElementById('cartDrawerOverlay')?.classList.add('active');
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflowY = 'hidden';
     renderCartDrawer();
 }
 
 function closeCartDrawer() {
     document.getElementById('cartDrawer')?.classList.remove('active');
     document.getElementById('cartDrawerOverlay')?.classList.remove('active');
-    document.body.style.overflow = '';
+    document.body.style.overflowY = '';
 }
 
 document.addEventListener('DOMContentLoaded', function () {
