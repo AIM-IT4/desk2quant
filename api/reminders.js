@@ -35,6 +35,26 @@ export default async function handler(req, res) {
     const SENDER_EMAIL = process.env.SENDER_EMAIL || 'desk2quant@gmail.com';
     const SENDER_NAME = process.env.SENDER_NAME || 'Desk2Quant';
 
+    // --- One-off Drive permission audit -------------------------------
+    // Past buyers were granted role:'writer' on the master product files.
+    // Runs here because GOOGLE_PRIVATE_KEY is redacted by `vercel env pull`
+    // and cannot be used from a local machine. Guarded by CRON_SECRET above.
+    if (req.query.action === 'drive-audit') {
+        try {
+            const { runDriveAudit } = await import('../lib/driveAudit.js');
+            const result = await runDriveAudit({
+                clientEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+                privateKey: process.env.GOOGLE_PRIVATE_KEY,
+                supabaseUrl: SUPABASE_URL,
+                supabaseKey: SUPABASE_KEY,
+                apply: req.query.apply === 'true'
+            });
+            return res.status(200).json(result);
+        } catch (err) {
+            return res.status(500).json({ error: String(err.message || err) });
+        }
+    }
+
     if (!BREVO_API_KEY) {
         return res.status(500).json({ error: 'BREVO_API_KEY not configured' });
     }
