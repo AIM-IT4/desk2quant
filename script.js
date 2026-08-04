@@ -1673,7 +1673,7 @@ async function loadBlogsFromSupabase() {
             card.dataset.detailHref = blogHref;
 
             const imageHtml = blog.cover_image_url
-                ? `<div class="product-image" style="height:200px; padding:0; overflow:hidden;"><img src="${blog.cover_image_url}" alt="${blog.title || 'Blog post cover image'}" style="width:100%; height:100%; object-fit:cover; transition:transform 0.5s ease;"></div>`
+                ? `<div class="product-image" style="height:200px; padding:0; overflow:hidden;"><img loading="lazy" decoding="async" src="${blog.cover_image_url}" alt="${blog.title || 'Blog post cover image'}" style="width:100%; height:100%; object-fit:cover; transition:transform 0.5s ease;"></div>`
                 : `<div class="product-image" style="height:200px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05);"><i class="fas fa-newspaper" style="font-size:3em; opacity:0.5;"></i></div>`;
 
             card.innerHTML = `
@@ -3888,7 +3888,7 @@ function displayBlogs(blogs) {
 
         card.innerHTML = `
             <div class="product-image" style="padding:0; aspect-ratio:16/9; overflow:hidden; background:#1e293b;">
-                ${blog.cover_image_url ? `<img src="${blog.cover_image_url}" alt="${blog.title || 'Blog post cover image'}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:gray;"><i class="fas fa-newspaper fa-3x"></i></div>`}
+                ${blog.cover_image_url ? `<img loading="lazy" decoding="async" src="${blog.cover_image_url}" alt="${blog.title || 'Blog post cover image'}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:gray;"><i class="fas fa-newspaper fa-3x"></i></div>`}
                 <div class="product-badge" style="background:#8b5cf6;">ARTICLE</div>
             </div>
             <div class="product-content" style="display:flex; flex-direction:column;">
