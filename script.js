@@ -4546,6 +4546,15 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
         // Own the scroll lock instead of relying on another modal's overlay
         // handler to clear it. Use overflowY so the base `overflow-x: hidden`
         // on body is never clobbered by a shorthand write.
+        // The cover sits inside a position:fixed modal, so loading="lazy" never
+        // defers it -- browsers treat a fixed overlay as in-viewport and fetch it
+        // on load (619KB on every visit). Keep the URL in data-src and promote it
+        // to src the first time the popup actually opens.
+        const promoImg = modal.querySelector('img[data-src]');
+        if (promoImg) {
+            promoImg.src = promoImg.dataset.src;
+            promoImg.removeAttribute('data-src');
+        }
         document.body.style.overflowY = 'hidden';
         sessionStorage.setItem('launch_promo_shown', 'true');
     };
