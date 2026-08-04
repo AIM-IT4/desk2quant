@@ -10,4 +10,4 @@ Disallow: /index-test.html
 Disallow: /product-test.html
 Disallow: /emailjs_template.html
 
-Sitemap: https://desk2quant.vercel.app/sitemap.xml
+Sitemap: https://desk2quant.com/sitemap.xml

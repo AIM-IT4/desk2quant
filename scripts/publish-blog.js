@@ -8,7 +8,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const ARTICLE_PATH = 'C:/Users/iitak/.gemini/antigravity/brain/54439cb6-7ff3-43f8-b28d-aff83e2f4f9a/article_heston_calibration.md';
 
 // Base URL for resolving relative image paths
-const SITE_BASE_URL = 'https://desk2quant.vercel.app';
+const SITE_BASE_URL = 'https://desk2quant.com';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 

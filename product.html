@@ -7,20 +7,20 @@
     <title id="p-meta-title">Product Details | Desk2Quant</title>
     <meta id="p-meta-description" name="description"
         content="View detailed product information, pricing, and features for Desk2Quant premium quant finance resources and study materials.">
-    <link id="p-meta-canonical" rel="canonical" href="https://desk2quant.vercel.app/product.html">
+    <link id="p-meta-canonical" rel="canonical" href="https://desk2quant.com/product.html">
     <link rel="icon" type="image/png" href="assets/images/desk2quant-logo.png?v=3">
     <link rel="apple-touch-icon" href="assets/images/desk2quant-logo.png?v=3">
     <link rel="shortcut icon" href="assets/images/desk2quant-logo.png?v=3">
     <meta id="p-meta-og-type" property="og:type" content="website">
-    <meta id="p-meta-og-url" property="og:url" content="https://desk2quant.vercel.app/product.html">
+    <meta id="p-meta-og-url" property="og:url" content="https://desk2quant.com/product.html">
     <meta id="p-meta-og-title" property="og:title" content="Desk2Quant Premium Resource">
     <meta id="p-meta-og-description" property="og:description" content="Premium digital resource for quantitative finance professionals.">
-    <meta id="p-meta-og-image" property="og:image" content="https://desk2quant.vercel.app/assets/images/desk2quant-logo.png">
+    <meta id="p-meta-og-image" property="og:image" content="https://desk2quant.com/assets/images/desk2quant-logo.png">
     <meta id="p-meta-twitter-card" name="twitter:card" content="summary_large_image">
     <meta id="p-meta-twitter-title" name="twitter:title" content="Product Details | Desk2Quant">
     <meta id="p-meta-twitter-description" name="twitter:description"
         content="View detailed product information, pricing, and features for Desk2Quant premium quant finance resources.">
-    <meta id="p-meta-twitter-image" name="twitter:image" content="https://desk2quant.vercel.app/assets/images/desk2quant-logo.png">
+    <meta id="p-meta-twitter-image" name="twitter:image" content="https://desk2quant.com/assets/images/desk2quant-logo.png">
     <script id="p-product-jsonld" type="application/ld+json"></script>
 
     <!-- Google Fonts -->
@@ -867,11 +867,11 @@
         }
 
         function updateProductSEO(product, id) {
-            const pageUrl = `https://desk2quant.vercel.app/product.html?id=${id}`;
+            const pageUrl = `https://desk2quant.com/product.html?id=${id}`;
             const title = `${product.name} | Desk2Quant`;
             const description = plainTextFromHtml(product.description, 160) ||
                 'Premium digital resource for quantitative finance professionals from Desk2Quant.';
-            const image = product.cover_image_url || 'https://desk2quant.vercel.app/assets/images/desk2quant-logo.png';
+            const image = product.cover_image_url || 'https://desk2quant.com/assets/images/desk2quant-logo.png';
 
             document.title = title;
             document.getElementById('p-meta-description').setAttribute('content', description);

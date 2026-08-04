@@ -58,7 +58,7 @@ export default async function handler(req, res) {
         if (testEmail) {
             console.log(`🧪 TEST MODE — sending only to: ${testEmail}`);
             const productCardsHtml = buildProductCards(latestProducts);
-            const productListText = latestProducts.map(p => `• ${p.name} — ₹${p.price} → https://desk2quant.vercel.app/product.html?id=${p.id}`).join('\n');
+            const productListText = latestProducts.map(p => `• ${p.name} — ₹${p.price} → https://desk2quant.com/product.html?id=${p.id}`).join('\n');
             const emailHtml = buildEmailHtml(productCardsHtml);
             const emailText = buildEmailText(productListText);
 
@@ -131,7 +131,7 @@ export default async function handler(req, res) {
 
         // 5. Build the product cards HTML (same for all emails)
         const productCardsHtml = buildProductCards(latestProducts);
-        const productListText = latestProducts.map(p => `• ${p.name} — ₹${p.price} → https://desk2quant.vercel.app/product.html?id=${p.id}`).join('\n');
+        const productListText = latestProducts.map(p => `• ${p.name} — ₹${p.price} → https://desk2quant.com/product.html?id=${p.id}`).join('\n');
 
         // 6. Send to each eligible customer
         for (const [email] of eligibleCustomers) {
@@ -194,7 +194,7 @@ function buildEmailHtml(productCardsHtml) {
 
             <!-- Header -->
             <div style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%); border-radius:16px 16px 0 0; padding:40px 30px; text-align:center;">
-                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 6px auto;"><tr><td style="padding-right:12px; vertical-align:middle;"><img src="https://desk2quant.vercel.app/assets/images/email-logo.png" width="40" height="40" alt="Desk2Quant" style="display:block; width:40px; height:40px; border:0; outline:none; text-decoration:none; background:#ffffff; border-radius:11px;"></td><td style="vertical-align:middle;"><span style="font-size:28px; font-weight:800; color:#ffffff; letter-spacing:1px;">Desk2Quant</span></td></tr></table>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 6px auto;"><tr><td style="padding-right:12px; vertical-align:middle;"><img src="https://desk2quant.com/assets/images/email-logo.png" width="40" height="40" alt="Desk2Quant" style="display:block; width:40px; height:40px; border:0; outline:none; text-decoration:none; background:#ffffff; border-radius:11px;"></td><td style="vertical-align:middle;"><span style="font-size:28px; font-weight:800; color:#ffffff; letter-spacing:1px;">Desk2Quant</span></td></tr></table>
                 <div style="font-size:13px; color:#a0aec0; letter-spacing:2px; text-transform:uppercase;">New Arrivals</div>
             </div>
 
@@ -219,7 +219,7 @@ function buildEmailHtml(productCardsHtml) {
                 <!-- Urgency CTA -->
                 <div style="background:linear-gradient(135deg,#fff7ed,#ffedd5); border:2px dashed #f97316; border-radius:12px; padding:20px; text-align:center; margin-top:10px;">
                     <p style="font-size:15px; color:#c2410c; font-weight:700; margin:0 0 12px 0;">⏰ Don't wait — your peers are already leveling up!</p>
-                    <a href="https://desk2quant.vercel.app/#products" style="display:inline-block; background:linear-gradient(135deg,#ea580c,#f97316); color:#ffffff; font-weight:700; text-decoration:none; padding:14px 36px; border-radius:8px; font-size:16px; letter-spacing:0.3px;">Browse All Products →</a>
+                    <a href="https://desk2quant.com/#products" style="display:inline-block; background:linear-gradient(135deg,#ea580c,#f97316); color:#ffffff; font-weight:700; text-decoration:none; padding:14px 36px; border-radius:8px; font-size:16px; letter-spacing:0.3px;">Browse All Products →</a>
                 </div>
             </div>
 
@@ -230,7 +230,7 @@ function buildEmailHtml(productCardsHtml) {
                     Questions? Simply reply to this email.
                 </p>
                 <p style="margin:0;">
-                    <a href="https://desk2quant.vercel.app" style="color:#818cf8; text-decoration:none; font-size:13px; font-weight:600;">desk2quant.vercel.app</a>
+                    <a href="https://desk2quant.com" style="color:#818cf8; text-decoration:none; font-size:13px; font-weight:600;">desk2quant.com</a>
                 </p>
             </div>
 
@@ -249,10 +249,10 @@ ${productListText}
 
 Don't wait — your peers are already leveling up!
 
-Browse all products: https://desk2quant.vercel.app/#products
+Browse all products: https://desk2quant.com/#products
 
 ---
-Sent by Desk2Quant • desk2quant.vercel.app
+Sent by Desk2Quant • desk2quant.com
 You're receiving this because you previously purchased from Desk2Quant.`;
 }
 
@@ -274,7 +274,7 @@ function buildProductCards(products) {
                     <p style="margin:0 0 16px 0; font-size:13px; color:#666; line-height:1.6;">${desc}...</p>
                     <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
                         <span style="font-size:22px; font-weight:800; color:#1a1a1a;">₹${p.price}</span>
-                        <a href="https://desk2quant.vercel.app/product.html?id=${p.id}" style="display:inline-block; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#ffffff; font-weight:700; text-decoration:none; padding:10px 24px; border-radius:8px; font-size:14px; letter-spacing:0.3px;">View Product →</a>
+                        <a href="https://desk2quant.com/product.html?id=${p.id}" style="display:inline-block; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#ffffff; font-weight:700; text-decoration:none; padding:10px 24px; border-radius:8px; font-size:14px; letter-spacing:0.3px;">View Product →</a>
                     </div>
                 </div>
             </div>`;

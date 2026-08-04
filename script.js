@@ -1725,7 +1725,7 @@ function buildProductCatalogJsonLd(products) {
         const rawDesc = stripMarkdown((product.description || '').replace(/<[^>]*>?/gm, ''));
         const description = truncateText(rawDesc, 200) ||
             'Premium digital resource for quantitative finance professionals from Desk2Quant.';
-        const url = `https://desk2quant.vercel.app/product.html?id=${product.id}`;
+        const url = `https://desk2quant.com/product.html?id=${product.id}`;
 
         return {
             '@type': 'ListItem',
@@ -1735,7 +1735,7 @@ function buildProductCatalogJsonLd(products) {
                 name: product.name,
                 description: description,
                 url: url,
-                image: product.cover_image_url || 'https://desk2quant.vercel.app/assets/images/desk2quant-logo.png?v=3',
+                image: product.cover_image_url || 'https://desk2quant.com/assets/images/desk2quant-logo.png?v=3',
                 offers: {
                     '@type': 'Offer',
                     price: String(product.price),
@@ -1758,7 +1758,7 @@ function buildProductCatalogJsonLd(products) {
         '@type': 'ItemList',
         name: 'Desk2Quant Digital Products',
         description: 'Premium digital products for quantitative finance professionals — study materials, coding scripts, interview guides, and desk-ready playbooks.',
-        url: 'https://desk2quant.vercel.app/#products',
+        url: 'https://desk2quant.com/#products',
         numberOfItems: itemListElement.length,
         itemListElement: itemListElement
     };
@@ -4005,8 +4005,8 @@ function escapeHtml(text) {
 const BLOG_INDEX_SEO = Object.freeze({
     title: 'Blog & Articles | Desk2Quant',
     description: 'Read expert articles on quant finance, algorithms, market microstructure, career advice, and technical interview preparation from Desk2Quant.',
-    url: 'https://desk2quant.vercel.app/blog.html',
-    image: 'https://desk2quant.vercel.app/assets/images/desk2quant-logo.png'
+    url: 'https://desk2quant.com/blog.html',
+    image: 'https://desk2quant.com/assets/images/desk2quant-logo.png'
 });
 
 function setBlogMetaContent(id, content) {
@@ -4293,7 +4293,7 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             // Look up the current Quant Formula Sheet file_url directly (not the
             // hardcoded fallback map) so this always sends the latest file.
-            let downloadLink = 'https://desk2quant.vercel.app/#resources';
+            let downloadLink = 'https://desk2quant.com/#resources';
             if (window.supabaseClient) {
                 const { data } = await window.supabaseClient
                     .from('products')

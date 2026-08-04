@@ -42,8 +42,8 @@ export default async function handler(req, res) {
             coverImage: p.cover_image_url || null,
             downloadUrl: Number(p.price) === 0 ? p.file_url : null,
             purchaseUrl: p.price > 0
-                ? `https://desk2quant.vercel.app/?id=${p.id}`
-                : 'https://desk2quant.vercel.app/#resources',
+                ? `https://desk2quant.com/?id=${p.id}`
+                : 'https://desk2quant.com/#resources',
             createdAt: p.created_at
         }));
 
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
         const free = formatted.filter(p => p.priceINR === 0);
 
         return res.status(200).json({
-            site: 'Desk2Quant - desk2quant.vercel.app',
+            site: 'Desk2Quant - desk2quant.com',
             description: 'Premium digital products for quantitative finance professionals. Curated study materials, coding scripts, and interview guides.',
             totalProducts: formatted.length,
             paidProducts: { count: paid.length, items: paid },

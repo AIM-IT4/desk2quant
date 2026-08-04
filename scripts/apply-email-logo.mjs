@@ -30,14 +30,14 @@ const OLD_BAR = '<div style="background-color: #1a1a1a; padding: 20px; text-alig
 const NEW_BAR = '<div style="background-color: #ffffff; padding: 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">';
 
 const OLD_LOCKUP = [
-    '<img src="https://desk2quant.vercel.app/assets/images/email-logo.png" width="52" height="32" alt="Desk2Quant" style="display: block; width: 52px; height: 32px; border: 0; outline: none; text-decoration: none; color: #ffffff; font-size: 20px; font-weight: bold;">',
+    '<img src="https://desk2quant.com/assets/images/email-logo.png" width="52" height="32" alt="Desk2Quant" style="display: block; width: 52px; height: 32px; border: 0; outline: none; text-decoration: none; color: #ffffff; font-size: 20px; font-weight: bold;">',
     '</td>',
     '<td style="vertical-align: middle;">',
     '<span style="color: #ffffff; font-size: 24px; font-weight: bold; letter-spacing: 1px;">Desk2Quant</span>'
 ].join('');
 
 const NEW_LOCKUP = [
-    '<img src="https://desk2quant.vercel.app/assets/images/email-logo.png" width="32" height="32" alt="Desk2Quant" style="display: block; width: 32px; height: 32px; border: 0; outline: none; text-decoration: none; color: #1a1a1a; font-size: 20px; font-weight: bold;">',
+    '<img src="https://desk2quant.com/assets/images/email-logo.png" width="32" height="32" alt="Desk2Quant" style="display: block; width: 32px; height: 32px; border: 0; outline: none; text-decoration: none; color: #1a1a1a; font-size: 20px; font-weight: bold;">',
     '</td>',
     '<td style="vertical-align: middle;">',
     '<span style="color: #1a1a1a; font-size: 24px; font-weight: bold; letter-spacing: 1px;">Desk2Quant</span>'

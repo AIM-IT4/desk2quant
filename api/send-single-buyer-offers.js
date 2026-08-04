@@ -509,7 +509,7 @@ function buildCampaignEmail(purchasedProductName, recommendations, expiryStr) {
                         <span style="font-size:12px; color:#92400e; font-weight:600;">Use code at checkout:</span>
                         <div style="font-size:20px; font-weight:800; color:#92400e; letter-spacing:2px; margin-top:2px;">${rec.couponCode}</div>
                     </div>
-                    <a href="https://desk2quant.vercel.app/product.html?id=${rec.id}" style="display:block; text-align:center; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#ffffff; font-weight:700; text-decoration:none; padding:12px 24px; border-radius:8px; font-size:14px; letter-spacing:0.3px;">View Product →</a>
+                    <a href="https://desk2quant.com/product.html?id=${rec.id}" style="display:block; text-align:center; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#ffffff; font-weight:700; text-decoration:none; padding:12px 24px; border-radius:8px; font-size:14px; letter-spacing:0.3px;">View Product →</a>
                 </div>
             </div>`;
     }).join('');
@@ -520,7 +520,7 @@ function buildCampaignEmail(purchasedProductName, recommendations, expiryStr) {
 
             <!-- Header -->
             <div style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%); border-radius:16px 16px 0 0; padding:40px 30px; text-align:center;">
-                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 6px auto;"><tr><td style="padding-right:12px; vertical-align:middle;"><img src="https://desk2quant.vercel.app/assets/images/email-logo.png" width="40" height="40" alt="Desk2Quant" style="display:block; width:40px; height:40px; border:0; outline:none; text-decoration:none; background:#ffffff; border-radius:11px;"></td><td style="vertical-align:middle;"><span style="font-size:28px; font-weight:800; color:#ffffff; letter-spacing:1px;">Desk2Quant</span></td></tr></table>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 6px auto;"><tr><td style="padding-right:12px; vertical-align:middle;"><img src="https://desk2quant.com/assets/images/email-logo.png" width="40" height="40" alt="Desk2Quant" style="display:block; width:40px; height:40px; border:0; outline:none; text-decoration:none; background:#ffffff; border-radius:11px;"></td><td style="vertical-align:middle;"><span style="font-size:28px; font-weight:800; color:#ffffff; letter-spacing:1px;">Desk2Quant</span></td></tr></table>
                 <div style="font-size:13px; color:#a0aec0; letter-spacing:2px; text-transform:uppercase;">Exclusive Offer</div>
             </div>
 
@@ -553,7 +553,7 @@ function buildCampaignEmail(purchasedProductName, recommendations, expiryStr) {
 
                 <!-- CTA -->
                 <div style="text-align:center; margin-top:16px;">
-                    <a href="https://desk2quant.vercel.app/#products" style="display:inline-block; background:linear-gradient(135deg,#ea580c,#f97316); color:#ffffff; font-weight:700; text-decoration:none; padding:14px 36px; border-radius:8px; font-size:16px; letter-spacing:0.3px;">Browse All Products →</a>
+                    <a href="https://desk2quant.com/#products" style="display:inline-block; background:linear-gradient(135deg,#ea580c,#f97316); color:#ffffff; font-weight:700; text-decoration:none; padding:14px 36px; border-radius:8px; font-size:16px; letter-spacing:0.3px;">Browse All Products →</a>
                 </div>
             </div>
 
@@ -564,7 +564,7 @@ function buildCampaignEmail(purchasedProductName, recommendations, expiryStr) {
                     Questions? Simply reply to this email.
                 </p>
                 <p style="margin:0;">
-                    <a href="https://desk2quant.vercel.app" style="color:#818cf8; text-decoration:none; font-size:13px; font-weight:600;">desk2quant.vercel.app</a>
+                    <a href="https://desk2quant.com" style="color:#818cf8; text-decoration:none; font-size:13px; font-weight:600;">desk2quant.com</a>
                 </p>
             </div>
 
@@ -574,7 +574,7 @@ function buildCampaignEmail(purchasedProductName, recommendations, expiryStr) {
 
 function buildCampaignText(purchasedProductName, recommendations, expiryStr) {
     const recList = recommendations.map(r =>
-        `• ${r.name}\n  Original: ₹${r.price} → Your price: ₹${r.discountedPrice} (20% OFF)\n  Coupon code: ${r.couponCode}\n  View: https://desk2quant.vercel.app/product.html?id=${r.id}`
+        `• ${r.name}\n  Original: ₹${r.price} → Your price: ₹${r.discountedPrice} (20% OFF)\n  Coupon code: ${r.couponCode}\n  View: https://desk2quant.com/product.html?id=${r.id}`
     ).join('\n\n');
 
     return `🎁 Exclusive 20% Off — Just for You!
@@ -589,10 +589,10 @@ ${recList}
 
 ⏰ These codes expire on ${expiryStr}. Don't miss out!
 
-Browse all products: https://desk2quant.vercel.app/#products
+Browse all products: https://desk2quant.com/#products
 
 ---
-Sent by Desk2Quant • desk2quant.vercel.app
+Sent by Desk2Quant • desk2quant.com
 You're receiving this because you previously purchased from Desk2Quant.`;
 }
 

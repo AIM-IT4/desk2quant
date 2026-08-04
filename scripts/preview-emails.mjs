@@ -185,7 +185,7 @@ function render(body) {
 // The templates point at the production URL, which 404s until the asset is
 // deployed -- so in a local preview the logo would render as a broken image and
 // look like a template bug. Swap in a base64 data URI for preview only.
-const LOGO_URL = 'https://desk2quant.vercel.app/assets/images/email-logo.png';
+const LOGO_URL = 'https://desk2quant.com/assets/images/email-logo.png';
 const LOGO_DATA = 'data:image/png;base64,' + readFileSync('assets/images/email-logo.png').toString('base64');
 
 const templates = FILES.flatMap((f) => extractTemplates(readFileSync(f, 'utf8'), f));

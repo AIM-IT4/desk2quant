@@ -973,7 +973,7 @@ async function submitSimLead(event) {
         // Look up the current Quant Formula Sheet download link so the email
         // always sends the latest file, same source of truth as the homepage
         // lead-capture form.
-        let downloadLink = 'https://desk2quant.vercel.app/index.html#resources';
+        let downloadLink = 'https://desk2quant.com/index.html#resources';
         try {
             const lookupRes = await fetch(
                 `${SIM_SUPABASE_URL}/rest/v1/products?name=ilike.*Quant+Formula+Sheet*&select=file_url&limit=1`,

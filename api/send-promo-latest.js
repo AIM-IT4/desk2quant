@@ -239,7 +239,7 @@ function buildPromoEmail(product, discountCode, discountPercent) {
             <span style="display:inline-block; background:#dcfce7; color:#16a34a; font-size:13px; font-weight:700; padding:4px 12px; border-radius:20px; margin-left:10px;">SAVE ${discountPct}%</span>`;
     }
 
-    const productUrl = `https://desk2quant.vercel.app/product.html?id=${product.id}`;
+    const productUrl = `https://desk2quant.com/product.html?id=${product.id}`;
 
     return `
     <div style="font-family:'Segoe UI',Arial,sans-serif; background-color:#f4f1ec; padding:0; margin:0;">
@@ -247,7 +247,7 @@ function buildPromoEmail(product, discountCode, discountPercent) {
 
             <!-- Header -->
             <div style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%); border-radius:16px 16px 0 0; padding:40px 30px; text-align:center;">
-                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 6px auto;"><tr><td style="padding-right:12px; vertical-align:middle;"><img src="https://desk2quant.vercel.app/assets/images/email-logo.png" width="40" height="40" alt="Desk2Quant" style="display:block; width:40px; height:40px; border:0; outline:none; text-decoration:none; background:#ffffff; border-radius:11px;"></td><td style="vertical-align:middle;"><span style="font-size:28px; font-weight:800; color:#ffffff; letter-spacing:1px;">Desk2Quant</span></td></tr></table>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 6px auto;"><tr><td style="padding-right:12px; vertical-align:middle;"><img src="https://desk2quant.com/assets/images/email-logo.png" width="40" height="40" alt="Desk2Quant" style="display:block; width:40px; height:40px; border:0; outline:none; text-decoration:none; background:#ffffff; border-radius:11px;"></td><td style="vertical-align:middle;"><span style="font-size:28px; font-weight:800; color:#ffffff; letter-spacing:1px;">Desk2Quant</span></td></tr></table>
                 <div style="font-size:13px; color:#a0aec0; letter-spacing:2px; text-transform:uppercase;">Just Launched 🚀</div>
             </div>
 
@@ -325,7 +325,7 @@ function buildPromoEmail(product, discountCode, discountPercent) {
 
                 <!-- Secondary CTA -->
                 <div style="text-align:center; margin-top:20px;">
-                    <a href="https://desk2quant.vercel.app/#products" style="display:inline-block; background:linear-gradient(135deg,#ea580c,#f97316); color:#ffffff; font-weight:700; text-decoration:none; padding:12px 32px; border-radius:8px; font-size:14px; letter-spacing:0.3px;">Browse All Products →</a>
+                    <a href="https://desk2quant.com/#products" style="display:inline-block; background:linear-gradient(135deg,#ea580c,#f97316); color:#ffffff; font-weight:700; text-decoration:none; padding:12px 32px; border-radius:8px; font-size:14px; letter-spacing:0.3px;">Browse All Products →</a>
                 </div>
             </div>
 
@@ -336,7 +336,7 @@ function buildPromoEmail(product, discountCode, discountPercent) {
                     Questions? Simply reply to this email.
                 </p>
                 <p style="margin:0;">
-                    <a href="https://desk2quant.vercel.app" style="color:#818cf8; text-decoration:none; font-size:13px; font-weight:600;">desk2quant.vercel.app</a>
+                    <a href="https://desk2quant.com" style="color:#818cf8; text-decoration:none; font-size:13px; font-weight:600;">desk2quant.com</a>
                 </p>
             </div>
 
@@ -346,7 +346,7 @@ function buildPromoEmail(product, discountCode, discountPercent) {
 
 function buildPromoText(product, discountCode, discountPercent) {
     const desc = stripHtml(product.description || '').substring(0, 200);
-    const productUrl = `https://desk2quant.vercel.app/product.html?id=${product.id}`;
+    const productUrl = `https://desk2quant.com/product.html?id=${product.id}`;
 
     let priceText = `₹${product.price}`;
     if (product.original_price && product.original_price > product.price) {
@@ -375,10 +375,10 @@ ${desc}...
 
 Be among the first to get this resource — early buyers always get the best value!
 
-Browse all products: https://desk2quant.vercel.app/#products
+Browse all products: https://desk2quant.com/#products
 
 ---
-Sent by Desk2Quant • desk2quant.vercel.app
+Sent by Desk2Quant • desk2quant.com
 You're receiving this because you previously purchased from Desk2Quant.`;
 }
 

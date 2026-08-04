@@ -15,7 +15,7 @@
 // Run: node scripts/apply-email-logo-dark.mjs
 import { readFileSync, writeFileSync } from 'node:fs';
 
-const LOGO_CHIP = '<img src="https://desk2quant.vercel.app/assets/images/email-logo.png" width="40" height="40" alt="Desk2Quant" style="display:block; width:40px; height:40px; border:0; outline:none; text-decoration:none; background:#ffffff; border-radius:11px;">';
+const LOGO_CHIP = '<img src="https://desk2quant.com/assets/images/email-logo.png" width="40" height="40" alt="Desk2Quant" style="display:block; width:40px; height:40px; border:0; outline:none; text-decoration:none; background:#ffffff; border-radius:11px;">';
 
 // Promo senders: three files sharing one byte-identical wordmark line.
 const OLD_PROMO = '<div style="font-size:28px; font-weight:800; color:#ffffff; letter-spacing:1px; margin-bottom:6px;">Desk2Quant</div>';
