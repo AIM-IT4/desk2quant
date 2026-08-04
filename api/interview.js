@@ -46,6 +46,44 @@ export default async function handler(req, res) {
     const { action, messages, topic, difficulty, paymentId, durationMinutes, email, name, interviewerGender } = req.body;
     console.log('Action:', action, 'Topic:', topic, 'Gender:', interviewerGender);
 
+    // --- Product recommendation assistant --------------------------------
+    // Lives here rather than in its own route: the Vercel Hobby plan caps this
+    // project at 12 serverless functions and all 12 are already in use.
+    if (action === 'chat') {
+        const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim()
+            || req.socket?.remoteAddress || 'unknown';
+        const { rateLimit, fetchCatalog, buildSystemPrompt, sanitizeHistory, askAdvisor } =
+            await import('../lib/advisor.js');
+    
+        const gate = rateLimit(ip);
+        if (!gate.ok) {
+            res.setHeader('Retry-After', String(gate.retryAfter));
+            return res.status(429).json({ error: 'Too many messages. Give it a moment.', retryAfter: gate.retryAfter });
+        }
+    
+        const history = sanitizeHistory(messages);
+        if (!history.length) return res.status(400).json({ error: 'messages required' });
+    
+        try {
+            const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
+            const SUPABASE_KEY = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY;
+            const catalog = await fetchCatalog(SUPABASE_URL, SUPABASE_KEY);
+            const result = await askAdvisor({
+                groqKey: GROQ_API_KEY,
+                systemPrompt: buildSystemPrompt(catalog),
+                history
+            });
+            if (result.rateLimited) {
+                res.setHeader('Retry-After', String(result.retryAfter));
+                return res.status(429).json({ error: 'Busy right now. Try again shortly.', retryAfter: result.retryAfter });
+            }
+            return res.status(200).json({ reply: result.reply });
+        } catch (err) {
+            console.error('advisor error:', err.message);
+            return res.status(500).json({ error: 'Advisor unavailable right now.' });
+        }
+    }
+
     // SECURITY: verify the payment is real/captured/matches the claimed
     // duration before starting a paid interview. Previously `paymentId` was
     // accepted and merely logged -- never checked against Razorpay -- so a
