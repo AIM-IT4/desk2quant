@@ -1,4 +1,17 @@
 {
     "buildCommand": "node generate-config.js && node scripts/build-seo.js",
-    "outputDirectory": "."
+    "outputDirectory": ".",
+    "redirects": [
+        {
+            "source": "/:path*",
+            "has": [
+                {
+                    "type": "host",
+                    "value": "www.desk2quant.com"
+                }
+            ],
+            "destination": "https://desk2quant.com/:path*",
+            "permanent": true
+        }
+    ]
 }
