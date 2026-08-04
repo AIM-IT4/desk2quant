@@ -302,7 +302,13 @@ async function grantDrivePermission(clientEmail, privateKey, fileId, customerEma
     const tokenData = await tokenResponse.json();
     const token = tokenData.access_token;
 
-    // 2. Add editor permission via Google Drive API
+    // 2. Grant read-only access via Google Drive API.
+    //
+    // 'reader' -- NOT 'writer'. Reader already permits view/download/copy/print
+    // (copyRequiresWriterPermission is never set on these files), so offline
+    // reading works. 'writer' would additionally allow the buyer to delete,
+    // rename, or overwrite the file -- and these are shared master files, not
+    // per-buyer copies, so one buyer's deletion would break every other buyer.
     const permissionResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions?sendNotificationEmail=false`, {
         method: 'POST',
         headers: {
@@ -310,7 +316,7 @@ async function grantDrivePermission(clientEmail, privateKey, fileId, customerEma
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            role: 'writer',
+            role: 'reader',
             type: 'user',
             emailAddress: customerEmail
         })

@@ -30,9 +30,55 @@ const SAMPLE = {
     sessionTime: '7:30 PM IST',
     meetingLink: 'https://meet.jit.si/desk2quant-priya-a1b2c3',
     purchaseDate: '4 August 2026',
-    lineResults: [],
+    // Session-booking path (handleSessionBooking) uses its own variable names.
+    sessionName: '1:1 Quant Interview Mock',
+    sessionPrice: '2,999',
+    sessionDuration: '60',
+    displayTime: '7:30 PM IST',
+    meetLink: 'https://meet.jit.si/desk2quant-priya-a1b2c3',
+    userName: 'Priya Sharma',
+    customerPhone: '+91 98765 43210',
+    customerMessage: 'Targeting HFT roles, want to focus on brainteasers.',
+    downloadLink: 'https://drive.google.com/file/d/1a2B3c4D5e6F/view',
+    couponCode: 'THANKYOU20',
+    discountPct: 20,
+    // Computed at lib/recommendationEmail.js:112 from the trigger type, so it
+    // is a module-local const the literal closes over rather than a parameter.
+    // Default to the purchase wording; the session wording is substituted by
+    // scripts/preview-purchase-flow.mjs for the booking flow.
+    triggerText: 'purchasing <strong>Python for Quants: Complete Interview Guide</strong>',
+    // Cart path maps over lineResults; empty array renders an empty table.
+    lineResults: [
+        { name: 'Stochastic Calculus for Quant Interviews', downloadLink: 'https://drive.google.com/file/d/1a2B/view' },
+        { name: 'Python for Quants: Complete Interview Guide', downloadLink: 'https://drive.google.com/file/d/3c4D/view' }
+    ],
     items: []
 };
+
+// The card-list variables are built by a .map() OUTSIDE the template literal,
+// so the literal only ever interpolates the finished string. Supplying real
+// markup here keeps the preview representative of a multi-product email
+// instead of leaving a visible [productCards] placeholder.
+const SAMPLE_CARDS = ['Brainteasers for Quant Interviews', 'C++ for Low-Latency Trading', 'Options Pricing Masterclass']
+    .map((n, i) => `
+        <div style="background:#ffffff; border-radius:12px; margin-bottom:16px; border:1px solid #eef2f6; padding:18px;">
+            <h3 style="margin:0 0 6px 0; font-size:15px; color:#0f172a; font-weight:700;">${n}</h3>
+            <p style="margin:0 0 10px 0; font-size:13px; color:#64748b;">Sample description for preview purposes only.</p>
+            <span style="font-size:13px; color:#999; text-decoration:line-through;">₹${1499 + i * 500}</span>
+            <span style="font-size:18px; font-weight:800; color:#0369a1; margin-left:8px;">₹${Math.round((1499 + i * 500) * 0.8)}</span>
+        </div>`).join('');
+
+for (const k of ['productCards', 'productCardsHtml']) SAMPLE[k] = SAMPLE_CARDS;
+
+// The cart email's itemsHtml is <tr> rows, not cards -- feeding it card divs
+// would render them outside the <table> and break the layout.
+SAMPLE.itemsHtml = SAMPLE.lineResults.map((l) => `
+                            <tr>
+                                <td style="padding:10px 0;border-bottom:1px solid #e5e5e5;">
+                                    <strong>${l.name}</strong><br>
+                                    <a href="${l.downloadLink}" style="color:#2563eb;text-decoration:underline;font-size:13px;">Download / View Resource</a>
+                                </td>
+                            </tr>`).join('');
 
 // Every file that builds customer-facing email HTML. Keep this list complete:
 // an omission renders as "no such template" rather than an error, so a stale

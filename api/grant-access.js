@@ -93,7 +93,7 @@ async function grantDrivePermission(clientEmail, privateKey, fileId, customerEma
     const permissionResponse = await fetch(permissionUrl, {
         method: existing ? 'PATCH' : 'POST',
         headers,
-        body: JSON.stringify(existing ? { role: 'writer' } : { role: 'writer', type: 'user', emailAddress: customerEmail })
+        body: JSON.stringify(existing ? { role: 'reader' } : { role: 'reader', type: 'user', emailAddress: customerEmail })
     });
     if (!permissionResponse.ok) throw new Error(`Drive permission update failed: ${await permissionResponse.text()}`);
     return permissionResponse.json();
