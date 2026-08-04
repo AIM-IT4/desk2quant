@@ -253,7 +253,7 @@ async function sendReminder(booking, type, config) {
             <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
                 <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                     <div style="background-color: #1a1a1a; padding: 20px; text-align: center;">
-                        <span style="color: #ffffff; font-size: 24px; font-weight: bold; letter-spacing: 1px;">Desk2Quant</span>
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;"><tr><td style="padding-right: 12px; vertical-align: middle;"><img src="https://desk2quant.vercel.app/assets/images/email-logo.png" width="52" height="32" alt="Desk2Quant" style="display: block; width: 52px; height: 32px; border: 0; outline: none; text-decoration: none; color: #ffffff; font-size: 20px; font-weight: bold;"></td><td style="vertical-align: middle;"><span style="color: #ffffff; font-size: 24px; font-weight: bold; letter-spacing: 1px;">Desk2Quant</span></td></tr></table>
                     </div>
                     <div style="padding: 30px;">
                         <div style="margin-bottom: 20px;">
@@ -289,7 +289,7 @@ async function sendReminder(booking, type, config) {
             <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
                 <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                     <div style="background-color: #1a1a1a; padding: 20px; text-align: center;">
-                        <span style="color: #ffffff; font-size: 24px; font-weight: bold; letter-spacing: 1px;">Desk2Quant</span>
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;"><tr><td style="padding-right: 12px; vertical-align: middle;"><img src="https://desk2quant.vercel.app/assets/images/email-logo.png" width="52" height="32" alt="Desk2Quant" style="display: block; width: 52px; height: 32px; border: 0; outline: none; text-decoration: none; color: #ffffff; font-size: 20px; font-weight: bold;"></td><td style="vertical-align: middle;"><span style="color: #ffffff; font-size: 24px; font-weight: bold; letter-spacing: 1px;">Desk2Quant</span></td></tr></table>
                     </div>
                     <div style="padding: 30px;">
                         <div style="margin-bottom: 20px;">
@@ -329,7 +329,7 @@ async function sendReminder(booking, type, config) {
             <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
                 <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 2px solid #ef4444;">
                     <div style="background-color: #1a1a1a; padding: 20px; text-align: center;">
-                        <span style="color: #ffffff; font-size: 24px; font-weight: bold; letter-spacing: 1px;">Desk2Quant</span>
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;"><tr><td style="padding-right: 12px; vertical-align: middle;"><img src="https://desk2quant.vercel.app/assets/images/email-logo.png" width="52" height="32" alt="Desk2Quant" style="display: block; width: 52px; height: 32px; border: 0; outline: none; text-decoration: none; color: #ffffff; font-size: 20px; font-weight: bold;"></td><td style="vertical-align: middle;"><span style="color: #ffffff; font-size: 24px; font-weight: bold; letter-spacing: 1px;">Desk2Quant</span></td></tr></table>
                     </div>
                     <div style="padding: 30px;">
                         <div style="margin-bottom: 20px; text-align: center;">
