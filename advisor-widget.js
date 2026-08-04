@@ -13,12 +13,12 @@
 
     function css() {
         return [
-            '.d2q-adv-fab{position:fixed;right:20px;bottom:20px;z-index:9998;display:flex;align-items:center;gap:8px;',
+            '.d2q-adv-fab{position:fixed;right:20px;bottom:20px;z-index:9990;display:flex;align-items:center;gap:8px;',
             'padding:12px 18px;border:0;border-radius:999px;cursor:pointer;font:600 14px/1 inherit;color:#fff;',
             'background:linear-gradient(135deg,#2563eb,#1e40af);box-shadow:0 6px 22px rgba(37,99,235,.38);}',
             '.d2q-adv-fab:hover{transform:translateY(-2px);}',
             '.d2q-adv-fab[hidden]{display:none;}',
-            '.d2q-adv-panel{position:fixed;right:20px;bottom:20px;z-index:9999;width:min(380px,calc(100vw - 32px));',
+            '.d2q-adv-panel{position:fixed;right:20px;bottom:20px;z-index:10001;width:min(380px,calc(100vw - 32px));',
             'height:min(560px,calc(100vh - 40px));display:flex;flex-direction:column;overflow:hidden;',
             'background:#fff;color:#0f172a;border-radius:16px;box-shadow:0 20px 60px rgba(2,6,23,.28);}',
             '.d2q-adv-panel[hidden]{display:none;}',
@@ -65,12 +65,19 @@
         return d;
     }
 
-    function build() {
-        if (built) return;
-        built = true;
+    var cssDone = false;
+    function injectCss() {
+        if (cssDone) return;
+        cssDone = true;
         var st = document.createElement('style');
         st.textContent = css();
         document.head.appendChild(st);
+    }
+
+    function build() {
+        if (built) return;
+        built = true;
+        injectCss();
 
         var panel = document.createElement('div');
         panel.className = 'd2q-adv-panel';
@@ -149,6 +156,10 @@
     }
 
     function init() {
+        // Inject styles up front: the FAB is visible before the panel is ever
+        // built, and without them it rendered as an unstyled inline button with
+        // z-index:auto, so the promo modal painted over it.
+        injectCss();
         var fab = document.createElement('button');
         fab.type = 'button';
         fab.className = 'd2q-adv-fab';
