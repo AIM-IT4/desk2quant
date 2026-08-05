@@ -490,3 +490,54 @@
         transform: none;
     }
 }
+
+/* --- pricing + inline buy --- */
+.g-price-line {
+    margin: 0 0 14px !important;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 12px;
+}
+
+.g-price-was {
+    font-size: 1.15rem;
+    color: var(--text-tertiary);
+    text-decoration: line-through;
+}
+
+.g-price-now {
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: var(--d2q-navy);
+    letter-spacing: -0.02em;
+}
+
+.g-buy-inline {
+    margin: 12px 0 0 !important;
+}
+
+.g-buy-inline a {
+    color: var(--d2q-teal-dark);
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 0.93rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.g-buy-inline a:hover {
+    text-decoration: underline;
+}
+
+.g-cta code,
+.g-faq-item code {
+    font-family: var(--font-mono, monospace);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-size: 0.88em;
+    color: var(--d2q-navy);
+}
