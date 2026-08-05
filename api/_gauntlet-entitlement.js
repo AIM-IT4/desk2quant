@@ -13,6 +13,12 @@ export const PROJECT_PRODUCTS = {
     '01-sofr-curve': 'eb4ee16b-8a1f-475c-9dbf-e03993528ac9'
 };
 
+// Extra product ids that also unlock a project. Used for the internal 1-rupee
+// payment test; the TEST row is deleted once the flow is verified.
+export const EXTRA_UNLOCKS = {
+    '01-sofr-curve': ['8e685a6c-670d-42f6-bf36-c3da7e0ed788']
+};
+
 const norm = (v) => String(v || '').trim().toLowerCase();
 
 /**
@@ -73,13 +79,14 @@ export async function verifyProjectEntitlement(slug, paymentId, email) {
         } catch (_) { /* fall through to the checks below */ }
     }
 
-    if (norm(notes.product_id) === norm(wantProductId)) return { ok: true };
+    const allowed = [wantProductId].concat(EXTRA_UNLOCKS[slug] || []).map(norm);
+    if (allowed.includes(norm(notes.product_id))) return { ok: true };
 
     // Cart checkouts store "productId:qty:coupon" triples instead.
     const cart = String(notes.cart_items || '');
     if (cart) {
         const ids = cart.split(',').map((part) => norm(part.split(':')[0]));
-        if (ids.includes(norm(wantProductId))) return { ok: true };
+        if (ids.some((id) => allowed.includes(id))) return { ok: true };
     }
 
     return { ok: false, status: 403, error: 'That payment is not for this project.' };
