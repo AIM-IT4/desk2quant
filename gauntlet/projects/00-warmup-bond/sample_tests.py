@@ -80,7 +80,8 @@ def main():
     if failed:
         print("  Fix these before submitting.")
         sys.exit(1)
-    print("  Clean. Run 'python starter.py' to write submission.json, then send it in.")
+    print("  Clean. Hit Grade in the playground, or run 'python starter.py'")
+    print("  locally to write submission.json.")
 
 
 if __name__ == "__main__":
