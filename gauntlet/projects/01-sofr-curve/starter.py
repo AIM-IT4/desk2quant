@@ -24,11 +24,11 @@ import math
 DAY_COUNT = 365.0
 
 QUOTES = [
-    {"days":  365, "rate": 0.0530},
-    {"days":  730, "rate": 0.0505},
-    {"days": 1095, "rate": 0.0480},
-    {"days": 1460, "rate": 0.0465},
-    {"days": 1825, "rate": 0.0455},
+    {"days":  365, "rate": 0.0515},
+    {"days":  730, "rate": 0.0492},
+    {"days": 1095, "rate": 0.0471},
+    {"days": 1460, "rate": 0.0458},
+    {"days": 1825, "rate": 0.0449},
 ]
 
 

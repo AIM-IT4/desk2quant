@@ -53,3 +53,14 @@ temp/
 email-preview-generated.html
 email-preview-flow.html
 email-preview-new.html
+
+# Python bytecode from running the Gauntlet starter kits locally.
+__pycache__/
+*.pyc
+
+# Gauntlet answer keys and reference solutions must never be committed:
+# this repo is PUBLIC, so anything tracked is readable at
+# raw.githubusercontent.com regardless of .vercelignore or vercel.json.
+# Keep them locally; back them up outside the repo.
+gauntlet/hidden/
+gauntlet/projects/*/reference.mjs

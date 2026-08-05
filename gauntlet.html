@@ -49,9 +49,9 @@
             </p>
             <div class="g-hero-cta">
                 <a href="/product.html?id=eb4ee16b-8a1f-475c-9dbf-e03993528ac9" class="g-btn g-btn-primary" data-gauntlet-buy>Get Project 01 &mdash; &#8377;999</a>
-                <a href="#sample" class="g-btn g-btn-ghost">Read the spec first</a>
+                <a href="#tryit" class="g-btn g-btn-ghost">Try the free warm-up</a>
             </div>
-            <p class="g-hero-note"><i class="fas fa-circle-check"></i> Project 01 is available now. Projects 02&ndash;08 are being authored.</p>
+            <p class="g-hero-note"><i class="fas fa-circle-check"></i> Free warm-up available now &middot; Project 01 live &middot; Projects 02&ndash;08 being authored.</p>
         </section>
 
         <section class="g-problem">
@@ -107,10 +107,42 @@
             </div>
         </section>
 
+        <section class="g-tryit" id="tryit">
+            <div class="g-tryit-inner">
+                <div class="g-tryit-copy">
+                    <span class="g-badge g-badge-free">Free &middot; No signup</span>
+                    <h2>Try the loop before you pay</h2>
+                    <p>
+                        Project 00 is a free warm-up: price a 5-year bond and compute its
+                        duration. An hour of work at most. You run the whole mechanism
+                        end to end &mdash; read the spec, implement, self-check, submit,
+                        read a real scorecard &mdash; so you can judge the grading before
+                        spending anything.
+                    </p>
+                    <div class="g-tryit-cta">
+                        <a class="g-btn g-btn-primary" href="/gauntlet/projects/00-warmup-bond/README.md">
+                            <i class="fas fa-play"></i> Start the free warm-up
+                        </a>
+                    </div>
+                </div>
+                <ol class="g-tryit-steps">
+                    <li><span>1</span> Read the spec &mdash; conventions fixed, nothing to argue about</li>
+                    <li><span>2</span> Fill in three functions in <code>starter.py</code></li>
+                    <li><span>3</span> Run <code>sample_tests.py</code> &mdash; 9 public checks</li>
+                    <li><span>4</span> Email <code>submission.json</code>, get a scorecard</li>
+                </ol>
+            </div>
+        </section>
+
         <section class="g-projects" id="projects">
-            <h2>The eight projects</h2>
-            <p class="g-section-sub">Deliberately fewer and harder. Each is one to three days of genuine work, not an exercise.</p>
+            <h2>The projects</h2>
+            <p class="g-section-sub">One free warm-up, then eight paid projects. Deliberately fewer and harder &mdash; each paid one is one to three days of genuine work, not an exercise.</p>
             <ol class="g-project-list">
+                <li class="g-row-free"><span class="g-pill g-pill-free">Free</span>
+                    <h3>Warm-up: bond price and duration</h3>
+                    <p>An hour of work, graded the same way as everything else. Exists so you can test the loop end to end before paying.</p>
+                    <p class="g-buy-inline"><a href="/gauntlet/projects/00-warmup-bond/README.md">Start it free <i class="fas fa-arrow-right"></i></a></p>
+                </li>
                 <li><span class="g-pill g-pill-live">Available now</span>
                     <h3>OIS / SOFR discount curve bootstrap</h3>
                     <p>Build the curve everything else prices off. Graded on discount factors, zero rates, a forward, and curve monotonicity.</p>

@@ -6,7 +6,7 @@
 .gauntlet-main {
     max-width: 1000px;
     margin: 0 auto;
-    padding: 130px 20px 60px;
+    padding: 40px 20px 24px;
 }
 
 /* --- shared bits --- */
@@ -23,8 +23,19 @@
     font-size: 1.02rem;
 }
 
-.gauntlet-main section {
-    margin-bottom: 68px;
+/* styles.css:153 applies var(--section-padding) -- clamp(72px, 9vw, 132px),
+   i.e. 93.6px top and bottom at desktop -- to every <section>. That is sized
+   for full-bleed homepage bands; inside this 1000px column it stacked with the
+   old 68px margin to leave roughly 255px of empty space between sections.
+   Reset it and own the rhythm here. */
+.gauntlet-main > section {
+    padding: 0 0 40px;
+    margin: 0 0 40px;
+}
+
+.gauntlet-main > section:last-of-type {
+    padding-bottom: 0;
+    margin-bottom: 0;
 }
 
 .g-btn {
@@ -70,7 +81,7 @@
 /* --- hero --- */
 .g-hero {
     text-align: center;
-    padding: 20px 0 8px;
+    padding: 8px 0 36px !important;
 }
 
 .g-badge {
@@ -583,4 +594,124 @@ body.d2q-launchzone .gauntlet-main .g-btn-primary:visited {
 body.d2q-launchzone .gauntlet-main .g-btn-primary:hover {
     background: var(--d2q-navy);
     color: #fff;
+}
+
+/* --- spacing rhythm --------------------------------------------------------
+   body.d2q-launchzone raises specificity above styles.css's bare `section`
+   rule, so these win without !important on the padding shorthand. */
+body.d2q-launchzone .gauntlet-main > section {
+    padding: 0 0 40px;
+    margin: 0 0 40px;
+    background: transparent !important;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+body.d2q-launchzone .gauntlet-main > section:last-of-type {
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-bottom: none;
+}
+
+body.d2q-launchzone .gauntlet-main > section.g-hero {
+    padding: 8px 0 36px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+/* tighten internal rhythm to match the reduced section gaps */
+body.d2q-launchzone .gauntlet-main .g-section-sub {
+    margin: 0 0 22px;
+}
+
+body.d2q-launchzone .gauntlet-main .g-flow,
+body.d2q-launchzone .gauntlet-main .g-compare {
+    margin-bottom: 0;
+}
+
+/* --- free warm-up ("try it") ------------------------------------------- */
+.g-tryit-inner {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 34px;
+    align-items: center;
+    background: var(--d2q-teal-soft);
+    border: 1px solid rgba(8, 169, 162, 0.28);
+    border-radius: 16px;
+    padding: 30px 32px;
+}
+
+.g-tryit-copy h2 {
+    margin: 14px 0 10px !important;
+}
+
+.g-tryit-copy p {
+    color: var(--text-secondary);
+    margin: 0 0 20px;
+    font-size: 1rem;
+}
+
+.g-badge-free {
+    background: #fff;
+    border-color: rgba(8, 169, 162, 0.35);
+}
+
+.g-tryit-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 11px;
+}
+
+.g-tryit-steps li {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    font-size: 0.93rem;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(8, 169, 162, 0.16);
+    border-radius: 10px;
+    padding: 11px 13px;
+    line-height: 1.45;
+}
+
+.g-tryit-steps li > span {
+    flex: 0 0 21px;
+    height: 21px;
+    border-radius: 50%;
+    background: var(--d2q-teal-dark);
+    color: #fff;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+}
+
+.g-tryit-steps code {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.87em;
+    background: rgba(6, 39, 91, 0.06);
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+
+.g-pill-free {
+    background: var(--d2q-teal-dark) !important;
+    color: #fff !important;
+    border-color: var(--d2q-teal-dark) !important;
+}
+
+.g-row-free {
+    background: rgba(8, 169, 162, 0.045);
+}
+
+@media (max-width: 780px) {
+    .g-tryit-inner {
+        grid-template-columns: 1fr;
+        gap: 24px;
+        padding: 24px 20px;
+    }
 }
