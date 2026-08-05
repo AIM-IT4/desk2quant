@@ -12,10 +12,28 @@
         '01-sofr-curve': 'Bootstrap an OIS / SOFR discount curve'
     };
 
-    // Projects the playground can actually grade. Anything else is paid and
-    // still gated server-side (api/products.js returns 402), so offering it
-    // here would be a dead end.
-    var PLAYABLE = ['00-warmup-bond'];
+    // Free projects need no proof of purchase. Paid ones are playable once the
+    // buyer has unlocked them; grading is still re-verified server-side against
+    // Razorpay on every submission, so this is convenience, not security.
+    var FREE = ['00-warmup-bond'];
+
+    function creds(slug) {
+        try {
+            var raw = localStorage.getItem('gauntlet:unlock:' + slug);
+            return raw ? JSON.parse(raw) : null;
+        } catch (e) { return null; }
+    }
+
+    function saveCreds(slug, paymentId, email) {
+        try {
+            localStorage.setItem('gauntlet:unlock:' + slug,
+                JSON.stringify({ payment_id: paymentId, email: email }));
+        } catch (e) { /* private mode; they can re-enter it */ }
+    }
+
+    function isPlayable(slug) {
+        return FREE.indexOf(slug) !== -1 || !!creds(slug);
+    }
 
     var BUY_URL = '/product.html?id=eb4ee16b-8a1f-475c-9dbf-e03993528ac9';
 
@@ -34,15 +52,78 @@
         var sc = el('gp-scorecard');
         if (sc) {
             sc.innerHTML = '<div class="gp-locked">'
-                + '<h3><i class="fas fa-lock"></i> This project is paid</h3>'
-                + '<p>In-browser grading is live for the free warm-up. Project 01 is graded '
-                + 'by email within one working day, and instant grading lands free for buyers.</p>'
-                + '<p><a class="g-btn g-btn-primary" href="' + BUY_URL + '">Get Project 01</a> '
-                + '<a class="g-btn g-btn-ghost" href="?project=00-warmup-bond">Try the free warm-up</a></p>'
+                + '<h3><i class="fas fa-lock"></i> Already bought this project?</h3>'
+                + '<p>Enter the email you paid with and the payment id from your receipt '
+                + 'to unlock the editor and instant grading.</p>'
+                + '<form class="gp-unlock-form" id="gp-unlock-form">'
+                + '<input type="email" id="gp-unlock-email" placeholder="Email you paid with" '
+                + 'autocomplete="email" required>'
+                + '<input type="text" id="gp-unlock-pay" placeholder="Payment id (pay_...)" '
+                + 'spellcheck="false" required>'
+                + '<button type="submit" class="g-btn g-btn-primary">Unlock</button>'
+                + '</form>'
+                + '<p class="gp-unlock-msg" id="gp-unlock-msg"></p>'
+                + '<p class="gp-locked-alt">Not bought it yet? '
+                + '<a href="' + BUY_URL + '">Get Project 01</a> or '
+                + '<a href="?project=00-warmup-bond">try the free warm-up</a>.</p>'
                 + '</div>';
             sc.hidden = false;
+
+            var form = el('gp-unlock-form');
+            if (form) {
+                form.addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    attemptUnlock(slug);
+                });
+            }
         }
-        GP.setStatus('Locked - the free warm-up is fully playable.', 'err');
+        GP.setStatus('Locked - unlock it, or run the free warm-up.', 'err');
+    }
+
+    /**
+     * Confirm the purchase server-side before unlocking. Sending an empty
+     * submission is enough: entitlement is checked before grading, so a
+     * non-buyer gets 402/403 and learns nothing about the answers.
+     */
+    function attemptUnlock(slug) {
+        var email = (el('gp-unlock-email') || {}).value;
+        var pay = (el('gp-unlock-pay') || {}).value;
+        var msg = el('gp-unlock-msg');
+        var btn = document.querySelector('#gp-unlock-form button');
+
+        if (!email || !pay) return;
+        if (btn) btn.disabled = true;
+        if (msg) { msg.textContent = 'Checking your purchase...'; msg.className = 'gp-unlock-msg'; }
+
+        fetch('/api/products?action=grade', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                project: slug,
+                submission: {},
+                payment_id: String(pay).trim(),
+                email: String(email).trim()
+            })
+        }).then(function (r) {
+            return r.json().then(function (b) { return { status: r.status, body: b }; });
+        }).then(function (out) {
+            // Entitlement passes -> we get a graded result (0 for an empty
+            // submission), not an error. Anything else is a real rejection.
+            if (out.status === 200) {
+                saveCreds(slug, String(pay).trim(), String(email).trim());
+                if (msg) { msg.textContent = 'Unlocked. Loading the project...'; msg.className = 'gp-unlock-msg gp-unlock-ok'; }
+                setTimeout(function () { selectProject(slug); }, 600);
+                return;
+            }
+            if (msg) {
+                msg.textContent = (out.body && out.body.error) || 'Could not verify that purchase.';
+                msg.className = 'gp-unlock-msg gp-unlock-err';
+            }
+            if (btn) btn.disabled = false;
+        }).catch(function () {
+            if (msg) { msg.textContent = 'Network error. Try again.'; msg.className = 'gp-unlock-msg gp-unlock-err'; }
+            if (btn) btn.disabled = false;
+        });
     }
 
     function el(id) { return document.getElementById(id); }
@@ -68,7 +149,7 @@
         url.searchParams.set('project', slug);
         window.history.replaceState({}, '', url);
 
-        if (PLAYABLE.indexOf(slug) === -1) {
+        if (!isPlayable(slug)) {
             showLocked(slug);
             return;
         }

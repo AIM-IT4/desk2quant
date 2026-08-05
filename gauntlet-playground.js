@@ -72,7 +72,19 @@
         return loading;
     }
 
+    /**
+     * Proof-of-purchase for paid projects, shared by the loader and the grader.
+     * Free projects have none and send nothing extra.
+     */
+    function unlockCreds(slug) {
+        try {
+            var raw = localStorage.getItem('gauntlet:unlock:' + slug);
+            return raw ? JSON.parse(raw) : {};
+        } catch (e) { return {}; }
+    }
+
     window.GauntletPlayground = {
+        unlockCreds: unlockCreds,
         ensurePyodide: ensurePyodide,
         write: write,
         clearOutput: clearOutput,
@@ -100,15 +112,37 @@
         });
     }
 
-    /** Load the same starter.py and sample_tests.py the download ships. */
-    function loadProject(nextSlug) {
-        slug = nextSlug;
+    /**
+     * Load the same starter.py and sample_tests.py the download ships.
+     *
+     * Free projects are static files. Paid ones are not deployed at all (they
+     * are the deliverable), so they come from ?action=kit, which re-verifies
+     * the purchase server-side before returning anything.
+     */
+    function loadSources(slug) {
+        var creds = GP.unlockCreds(slug);
+        if (creds && creds.payment_id) {
+            var qs = '?action=kit&project=' + encodeURIComponent(slug)
+                + '&payment_id=' + encodeURIComponent(creds.payment_id)
+                + '&email=' + encodeURIComponent(creds.email || '');
+            return fetch('/api/products' + qs).then(function (r) {
+                return r.json().then(function (b) {
+                    if (!r.ok) throw new Error(b.error || 'Could not load the project files.');
+                    return [b.starter, b.tests];
+                });
+            });
+        }
         var base = '/gauntlet/projects/' + slug + '/';
-        GP.setStatus('Loading project files...', 'busy');
         return Promise.all([
             fetchText(base + 'starter.py'),
             fetchText(base + 'sample_tests.py')
-        ]).then(function (parts) {
+        ]);
+    }
+
+    function loadProject(nextSlug) {
+        slug = nextSlug;
+        GP.setStatus('Loading project files...', 'busy');
+        return loadSources(slug).then(function (parts) {
             starterSource = parts[0];
             checksSource = parts[1];
             var saved = null;
@@ -228,10 +262,10 @@
             return fetch('/api/products?action=grade', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                body: JSON.stringify(Object.assign({
                     project: window.GauntletRunner.getSlug(),
                     submission: JSON.parse(json)
-                })
+                }, GP.unlockCreds(window.GauntletRunner.getSlug())))
             });
         }).then(function (r) {
             return r.json().then(function (body) {

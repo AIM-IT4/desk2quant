@@ -1,4 +1,5 @@
 import { gradeSubmission } from '../lib/gauntletGrading.js';
+import { verifyProjectEntitlement } from './_gauntlet-entitlement.js';
 
 export default async function handler(req, res) {
     // CORS
@@ -14,6 +15,11 @@ export default async function handler(req, res) {
     if (req.query.action === 'grade') {
         res.setHeader('Cache-Control', 'no-store');
         return handleGrade(req, res);
+    }
+
+    if (req.query.action === 'kit') {
+        res.setHeader('Cache-Control', 'no-store');
+        return handleKit(req, res);
     }
 
     // Cache for 5 minutes, serve stale for 10 min
@@ -116,6 +122,41 @@ function loadTestBank() {
     }
 }
 
+/**
+ * Serve a paid project's starter + public tests to a verified buyer.
+ *
+ * The files are deliberately NOT deployed (.vercelignore) because they are the
+ * paid deliverable, so they come from the GAUNTLET_KITS env var instead of the
+ * filesystem. Free projects are served as static files and never reach here.
+ */
+async function handleKit(req, res) {
+    const project = String(req.query.project || '');
+    if (!SLUG_RE.test(project)) {
+        return res.status(400).json({ error: 'Unknown project.' });
+    }
+
+    const ent = await verifyProjectEntitlement(
+        project,
+        req.query.payment_id,
+        req.query.email
+    );
+    if (!ent.ok) return res.status(ent.status).json({ error: ent.error });
+
+    let kits;
+    try {
+        kits = JSON.parse(process.env.GAUNTLET_KITS || '{}');
+    } catch (err) {
+        console.error('GAUNTLET_KITS is not valid JSON:', err.message);
+        return res.status(503).json({ error: 'Project files unavailable.' });
+    }
+
+    const kit = kits[project];
+    if (!kit || !kit.starter) {
+        return res.status(404).json({ error: 'No files for that project.' });
+    }
+    return res.status(200).json({ starter: kit.starter, tests: kit.tests || '' });
+}
+
 async function handleGrade(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'POST required' });
@@ -146,10 +187,14 @@ async function handleGrade(req, res) {
         return res.status(404).json({ error: 'No hidden tests for that project yet.' });
     }
 
+    // Paid projects require a Razorpay-verified purchase. Checked before
+    // grading so a non-buyer cannot use the grader as an answer oracle.
     if (!FREE_PROJECTS.includes(project)) {
-        return res.status(402).json({
-            error: 'That project is paid. Instant grading for it is being wired up; email submission.json to hello@desk2quant.com meanwhile.'
-        });
+        const { payment_id: paymentId, email } = req.body || {};
+        const ent = await verifyProjectEntitlement(project, paymentId, email);
+        if (!ent.ok) {
+            return res.status(ent.status).json({ error: ent.error, needsUnlock: true });
+        }
     }
 
     try {

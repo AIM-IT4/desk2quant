@@ -1042,3 +1042,49 @@ body.d2q-launchzone .gauntlet-main .g-compare {
     opacity: 0.45;
     cursor: not-allowed;
 }
+
+.gp-unlock-form {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 0 auto 12px;
+    max-width: 560px;
+}
+
+.gp-unlock-form input {
+    flex: 1 1 200px;
+    min-width: 0;
+    padding: 10px 13px;
+    font-family: inherit;
+    font-size: 0.92rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--d2q-navy);
+}
+
+.gp-unlock-form input:focus {
+    outline: 2px solid var(--d2q-teal);
+    outline-offset: 1px;
+}
+
+.gp-unlock-form button {
+    flex: 0 0 auto;
+}
+
+.gp-unlock-msg {
+    margin: 0 0 12px !important;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.8rem;
+    min-height: 1em;
+    color: var(--text-secondary);
+}
+
+.gp-unlock-ok { color: var(--d2q-teal-dark); }
+.gp-unlock-err { color: #b4392f; }
+
+.gp-locked-alt {
+    font-size: 0.86rem !important;
+    color: var(--text-tertiary) !important;
+}
