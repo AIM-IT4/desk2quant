@@ -715,3 +715,17 @@ body.d2q-launchzone .gauntlet-main .g-compare {
         padding: 24px 20px;
     }
 }
+
+/* The list counter starts at 1, which labelled the free warm-up "01" and
+   pushed the SOFR curve to "02" -- contradicting "Project 01" used in the
+   spec, the README, the FAQ and the product name. Start the counter at zero
+   so the warm-up reads 00 and the paid projects keep 01-08. */
+.g-project-list {
+    counter-reset: gp -1;
+}
+
+.g-row-free::before {
+    background: var(--d2q-teal-dark) !important;
+    color: #fff !important;
+    border-color: var(--d2q-teal-dark) !important;
+}
