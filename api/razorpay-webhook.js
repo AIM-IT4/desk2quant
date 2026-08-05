@@ -47,6 +47,7 @@ export default async function handler(req, res) {
     const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'desk2quant@gmail.com';
     const SENDER_EMAIL = process.env.SENDER_EMAIL || 'desk2quant@gmail.com';
     const SENDER_NAME = process.env.SENDER_NAME || 'Desk2Quant';
+    const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || SENDER_EMAIL;
 
     // 1. Capture Raw Body for Signature Verification
     let rawBody;
@@ -635,6 +636,7 @@ export async function handleProductPurchase(data) {
                 },
                 body: JSON.stringify({
                     sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+                    replyTo: { email: REPLY_TO_EMAIL, name: SENDER_NAME },
                     to: [{ email: customerEmail, name: customerName }],
                     subject: `Your Purchase: ${productName}`,
                     htmlContent: customerHtml,
@@ -676,6 +678,7 @@ export async function handleProductPurchase(data) {
                 headers: { 'accept': 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
                 body: JSON.stringify({
                     sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+                    replyTo: { email: REPLY_TO_EMAIL, name: SENDER_NAME },
                     to: ADMIN_EMAIL.split(',').map(email => ({ email: email.trim() })).filter(item => item.email),
                     subject: `🚨 Underpayment blocked: ${productName}`,
                     htmlContent: alertHtml,
@@ -736,6 +739,7 @@ export async function handleProductPurchase(data) {
                 },
                 body: JSON.stringify({
                     sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+                    replyTo: { email: REPLY_TO_EMAIL, name: SENDER_NAME },
                     to: ADMIN_EMAIL.split(',').map(email => ({ email: email.trim() })).filter(item => item.email),
                     subject: `New Sale: ${productName}`,
                     htmlContent: adminHtml,
@@ -968,6 +972,7 @@ async function handleCartPurchase(data) {
                 headers: { accept: 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
                 body: JSON.stringify({
                     sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+                    replyTo: { email: REPLY_TO_EMAIL, name: SENDER_NAME },
                     to: [{ email: customerEmail, name: customerName }],
                     subject: `Your Order (${lineResults.length} item${lineResults.length > 1 ? 's' : ''}): Desk2Quant`,
                     htmlContent: customerHtml,
@@ -999,6 +1004,7 @@ async function handleCartPurchase(data) {
                 headers: { accept: 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
                 body: JSON.stringify({
                     sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+                    replyTo: { email: REPLY_TO_EMAIL, name: SENDER_NAME },
                     to: ADMIN_EMAIL.split(',').map((email) => ({ email: email.trim() })).filter((item) => item.email),
                     subject: `New Cart Sale: ${lineResults.length} item(s)`,
                     htmlContent: adminHtml,
@@ -1221,6 +1227,7 @@ async function handleSessionBooking(data) {
                 },
                 body: JSON.stringify({
                     sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+                    replyTo: { email: REPLY_TO_EMAIL, name: SENDER_NAME },
                     to: [{ email: customerEmail, name: customerName }],
                     subject: `Booking Confirmed: ${sessionName}`,
                     htmlContent: customerHtml,
@@ -1262,6 +1269,7 @@ async function handleSessionBooking(data) {
                 headers: { 'accept': 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
                 body: JSON.stringify({
                     sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+                    replyTo: { email: REPLY_TO_EMAIL, name: SENDER_NAME },
                     to: ADMIN_EMAIL.split(',').map(email => ({ email: email.trim() })).filter(item => item.email),
                     subject: `🚨 Underpayment blocked: ${sessionName}`,
                     htmlContent: alertHtml,
@@ -1332,6 +1340,7 @@ async function handleSessionBooking(data) {
                 },
                 body: JSON.stringify({
                     sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+                    replyTo: { email: REPLY_TO_EMAIL, name: SENDER_NAME },
                     to: ADMIN_EMAIL.split(',').map(email => ({ email: email.trim() })).filter(item => item.email),
                     subject: `🆕 New Booking: ${customerName} - ${sessionName}`,
                     htmlContent: adminHtml,

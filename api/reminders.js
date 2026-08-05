@@ -34,6 +34,7 @@ export default async function handler(req, res) {
     const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'desk2quant@gmail.com';
     const SENDER_EMAIL = process.env.SENDER_EMAIL || 'desk2quant@gmail.com';
     const SENDER_NAME = process.env.SENDER_NAME || 'Desk2Quant';
+    const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || SENDER_EMAIL;
 
     // --- One-off Drive permission audit -------------------------------
     // Past buyers were granted role:'writer' on the master product files.
@@ -380,6 +381,7 @@ async function sendReminder(booking, type, config) {
         },
         body: JSON.stringify({
             sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+            replyTo: { email: REPLY_TO_EMAIL, name: SENDER_NAME },
             to: [{ email: booking.email, name: userName }],
             subject: subject,
             htmlContent: htmlBody
@@ -401,6 +403,7 @@ async function sendReminder(booking, type, config) {
         },
         body: JSON.stringify({
             sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+            replyTo: { email: REPLY_TO_EMAIL, name: SENDER_NAME },
             to: ADMIN_EMAIL.split(',').map(email => ({ email: email.trim() })).filter(item => item.email),
             subject: `Admin Alert: ${type} Reminder Sent`,
             htmlContent: `<p>${type} Reminder sent to ${booking.email} for ${booking.service_name}</p><p>Meeting Link: ${meetLink}</p>`
