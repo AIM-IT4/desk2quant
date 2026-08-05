@@ -38,6 +38,14 @@
   ],
   "rewrites": [
     {
+      "source": "/gauntlet/projects/01-sofr-curve/sample_tests.py",
+      "destination": "/404.html"
+    },
+    {
+      "source": "/gauntlet/projects/01-sofr-curve/starter.py",
+      "destination": "/404.html"
+    },
+    {
       "source": "/gauntlet/hidden/:path*",
       "destination": "/404.html"
     },

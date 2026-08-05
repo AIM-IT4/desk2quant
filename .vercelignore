@@ -5,6 +5,13 @@
 gauntlet/hidden/
 gauntlet/projects/*/reference.mjs
 
+# Paid project kits: the README (spec) stays public so buyers can judge the
+# work before paying, but the starter and public tests ARE the deliverable and
+# ship only inside the purchased ZIP. The free warm-up (00) is exempt because
+# the browser playground fetches its files directly.
+gauntlet/projects/01-sofr-curve/starter.py
+gauntlet/projects/01-sofr-curve/sample_tests.py
+
 # Internal working notes.
 _private_notes/
 _couponfix_backup/

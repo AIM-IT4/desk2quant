@@ -1001,3 +1001,44 @@ body.d2q-launchzone .gauntlet-main .g-compare {
 @media (prefers-reduced-motion: reduce) {
     .gp-status-busy::before { animation: none; }
 }
+
+.gp-locked {
+    padding: 26px 22px;
+    text-align: center;
+}
+
+.gp-locked h3 {
+    margin: 0 0 10px;
+    font-size: 1.12rem;
+    color: var(--d2q-navy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+}
+
+.gp-locked p {
+    margin: 0 auto 14px;
+    max-width: 60ch;
+    font-size: 0.92rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.gp-locked p:last-child {
+    margin-bottom: 0;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+#gp-code:disabled {
+    background: var(--bg-secondary);
+    cursor: not-allowed;
+}
+
+.gp-toolbar-actions button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}

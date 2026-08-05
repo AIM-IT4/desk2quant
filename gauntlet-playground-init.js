@@ -10,6 +10,39 @@
         '01-sofr-curve': 'Bootstrap an OIS / SOFR discount curve'
     };
 
+    // Projects the playground can actually grade. Anything else is paid and
+    // still gated server-side (api/products.js returns 402), so offering it
+    // here would be a dead end.
+    var PLAYABLE = ['00-warmup-bond'];
+
+    var BUY_URL = '/product.html?id=eb4ee16b-8a1f-475c-9dbf-e03993528ac9';
+
+    function showLocked(slug) {
+        var title = el('gp-title');
+        if (title) title.textContent = TITLES[slug] || slug;
+
+        var code = el('gp-code');
+        if (code) { code.value = ''; code.disabled = true; }
+
+        ['gp-run', 'gp-checks', 'gp-grade', 'gp-reset'].forEach(function (id) {
+            var b = el(id);
+            if (b) b.disabled = true;
+        });
+
+        var sc = el('gp-scorecard');
+        if (sc) {
+            sc.innerHTML = '<div class="gp-locked">'
+                + '<h3><i class="fas fa-lock"></i> This project is paid</h3>'
+                + '<p>In-browser grading is live for the free warm-up. Project 01 is graded '
+                + 'by email within one working day, and instant grading lands free for buyers.</p>'
+                + '<p><a class="g-btn g-btn-primary" href="' + BUY_URL + '">Get Project 01</a> '
+                + '<a class="g-btn g-btn-ghost" href="?project=00-warmup-bond">Try the free warm-up</a></p>'
+                + '</div>';
+            sc.hidden = false;
+        }
+        GP.setStatus('Locked - the free warm-up is fully playable.', 'err');
+    }
+
     function el(id) { return document.getElementById(id); }
 
     function currentSlug() {
@@ -32,6 +65,18 @@
         var url = new URL(window.location.href);
         url.searchParams.set('project', slug);
         window.history.replaceState({}, '', url);
+
+        if (PLAYABLE.indexOf(slug) === -1) {
+            showLocked(slug);
+            return;
+        }
+
+        var code = el('gp-code');
+        if (code) code.disabled = false;
+        ['gp-run', 'gp-checks', 'gp-grade', 'gp-reset'].forEach(function (id) {
+            var b = el(id);
+            if (b) b.disabled = false;
+        });
 
         window.GauntletRunner.loadProject(slug);
     }
