@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gauntlet Playground | Desk2Quant</title>
+    <meta name="description"
+        content="Write and run real Python in the browser, check your work against the public tests, and get graded against the hidden test suite.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://desk2quant.com/gauntlet-playground.html">
+    <link rel="icon" type="image/png" href="assets/images/desk2quant-logo.png?v=3">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="launchzone.css?v=5">
+    <link rel="stylesheet" href="launchzone-pages.css?v=2">
+    <link rel="stylesheet" href="gauntlet-page.css">
+</head>
+
+<body class="d2q-reference d2q-launchzone">
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo" style="text-decoration: none; display: flex; align-items: center; gap: 10px;">
+                <img src="assets/images/desk2quant-logo.png?v=3" alt="Desk2Quant" class="logo-img">
+                <span class="logo-icon" style="display:none;">&#128202;</span>
+                <span class="logo-text">Desk2Quant</span>
+            </a>
+            <a href="/gauntlet.html" class="legal-back-link"><i class="fas fa-arrow-left"></i> Gauntlet</a>
+        </div>
+    </nav>
+
+    <main class="gauntlet-main gp-main">
+        <section class="g-hero gp-hero">
+            <span class="g-badge">Playground</span>
+            <h1 id="gp-title">Warm-up: bond price and duration</h1>
+            <p class="g-sub">
+                Real CPython, running in your browser. Edit the starter, run it, check your work
+                against the public tests, then grade against the hidden suite.
+            </p>
+        </section>
+
+        <section class="gp-work">
+            <div class="gp-toolbar">
+                <label class="gp-project-label" for="gp-project">Project</label>
+                <select id="gp-project">
+                    <option value="00-warmup-bond">00 &middot; Warm-up: bond price and duration (free)</option>
+                    <option value="01-sofr-curve">01 &middot; OIS / SOFR discount curve (paid)</option>
+                </select>
+                <div class="gp-toolbar-actions">
+                    <button type="button" class="g-btn g-btn-ghost gp-btn-sm" id="gp-reset">
+                        <i class="fas fa-rotate-left"></i> Reset
+                    </button>
+                    <button type="button" class="g-btn g-btn-ghost gp-btn-sm" id="gp-run">
+                        <i class="fas fa-play"></i> Run
+                    </button>
+                    <button type="button" class="g-btn g-btn-ghost gp-btn-sm" id="gp-checks">
+                        <i class="fas fa-list-check"></i> Self-checks
+                    </button>
+                    <button type="button" class="g-btn g-btn-primary gp-btn-sm" id="gp-grade">
+                        <i class="fas fa-award"></i> Grade
+                    </button>
+                </div>
+            </div>
+
+            <div class="gp-split">
+                <div class="gp-pane">
+                    <div class="gp-pane-head"><i class="fas fa-code"></i> starter.py</div>
+                    <textarea id="gp-code" spellcheck="false" aria-label="Python editor"></textarea>
+                </div>
+                <div class="gp-pane">
+                    <div class="gp-pane-head"><i class="fas fa-terminal"></i> Output</div>
+                    <div id="gp-output" class="gp-output" aria-live="polite"></div>
+                </div>
+            </div>
+
+            <p id="gp-status" class="gp-status">Loading...</p>
+            <div id="gp-scorecard" class="gp-scorecard" hidden></div>
+
+            <p class="gp-note">
+                <i class="fas fa-circle-info"></i>
+                Your code runs entirely in this browser tab &mdash; nothing is uploaded when you hit Run.
+                Grading sends only your numeric answers, because the expected values live server-side.
+                Work is saved to this browser automatically.
+            </p>
+        </section>
+    </main>
+
+    <footer class="legal-footer">
+        <p>
+            Questions? <a href="mailto:hello@desk2quant.com">hello@desk2quant.com</a><br>
+            <a href="/">Home</a> &middot; <a href="/gauntlet.html">Gauntlet</a> &middot; <a href="/faq.html">FAQ</a>
+        </p>
+    </footer>
+
+    <script src="ui-components.js?v=1" defer></script>
+    <script src="gauntlet-playground.js?v=1"></script>
+    <script src="gauntlet-playground-init.js?v=1"></script>
+</body>
+
+</html>

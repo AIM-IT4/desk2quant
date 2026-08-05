@@ -6,7 +6,7 @@ const { renderPage } = require('./seo-template.js');
 const STATIC_PAGES = [
   ['/', '1.0'], ['/desk-simulator.html', '0.9'], ['/interview.html', '0.8'],
   ['/blog.html', '0.8'], ['/faq.html', '0.6'], ['/code-playground.html', '0.6'],
-  ['/products/', '0.9'], ['/gauntlet.html', '0.8'],
+  ['/products/', '0.9'], ['/gauntlet.html', '0.8'], ['/gauntlet-playground.html', '0.7'],
   ['/privacy.html', '0.3'], ['/terms.html', '0.3']
 ];
 

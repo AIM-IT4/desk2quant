@@ -729,3 +729,275 @@ body.d2q-launchzone .gauntlet-main .g-compare {
     color: #fff !important;
     border-color: var(--d2q-teal-dark) !important;
 }
+
+/* ===== playground ======================================================== */
+.gp-main {
+    max-width: 1180px;
+}
+
+.gp-hero {
+    padding-bottom: 22px !important;
+}
+
+.gp-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.gp-project-label {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+
+#gp-project {
+    font-family: inherit;
+    font-size: 0.92rem;
+    padding: 9px 12px;
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--d2q-navy);
+    max-width: 100%;
+}
+
+.gp-toolbar-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+    flex-wrap: wrap;
+}
+
+.gp-btn-sm {
+    padding: 9px 15px !important;
+    font-size: 0.88rem !important;
+}
+
+.gp-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    align-items: stretch;
+}
+
+.gp-pane {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+    min-height: 460px;
+}
+
+.gp-pane-head {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.74rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#gp-code {
+    flex: 1;
+    width: 100%;
+    border: 0;
+    resize: vertical;
+    padding: 16px;
+    font-family: "JetBrains Mono", SFMono-Regular, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.62;
+    color: var(--d2q-navy);
+    background: #fff;
+    tab-size: 4;
+    outline: none;
+    min-height: 420px;
+}
+
+.gp-output {
+    flex: 1;
+    margin: 0;
+    padding: 14px 16px;
+    font-family: "JetBrains Mono", SFMono-Regular, Consolas, monospace;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: #e8eef1;
+    background: #0f1c24;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    min-height: 420px;
+}
+
+.gp-line-err {
+    color: #ff9d94;
+}
+
+.gp-status {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin: 14px 0 0 !important;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gp-status-busy::before {
+    content: "";
+    width: 11px;
+    height: 11px;
+    border: 2px solid var(--d2q-teal);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: gp-spin 0.7s linear infinite;
+}
+
+@keyframes gp-spin {
+    to { transform: rotate(360deg); }
+}
+
+.gp-status-ok {
+    color: var(--d2q-teal-dark);
+}
+
+.gp-status-err {
+    color: #b4392f;
+}
+
+.gp-note {
+    font-size: 0.86rem;
+    color: var(--text-tertiary);
+    margin: 16px 0 0 !important;
+    line-height: 1.55;
+}
+
+/* --- scorecard --- */
+.gp-scorecard {
+    margin-top: 20px;
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.gp-score-head {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 18px 20px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.gp-score-head.gp-passed {
+    background: var(--d2q-teal-soft);
+}
+
+.gp-score-num {
+    font-size: 2.1rem;
+    font-weight: 700;
+    color: var(--d2q-navy);
+    letter-spacing: -0.02em;
+}
+
+.gp-score-num small {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+}
+
+.gp-score-verdict {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.76rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 5px 11px;
+    border-radius: 100px;
+    background: #fff;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+}
+
+.gp-passed .gp-score-verdict {
+    background: var(--d2q-teal-dark);
+    border-color: var(--d2q-teal-dark);
+    color: #fff;
+}
+
+.gp-score-meta {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    margin-left: auto;
+}
+
+.gp-score-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.89rem;
+}
+
+.gp-score-table td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border-subtle);
+    vertical-align: top;
+}
+
+.gp-score-table tr:last-child td {
+    border-bottom: 0;
+}
+
+.gp-score-table td:first-child {
+    width: 30px;
+    text-align: center;
+    font-weight: 700;
+}
+
+.gp-score-table td:nth-child(3) {
+    width: 66px;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.gp-pass td:first-child { color: var(--d2q-teal-dark); }
+.gp-fail td:first-child { color: #b4392f; }
+
+.gp-score-table code {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.86em;
+    color: var(--d2q-navy);
+}
+
+.gp-score-note {
+    margin: 0 !important;
+    padding: 13px 16px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-subtle);
+}
+
+@media (max-width: 900px) {
+    .gp-split { grid-template-columns: 1fr; }
+    #gp-code, .gp-output { min-height: 320px; }
+    .gp-pane { min-height: 0; }
+    .gp-toolbar-actions { margin-left: 0; width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gp-status-busy::before { animation: none; }
+}

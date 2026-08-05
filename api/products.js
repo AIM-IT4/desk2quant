@@ -1,12 +1,23 @@
+import { gradeSubmission } from '../lib/gauntletGrading.js';
+
 export default async function handler(req, res) {
     // CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    // Cache for 5 minutes, serve stale for 10 min
-    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
 
     if (req.method === 'OPTIONS') return res.status(200).end();
+
+    // Gauntlet grading is multiplexed onto this route because the Vercel Hobby
+    // plan caps us at 12 serverless functions and we are at 12. Same pattern
+    // api/interview.js already uses.
+    if (req.query.action === 'grade') {
+        res.setHeader('Cache-Control', 'no-store');
+        return handleGrade(req, res);
+    }
+
+    // Cache for 5 minutes, serve stale for 10 min
+    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
 
     const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
     const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_OhbTYIuMYgGgmKPQJ9W7RA_rhKyaad0';
@@ -78,4 +89,89 @@ function stripHtml(html) {
         .replace(/&#39;/g, "'")
         .replace(/\s+/g, ' ')
         .trim();
+}
+
+/* ------------------------------------------------------------------------- *
+ * Gauntlet grading
+ *
+ * The hidden tests CANNOT live in a repo file: vercel.json sets
+ * outputDirectory "." so the whole repo root is web-served, and I verified
+ * api/*.js and lib/*.js return 200 publicly. They come from the
+ * GAUNTLET_TESTS env var instead, which is never served.
+ *
+ * Free warm-up (00) is open. Paid projects require a verified purchase.
+ * ------------------------------------------------------------------------- */
+
+const FREE_PROJECTS = ['00-warmup-bond'];
+const SLUG_RE = /^[0-9]{2}-[a-z0-9-]{2,40}$/;
+
+function loadTestBank() {
+    const raw = process.env.GAUNTLET_TESTS;
+    if (!raw) return null;
+    try {
+        return JSON.parse(raw);
+    } catch (err) {
+        console.error('GAUNTLET_TESTS is not valid JSON:', err.message);
+        return null;
+    }
+}
+
+async function handleGrade(req, res) {
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'POST required' });
+    }
+
+    const { project, submission } = req.body || {};
+
+    if (typeof project !== 'string' || !SLUG_RE.test(project)) {
+        return res.status(400).json({ error: 'Unknown project.' });
+    }
+    if (!submission || typeof submission !== 'object' || Array.isArray(submission)) {
+        return res.status(400).json({ error: 'submission must be a JSON object.' });
+    }
+    // Bound the payload: grading is pure arithmetic over a handful of numbers.
+    if (Object.keys(submission).length > 40) {
+        return res.status(400).json({ error: 'Submission has too many fields.' });
+    }
+
+    const bank = loadTestBank();
+    if (!bank) {
+        return res.status(503).json({
+            error: 'Instant grading is not configured yet. Email submission.json to hello@desk2quant.com and you will get a scorecard back.'
+        });
+    }
+
+    const entry = bank[project];
+    if (!entry || !Array.isArray(entry.tests)) {
+        return res.status(404).json({ error: 'No hidden tests for that project yet.' });
+    }
+
+    if (!FREE_PROJECTS.includes(project)) {
+        return res.status(402).json({
+            error: 'That project is paid. Instant grading for it is being wired up; email submission.json to hello@desk2quant.com meanwhile.'
+        });
+    }
+
+    try {
+        const result = gradeSubmission(entry.tests, submission);
+        // Never echo expected values or diffs -- that would turn the grader
+        // into a brute-forceable oracle. Only id/ok/points/hint go back.
+        return res.status(200).json({
+            project,
+            score: result.score,
+            passed: result.passed,
+            testsPassed: result.testsPassed,
+            testsTotal: result.testsTotal,
+            results: (result.results || []).map(r => ({
+                id: r.id,
+                ok: r.ok,
+                points: r.points,
+                maxPoints: r.maxPoints,
+                hint: r.ok ? undefined : r.hint
+            }))
+        });
+    } catch (err) {
+        console.error('Gauntlet grading error:', err.message);
+        return res.status(500).json({ error: 'Grading failed.' });
+    }
 }
