@@ -5,6 +5,8 @@
 (function () {
     'use strict';
 
+    var GP = window.GauntletPlayground;
+
     var TITLES = {
         '00-warmup-bond': 'Warm-up: bond price and duration',
         '01-sofr-curve': 'Bootstrap an OIS / SOFR discount curve'
