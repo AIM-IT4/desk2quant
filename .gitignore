@@ -64,3 +64,12 @@ __pycache__/
 # Keep them locally; back them up outside the repo.
 gauntlet/hidden/
 gauntlet/projects/*/reference.mjs
+
+# Local-only working dirs. _private_notes holds the Gauntlet answer keys and the
+# GAUNTLET_TESTS / GAUNTLET_KITS env payloads; this repo is PUBLIC, so a stray
+# "git add -A" would publish them and burn the keys.
+_private_notes/
+_couponfix_backup/
+_preview.html
+_*.js
+_*.ps1
