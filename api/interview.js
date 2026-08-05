@@ -363,7 +363,7 @@ async function sendEmailReport(toEmail, toName, reportMarkdown) {
     };
 
     const body = {
-        sender: { email: 'desk2quant@gmail.com', name: 'Desk2Quant AI' },
+        sender: { email: process.env.SENDER_EMAIL || 'desk2quant@gmail.com', name: process.env.SENDER_NAME ? `${process.env.SENDER_NAME} AI` : 'Desk2Quant AI' },
         to: [{ email: toEmail, name: toName }],
         subject: 'Your AI Interview Scorecard 📊',
         htmlContent: htmlContent,
