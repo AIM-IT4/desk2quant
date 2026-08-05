@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { slugify, fetchProducts, esc, clamp, SITE, OUT_DIR } = require('./generate-seo-pages.js');
+const { slugify, fetchProducts, fetchProductReviews, esc, clamp, SITE, OUT_DIR } = require('./generate-seo-pages.js');
 const { renderPage } = require('./seo-template.js');
 
 const STATIC_PAGES = [
@@ -22,6 +22,16 @@ async function main() {
     return;
   }
 
+  // Real per-product reviews for JSON-LD aggregateRating/review. Non-fatal --
+  // a fetch failure here should not block the whole SEO build, it just means
+  // pages ship without review markup instead of with truthful ratings.
+  let reviewsByProduct = {};
+  try {
+    reviewsByProduct = await fetchProductReviews();
+  } catch (e) {
+    console.warn('[seo] Could not fetch product reviews (' + e.message + '). Pages will ship without aggregateRating/review.');
+  }
+
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
   // Assign unique slugs.
@@ -38,7 +48,8 @@ async function main() {
       .filter(r => r.id !== p.id)
       .slice(0, 5)
       .map(r => ({ slug: r.__slug, name: r.name }));
-    fs.writeFileSync(path.join(OUT_DIR, `${p.__slug}.html`), renderPage(p, p.__slug, related), 'utf8');
+    const reviews = reviewsByProduct[p.id] || [];
+    fs.writeFileSync(path.join(OUT_DIR, `${p.__slug}.html`), renderPage(p, p.__slug, related, reviews), 'utf8');
   });
 
   // Hub page listing every resource.

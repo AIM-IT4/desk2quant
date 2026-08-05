@@ -1,6 +1,6 @@
 const { esc, clamp, stripHtml, SITE } = require('./generate-seo-pages.js');
 
-function renderPage(p, slug, related) {
+function renderPage(p, slug, related, reviews) {
   const url = `${SITE}/products/${slug}.html`;
   const canonicalApp = `${SITE}/product.html?id=${p.id}`;
   const title = `${p.name} | Desk2Quant`;
@@ -22,12 +22,24 @@ function renderPage(p, slug, related) {
       price: String(price), availability: 'https://schema.org/InStock'
     }
   };
-  if (p.average_rating && Number(p.average_rating) > 0) {
+  // aggregateRating/review must reflect REAL reviews, not sales_count or a
+  // placeholder average_rating -- schema.org (and Google) treat fabricated
+  // ratings as a policy violation, not just a missed enhancement. Products
+  // with no linked reviews get neither field, which is correct and truthful.
+  const realReviews = Array.isArray(reviews) ? reviews.filter(r => r && r.rating && r.review) : [];
+  if (realReviews.length) {
+    const avg = realReviews.reduce((sum, r) => sum + Number(r.rating), 0) / realReviews.length;
     jsonLd.aggregateRating = {
       '@type': 'AggregateRating',
-      ratingValue: String(p.average_rating),
-      reviewCount: String(p.sales_count && p.sales_count > 0 ? p.sales_count : 1)
+      ratingValue: String(Math.round(avg * 10) / 10),
+      reviewCount: String(realReviews.length)
     };
+    jsonLd.review = realReviews.slice(0, 10).map(r => ({
+      '@type': 'Review',
+      author: { '@type': 'Person', name: r.name || 'Verified buyer' },
+      reviewRating: { '@type': 'Rating', ratingValue: String(r.rating), bestRating: '5' },
+      reviewBody: clamp(r.review, 400)
+    }));
   }
 
   const crumbs = {

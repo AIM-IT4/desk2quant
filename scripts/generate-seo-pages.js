@@ -55,4 +55,32 @@ async function fetchProducts() {
   return res.json();
 }
 
-module.exports = { esc, stripHtml, clamp, slugify, fetchProducts, SITE, OUT_DIR };
+
+// Real, product-linked reviews for JSON-LD aggregateRating/review. Sourced
+// from product_reviews (the linking table) joined to testimonials -- NOT
+// products.average_rating/sales_count, which are placeholder-looking (mostly
+// rating=5, sales=0) and unrelated to actual review counts.
+// Returns { [productId]: [{ name, rating, review, title }] }.
+async function fetchProductReviews() {
+  const [linksRes, testRes] = await Promise.all([
+    fetch(`${SUPABASE_URL}/rest/v1/product_reviews?select=product_id,testimonial_id`,
+      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }),
+    fetch(`${SUPABASE_URL}/rest/v1/testimonials?select=id,name,rating,review,title`,
+      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } })
+  ]);
+  if (!linksRes.ok) throw new Error(`Supabase product_reviews ${linksRes.status}`);
+  if (!testRes.ok) throw new Error(`Supabase testimonials ${testRes.status}`);
+
+  const links = await linksRes.json();
+  const testimonials = await testRes.json();
+  const byId = new Map(testimonials.map(t => [t.id, t]));
+
+  const byProduct = {};
+  for (const link of links) {
+    const t = byId.get(link.testimonial_id);
+    if (!t || !t.rating || !t.review) continue;
+    (byProduct[link.product_id] ??= []).push(t);
+  }
+  return byProduct;
+}
+module.exports = { esc, stripHtml, clamp, slugify, fetchProducts, fetchProductReviews, SITE, OUT_DIR };
