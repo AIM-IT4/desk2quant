@@ -48,7 +48,7 @@
                 &mdash; the same way a desk would check your work.
             </p>
             <div class="g-hero-cta">
-                <a href="/product.html?id=eb4ee16b-8a1f-475c-9dbf-e03993528ac9" class="g-btn g-btn-primary">Get Project 01 &mdash; &#8377;999</a>
+                <a href="/product.html?id=eb4ee16b-8a1f-475c-9dbf-e03993528ac9" class="g-btn g-btn-primary" data-gauntlet-buy>Get Project 01 &mdash; &#8377;999</a>
                 <a href="#sample" class="g-btn g-btn-ghost">Read the spec first</a>
             </div>
             <p class="g-hero-note"><i class="fas fa-circle-check"></i> Project 01 is available now. Projects 02&ndash;08 are being authored.</p>
@@ -114,7 +114,7 @@
                 <li><span class="g-pill g-pill-live">Available now</span>
                     <h3>OIS / SOFR discount curve bootstrap</h3>
                     <p>Build the curve everything else prices off. Graded on discount factors, zero rates, a forward, and curve monotonicity.</p>
-                    <p class="g-buy-inline"><a href="/product.html?id=eb4ee16b-8a1f-475c-9dbf-e03993528ac9">Get it for &#8377;999 <i class="fas fa-arrow-right"></i></a></p>
+                    <p class="g-buy-inline"><a href="/product.html?id=eb4ee16b-8a1f-475c-9dbf-e03993528ac9" data-gauntlet-buy>Get it for &#8377;999 <i class="fas fa-arrow-right"></i></a></p>
                 </li>
                 <li><span class="g-pill">Authoring</span>
                     <h3>Vol surface arbitrage screen</h3>
@@ -248,7 +248,7 @@
                 self-checks, and a graded scorecard against six hidden tests.
                 Use <code>GAUNTLET20</code> for 20% off.
             </p>
-            <a class="g-btn g-btn-primary g-btn-lg" href="/product.html?id=eb4ee16b-8a1f-475c-9dbf-e03993528ac9">
+            <a class="g-btn g-btn-primary g-btn-lg" href="/product.html?id=eb4ee16b-8a1f-475c-9dbf-e03993528ac9" data-gauntlet-buy>
                 <i class="fas fa-lock-open"></i> Get Project 01
             </a>
             <p class="g-cta-note">
@@ -266,6 +266,61 @@
             <a href="/faq.html">FAQ</a>
         </p>
     </footer>
+
+    <!-- Checkout modal: same markup and ids the homepage uses, so script.js's
+         openProductModal() works here unchanged. -->
+    <div class="modal" id="productModal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose" aria-label="Close product modal">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="modal-header">
+                <h3 id="modalTitle">Product Name</h3>
+            </div>
+            <div class="modal-body">
+                <div id="modalDescription" class="modal-description-text">Product description goes here.</div>
+                <div class="modal-price" id="modalPrice">&#8377;999</div>
+                <div id="pppInfo" style="margin-top:8px; font-size:0.9em; color:var(--text-muted); display:none;">
+                    <i class="fas fa-globe"></i> <span id="pppText"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="coupon-row" style="margin-bottom: 12px;">
+                    <input id="couponInput" placeholder="Have a coupon code?" aria-label="Coupon code" />
+                    <button id="applyCouponBtn" class="btn btn-secondary" type="button">Apply</button>
+                </div>
+                <div id="modalCouponFeedback" style="margin-bottom: 12px;"></div>
+                <p class="modal-note">
+                    <i class="fas fa-lock"></i>
+                    Secure payment via Razorpay. Instant download after payment.
+                </p>
+                <a href="#" class="btn btn-primary btn-full" id="modalPayBtn">
+                    <i class="fas fa-credit-card"></i>
+                    Pay Now
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js?v=6"></script>
+    <script src="ui-components.js?v=1" defer></script>
+    <script>
+        // Open the shared Razorpay checkout modal in place. The href stays a real
+        // product.html link, so this degrades to normal navigation if script.js
+        // has not loaded or openProductModal is unavailable.
+        (function () {
+            var PRODUCT_ID = 'eb4ee16b-8a1f-475c-9dbf-e03993528ac9';
+            document.addEventListener('click', function (event) {
+                var trigger = event.target.closest('[data-gauntlet-buy]');
+                if (!trigger) return;
+                if (typeof window.openProductModal !== 'function') return;
+                event.preventDefault();
+                window.openProductModal(PRODUCT_ID);
+            });
+        })();
+    </script>
 </body>
 
 </html>

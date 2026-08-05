@@ -569,9 +569,18 @@ body.d2q-launchzone .gauntlet-main .g-buy-inline a {
     color: var(--d2q-teal-dark);
 }
 
-/* d2q-launchzone force-shows .logo-text next to the image logo, which renders
-   the wordmark twice. The homepage hides it via styles.css; match that. */
-body.d2q-launchzone .navbar .logo-text,
-body.d2q-reference .navbar .logo-text {
-    display: none !important;
+
+/* --- button colour consistency -------------------------------------------
+   The hero and CTA buttons resolved to near-black (rgb(9,9,9)) from the
+   inherited launchzone ink, while "Read the full spec" used brand teal, so
+   the same button role rendered in two different colours. Unify on teal. */
+body.d2q-launchzone .gauntlet-main .g-btn-primary,
+body.d2q-launchzone .gauntlet-main .g-btn-primary:visited {
+    background: var(--d2q-teal-dark);
+    color: #fff;
+}
+
+body.d2q-launchzone .gauntlet-main .g-btn-primary:hover {
+    background: var(--d2q-navy);
+    color: #fff;
 }
