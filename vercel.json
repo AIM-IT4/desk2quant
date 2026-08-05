@@ -1,39 +1,49 @@
 {
-    "buildCommand": "node generate-config.js && node scripts/build-seo.js",
-    "outputDirectory": ".",
-    "redirects": [
+  "buildCommand": "node generate-config.js && node scripts/build-seo.js",
+  "outputDirectory": ".",
+  "redirects": [
+    {
+      "source": "/",
+      "has": [
         {
-            "source": "/",
-            "has": [
-                {
-                    "type": "host",
-                    "value": "www.desk2quant.com"
-                }
-            ],
-            "destination": "https://desk2quant.com/",
-            "permanent": true
-        },
-        {
-            "source": "/:path+/",
-            "has": [
-                {
-                    "type": "host",
-                    "value": "www.desk2quant.com"
-                }
-            ],
-            "destination": "https://desk2quant.com/:path+/",
-            "permanent": true
-        },
-        {
-            "source": "/:path+",
-            "has": [
-                {
-                    "type": "host",
-                    "value": "www.desk2quant.com"
-                }
-            ],
-            "destination": "https://desk2quant.com/:path+",
-            "permanent": true
+          "type": "host",
+          "value": "www.desk2quant.com"
         }
-    ]
+      ],
+      "destination": "https://desk2quant.com/",
+      "permanent": true
+    },
+    {
+      "source": "/:path+/",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.desk2quant.com"
+        }
+      ],
+      "destination": "https://desk2quant.com/:path+/",
+      "permanent": true
+    },
+    {
+      "source": "/:path+",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.desk2quant.com"
+        }
+      ],
+      "destination": "https://desk2quant.com/:path+",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/gauntlet/hidden/:path*",
+      "destination": "/404.html"
+    },
+    {
+      "source": "/gauntlet/projects/:slug/reference.mjs",
+      "destination": "/404.html"
+    }
+  ]
 }

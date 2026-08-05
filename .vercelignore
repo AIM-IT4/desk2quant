@@ -1,0 +1,13 @@
+# Gauntlet answer keys and reference solutions must never be deployed.
+# outputDirectory is "." so anything in the repo root is otherwise web-served
+# (this is how docs/*.md leaked publicly). The vercel.json rewrites are a
+# second layer in case this file is ever lost.
+gauntlet/hidden/
+gauntlet/projects/*/reference.mjs
+
+# Internal working notes.
+_private_notes/
+_couponfix_backup/
+
+# Tests are not needed at runtime.
+test/
