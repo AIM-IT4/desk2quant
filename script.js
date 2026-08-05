@@ -1433,9 +1433,12 @@ async function fetchExchangeRates() {
     try {
         // Try multiple exchange rate APIs in case one fails
         const apis = [
-            'https://api.frankfurter.app/latest?from=INR',
+            // open.er-api first: it covers 166 currencies including AED and PKR.
+            // Frankfurter is ECB-only (29 currencies) and omits both, so while it was
+            // primary those buyers hit "Unsupported currency" and could not check out.
             'https://open.er-api.com/v6/latest/INR',
-            'https://api.exchangerate-api.com/v4/latest/INR'
+            'https://api.exchangerate-api.com/v4/latest/INR',
+            'https://api.frankfurter.dev/v1/latest?from=INR'
         ];
 
         for (const apiUrl of apis) {
