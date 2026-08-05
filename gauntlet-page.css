@@ -541,3 +541,37 @@
     font-size: 0.88em;
     color: var(--d2q-navy);
 }
+
+/* --- launchzone overrides ---------------------------------------------------
+   launchzone.css:85 sets `body.d2q-launchzone a { color: var(--lz-ink) }`,
+   which outranks the .g-btn-primary rules above on specificity and rendered
+   both buy buttons as black text on a black background (verified in the
+   rendered DOM: color and background-color both rgb(9,9,9)).
+   Scoped to this page's buttons only. */
+body.d2q-launchzone .gauntlet-main .g-btn-primary {
+    color: #fff;
+}
+
+body.d2q-launchzone .gauntlet-main .g-btn-ghost {
+    color: var(--d2q-navy);
+}
+
+body.d2q-launchzone .gauntlet-main .g-btn-ghost:hover {
+    color: var(--d2q-teal-dark);
+}
+
+body.d2q-launchzone .gauntlet-main .g-sample-card .g-btn-primary,
+body.d2q-launchzone .gauntlet-main .g-buy-inline a {
+    color: #fff;
+}
+
+body.d2q-launchzone .gauntlet-main .g-buy-inline a {
+    color: var(--d2q-teal-dark);
+}
+
+/* d2q-launchzone force-shows .logo-text next to the image logo, which renders
+   the wordmark twice. The homepage hides it via styles.css; match that. */
+body.d2q-launchzone .navbar .logo-text,
+body.d2q-reference .navbar .logo-text {
+    display: none !important;
+}
