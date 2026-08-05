@@ -1,0 +1,492 @@
+/* ================================
+   Quant Project Gauntlet landing page
+   Uses the real design tokens from styles.css (--d2q-*, --text-*, --bg-*).
+   ================================ */
+
+.gauntlet-main {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 130px 20px 60px;
+}
+
+/* --- shared bits --- */
+.gauntlet-main h2 {
+    font-size: clamp(1.5rem, 3vw, 2.1rem);
+    color: var(--d2q-navy);
+    margin: 0 0 10px;
+    letter-spacing: -0.02em;
+}
+
+.g-section-sub {
+    color: var(--text-secondary);
+    margin: 0 0 28px;
+    font-size: 1.02rem;
+}
+
+.gauntlet-main section {
+    margin-bottom: 68px;
+}
+
+.g-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 13px 24px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.98rem;
+    text-decoration: none;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.g-btn-primary {
+    background: var(--d2q-navy);
+    color: #fff;
+    box-shadow: 0 10px 26px rgba(6, 39, 91, 0.18);
+}
+
+.g-btn-primary:hover {
+    background: var(--d2q-navy-hover);
+    transform: translateY(-2px);
+}
+
+.g-btn-ghost {
+    background: transparent;
+    color: var(--d2q-navy);
+    border: 1.5px solid var(--border-light);
+}
+
+.g-btn-ghost:hover {
+    border-color: var(--d2q-teal);
+    color: var(--d2q-teal-dark);
+    transform: translateY(-2px);
+}
+
+.g-btn-lg {
+    padding: 16px 30px;
+    font-size: 1.05rem;
+}
+
+/* --- hero --- */
+.g-hero {
+    text-align: center;
+    padding: 20px 0 8px;
+}
+
+.g-badge {
+    display: inline-block;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--d2q-teal-dark);
+    background: var(--d2q-teal-soft);
+    border: 1px solid rgba(8, 169, 162, 0.25);
+    padding: 7px 14px;
+    border-radius: 100px;
+    font-weight: 700;
+    margin-bottom: 22px;
+}
+
+.g-hero h1 {
+    font-size: clamp(1.9rem, 5vw, 3.1rem);
+    line-height: 1.16;
+    color: var(--d2q-navy);
+    margin: 0 0 20px;
+    letter-spacing: -0.03em;
+}
+
+.g-accent {
+    color: var(--d2q-teal);
+}
+
+.g-sub {
+    max-width: 620px;
+    margin: 0 auto 30px;
+    color: var(--text-secondary);
+    font-size: 1.08rem;
+    line-height: 1.7;
+}
+
+.g-hero-cta {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.g-hero-note {
+    margin-top: 22px;
+    font-size: 0.9rem;
+    color: var(--text-tertiary);
+}
+
+.g-hero-note i {
+    color: var(--d2q-teal);
+}
+
+/* --- problem comparison --- */
+.g-problem-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.g-problem-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 26px;
+    box-shadow: var(--d2q-shadow);
+}
+
+.g-problem-card h3 {
+    font-size: 1.05rem;
+    margin: 0 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--d2q-navy);
+}
+
+.g-problem-bad h3 i {
+    color: var(--text-tertiary);
+}
+
+.g-problem-good {
+    border-color: rgba(8, 169, 162, 0.35);
+}
+
+.g-problem-good h3 i {
+    color: var(--d2q-teal);
+}
+
+.g-problem-card ul {
+    margin: 0;
+    padding-left: 20px;
+    color: var(--text-secondary);
+    line-height: 1.85;
+    font-size: 0.96rem;
+}
+
+/* --- how it works --- */
+.g-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 18px;
+    margin-bottom: 26px;
+}
+
+.g-step {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 22px;
+}
+
+.g-step-n {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: var(--d2q-navy);
+    color: #fff;
+    font-family: var(--font-mono, monospace);
+    font-weight: 700;
+    font-size: 0.86rem;
+    margin-bottom: 13px;
+}
+
+.g-step h3 {
+    font-size: 1rem;
+    margin: 0 0 8px;
+    color: var(--d2q-navy);
+}
+
+.g-step p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.93rem;
+    line-height: 1.65;
+}
+
+.g-callout {
+    background: var(--d2q-teal-soft);
+    border: 1px solid rgba(8, 169, 162, 0.28);
+    border-radius: 14px;
+    padding: 24px;
+}
+
+.g-callout h3 {
+    margin: 0 0 10px;
+    font-size: 1.02rem;
+    color: var(--d2q-teal-dark);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.g-callout p {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    font-size: 0.96rem;
+}
+
+/* --- project list --- */
+.g-project-list {
+    list-style: none;
+    counter-reset: gp;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 14px;
+}
+
+.g-project-list li {
+    counter-increment: gp;
+    position: relative;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 20px 22px 20px 62px;
+}
+
+.g-project-list li::before {
+    content: counter(gp, decimal-leading-zero);
+    position: absolute;
+    left: 20px;
+    top: 20px;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--d2q-teal);
+}
+
+.g-project-list h3 {
+    margin: 0 0 6px;
+    font-size: 1.02rem;
+    color: var(--d2q-navy);
+}
+
+.g-project-list p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.94rem;
+    line-height: 1.62;
+}
+
+.g-pill {
+    float: right;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 5px 11px;
+    border-radius: 100px;
+    background: var(--bg-tertiary);
+    color: var(--text-tertiary);
+    border: 1px solid var(--border-subtle);
+    margin-left: 12px;
+}
+
+.g-pill-live {
+    background: var(--d2q-teal-soft);
+    color: var(--d2q-teal-dark);
+    border-color: rgba(8, 169, 162, 0.3);
+}
+
+/* --- sample project + tolerance table --- */
+.g-sample-card {
+    background: linear-gradient(160deg, var(--d2q-navy) 0%, var(--d2q-navy-deep) 100%);
+    border-radius: 16px;
+    padding: 30px;
+    color: #fff;
+    box-shadow: 0 20px 50px rgba(6, 39, 91, 0.22);
+    margin-bottom: 26px;
+}
+
+.g-sample-card h3 {
+    margin: 0 0 12px;
+    font-size: 1.18rem;
+    color: #fff;
+}
+
+.g-sample-meta {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.72);
+    margin: 0 0 14px;
+}
+
+.g-sample-card p {
+    color: rgba(255, 255, 255, 0.86);
+    line-height: 1.72;
+    font-size: 0.98rem;
+    margin: 0 0 20px;
+}
+
+.g-sample-card .g-btn-primary {
+    background: var(--d2q-teal);
+    box-shadow: none;
+}
+
+.g-sample-card .g-btn-primary:hover {
+    background: #07938d;
+}
+
+.g-tolerance {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 26px;
+}
+
+.g-tolerance h3 {
+    margin: 0 0 8px;
+    font-size: 1.05rem;
+    color: var(--d2q-navy);
+}
+
+.g-tolerance > p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    margin: 0 0 16px;
+}
+
+.g-tol-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.93rem;
+}
+
+.g-tol-table th {
+    text-align: left;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    border-bottom: 1.5px solid var(--border-light);
+    padding: 9px 10px;
+}
+
+.g-tol-table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+}
+
+.g-tol-table td:nth-child(2) {
+    font-family: var(--font-mono, monospace);
+    font-weight: 700;
+    color: var(--d2q-navy);
+}
+
+.g-pass {
+    color: var(--d2q-teal-dark);
+    font-weight: 700;
+}
+
+.g-fail {
+    color: #b4232a;
+    font-weight: 700;
+}
+
+.g-tol-note {
+    margin: 16px 0 0;
+    font-size: 0.9rem;
+    color: var(--text-tertiary);
+    line-height: 1.6;
+}
+
+/* --- faq --- */
+.g-faq-item {
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 18px 0;
+}
+
+.g-faq-item h3 {
+    margin: 0 0 8px;
+    font-size: 1rem;
+    color: var(--d2q-navy);
+}
+
+.g-faq-item p {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.72;
+    font-size: 0.96rem;
+}
+
+/* --- final cta --- */
+.g-cta {
+    text-align: center;
+    background: var(--d2q-paper);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 44px 26px;
+}
+
+.g-cta p {
+    color: var(--text-secondary);
+    max-width: 520px;
+    margin: 0 auto 22px;
+    line-height: 1.7;
+}
+
+.g-cta-note {
+    font-size: 0.88rem !important;
+    color: var(--text-tertiary) !important;
+    margin: 20px auto 0 !important;
+}
+
+/* --- footer --- */
+.gauntlet-footer {
+    text-align: center;
+    padding: 40px 20px 60px;
+    color: var(--text-tertiary);
+    font-size: 0.92rem;
+}
+
+.gauntlet-footer a {
+    color: var(--d2q-teal-dark);
+    text-decoration: none;
+}
+
+.gauntlet-footer a:hover {
+    text-decoration: underline;
+}
+
+.g-footer-links,
+.gauntlet-footer-links {
+    margin-top: 8px;
+}
+
+@media (max-width: 640px) {
+    .gauntlet-main {
+        padding-top: 110px;
+    }
+
+    .g-project-list li {
+        padding: 18px 18px 18px 52px;
+    }
+
+    .g-pill {
+        float: none;
+        display: inline-block;
+        margin: 0 0 10px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .g-btn,
+    .g-btn:hover {
+        transition: none;
+        transform: none;
+    }
+}

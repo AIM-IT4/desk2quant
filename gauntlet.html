@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quant Project Gauntlet | Desk2Quant</title>
+    <meta name="description" content="Graded quant projects with hidden test suites. Build a rates curve, a vol surface, an XVA engine - then get scored against a reference implementation. Proof you can build, not just read.">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Quant Project Gauntlet | Desk2Quant">
+    <meta property="og:description" content="Graded quant projects with hidden test suites. Anyone can read a derivation. This proves you can build it.">
+    <meta property="og:image" content="https://desk2quant.com/assets/images/desk2quant-logo.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Quant Project Gauntlet | Desk2Quant">
+    <meta name="twitter:description" content="Graded quant projects with hidden test suites. Proof you can build, not just read.">
+    <link rel="canonical" href="https://desk2quant.com/gauntlet.html">
+    <link rel="icon" type="image/png" href="assets/images/desk2quant-logo.png?v=3">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="legal-page.css">
+    <link rel="stylesheet" href="gauntlet-page.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo"
+                style="text-decoration: none; display: flex; align-items: center; gap: 10px;">
+                <img src="assets/images/desk2quant-logo.png?v=3" alt="Desk2Quant" class="logo-img">
+                <span class="logo-icon" style="display:none;">📊</span>
+                <span class="logo-text">Desk2Quant</span>
+            </a>
+            <a href="/" class="legal-back-link"><i class="fas fa-arrow-left"></i> Back to Home</a>
+        </div>
+    </nav>
+
+    <main class="gauntlet-main">
+        <section class="g-hero">
+            <span class="g-badge">New &middot; Graded Projects</span>
+            <h1>Anyone can read a derivation.<br><span class="g-accent">This proves you can build it.</span></h1>
+            <p class="g-sub">
+                Eight desk-level quant projects, each with a hidden test suite. You build the
+                model, submit your numbers, and get scored against a reference implementation
+                &mdash; the same way a desk would check your work.
+            </p>
+            <div class="g-hero-cta">
+                <a href="#projects" class="g-btn g-btn-primary">See the projects</a>
+                <a href="#sample" class="g-btn g-btn-ghost">Try a sample free</a>
+            </div>
+            <p class="g-hero-note"><i class="fas fa-circle-info"></i> In development &mdash; join the waitlist below to get launch pricing.</p>
+        </section>
+
+        <section class="g-problem">
+            <h2>The gap this fills</h2>
+            <div class="g-problem-grid">
+                <div class="g-problem-card g-problem-bad">
+                    <h3><i class="fas fa-book"></i> Reading a PDF</h3>
+                    <ul>
+                        <li>You follow the derivation and it makes sense</li>
+                        <li>You copy the code and it runs</li>
+                        <li>Nothing tells you your model is <em>wrong</em></li>
+                        <li>In the interview, you describe &mdash; not demonstrate</li>
+                    </ul>
+                </div>
+                <div class="g-problem-card g-problem-good">
+                    <h3><i class="fas fa-circle-check"></i> Passing the Gauntlet</h3>
+                    <ul>
+                        <li>You build it from a spec, like real desk work</li>
+                        <li>Hidden tests catch the errors you cannot see</li>
+                        <li>A wrong day count fails immediately, with a hint</li>
+                        <li>You walk in with numbers you can defend</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+        <section class="g-how">
+            <h2>How grading works</h2>
+            <div class="g-steps">
+                <div class="g-step"><span class="g-step-n">1</span>
+                    <h3>Read the spec</h3>
+                    <p>Conventions are fixed and stated exactly &mdash; day count, compounding, pillars. No ambiguity to argue about later.</p>
+                </div>
+                <div class="g-step"><span class="g-step-n">2</span>
+                    <h3>Build it</h3>
+                    <p>Python, your own way. Public sample tests let you check yourself locally before submitting.</p>
+                </div>
+                <div class="g-step"><span class="g-step-n">3</span>
+                    <h3>Submit your numbers</h3>
+                    <p>A small JSON object with your outputs. Graded against a reference implementation at a calibrated tolerance.</p>
+                </div>
+                <div class="g-step"><span class="g-step-n">4</span>
+                    <h3>Get a scorecard</h3>
+                    <p>Pass or fail per test, a score, and a hint on what broke &mdash; never the answer.</p>
+                </div>
+            </div>
+            <div class="g-callout">
+                <h3><i class="fas fa-shield-halved"></i> Why the tests are hidden</h3>
+                <p>
+                    If failures revealed the expected value, the grader becomes an oracle you could
+                    brute-force without solving anything. You get the failing test and a hint about
+                    the likely cause &mdash; enough to debug, not enough to cheat.
+                </p>
+            </div>
+        </section>
+
+        <section class="g-projects" id="projects">
+            <h2>The eight projects</h2>
+            <p class="g-section-sub">Deliberately fewer and harder. Each is one to three days of genuine work, not an exercise.</p>
+            <ol class="g-project-list">
+                <li><span class="g-pill g-pill-live">Ready</span>
+                    <h3>OIS / SOFR discount curve bootstrap</h3>
+                    <p>Build the curve everything else prices off. Graded on discount factors, zero rates, a forward, and curve monotonicity.</p>
+                </li>
+                <li><span class="g-pill">Authoring</span>
+                    <h3>Vol surface arbitrage screen</h3>
+                    <p>Detect calendar and butterfly violations. Graded against seeded arbitrage cases.</p>
+                </li>
+                <li><span class="g-pill">Authoring</span>
+                    <h3>XVA on a netting set with collateral</h3>
+                    <p>CVA and DVA under CSA thresholds. Graded on exposure profile quantiles.</p>
+                </li>
+                <li><span class="g-pill">Authoring</span>
+                    <h3>Market-making PnL simulator</h3>
+                    <p>Inventory risk and adverse selection. Graded on the moments of the terminal PnL distribution.</p>
+                </li>
+                <li><span class="g-pill">Authoring</span>
+                    <h3>Bermudan swaption via Longstaff-Schwartz</h3>
+                    <p>Graded on price within tolerance of a reference lattice, plus the early-exercise boundary.</p>
+                </li>
+                <li><span class="g-pill">Authoring</span>
+                    <h3>Model validation challenge</h3>
+                    <p>You are handed a model with a deliberately seeded bug. Find it, fix it, and match the corrected outputs.</p>
+                </li>
+                <li><span class="g-pill">Authoring</span>
+                    <h3>Cross-currency basis hedge optimiser</h3>
+                    <p>Graded on hedge ratios under a basis shock.</p>
+                </li>
+                <li><span class="g-pill">Authoring</span>
+                    <h3>Intraday liquidity and slippage model</h3>
+                    <p>Graded on execution cost estimates against a reference fill simulation.</p>
+                </li>
+            </ol>
+        </section>
+        <section class="g-sample" id="sample">
+            <h2>See a real project spec</h2>
+            <p class="g-section-sub">
+                Project 01 is finished and its full candidate spec is public, so you can judge the
+                standard before paying anything.
+            </p>
+            <div class="g-sample-card">
+                <h3>Project 01 &mdash; Bootstrap an OIS / SOFR discount curve</h3>
+                <p class="g-sample-meta"><i class="fas fa-signal"></i> Foundation &nbsp;&middot;&nbsp;
+                   <i class="fas fa-clock"></i> 3&ndash;6 hours &nbsp;&middot;&nbsp;
+                   <i class="fas fa-list-check"></i> 6 hidden tests, 100 points</p>
+                <p>
+                    Fixed conventions (ACT/365F, continuous compounding, annual pillars), five par OIS
+                    quotes in, and a JSON object out. The spec includes the self-check that must
+                    reprice every input swap to zero, plus the three ways candidates actually fail it.
+                </p>
+                <a class="g-btn g-btn-primary" href="/gauntlet/projects/01-sofr-curve/README.md">
+                    Read the full spec <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="g-tolerance">
+                <h3>Tolerance is measured, not guessed</h3>
+                <p>Project 01, scored against its own hidden tests:</p>
+                <table class="g-tol-table">
+                    <thead><tr><th>Submission</th><th>Score</th><th>Result</th></tr></thead>
+                    <tbody>
+                        <tr><td>Correct implementation</td><td>100</td><td class="g-pass">Pass</td></tr>
+                        <tr><td>Wrong day count (360 vs 365)</td><td>10</td><td class="g-fail">Fail</td></tr>
+                        <tr><td>Discrete instead of continuous compounding</td><td>85</td><td class="g-fail">Fail</td></tr>
+                    </tbody>
+                </table>
+                <p class="g-tol-note">
+                    Loose enough that any sane floating-point path passes. Tight enough that the two
+                    mistakes candidates actually make are caught immediately.
+                </p>
+            </div>
+        </section>
+        <section class="g-faq">
+            <h2>Questions</h2>
+            <div class="g-faq-item">
+                <h3>How is this different from the &#8377;799 project pack?</h3>
+                <p>
+                    Completely different projects, and a different mechanism. The 45-project pack is
+                    reference material you read &mdash; derivations, Python and C++ implementations,
+                    interview questions. The Gauntlet grades work you produce. Owning one does not
+                    overlap the other, and the projects here appear in no other Desk2Quant product.
+                </p>
+            </div>
+            <div class="g-faq-item">
+                <h3>What language can I use?</h3>
+                <p>
+                    Python for the first release. You submit numerical outputs rather than code, so
+                    anything that produces the right numbers is fair game &mdash; numpy, pure standard
+                    library, or your own solver.
+                </p>
+            </div>
+            <div class="g-faq-item">
+                <h3>What if I think the grader is wrong?</h3>
+                <p>
+                    Every expected value is generated from a reference implementation that reprices
+                    each input instrument to machine precision, and the tolerances are calibrated
+                    against deliberately wrong solutions. If you still believe a test is unfair,
+                    email the scorecard and it gets reviewed by a human.
+                </p>
+            </div>
+            <div class="g-faq-item">
+                <h3>How many attempts do I get?</h3>
+                <p>
+                    Multiple, with a per-day cap. Debugging against a hidden suite is part of the
+                    exercise; unlimited rapid-fire guessing is not.
+                </p>
+            </div>
+            <div class="g-faq-item">
+                <h3>Is it live yet?</h3>
+                <p>
+                    Project 01 is complete and its grading engine is built and unit-tested. The
+                    remaining seven are being authored, and the submission portal is in development.
+                    Join the waitlist for launch pricing.
+                </p>
+            </div>
+        </section>
+
+        <section class="g-cta">
+            <h2>Join the waitlist</h2>
+            <p>
+                Launch pricing goes to the waitlist first. No spam, and one email when it opens.
+            </p>
+            <a class="g-btn g-btn-primary g-btn-lg"
+               href="mailto:hello@desk2quant.com?subject=Gauntlet%20waitlist&body=Add%20me%20to%20the%20Quant%20Project%20Gauntlet%20waitlist.">
+                <i class="fas fa-envelope"></i> Email to join the waitlist
+            </a>
+            <p class="g-cta-note">
+                Already own a Desk2Quant resource? Mention it &mdash; existing customers get first access.
+            </p>
+        </section>
+    </main>
+
+    <footer class="gauntlet-footer">
+        <p>Questions? <a href="mailto:hello@desk2quant.com">hello@desk2quant.com</a></p>
+        <p class="gauntlet-footer-links">
+            <a href="/">Home</a> &middot;
+            <a href="/products/">All Resources</a> &middot;
+            <a href="/faq.html">FAQ</a>
+        </p>
+    </footer>
+</body>
+
+</html>
