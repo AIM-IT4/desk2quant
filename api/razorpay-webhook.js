@@ -3,9 +3,12 @@
 // Handles product purchases and session bookings
 
 import crypto from 'crypto';
+import { grantDrivePermissionOrSignedFallback, buildSignedDownloadUrl } from '../lib/secureDownload.js';
 import { createJitsiMeetingLink } from '../lib/jitsi.js';
 import { queuePostPurchaseRecommendation } from '../lib/recommendationQueue.js';
 import { getExpectedProductOrder, getExpectedSessionOrder, getExpectedCartOrder, isWithinTolerance } from '../lib/pricing.js';
+
+const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || 'https://desk2quant.com';
 
 // Disable Vercel body parsing so we can read the raw stream for signature verification
 export const config = {
@@ -259,76 +262,16 @@ function extractDriveFileId(url) {
 }
 
 // Helper function to authenticate service account and grant reader permission
+// Shares a Drive file/folder with customerEmail, with a secure fallback to a
+// signed, expiring download URL (never a public link) when the email has no
+// Google Account. Shared implementation lives in lib/secureDownload.js so the
+// webhook and api/grant-access.js cannot drift apart on the Drive role.
 async function grantDrivePermission(clientEmail, privateKey, fileId, customerEmail) {
     if (!clientEmail || !privateKey) {
         console.warn('Google Drive credentials missing in environment; skipping permission grant');
         return null;
     }
-
-    // 1. Get access token via JWT authentication flow
-    const header = { alg: 'RS256', typ: 'JWT' };
-    const now = Math.floor(Date.now() / 1000);
-    const claimSet = {
-        iss: clientEmail,
-        scope: 'https://www.googleapis.com/auth/drive',
-        aud: 'https://oauth2.googleapis.com/token',
-        exp: now + 3600,
-        iat: now
-    };
-
-    const base64Encode = (obj) => Buffer.from(JSON.stringify(obj)).toString('base64url');
-    const tokenInput = `${base64Encode(header)}.${base64Encode(claimSet)}`;
-
-    const signer = crypto.createSign('RSA-SHA256');
-    signer.write(tokenInput);
-    signer.end();
-
-    // Format newlines if private key is stored as single line string in env
-    const formattedKey = privateKey.replace(/\\n/g, '\n');
-    const signature = signer.sign(formattedKey, 'base64url');
-
-    const jwt = `${tokenInput}.${signature}`;
-
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
-    });
-
-    if (!tokenResponse.ok) {
-        const errorText = await tokenResponse.text();
-        throw new Error(`Google Drive API auth token creation failed: ${errorText}`);
-    }
-
-    const tokenData = await tokenResponse.json();
-    const token = tokenData.access_token;
-
-    // 2. Grant read-only access via Google Drive API.
-    //
-    // 'reader' -- NOT 'writer'. Reader already permits view/download/copy/print
-    // (copyRequiresWriterPermission is never set on these files), so offline
-    // reading works. 'writer' would additionally allow the buyer to delete,
-    // rename, or overwrite the file -- and these are shared master files, not
-    // per-buyer copies, so one buyer's deletion would break every other buyer.
-    const permissionResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions?sendNotificationEmail=false`, {
-        method: 'POST',
-        headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            role: 'reader',
-            type: 'user',
-            emailAddress: customerEmail
-        })
-    });
-
-    if (!permissionResponse.ok) {
-        const errorText = await permissionResponse.text();
-        throw new Error(`Google Drive share permissions failed: ${errorText}`);
-    }
-
-    return await permissionResponse.json();
+    return grantDrivePermissionOrSignedFallback(clientEmail, privateKey, fileId, customerEmail);
 }
 
 // Handle product purchase - send email and log to Supabase
@@ -498,20 +441,30 @@ export async function handleProductPurchase(data) {
 
         if (GOOGLE_SERVICE_ACCOUNT_EMAIL && GOOGLE_PRIVATE_KEY) {
             console.log(`Google Drive Secure Flow: Sharing ID ${driveFileId} with ${customerEmail}...`);
+            const isFolder = downloadLink.includes('/folders/') || downloadLink.includes('/drive/folders/');
             try {
-                await grantDrivePermission(GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, driveFileId, customerEmail);
-                console.log(`✅ Successfully shared Drive ID ${driveFileId} with ${customerEmail}`);
+                const grantResult = await grantDrivePermission(GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, driveFileId, customerEmail);
+                if (grantResult && grantResult.fallback === 'signed_download_url') {
+                    // The buyer's email has no Google Account. Do NOT fall back to a
+                    // public "anyone with the link" share -- that would expose a paid
+                    // product to anyone who obtains the URL. Issue a signed, expiring,
+                    // per-buyer link that streams the file through our own server.
+                    downloadLink = buildSignedDownloadUrl(PUBLIC_BASE_URL, process.env.RAZORPAY_KEY_SECRET, driveFileId, customerEmail, productName, isFolder);
+                    console.log(`Issued signed download URL for ${driveFileId} to ${customerEmail} (no Google Account)`);
+                } else {
+                    console.log(`✅ Successfully shared Drive ID ${driveFileId} with ${customerEmail}`);
+                    downloadLink = isFolder
+                        ? `https://drive.google.com/drive/folders/${driveFileId}?usp=drivesdk`
+                        : `https://drive.google.com/file/d/${driveFileId}/view?usp=drivesdk`;
+                }
                 hasSharedSecurely = true;
             } catch (err) {
                 console.error(`❌ Failed to share Google Drive item: ${err.message}`);
                 fallbackToManualInfo = true;
+                downloadLink = isFolder
+                    ? `https://drive.google.com/drive/folders/${driveFileId}?usp=drivesdk`
+                    : `https://drive.google.com/file/d/${driveFileId}/view?usp=drivesdk`;
             }
-
-            // Secure viewer URL instead of direct download link
-            const isFolder = downloadLink.includes('/folders/') || downloadLink.includes('/drive/folders/');
-            downloadLink = isFolder
-                ? `https://drive.google.com/drive/folders/${driveFileId}?usp=drivesdk`
-                : `https://drive.google.com/file/d/${driveFileId}/view?usp=drivesdk`;
         } else {
             console.warn('GCP Google Drive credentials not configured in environment variables. Sharing bypassed.');
         }
@@ -878,16 +831,26 @@ async function handleCartPurchase(data) {
             const GOOGLE_SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
             const GOOGLE_PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY;
             if (GOOGLE_SERVICE_ACCOUNT_EMAIL && GOOGLE_PRIVATE_KEY) {
+                const isFolder = downloadLink.includes('/folders/') || downloadLink.includes('/drive/folders/');
                 try {
-                    await grantDrivePermission(GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, driveFileId, customerEmail);
+                    const grantResult = await grantDrivePermission(GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, driveFileId, customerEmail);
+                    if (grantResult && grantResult.fallback === 'signed_download_url') {
+                        // No Google Account for this buyer -- issue a signed, expiring
+                        // per-buyer URL rather than making the file publicly linkable.
+                        downloadLink = buildSignedDownloadUrl(PUBLIC_BASE_URL, process.env.RAZORPAY_KEY_SECRET, driveFileId, customerEmail, name, isFolder);
+                        console.log(`Issued signed download URL for cart line "${name}" to ${customerEmail} (no Google Account)`);
+                    } else {
+                        downloadLink = isFolder
+                            ? `https://drive.google.com/drive/folders/${driveFileId}?usp=drivesdk`
+                            : `https://drive.google.com/file/d/${driveFileId}/view?usp=drivesdk`;
+                    }
                     hasSharedSecurely = true;
                 } catch (err) {
                     console.error(`❌ Failed to share Drive item for cart line "${name}": ${err.message}`);
+                    downloadLink = isFolder
+                        ? `https://drive.google.com/drive/folders/${driveFileId}?usp=drivesdk`
+                        : `https://drive.google.com/file/d/${driveFileId}/view?usp=drivesdk`;
                 }
-                const isFolder = downloadLink.includes('/folders/') || downloadLink.includes('/drive/folders/');
-                downloadLink = isFolder
-                    ? `https://drive.google.com/drive/folders/${driveFileId}?usp=drivesdk`
-                    : `https://drive.google.com/file/d/${driveFileId}/view?usp=drivesdk`;
             }
         }
 
