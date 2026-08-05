@@ -18,6 +18,16 @@ export const config = {
 };
 
 // Helper function to read the raw body from the request stream
+// Reply-To for every outbound email. Declared at module scope because the
+// send blocks live in handleProductPurchase / handleCartPurchase /
+// handleSessionBooking, which cannot see the handler's local consts. It was
+// previously declared inside handler(), so every one of those sends threw
+// "ReferenceError: REPLY_TO_EMAIL is not defined" and silently delivered
+// nothing -- the catch blocks only console.error.
+const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL
+    || process.env.SENDER_EMAIL
+    || 'desk2quant@gmail.com';
+
 async function getRawBody(readable) {
     const chunks = [];
     for await (const chunk of readable) {
@@ -50,7 +60,6 @@ export default async function handler(req, res) {
     const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'desk2quant@gmail.com';
     const SENDER_EMAIL = process.env.SENDER_EMAIL || 'desk2quant@gmail.com';
     const SENDER_NAME = process.env.SENDER_NAME || 'Desk2Quant';
-    const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || SENDER_EMAIL;
 
     // 1. Capture Raw Body for Signature Verification
     let rawBody;
