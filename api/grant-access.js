@@ -1,31 +1,16 @@
 // Grant Drive access after payment - fallback when webhook fails
 // POST /api/grant-access  Body: { payment_id, email }
 // Verifies payment with Razorpay, resolves product link, grants Drive reader permission.
-// Handles both single-product checkout and multi-item cart checkout.
 
 import crypto from 'crypto';
 
-// Currencies Razorpay reports in whole units rather than subunits.
-const ZERO_DECIMAL_CURRENCIES = ['JPY', 'KRW', 'VND'];
-
-// Cart orders store their line items in the Razorpay order note `cart_items`
-// as "productId:qty:couponCode" per item (couponCode may be empty), because
-// Razorpay caps each note value at 256 chars. Same format razorpay-webhook.js
-// parses in handleCartPurchase -- keep the two in sync.
-function parseCartItems(raw) {
-    return String(raw || '')
-        .split(',')
-        .filter(Boolean)
-        .map((triple) => {
-            const [productId, qtyStr, itemCouponCode] = triple.split(':');
-            return {
-                productId,
-                quantity: Math.max(1, parseInt(qtyStr, 10) || 1),
-                couponCode: itemCouponCode || null
-            };
-        })
-        .filter((item) => item.productId);
-}
+import {
+    buildSignedDownloadUrl,
+    signDownloadToken,
+    getDriveAccessToken,
+    resolveServableDriveFile,
+    grantDrivePermissionOrSignedFallback as grantDrivePermission
+} from '../lib/secureDownload.js';
 
 function normalizeProductName(value) {
     return String(value || '')
@@ -48,68 +33,82 @@ function extractDriveFileId(url) {
     return null;
 }
 
-async function grantDrivePermission(clientEmail, privateKey, fileId, customerEmail) {
-    const header = { alg: 'RS256', typ: 'JWT' };
-    const now = Math.floor(Date.now() / 1000);
-    const claimSet = {
-        iss: clientEmail,
-        scope: 'https://www.googleapis.com/auth/drive',
-        aud: 'https://oauth2.googleapis.com/token',
-        exp: now + 3600,
-        iat: now
-    };
 
-    const base64Encode = (obj) => Buffer.from(JSON.stringify(obj)).toString('base64url');
-    const tokenInput = `${base64Encode(header)}.${base64Encode(claimSet)}`;
+async function handleSignedDownload(req, res) {
+    const { fileId, email, expires, sig, name } = req.query || {};
+    const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
+    const GOOGLE_SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+    const GOOGLE_PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY;
 
-    const signer = crypto.createSign('RSA-SHA256');
-    signer.write(tokenInput);
-    signer.end();
-
-    const formattedKey = privateKey.replace(/\\n/g, '\n');
-    const signature = signer.sign(formattedKey, 'base64url');
-    const jwt = `${tokenInput}.${signature}`;
-
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
-    });
-    if (!tokenResponse.ok) {
-        throw new Error(`Drive auth failed: ${await tokenResponse.text()}`);
+    if (!fileId || !email || !expires || !sig) {
+        return res.status(400).json({ error: 'Missing download token parameters' });
     }
-    const { access_token: token } = await tokenResponse.json();
+    if (!RAZORPAY_KEY_SECRET || !GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY) {
+        return res.status(500).json({ error: 'Server misconfigured for download proxy' });
+    }
 
-    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-    const permissionsUrl = `https://www.googleapis.com/drive/v3/files/${fileId}/permissions?fields=permissions(id,emailAddress,type)&supportsAllDrives=true`;
-    const listResponse = await fetch(permissionsUrl, { headers });
-    if (!listResponse.ok) throw new Error(`Drive permission lookup failed: ${await listResponse.text()}`);
+    const expectedSig = signDownloadToken(RAZORPAY_KEY_SECRET, fileId, email, expires);
+    const sigBuf = Buffer.from(String(sig), 'hex');
+    const expectedBuf = Buffer.from(expectedSig, 'hex');
+    const validSig = sigBuf.length === expectedBuf.length && crypto.timingSafeEqual(sigBuf, expectedBuf);
+    if (!validSig) {
+        return res.status(403).json({ error: 'Invalid or tampered download link' });
+    }
+    if (Date.now() > Number(expires)) {
+        return res.status(410).json({ error: 'This download link has expired. Please contact support for a new one.' });
+    }
 
-    const { permissions = [] } = await listResponse.json();
-    const existing = permissions.find(permission => permission.type === 'user' && String(permission.emailAddress).toLowerCase() === String(customerEmail).toLowerCase());
-    const permissionUrl = existing
-        ? `https://www.googleapis.com/drive/v3/files/${fileId}/permissions/${existing.id}?supportsAllDrives=true`
-        : `https://www.googleapis.com/drive/v3/files/${fileId}/permissions?sendNotificationEmail=false&supportsAllDrives=true`;
-    const permissionResponse = await fetch(permissionUrl, {
-        method: existing ? 'PATCH' : 'POST',
-        headers,
-        body: JSON.stringify(existing ? { role: 'reader' } : { role: 'reader', type: 'user', emailAddress: customerEmail })
-    });
-    if (!permissionResponse.ok) throw new Error(`Drive permission update failed: ${await permissionResponse.text()}`);
-    return permissionResponse.json();
+    try {
+        const token = await getDriveAccessToken(GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY);
+        const isFolder = String(req.query?.isFolder) === '1';
+        const { fileId: servableFileId, fileName: resolvedName } = await resolveServableDriveFile(token, fileId, isFolder);
+
+        const driveResp = await fetch(`https://www.googleapis.com/drive/v3/files/${servableFileId}?alt=media&supportsAllDrives=true`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!driveResp.ok) {
+            const detail = await driveResp.text();
+            console.error('grant-access download proxy: Drive fetch failed:', detail);
+            return res.status(502).json({ error: 'Could not fetch file from storage' });
+        }
+
+        res.setHeader('Content-Type', driveResp.headers.get('content-type') || 'application/octet-stream');
+        const contentLength = driveResp.headers.get('content-length');
+        if (contentLength) res.setHeader('Content-Length', contentLength);
+        const safeName = String(name || resolvedName || `${servableFileId}.zip`).replace(/[^\w.\- ]/g, '_');
+        res.setHeader('Content-Disposition', `attachment; filename="${safeName}"`);
+
+        const reader = driveResp.body.getReader();
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            res.write(Buffer.from(value));
+        }
+        return res.end();
+    } catch (err) {
+        console.error('grant-access download proxy error:', err.message);
+        return res.status(500).json({ error: 'Internal server error while streaming file' });
+    }
 }
 
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     if (req.method === 'OPTIONS') return res.status(200).end();
+
+    // Signed download proxy - GET /api/grant-access?action=download&fileId=...&email=...&expires=...&sig=...
+    // Used as the secure fallback for buyers whose email has no Google
+    // Account, instead of making the file publicly link-shareable.
+    if (req.method === 'GET' && req.query?.action === 'download') {
+        return handleSignedDownload(req, res);
+    }
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
     const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
     const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
-    const SUPABASE_KEY = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY;
+    const SUPABASE_KEY = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRudGFibXl1cmxybG5vYWpkbmphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMDEyNjUsImV4cCI6MjA4NTY3NzI2NX0.PYpNd_t_px09zi2d5WGjFVOB23sjb3ZPuAnxagYshe0';
     const GOOGLE_SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
     const GOOGLE_PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY;
 
@@ -144,13 +143,119 @@ export default async function handler(req, res) {
             return res.status(403).json({ error: 'Email does not match payment record' });
         }
 
-        // 2. Resolve product name + link from payment/order notes
+        // 2. Cart purchases (payment.notes.type === 'cart') store a
+        // "productId:qty:couponCode" list in notes.cart_items instead of a
+        // single product_name/download_link -- handle as a distinct
+        // multi-item path, mirroring handleCartPurchase() in razorpay-webhook.js.
+        //
+        // Razorpay does NOT copy order notes to payment notes, so a payment
+        // that was genuinely a cart checkout can still show up here with an
+        // empty payment.notes.type/.cart_items -- fetch the order to recover
+        // them before deciding this isn't a cart purchase (mirrors the same
+        // fallback razorpay-webhook.js uses for the single-item path).
+        let cartType = payment.notes?.type;
+        let cartItemsRaw = payment.notes?.cart_items;
+        if (!cartType && payment.order_id) {
+            try {
+                const orderResp = await fetch(`https://api.razorpay.com/v1/orders/${payment.order_id}`, {
+                    headers: { Authorization: authHeader }
+                });
+                if (orderResp.ok) {
+                    const order = await orderResp.json();
+                    const orderNotes = order.notes || {};
+                    cartType = cartType || orderNotes.type;
+                    cartItemsRaw = cartItemsRaw || orderNotes.cart_items;
+                }
+            } catch (err) {
+                console.error('grant-access: order notes fallback (cart detection) failed:', err.message);
+            }
+        }
+        if (cartType === 'cart' && cartItemsRaw) {
+            const parsedItems = String(cartItemsRaw)
+                .split(',')
+                .filter(Boolean)
+                .map((triple) => {
+                    const [pid, qtyStr, itemCouponCode] = triple.split(':');
+                    return { productId: pid, quantity: Math.max(1, parseInt(qtyStr, 10) || 1), couponCode: itemCouponCode || null };
+                })
+                .filter((item) => item.productId);
+
+            if (parsedItems.length === 0) {
+                return res.status(404).json({ error: 'No cart items found on this payment' });
+            }
+
+            try {
+                const { getExpectedCartOrder, isWithinTolerance } = await import('../lib/pricing.js');
+                const capturedMajor = ['JPY', 'KRW', 'VND'].includes(String(payment.currency).toUpperCase())
+                    ? payment.amount
+                    : payment.amount / 100;
+                const expected = await getExpectedCartOrder(
+                    parsedItems.map((i) => ({ product_id: i.productId, quantity: i.quantity, coupon_code: i.couponCode })),
+                    payment.currency,
+                    payment.notes?.coupon_code || null
+                );
+                if (expected.ok && !isWithinTolerance(capturedMajor, expected.amountMajor ?? expected.amountInr)) {
+                    console.error('grant-access (cart): underpayment detected, refusing to grant:', { paymentId, capturedMajor, expected });
+                    return res.status(402).json({ error: 'Captured amount does not match the cart total. This purchase has been flagged for review.' });
+                }
+            } catch (err) {
+                console.error('grant-access cart price verification error:', err.message);
+            }
+
+            const items = [];
+            for (const item of parsedItems) {
+                let name = item.productId;
+                let fileUrl = '';
+                if (SUPABASE_KEY) {
+                    const prodResp = await fetch(
+                        `${SUPABASE_URL}/rest/v1/products?id=eq.${encodeURIComponent(item.productId)}&select=name,file_url`,
+                        { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+                    );
+                    if (prodResp.ok) {
+                        const rows = await prodResp.json();
+                        if (rows && rows[0]) {
+                            name = rows[0].name || name;
+                            fileUrl = rows[0].file_url || '';
+                        }
+                    }
+                }
+
+                let downloadLink = fileUrl || null;
+                let granted = false;
+                let grantError = null;
+                let secureDownloadUrl = null;
+                const driveFileId = extractDriveFileId(downloadLink);
+                if (driveFileId && GOOGLE_SERVICE_ACCOUNT_EMAIL && GOOGLE_PRIVATE_KEY) {
+                    const isFolder = downloadLink.includes('/folders/');
+                    try {
+                        const grantResult = await grantDrivePermission(GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, driveFileId, email);
+                        if (grantResult && grantResult.fallback === 'signed_download_url') {
+                            const baseUrl = `https://${req.headers.host}`;
+                            secureDownloadUrl = buildSignedDownloadUrl(baseUrl, RAZORPAY_KEY_SECRET, driveFileId, email, name, isFolder);
+                            console.log(`grant-access (cart): issued signed download URL for ${driveFileId} to ${email} (no Google Account) (payment ${paymentId})`);
+                        } else {
+                            console.log(`grant-access (cart): shared ${driveFileId} with ${email} (payment ${paymentId})`);
+                        }
+                        granted = true;
+                    } catch (err) {
+                        grantError = err.message;
+                        console.error(`grant-access (cart) share failed: ${err.message}`);
+                    }
+                    downloadLink = secureDownloadUrl || (isFolder
+                        ? `https://drive.google.com/drive/folders/${driveFileId}?usp=drivesdk`
+                        : `https://drive.google.com/file/d/${driveFileId}/view?usp=drivesdk`);
+                }
+                items.push({ product: name, download_link: downloadLink, drive_access_granted: granted, drive_error: grantError });
+            }
+
+            return res.status(200).json({ success: true, cart: true, items });
+        }
+
+        // 3. Single-item (legacy) purchases: Resolve product name + link from payment/order notes
         let productName = payment.notes?.product_name;
         let downloadLink = payment.notes?.download_link || '';
         let productId = payment.notes?.product_id || null;
         let couponCode = payment.notes?.coupon_code || null;
-        let cartItemsRaw = payment.notes?.cart_items || '';
-        let checkoutType = payment.notes?.type || null;
         let orderNotes = null;
         if ((!productName || !downloadLink || !productId) && payment.order_id) {
             const orderResp = await fetch(`https://api.razorpay.com/v1/orders/${payment.order_id}`, {
@@ -163,124 +268,32 @@ export default async function handler(req, res) {
                 downloadLink = downloadLink || orderNotes.download_link || '';
                 productId = productId || orderNotes.product_id || null;
                 couponCode = couponCode || orderNotes.coupon_code || null;
-                cartItemsRaw = cartItemsRaw || orderNotes.cart_items || '';
-                checkoutType = checkoutType || orderNotes.type || null;
             }
-        }
-
-        // 2b. Cart checkout: notes carry `cart_items` instead of a single
-        // product_id/download_link, so the single-product path below would
-        // always 404 and the buyer would get nothing when the webhook fails.
-        // Resolve and grant every line item here instead.
-        if (checkoutType === 'cart' || cartItemsRaw) {
-            const cartItems = parseCartItems(cartItemsRaw);
-            if (cartItems.length === 0) {
-                console.error('grant-access (cart): no items parsed from cart_items note:', cartItemsRaw, '| paymentId:', paymentId);
-                return res.status(404).json({ error: 'No cart items found for this purchase' });
-            }
-
-            // SECURITY: same price-tamper guard as the single-product path --
-            // this endpoint is public, so re-verify the captured total against
-            // the real cart price before granting anything.
-            try {
-                const { getExpectedCartOrder, isWithinTolerance } = await import('../lib/pricing.js');
-                const expected = await getExpectedCartOrder(
-                    cartItems.map((item) => ({
-                        product_id: item.productId,
-                        quantity: item.quantity,
-                        coupon_code: item.couponCode
-                    })),
-                    payment.currency,
-                    couponCode
-                );
-                const capturedMajor = ZERO_DECIMAL_CURRENCIES.includes(String(payment.currency).toUpperCase())
-                    ? payment.amount
-                    : payment.amount / 100;
-                if (expected.ok && !isWithinTolerance(capturedMajor, expected.amountMajor)) {
-                    console.error('🚨 grant-access (cart): underpayment detected, refusing to grant:', { paymentId, capturedMajor, expectedMajor: expected.amountMajor });
-                    return res.status(402).json({ error: 'Captured amount does not match the cart price. This purchase has been flagged for review.' });
-                }
-                if (!expected.ok) {
-                    console.warn('⚠️ grant-access (cart): could not verify price, proceeding without check:', expected.error);
-                }
-            } catch (err) {
-                console.error('grant-access (cart) price verification error:', err.message);
-                return res.status(500).json({ error: 'Could not verify payment amount. Please try again or contact support.' });
-            }
-
-            if (!SUPABASE_KEY) {
-                console.error('grant-access (cart): SUPABASE_KEY not configured, cannot resolve product links');
-                return res.status(500).json({ error: 'Product catalog not reachable. Please contact support.' });
-            }
-
-            const items = [];
-            for (const item of cartItems) {
-                let name = item.productId;
-                let link = '';
-                try {
-                    const resp = await fetch(
-                        `${SUPABASE_URL}/rest/v1/products?id=eq.${encodeURIComponent(item.productId)}&select=name,file_url`,
-                        { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
-                    );
-                    if (resp.ok) {
-                        const rows = await resp.json();
-                        if (rows && rows[0]) {
-                            name = rows[0].name || name;
-                            link = rows[0].file_url || '';
-                        }
-                    } else {
-                        console.error('grant-access (cart): product lookup failed:', item.productId, resp.status);
-                    }
-                } catch (err) {
-                    console.error('grant-access (cart): product lookup error:', item.productId, err.message);
-                }
-
-                let itemGranted = false;
-                let itemError = link ? null : 'No download link on this product';
-                const fileId = extractDriveFileId(link);
-                if (fileId && GOOGLE_SERVICE_ACCOUNT_EMAIL && GOOGLE_PRIVATE_KEY) {
-                    try {
-                        await grantDrivePermission(GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, fileId, email);
-                        itemGranted = true;
-                        console.log(`✅ grant-access (cart): shared ${fileId} with ${email} (payment ${paymentId})`);
-                    } catch (err) {
-                        itemError = err.message;
-                        console.error(`❌ grant-access (cart) "${name}": ${err.message}`);
-                    }
-                    link = link.includes('/folders/')
-                        ? `https://drive.google.com/drive/folders/${fileId}?usp=drivesdk`
-                        : `https://drive.google.com/file/d/${fileId}/view?usp=drivesdk`;
-                }
-
-                items.push({
-                    product_id: item.productId,
-                    product: name,
-                    quantity: item.quantity,
-                    download_link: link || null,
-                    drive_access_granted: itemGranted,
-                    drive_error: itemError
-                });
-            }
-
-            const grantedCount = items.filter((line) => line.drive_access_granted).length;
-            return res.status(200).json({
-                success: true,
-                type: 'cart',
-                items,
-                granted_count: grantedCount,
-                drive_access_granted: grantedCount > 0
-            });
         }
 
         // SECURITY: re-verify the captured amount against the real product
         // price before granting access -- this endpoint is a public fallback
         // for when the webhook fails, so it needs the same price-tamper guard
         // razorpay-webhook.js has (see lib/pricing.js).
+        const { getExpectedProductOrder, isWithinTolerance, fetchProductByName } = await import('../lib/pricing.js');
+        // Resolve product_id from the product name when missing (e.g. a raw
+        // Razorpay Checkout call bypassing create-order.js) so the price
+        // check below still runs instead of being skipped outright.
+        if (!productId && productName) {
+            try {
+                const resolved = await fetchProductByName(productName);
+                if (resolved) {
+                    productId = resolved.id;
+                    console.warn('⚠️ grant-access: product_id missing from notes; resolved by name to', productId, 'for', productName, '(paymentId:', paymentId, ')');
+                }
+            } catch (err) {
+                console.error('⚠️ grant-access: product name resolution error:', err.message);
+            }
+        }
         if (productId) {
             try {
-                const { getExpectedProductOrder, isWithinTolerance } = await import('../lib/pricing.js');
                 const expected = await getExpectedProductOrder(productId, payment.currency, couponCode);
-                const capturedMajor = ZERO_DECIMAL_CURRENCIES.includes(String(payment.currency).toUpperCase())
+                const capturedMajor = ['JPY', 'KRW', 'VND'].includes(String(payment.currency).toUpperCase())
                     ? payment.amount
                     : payment.amount / 100;
                 if (expected.ok && !isWithinTolerance(capturedMajor, expected.amountMajor)) {
@@ -318,20 +331,27 @@ export default async function handler(req, res) {
         const driveFileId = extractDriveFileId(downloadLink);
         let granted = false;
         let grantError = null;
+        let secureDownloadUrl = null;
 
         if (driveFileId && GOOGLE_SERVICE_ACCOUNT_EMAIL && GOOGLE_PRIVATE_KEY) {
+            const isFolder = downloadLink.includes('/folders/');
             try {
-                await grantDrivePermission(GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, driveFileId, email);
+                const grantResult = await grantDrivePermission(GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, driveFileId, email);
+                if (grantResult && grantResult.fallback === 'signed_download_url') {
+                    const baseUrl = `https://${req.headers.host}`;
+                    secureDownloadUrl = buildSignedDownloadUrl(baseUrl, RAZORPAY_KEY_SECRET, driveFileId, email, productName, isFolder);
+                    console.log(`grant-access: issued signed download URL for ${driveFileId} to ${email} (no Google Account) (payment ${paymentId})`);
+                } else {
+                    console.log(`✅ grant-access: shared ${driveFileId} with ${email} (payment ${paymentId})`);
+                }
                 granted = true;
-                console.log(`✅ grant-access: shared ${driveFileId} with ${email} (payment ${paymentId})`);
             } catch (err) {
                 grantError = err.message;
                 console.error(`❌ grant-access: ${err.message}`);
             }
-            const isFolder = downloadLink.includes('/folders/');
-            downloadLink = isFolder
+            downloadLink = secureDownloadUrl || (isFolder
                 ? `https://drive.google.com/drive/folders/${driveFileId}?usp=drivesdk`
-                : `https://drive.google.com/file/d/${driveFileId}/view?usp=drivesdk`;
+                : `https://drive.google.com/file/d/${driveFileId}/view?usp=drivesdk`);
         }
 
         return res.status(200).json({
