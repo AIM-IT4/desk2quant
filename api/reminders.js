@@ -61,6 +61,36 @@ export default async function handler(req, res) {
         }
     }
 
+    // --- Ownership probe (diagnostic) -----------------------------------
+    // Five product files have copyRequiresWriterPermission = true, which hides
+    // Download/Print/Copy from readers, and the service account cannot clear it
+    // because it is not the owner. Before asking for an ownership transfer, ask
+    // Drive whether such a transfer is even permitted. Inspect-only unless
+    // attempt=true. Guarded by CRON_SECRET above.
+    if (req.query.action === 'ownership-probe') {
+        try {
+            const { probeOwnership } = await import('../lib/driveAudit.js');
+            const ids = (req.query.fileIds
+                ? String(req.query.fileIds).split(',')
+                : [
+                    '13JzCKxxRXKSp7rC00gxdmkrr_ZiuOk_F',
+                    '1Rz_8G6TsV-6wzf58_JHThgM2Ataf37jK',
+                    '1QNoTQNauNT7a-uXfzmC2f6q4Kv2JWbES',
+                    '1O9-GnC6GhKKkxu9J3VaDJ3quYy-UJ6Yq',
+                    '1I-ALHHi7k8VuYVrspEn-SSuuCmGfVYMY'
+                ]).map((x) => x.trim()).filter(Boolean);
+            const result = await probeOwnership({
+                clientEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+                privateKey: process.env.GOOGLE_PRIVATE_KEY,
+                fileIds: ids,
+                attempt: req.query.attempt === 'true'
+            });
+            return res.status(200).json(result);
+        } catch (err) {
+            return res.status(500).json({ error: String(err.message || err) });
+        }
+    }
+
     if (!BREVO_API_KEY) {
         return res.status(500).json({ error: 'BREVO_API_KEY not configured' });
     }
