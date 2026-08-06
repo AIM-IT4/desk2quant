@@ -548,7 +548,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 isValid = true;
                 appliedDiscount = 20;
                 window.activeModalCoupon.percent = 20; // Ensure checkout button uses 20%
-            } else if (inputCodeUpper && /^[A-Z]{3,40}20$/.test(inputCodeUpper)) {
+            } else if (inputCodeUpper && /^[A-Z]{3,40}20(?:[A-F0-9]{8})?$/.test(inputCodeUpper)) {
                 // Personalised post-purchase/post-booking coupon (e.g. AYAN20). Verified
                 // server-side by exact issued code against recommendation_emails via an
                 // RPC that never exposes the underlying table (see migrations 0006/0008),
@@ -2685,7 +2685,7 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
         name: 'Desk2Quant',
         description: productName,
         order_id: orderData.order_id,
-        handler: function (response) {
+        handler: async function (response) {
             const paymentId = response.razorpay_payment_id;
             // Prefer the email from the pre-checkout form, then whatever the
             // customer entered in Razorpay's own form. Never prompt() here:
@@ -2697,14 +2697,24 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
                 : (response.email || (orderData.notes && orderData.notes.customer_email) || '');
 
             // Grant Drive access server-side (fallback if webhook fails)
+            let grantAccessPromise = null;
             if (customerEmail) {
-                fetch('/api/grant-access', {
+                // B3/B7: grant-access returns the AUTHORITATIVE link -- a signed
+                // expiring URL when the buyer has no Google account, otherwise the
+                // Drive URL it just shared. Awaiting it does two things: the modal
+                // can show the working link instead of the raw Drive one (B3), and
+                // we stop opening Drive before the share completes, which produced
+                // the 'You need access' flash (B7).
+                grantAccessPromise = fetch('/api/grant-access', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ payment_id: paymentId, email: customerEmail })
                 }).then(r => r.json())
-                    .then(d => qmLog('🔑 grant-access:', d.drive_access_granted ? 'Drive access granted' : (d.drive_error || 'no Drive grant needed')))
-                    .catch(err => console.warn('grant-access call failed:', err));
+                    .then(d => {
+                        qmLog('grant-access:', d && d.drive_access_granted ? 'Drive access granted' : 'see response');
+                        return (d && d.download_link) ? d.download_link : null;
+                    })
+                    .catch(err => { console.warn('grant-access call failed:', err); return null; });
             }
 
             if (window.supabaseClient && customerEmail) {
@@ -2732,6 +2742,20 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
 
             // NOTE: purchase emails (customer + admin) are sent server-side by
             // /api/razorpay-webhook — do not send from frontend (caused duplicates)
+
+            // B3/B7: prefer the link grant-access just verified. Awaiting it means
+            // the share has completed before we hand the buyer a Drive URL, and a
+            // no-Google-account buyer gets their signed URL instead of a dead link.
+            // Bounded so a slow/hanging call can never block the success modal.
+            if (grantAccessPromise) {
+                try {
+                    const resolved = await Promise.race([
+                        grantAccessPromise,
+                        new Promise(r => setTimeout(() => r(null), 8000))
+                    ]);
+                    if (resolved) downloadLink = resolved;
+                } catch (_) { /* keep the checkout link */ }
+            }
 
             if (downloadLink && downloadLink !== 'YOUR_DRIVE_LINK_HERE') {
                 if (typeof window.showSuccessModal === 'function') {
@@ -4962,7 +4986,7 @@ async function resolveCartCouponDiscount(item, inputCode) {
     const hardcoded20 = mapKey ? CART_COUPON_MAP_20[mapKey].toUpperCase() : null;
     if (inputCodeUpper === expected20Code || inputCodeUpper === hardcoded20) return { valid: true, percent: 20 };
 
-    if (/^[A-Z]{3,40}20$/.test(inputCodeUpper)) {
+    if (/^[A-Z]{3,40}20(?:[A-F0-9]{8})?$/.test(inputCodeUpper)) {
         try {
             const rpcResp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/validate_recommendation_coupon_code`, {
                 method: 'POST',

@@ -401,6 +401,48 @@ export async function handleProductPurchase(data) {
         console.error('Error checking existing purchase:', err);
     }
 
+    // SECURITY (B2): `downloadLink` arrives from payment/order notes, which a
+    // client controls -- a raw Razorpay Checkout call can set them freely. So
+    // paying for a cheap product while stamping a premium bundle's Drive URL in
+    // the notes used to make the service account share the premium file.
+    //
+    // The price guard above only compares the captured amount against the
+    // price of `product_id`, so that attack pays the *correct* cheap price and
+    // sails through it. The link itself has to be re-derived server-side.
+    //
+    // Whenever product_id resolves to a row, that row's file_url wins outright
+    // and the client-supplied link is discarded. Falling back to the name match
+    // and the static map below keeps the legacy path (no product_id in notes)
+    // working exactly as before.
+    if (productId) {
+        try {
+            const byIdResponse = await fetch(
+                `${SUPABASE_URL}/rest/v1/products?id=eq.${encodeURIComponent(productId)}&select=name,file_url`,
+                {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                }
+            );
+            if (byIdResponse.ok) {
+                const rows = await byIdResponse.json();
+                const authoritative = Array.isArray(rows) ? rows.find((row) => row.file_url) : null;
+                if (authoritative) {
+                    if (downloadLink && downloadLink !== authoritative.file_url) {
+                        console.warn('🚨 Client-supplied download_link did not match the product row; ignoring it.', {
+                            paymentId, productId, supplied: downloadLink
+                        });
+                    }
+                    downloadLink = authoritative.file_url;
+                    console.log('Resolved download link server-side from product_id:', authoritative.name);
+                }
+            }
+        } catch (err) {
+            console.warn('Error resolving product by id, falling back to name match:', err.message);
+        }
+    }
+
     if (!downloadLink) {
         try {
             const productResponse = await fetch(
@@ -629,8 +671,46 @@ export async function handleProductPurchase(data) {
     }
 
     if (BREVO_API_KEY && underpaymentFlag) {
-        // Distinct alert so the underpayment is impossible to miss/confuse
-        // with a normal sale notification.
+        // B4: Send a clear explanation to the customer so they're not left
+        // wondering why they were charged and got nothing.
+        const customerHtml = `
+            <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
+                <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                    <div style="background-color: #ffffff; padding: 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;"><tr><td style="padding-right: 12px; vertical-align: middle;"><img src="https://desk2quant.com/assets/images/email-logo.png" width="32" height="32" alt="Desk2Quant" style="display: block; width: 32px; height: 32px; border: 0; outline: none; text-decoration: none; color: #1a1a1a; font-size: 20px; font-weight: bold;"></td><td style="vertical-align: middle;"><span style="color: #1a1a1a; font-size: 24px; font-weight: bold; letter-spacing: 1px;">Desk2Quant</span></td></tr></table>
+                    </div>
+                    <div style="padding: 30px;">
+                        <h2 style="color: #991b1b; margin: 0 0 20px 0;">Payment received, awaiting review</h2>
+                        <p style="font-size: 16px; margin-bottom: 20px;">Hi <strong>${customerName}</strong>,</p>
+                        <p style="font-size: 14px; line-height: 1.6; margin-bottom: 20px;">We received your payment for <strong>${productName}</strong>, but the amount doesn't match our current pricing. This can happen if a discount expired mid-checkout or if there was an unintended mismatch.</p>
+                        <p style="font-size: 14px; line-height: 1.6; margin-bottom: 20px;">We're reviewing your order manually and will send your download link or refund within 24 hours. If you have questions, reply to this email with your <strong>Payment ID: ${paymentId}</strong>.</p>
+                        <p style="font-size: 14px; line-height: 1.6; margin-bottom: 0;">Thanks for your patience.</p>
+                    </div>
+                    <div style="background-color: #1a1a1a; padding: 25px 20px; text-align: center; color: #888; font-size: 12px;">
+                        <p style="margin: 0 0 10px 0;">Sent by Desk2Quant</p>
+                        <p style="margin: 0;">Have an issue? Reply to this email.</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        try {
+            await fetch('https://api.brevo.com/v3/smtp/email', {
+                method: 'POST',
+                headers: { 'accept': 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
+                body: JSON.stringify({
+                    sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+                    replyTo: { email: REPLY_TO_EMAIL, name: SENDER_NAME },
+                    to: [{ email: customerEmail, name: customerName }],
+                    subject: `Your order for ${productName} is under review`,
+                    htmlContent: customerHtml,
+                    textContent: `Hi ${customerName},\n\nWe received your payment for ${productName}, but the amount doesn't match our current pricing. This can happen if a discount expired mid-checkout.\n\nWe're reviewing your order manually and will send your download link or refund within 24 hours.\n\nPayment ID: ${paymentId}\n\nHave questions? Reply to this email.\n\nSent by Desk2Quant`
+                })
+            });
+        } catch (err) {
+            console.error('Error sending underpaid customer email:', err);
+        }
+
+        // Distinct admin alert so the underpayment is impossible to miss.
         try {
             const alertHtml = `
                 <div style="font-family: Arial, sans-serif; padding: 20px; color: #1a1a1a;">
@@ -1142,6 +1222,44 @@ async function handleSessionBooking(data) {
         console.error('Error checking existing booking:', err);
     }
 
+    // A3: the browser dropdown was the only thing stopping two people paying
+    // for the same slot. Re-check server-side, duration-aware: a 60-minute
+    // booking must also block the 30-minute slot that starts inside it.
+    // A clash is NOT refused -- the customer has already paid -- it is logged
+    // as 'pending' so a human reschedules instead of double-booking silently.
+    let slotConflict = false;
+    if (sessionDate && sessionTime) {
+        try {
+            const dayResp = await fetch(
+                `${SUPABASE_URL}/rest/v1/bookings?booking_date=eq.${encodeURIComponent(sessionDate)}&select=booking_time,service_duration,status,payment_id`,
+                { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+            );
+            if (dayResp.ok) {
+                const sameDay = await dayResp.json();
+                const toMin = (t) => {
+                    const p = String(t || '').split(':');
+                    return (parseInt(p[0], 10) || 0) * 60 + (parseInt(p[1], 10) || 0);
+                };
+                const newStart = toMin(sessionTime);
+                const newEnd = newStart + (parseInt(sessionDuration, 10) || 30);
+                slotConflict = (Array.isArray(sameDay) ? sameDay : []).some((b) => {
+                    if (b.payment_id === paymentId) return false;
+                    if (b.status === 'cancelled' || b.status === 'rejected') return false;
+                    const s0 = toMin(b.booking_time);
+                    const e0 = s0 + (parseInt(b.service_duration, 10) || 30);
+                    return newStart < e0 && s0 < newEnd;
+                });
+                if (slotConflict) {
+                    console.error('🚨 SLOT CONFLICT — double booking paid for:', {
+                        paymentId, sessionDate, sessionTime, sessionDuration, customerEmail
+                    });
+                }
+            }
+        } catch (err) {
+            console.warn('Slot conflict check failed (proceeding):', err.message);
+        }
+    }
+
     // 2. Log to Supabase bookings table
     try {
         const insertResponse = await fetch(`${SUPABASE_URL}/rest/v1/bookings`, {
@@ -1165,7 +1283,7 @@ async function handleSessionBooking(data) {
                 // Underpaid bookings land as 'pending' (not auto-confirmed 'upcoming')
                 // so they surface for manual review instead of silently granting a
                 // session at a tampered price; the meet link is withheld too.
-                status: underpaymentFlag ? 'pending' : 'upcoming',
+                status: (underpaymentFlag || slotConflict) ? 'pending' : 'upcoming',
                 payment_id: paymentId,
                 meet_link: underpaymentFlag ? null : meetLink,
                 customer_country: notes.customer_country || notes.country || 'Unknown'
@@ -1175,11 +1293,18 @@ async function handleSessionBooking(data) {
         if (!insertResponse.ok) {
             const errorText = await insertResponse.text();
             console.error('Supabase booking insert failed:', errorText);
-        } else {
-            console.log('✅ Booking logged to Supabase');
+            // A4/A5: Throw so the webhook 500s → Razorpay retries. Without this,
+            // the confirmation email below sends for a booking that doesn't exist.
+            throw new Error(`Booking insert failed (${insertResponse.status}): ${errorText}`);
         }
+        console.log('✅ Booking logged to Supabase');
     } catch (err) {
+        // A4/A5: the throw above is only useful if it escapes. This catch used to
+        // swallow it, so a failed insert still fell through to the confirmation
+        // email -- the customer was told a booking existed that did not. Rethrow
+        // so the handler returns 500 and Razorpay retries the webhook.
         console.error('Error logging booking to Supabase:', err);
+        throw err;
     }
 
     // 3. Send confirmation email to customer via Brevo (withheld if the
