@@ -31,3 +31,15 @@ graft/
 # blocked from web access by the /scripts/:path* rewrite in vercel.json instead.
 supabase/
 .claude/
+
+# Server-only source. The vercel.json /lib/:path* rewrite does NOT seal these:
+# a rewrite only applies when no static file matches, and outputDirectory "."
+# publishes lib/ as static assets, so /lib/pricing.js served 19829 bytes of real
+# source while /lib/does-not-exist.js correctly hit the 404 page. Only excluding
+# the files from the upload actually removes them.
+#
+# Safe because Vercel BUNDLES each serverless function at build time, tracing
+# and inlining its imports; the functions get their own copy of lib/*.js. No
+# browser code references /lib/ (verified: zero src= or import= hits in *.html).
+lib/
+api/_gauntlet-entitlement.js
