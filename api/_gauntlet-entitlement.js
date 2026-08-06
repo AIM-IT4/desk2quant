@@ -16,7 +16,7 @@ export const PROJECT_PRODUCTS = {
 const norm = (v) => String(v || '').trim().toLowerCase();
 
 // Must stay identical to the list in lib/pricing.js and api/grant-access.js.
-const ZERO_DECIMAL_CURRENCIES = ['JPY', 'KRW', 'VND', 'IDR', 'CLP', 'PYG', 'UGX'];
+const ZERO_DECIMAL_CURRENCIES = ['JPY', 'KRW', 'VND', 'CLP', 'PYG', 'UGX'];
 
 /**
  * SECURITY: order notes are attacker-influenceable (a raw Razorpay Checkout

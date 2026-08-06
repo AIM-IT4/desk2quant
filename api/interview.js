@@ -159,7 +159,7 @@ export default async function handler(req, res) {
                 return res.status(402).json({ error: `Payment not captured (status: ${payment.status})` });
             }
             const expected = await getExpectedInterviewOrder(durationMinutes, payment.currency);
-            const capturedMajor = ['JPY', 'KRW', 'VND', 'IDR', 'CLP', 'PYG', 'UGX'].includes(String(payment.currency).toUpperCase())
+            const capturedMajor = ['JPY', 'KRW', 'VND', 'CLP', 'PYG', 'UGX'].includes(String(payment.currency).toUpperCase())
                 ? payment.amount
                 : payment.amount / 100;
             if (!expected.ok || !isWithinTolerance(capturedMajor, expected.amountMajor)) {

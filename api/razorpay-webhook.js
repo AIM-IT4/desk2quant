@@ -110,7 +110,7 @@ export default async function handler(req, res) {
             const payment = event.payload.payment.entity;
             const paymentId = payment.id;
             const currency = payment.currency;
-            const zeroDecimalCurrencies = ['JPY', 'KRW', 'VND', 'IDR', 'CLP', 'PYG', 'UGX'];
+            const zeroDecimalCurrencies = ['JPY', 'KRW', 'VND', 'CLP', 'PYG', 'UGX'];
             const amount = zeroDecimalCurrencies.includes(currency) ? payment.amount : payment.amount / 100;
             const customerEmail = payment.email;
             const customerName = payment.notes?.customer_name || 'Customer';

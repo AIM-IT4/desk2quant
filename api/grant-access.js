@@ -16,7 +16,7 @@ import {
 // unit, so no /100 conversion. MUST stay identical to the lists in
 // lib/pricing.js and api/razorpay-webhook.js -- a divergence makes the
 // price-tamper guard compare a 100x-wrong amount and wave through underpayment.
-const ZERO_DECIMAL_CURRENCIES = ['JPY', 'KRW', 'VND', 'IDR', 'CLP', 'PYG', 'UGX'];
+const ZERO_DECIMAL_CURRENCIES = ['JPY', 'KRW', 'VND', 'CLP', 'PYG', 'UGX'];
 
 function normalizeProductName(value) {
     return String(value || '')

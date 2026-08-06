@@ -1402,7 +1402,7 @@ const CURRENCY_MAP = {
 };
 
 // Currencies with no fractional subunits for payment gateways
-const ZERO_DECIMAL_CURRENCIES = new Set(['JPY', 'KRW', 'VND']);
+const ZERO_DECIMAL_CURRENCIES = new Set(['JPY', 'KRW', 'VND', 'CLP', 'PYG', 'UGX']);
 
 function getSubunitMultiplier(currencyCode = 'INR') {
     return ZERO_DECIMAL_CURRENCIES.has(String(currencyCode).toUpperCase()) ? 1 : 100;
