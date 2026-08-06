@@ -18,3 +18,16 @@ _couponfix_backup/
 
 # Tests are not needed at runtime.
 test/
+
+# graft's cache contains extracted source INCLUDING the gauntlet reference
+# solutions. It is in .gitignore, but Vercel CLI uses THIS file instead of
+# .gitignore, so without this line a `vercel --prod` from a dev machine would
+# publish the answer key under outputDirectory ".".
+graft/
+
+# Build/tooling that must never be web-served.
+# NOTE: scripts/ is deliberately NOT listed here — buildCommand runs
+# `node scripts/build-seo.js`, so excluding it would break the build. It is
+# blocked from web access by the /scripts/:path* rewrite in vercel.json instead.
+supabase/
+.claude/

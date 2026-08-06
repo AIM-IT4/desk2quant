@@ -1,4 +1,50 @@
 import https from 'https';
+import crypto from 'crypto';
+
+// --- Interview session tokens ------------------------------------------------
+//
+// SECURITY: the paywall used to gate only `action: 'start'`. `respond` and
+// `evaluate` had no check at all -- and the entire interview runs through
+// `respond` -- so a direct POST gave anyone unlimited unauthenticated Groq
+// access, and one paid `paymentId` could start unlimited sessions.
+//
+// `start` now issues a short-lived HMAC-signed token bound to the duration that
+// was actually paid for. `respond`/`evaluate` require it. The token expires when
+// the purchased time does, so it also stops a single payment being replayed into
+// an endless session and caps the free trial to its 10 minutes.
+const SESSION_TOKEN_SECRET = process.env.INTERVIEW_SESSION_SECRET
+    || process.env.RAZORPAY_KEY_SECRET
+    || process.env.CRON_SECRET;
+
+// Interviews run slightly over: allow a grace period past the paid duration so a
+// candidate mid-answer is never cut off by the token rather than by the UI.
+const SESSION_GRACE_MS = 5 * 60 * 1000;
+
+function signSessionToken(payload) {
+    const body = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
+    const sig = crypto.createHmac('sha256', SESSION_TOKEN_SECRET).update(body).digest('base64url');
+    return `${body}.${sig}`;
+}
+
+/** Returns the decoded payload, or null if the token is missing/forged/expired. */
+function verifySessionToken(token) {
+    if (!token || typeof token !== 'string' || !SESSION_TOKEN_SECRET) return null;
+    const [body, sig] = token.split('.');
+    if (!body || !sig) return null;
+
+    const expected = crypto.createHmac('sha256', SESSION_TOKEN_SECRET).update(body).digest('base64url');
+    const a = Buffer.from(sig);
+    const b = Buffer.from(expected);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+
+    try {
+        const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+        if (!payload.exp || Date.now() > payload.exp) return null;
+        return payload;
+    } catch (_) {
+        return null;
+    }
+}
 
 // Helper: HTTP Request (Replace fetch to avoid dependency issues)
 function httpRequest(url, options, postData) {
@@ -43,7 +89,7 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Server configuration error: Missing API Key' });
     }
 
-    const { action, messages, topic, difficulty, paymentId, durationMinutes, email, name, interviewerGender } = req.body;
+    const { action, messages, topic, difficulty, paymentId, durationMinutes, email, name, interviewerGender, sessionToken } = req.body;
     console.log('Action:', action, 'Topic:', topic, 'Gender:', interviewerGender);
 
     // --- Product recommendation assistant --------------------------------
@@ -113,7 +159,7 @@ export default async function handler(req, res) {
                 return res.status(402).json({ error: `Payment not captured (status: ${payment.status})` });
             }
             const expected = await getExpectedInterviewOrder(durationMinutes, payment.currency);
-            const capturedMajor = ['JPY', 'KRW', 'VND'].includes(String(payment.currency).toUpperCase())
+            const capturedMajor = ['JPY', 'KRW', 'VND', 'IDR', 'CLP', 'PYG', 'UGX'].includes(String(payment.currency).toUpperCase())
                 ? payment.amount
                 : payment.amount / 100;
             if (!expected.ok || !isWithinTolerance(capturedMajor, expected.amountMajor)) {
@@ -123,6 +169,23 @@ export default async function handler(req, res) {
         } catch (err) {
             console.error('Interview payment verification error:', err.message);
             return res.status(500).json({ error: 'Could not verify payment. Please try again.' });
+        }
+    }
+
+    // The conversation itself runs through `respond`, and the scorecard through
+    // `evaluate`. Both must present the token minted by `start` -- without this
+    // the paywall above only ever protected the opening greeting.
+    if (action === 'respond' || action === 'evaluate') {
+        if (!SESSION_TOKEN_SECRET) {
+            console.error('CRITICAL: no secret available to verify interview session tokens');
+            return res.status(500).json({ error: 'Server configuration error' });
+        }
+        const session = verifySessionToken(sessionToken);
+        if (!session) {
+            return res.status(401).json({
+                error: 'Your interview session has expired or is invalid. Please start a new interview.',
+                sessionExpired: true
+            });
         }
     }
 
@@ -227,7 +290,19 @@ IMPORTANT:
             }
 
             const data = await response.json();
-            return res.status(200).json({ reply: data.choices[0].message.content });
+
+            // Mint the session token that `respond`/`evaluate` require. Bound to
+            // the duration actually paid for, so the session cannot outlive it.
+            const minutes = Number(durationMinutes) > 0 ? Number(durationMinutes) : 10;
+            const token = SESSION_TOKEN_SECRET
+                ? signSessionToken({
+                    minutes,
+                    paid: minutes > 10,
+                    exp: Date.now() + (minutes * 60 * 1000) + SESSION_GRACE_MS
+                })
+                : null;
+
+            return res.status(200).json({ reply: data.choices[0].message.content, sessionToken: token });
         }
 
         // 2. EVALUATE (END)

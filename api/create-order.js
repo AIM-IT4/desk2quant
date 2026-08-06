@@ -89,6 +89,18 @@ export default async function handler(req, res) {
                 .map((li) => `${li.productId}:${li.quantity}:${li.couponCode || ''}`)
                 .join(',');
             orderNotes.cart_item_count = String(expected.lineItems.length);
+
+            // Razorpay silently truncates note values over 256 chars, which would
+            // leave the webhook parsing a mangled UUID and shipping fewer products
+            // than the customer paid for. Fail loudly instead of shipping a
+            // corrupt order. lib/pricing.js caps the item count so this should be
+            // unreachable -- this is the backstop if that cap ever drifts.
+            if (orderNotes.cart_items.length > 256) {
+                console.error('❌ cart_items note exceeds Razorpay 256-char limit:', orderNotes.cart_items.length);
+                return res.status(400).json({
+                    error: 'Too many items in one checkout — please split into two orders'
+                });
+            }
         }
 
         const orderPayload = {

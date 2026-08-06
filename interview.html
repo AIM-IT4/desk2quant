@@ -1398,7 +1398,10 @@
         let finalTranscript = '';
         let currentPuterAudio = null; // Track audio for stopping on exit
 
-        recognition.onresult = (event) => {
+        // Handlers only attach when the browser has the Web Speech API. Firefox
+        // does not, so `recognition` stays null and these assignments would
+        // throw at parse-time-adjacent script execution, killing the whole page.
+        if (recognition) recognition.onresult = (event) => {
             if (isAIProcessing) return; // Ignore input if AI is thinking
 
             let interim = '';
@@ -1434,7 +1437,7 @@
             }
         };
 
-        recognition.onend = () => {
+        if (recognition) recognition.onend = () => {
             // Auto-restart if mode is ON and we are not engaged in AI Speech/Processing
             if (autoVoiceMode && !isAIProcessing && !isSpeaking) {
                 try {
@@ -1446,7 +1449,7 @@
             }
         };
 
-        recognition.onerror = (event) => {
+        if (recognition) recognition.onerror = (event) => {
             console.error('Speech error:', event.error);
             document.getElementById('mic-btn').classList.remove('listening');
             autoVoiceMode = false;
@@ -1711,7 +1714,7 @@
             // Stop Audio & Mic Immediately
             if (currentPuterAudio) { currentPuterAudio.pause(); currentPuterAudio = null; }
             if (synth.speaking) { synth.cancel(); }
-            recognition.stop();
+            if (recognition) recognition.stop();
             clearTimeout(silenceTimer);
 
             // UI Updates - These IDs are not in the original HTML, so commenting out or adapting
@@ -1829,6 +1832,11 @@
         }
 
         // ── API Call ──
+        // Signed, expiring proof that this browser paid for the session. Minted
+        // server-side by the `start` action; `respond` and `evaluate` are
+        // rejected with 401 without it.
+        let interviewSessionToken = '';
+
         async function callInterviewAPI(action, extraData = {}) {
             const maxRetries = 2;
             let lastError = null;
@@ -1843,6 +1851,7 @@
                             messages: conversationHistory,
                             topic: selectedTopic,
                             difficulty: selectedDifficulty,
+                            sessionToken: interviewSessionToken,
                             ...extraData
                         }),
                         timeout: 30000 // 30 second timeout
@@ -1895,6 +1904,9 @@
                     interviewerGender: interviewerGender
                 });
 
+                // Carry the signed session proof into every later API call.
+                interviewSessionToken = data.sessionToken || '';
+
                 // Switch to chat screen
                 document.getElementById('setup-screen').style.display = 'none';
                 document.getElementById('chat-screen').style.display = 'flex';
@@ -1938,7 +1950,7 @@
             // Stop mic while processing
             if (autoVoiceMode) {
                 isAIProcessing = true; // Lock the mic
-                recognition.stop();
+                if (recognition) recognition.stop();
                 clearTimeout(silenceTimer);
                 document.getElementById('mic-btn').classList.remove('listening');
                 document.getElementById('mic-btn').style.color = ''; // Reset color

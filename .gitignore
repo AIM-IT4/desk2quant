@@ -73,3 +73,6 @@ _couponfix_backup/
 _preview.html
 _*.js
 _*.ps1
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+graft/

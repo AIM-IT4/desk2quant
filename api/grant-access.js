@@ -12,6 +12,12 @@ import {
     grantDrivePermissionOrSignedFallback as grantDrivePermission
 } from '../lib/secureDownload.js';
 
+// Zero-decimal currencies (Razorpay convention): the smallest unit IS the major
+// unit, so no /100 conversion. MUST stay identical to the lists in
+// lib/pricing.js and api/razorpay-webhook.js -- a divergence makes the
+// price-tamper guard compare a 100x-wrong amount and wave through underpayment.
+const ZERO_DECIMAL_CURRENCIES = ['JPY', 'KRW', 'VND', 'IDR', 'CLP', 'PYG', 'UGX'];
+
 function normalizeProductName(value) {
     return String(value || '')
         .trim()
@@ -186,7 +192,7 @@ export default async function handler(req, res) {
 
             try {
                 const { getExpectedCartOrder, isWithinTolerance } = await import('../lib/pricing.js');
-                const capturedMajor = ['JPY', 'KRW', 'VND'].includes(String(payment.currency).toUpperCase())
+                const capturedMajor = ZERO_DECIMAL_CURRENCIES.includes(String(payment.currency).toUpperCase())
                     ? payment.amount
                     : payment.amount / 100;
                 const expected = await getExpectedCartOrder(
@@ -293,7 +299,7 @@ export default async function handler(req, res) {
         if (productId) {
             try {
                 const expected = await getExpectedProductOrder(productId, payment.currency, couponCode);
-                const capturedMajor = ['JPY', 'KRW', 'VND'].includes(String(payment.currency).toUpperCase())
+                const capturedMajor = ZERO_DECIMAL_CURRENCIES.includes(String(payment.currency).toUpperCase())
                     ? payment.amount
                     : payment.amount / 100;
                 if (expected.ok && !isWithinTolerance(capturedMajor, expected.amountMajor)) {

@@ -1,0 +1,71 @@
+-- RLS hardening for products / purchases / storage.objects.
+--
+-- ⚠️  DO NOT RUN THIS YET. It WILL break admin.html and the checkout flow as
+-- they are written today. It is committed as the documented target state plus
+-- the prerequisite work, not as a ready-to-apply migration.
+--
+-- WHY IT IS BLOCKED
+-- -----------------
+-- Everything that writes to Supabase from a browser uses the same anon /
+-- publishable key:
+--   * admin.html    - reads `purchases` (customer name/email/amount), writes
+--                     `products`, `sessions`, `blogs`, and uploads to the
+--                     `resources` / `product-covers` storage buckets. Its
+--                     password overlay is cosmetic: the password is checked by
+--                     a server endpoint, but every DB call afterwards still
+--                     goes out with the anon key, so anyone holding that key
+--                     (it is in the page source) can do the same operations
+--                     without ever seeing the login screen.
+--   * script.js     - inserts into `purchases` at checkout (lines ~2718, ~4315).
+--
+-- Consequences of today's policies:
+--   products          FOR ALL USING (true)   -> anon can edit/delete any product
+--   purchases         FOR SELECT USING (true)-> anon can read every customer's
+--                                               name, email and amount paid
+--   storage.objects   INSERT/UPDATE/DELETE   -> anon can overwrite or delete any
+--                                               paid deliverable
+--
+-- PREREQUISITE (must land before the statements below are run)
+-- -----------------------------------------------------------
+--   1. Provision SUPABASE_SERVICE_ROLE_KEY in Vercel (server-side only; it must
+--      never appear in a page, in generate-config.js output, or in git).
+--   2. Move every admin.html mutation and every `purchases` read behind a
+--      server route that authenticates with the existing admin password and
+--      then talks to Supabase with the service-role key. Same for the storage
+--      uploads/removals.
+--   3. Move script.js's purchases INSERT server-side. api/razorpay-webhook.js
+--      is already the authoritative writer for paid orders, so this is mostly a
+--      deletion.
+--   4. Rotate the anon key afterwards - the current one has been public.
+--
+-- Only once (1)-(3) are done do the statements below become safe, because the
+-- service role bypasses RLS and so is unaffected by them.
+
+-- ---------------------------------------------------------------------------
+-- TARGET STATE (run only after the prerequisite above)
+-- ---------------------------------------------------------------------------
+
+-- Products: public may read, nobody may write with the anon key.
+-- DROP POLICY IF EXISTS "Enable all for everyone (Admin)" ON products;
+-- (the existing "Public products are viewable by everyone" SELECT policy stays)
+
+-- Sessions: same shape.
+-- DROP POLICY IF EXISTS "Enable all for everyone (Admin)" ON sessions;
+
+-- Purchases: no anon reads at all. Buyers use api/my-bookings / grant-access,
+-- which verify against Razorpay rather than trusting a client-supplied email.
+-- DROP POLICY IF EXISTS "Public can view purchases" ON purchases;
+-- DROP POLICY IF EXISTS "Public can insert purchases" ON purchases;
+
+-- Bookings: an anon SELECT/UPDATE with USING (true) exposes and allows edits to
+-- every booking. Reads should go through the server route instead.
+-- DROP POLICY IF EXISTS "Users can view their own bookings" ON bookings;
+-- DROP POLICY IF EXISTS "Users can update their own bookings" ON bookings;
+-- (keep "Anyone can create bookings" so the public booking form still works)
+
+-- Storage: keep public reads of the two public buckets, drop anon writes.
+-- DROP POLICY IF EXISTS "Public Upload" ON storage.objects;
+-- DROP POLICY IF EXISTS "Enable delete" ON storage.objects;
+-- DROP POLICY IF EXISTS "Enable update" ON storage.objects;
+-- (keep "Public Access" SELECT - cover images and free resources are public by
+--  design; paid deliverables are served through api/secure-download instead)

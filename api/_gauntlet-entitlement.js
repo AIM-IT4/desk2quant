@@ -15,6 +15,35 @@ export const PROJECT_PRODUCTS = {
 
 const norm = (v) => String(v || '').trim().toLowerCase();
 
+// Must stay identical to the list in lib/pricing.js and api/grant-access.js.
+const ZERO_DECIMAL_CURRENCIES = ['JPY', 'KRW', 'VND', 'IDR', 'CLP', 'PYG', 'UGX'];
+
+/**
+ * SECURITY: order notes are attacker-influenceable (a raw Razorpay Checkout
+ * call can set them), so matching product_id alone would let someone pay ₹1
+ * with the paid project's id in the notes and unlock it. Re-check the captured
+ * amount against the real server-side price, exactly as grant-access.js does.
+ * Returns null when the payment is acceptable, or a { ok:false, ... } refusal.
+ */
+async function verifyAmount(payment, productId, couponCode) {
+    try {
+        const { getExpectedProductOrder, isWithinTolerance } = await import('../lib/pricing.js');
+        const expected = await getExpectedProductOrder(productId, payment.currency, couponCode);
+        if (!expected.ok) return null; // price unresolvable -- fall back to notes match
+        const capturedMajor = ZERO_DECIMAL_CURRENCIES.includes(String(payment.currency).toUpperCase())
+            ? payment.amount
+            : payment.amount / 100;
+        if (!isWithinTolerance(capturedMajor, expected.amountMajor)) {
+            console.error('🚨 gauntlet entitlement: underpayment, refusing:', { paymentId: payment.id, productId, capturedMajor, expected: expected.amountMajor });
+            return { ok: false, status: 402, error: 'Captured amount does not match the project price. This purchase has been flagged for review.' };
+        }
+        return null;
+    } catch (err) {
+        console.error('gauntlet entitlement price verification error:', err.message);
+        return { ok: false, status: 500, error: 'Could not verify payment amount. Please try again or contact support.' };
+    }
+}
+
 /**
  * Resolve whether `paymentId` (owned by `email`) unlocks `slug`.
  * Returns { ok: true } or { ok: false, status, error }.
@@ -73,13 +102,45 @@ export async function verifyProjectEntitlement(slug, paymentId, email) {
         } catch (_) { /* fall through to the checks below */ }
     }
 
-    if (norm(notes.product_id) === norm(wantProductId)) return { ok: true };
+    if (norm(notes.product_id) === norm(wantProductId)) {
+        const refusal = await verifyAmount(payment, wantProductId, notes.coupon_code || null);
+        return refusal || { ok: true };
+    }
 
     // Cart checkouts store "productId:qty:coupon" triples instead.
     const cart = String(notes.cart_items || '');
     if (cart) {
-        const ids = cart.split(',').map((part) => norm(part.split(':')[0]));
-        if (ids.includes(norm(wantProductId))) return { ok: true };
+        const triples = cart.split(',').map((part) => part.split(':'));
+        const mine = triples.find((parts) => norm(parts[0]) === norm(wantProductId));
+        if (mine) {
+            // The captured amount covers the whole cart, so price the whole
+            // cart and compare against that -- checking this one line item
+            // against the total would reject every legitimate multi-item order.
+            try {
+                const { getExpectedCartOrder, isWithinTolerance } = await import('../lib/pricing.js');
+                const items = triples
+                    .filter((parts) => parts[0])
+                    .map((parts) => ({
+                        product_id: String(parts[0]).trim(),
+                        quantity: Number(parts[1]) > 0 ? Number(parts[1]) : 1,
+                        coupon_code: parts[2] ? String(parts[2]).trim() : null
+                    }));
+                const expected = await getExpectedCartOrder(items, payment.currency, notes.coupon_code || null);
+                if (expected.ok) {
+                    const capturedMajor = ZERO_DECIMAL_CURRENCIES.includes(String(payment.currency).toUpperCase())
+                        ? payment.amount
+                        : payment.amount / 100;
+                    if (!isWithinTolerance(capturedMajor, expected.amountMajor)) {
+                        console.error('🚨 gauntlet entitlement: cart underpayment, refusing:', { paymentId: payment.id, capturedMajor, expected: expected.amountMajor });
+                        return { ok: false, status: 402, error: 'Captured amount does not match the cart total. This purchase has been flagged for review.' };
+                    }
+                }
+            } catch (err) {
+                console.error('gauntlet entitlement cart price verification error:', err.message);
+                return { ok: false, status: 500, error: 'Could not verify payment amount. Please try again or contact support.' };
+            }
+            return { ok: true };
+        }
     }
 
     return { ok: false, status: 403, error: 'That payment is not for this project.' };

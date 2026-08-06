@@ -536,7 +536,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (inputCodeUpper && couponInfo.code && inputCodeUpper === couponInfo.code.toUpperCase()) {
                 isValid = true;
                 appliedDiscount = parseInt(couponInfo.percent) || 0;
-            } else if (inputCodeUpper && (inputCodeUpper === 'BUNDLE15' || inputCodeUpper.endsWith('15'))) {
+            } else if (inputCodeUpper && inputCodeUpper === 'BUNDLE15') {
                 isValid = true;
                 appliedDiscount = 15;
                 window.activeModalCoupon.percent = 15; // Ensure checkout button uses 15%
@@ -4954,7 +4954,7 @@ async function resolveCartCouponDiscount(item, inputCode) {
         return { valid: true, percent: item.productDiscountPercent || 0 };
     }
     if (inputCodeUpper === 'VASUDHA30') return { valid: true, percent: 30 };
-    if (inputCodeUpper === 'BUNDLE15' || inputCodeUpper.endsWith('15')) return { valid: true, percent: 15 };
+    if (inputCodeUpper === 'BUNDLE15') return { valid: true, percent: 15 };
 
     const expected20Code = item.productCouponCode ? String(item.productCouponCode).replace('10', '20').toUpperCase() : null;
     const productName = String(item.name || '').toLowerCase().trim();

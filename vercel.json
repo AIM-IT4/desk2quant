@@ -38,6 +38,30 @@
   ],
   "rewrites": [
     {
+      "source": "/lib/:path*",
+      "destination": "/404.html"
+    },
+    {
+      "source": "/api/_:path*",
+      "destination": "/404.html"
+    },
+    {
+      "source": "/scripts/:path*",
+      "destination": "/404.html"
+    },
+    {
+      "source": "/supabase/:path*",
+      "destination": "/404.html"
+    },
+    {
+      "source": "/graft/:path*",
+      "destination": "/404.html"
+    },
+    {
+      "source": "/test/:path*",
+      "destination": "/404.html"
+    },
+    {
       "source": "/gauntlet/projects/01-sofr-curve/sample_tests.py",
       "destination": "/404.html"
     },

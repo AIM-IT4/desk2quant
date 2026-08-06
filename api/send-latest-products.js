@@ -3,16 +3,17 @@
 // Test mode: GET /api/send-latest-products?secret=YOUR_CRON_SECRET&test_email=someone@example.com
 // Sends the 3 most recently added products to every customer who hasn't purchased them
 
+import { authorizeCronRequest } from '../lib/cronAuth.js';
+
 export default async function handler(req, res) {
     if (req.method !== 'GET' && req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    // Auth check
-    const cronSecret = process.env.CRON_SECRET;
-    const querySecret = req.query?.secret;
-    if (cronSecret && querySecret !== cronSecret) {
-        return res.status(401).json({ error: 'Unauthorized — add ?secret=YOUR_CRON_SECRET' });
+    // Auth check — fails closed if CRON_SECRET is unset (see lib/cronAuth.js)
+    const auth = authorizeCronRequest(req);
+    if (!auth.ok) {
+        return res.status(auth.status).json({ error: auth.error });
     }
 
     const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';

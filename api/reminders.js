@@ -8,6 +8,9 @@
 
 import { sendRecommendationEmail } from '../lib/recommendationEmail.js';
 
+// Module-scope constants so sendReminder can access them
+const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || process.env.SENDER_EMAIL || 'desk2quant@gmail.com';
+
 export default async function handler(req, res) {
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -34,7 +37,6 @@ export default async function handler(req, res) {
     const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'desk2quant@gmail.com';
     const SENDER_EMAIL = process.env.SENDER_EMAIL || 'desk2quant@gmail.com';
     const SENDER_NAME = process.env.SENDER_NAME || 'Desk2Quant';
-    const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || SENDER_EMAIL;
 
     // --- One-off Drive permission audit -------------------------------
     // Past buyers were granted role:'writer' on the master product files.
