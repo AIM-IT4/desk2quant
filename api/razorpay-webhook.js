@@ -26,7 +26,7 @@ export const config = {
 // nothing -- the catch blocks only console.error.
 const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL
     || process.env.SENDER_EMAIL
-    || 'desk2quant@gmail.com';
+    || 'hello@desk2quant.com';
 
 async function getRawBody(readable) {
     const chunks = [];
@@ -57,8 +57,18 @@ export default async function handler(req, res) {
     const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
     const SUPABASE_KEY = process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRudGFibXl1cmxybG5vYWpkbmphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMDEyNjUsImV4cCI6MjA4NTY3NzI2NX0.PYpNd_t_px09zi2d5WGjFVOB23sjb3ZPuAnxagYshe0';
     const BREVO_API_KEY = process.env.BREVO_API_KEY;
-    const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'desk2quant@gmail.com';
-    const SENDER_EMAIL = process.env.SENDER_EMAIL || 'desk2quant@gmail.com';
+    // Warn loudly rather than silently misrouting. Sale alerts went to the
+    // gmail fallback because ADMIN_EMAIL was simply never set, and nothing in
+    // the logs said so -- the same silent-fallback shape as the REPLY_TO_EMAIL
+    // bug that killed every purchase email.
+    if (!process.env.ADMIN_EMAIL) {
+        console.warn('CONFIG: ADMIN_EMAIL not set - sale alerts fall back to hello@desk2quant.com');
+    }
+    if (!process.env.SENDER_EMAIL) {
+        console.warn('CONFIG: SENDER_EMAIL not set - sending as hello@desk2quant.com');
+    }
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'hello@desk2quant.com';
+    const SENDER_EMAIL = process.env.SENDER_EMAIL || 'hello@desk2quant.com';
     const SENDER_NAME = process.env.SENDER_NAME || 'Desk2Quant';
 
     // 1. Capture Raw Body for Signature Verification

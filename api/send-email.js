@@ -112,7 +112,7 @@ export default async function handler(req, res) {
         }
 
         const brevoApiKey = process.env.BREVO_API_KEY;
-        const senderEmail = process.env.SENDER_EMAIL || 'desk2quant@gmail.com';
+        const senderEmail = process.env.SENDER_EMAIL || 'hello@desk2quant.com';
         const senderName = process.env.SENDER_NAME || 'Desk2Quant';
 
         if (!brevoApiKey) {

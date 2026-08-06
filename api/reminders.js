@@ -9,7 +9,7 @@
 import { sendRecommendationEmail } from '../lib/recommendationEmail.js';
 
 // Module-scope constants so sendReminder can access them
-const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || process.env.SENDER_EMAIL || 'desk2quant@gmail.com';
+const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || process.env.SENDER_EMAIL || 'hello@desk2quant.com';
 
 export default async function handler(req, res) {
     // CORS headers
@@ -34,8 +34,11 @@ export default async function handler(req, res) {
     const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
     const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_OhbTYIuMYgGgmKPQJ9W7RA_rhKyaad0';
     const BREVO_API_KEY = process.env.BREVO_API_KEY;
-    const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'desk2quant@gmail.com';
-    const SENDER_EMAIL = process.env.SENDER_EMAIL || 'desk2quant@gmail.com';
+    if (!process.env.ADMIN_EMAIL) {
+        console.warn('CONFIG: ADMIN_EMAIL not set - reminder alerts fall back to hello@desk2quant.com');
+    }
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'hello@desk2quant.com';
+    const SENDER_EMAIL = process.env.SENDER_EMAIL || 'hello@desk2quant.com';
     const SENDER_NAME = process.env.SENDER_NAME || 'Desk2Quant';
 
     // --- One-off Drive permission audit -------------------------------
