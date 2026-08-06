@@ -73,9 +73,11 @@ async function main() {
 <meta property="og:title" content="All Quant Finance Resources | Desk2Quant">
 <meta property="og:description" content="Browse all ${products.length} practitioner-built quant finance resources.">
 <link rel="stylesheet" href="/styles.css">
-<link rel="stylesheet" href="/seo-product.css?v=1">
+<link rel="stylesheet" href="/launchzone.css?v=8">
+<link rel="stylesheet" href="/launchzone-pages.css?v=10">
+<link rel="stylesheet" href="/seo-product.css?v=3">
 </head>
-<body>
+<body class="d2q-launchzone">
 <main class="seo-doc">
   <nav class="seo-crumbs" aria-label="Breadcrumb">
     <a href="/">Home</a> <span>/</span> <span aria-current="page">Resources</span>

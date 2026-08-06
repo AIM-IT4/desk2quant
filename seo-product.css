@@ -43,3 +43,212 @@
     .seo-cta { transition: none; }
     .seo-cta:hover { transform: none; }
 }
+
+/* Neobrutalism (launchzone) adaptation for SEO product pages. */
+body.d2q-launchzone .seo-doc {
+    padding-top: clamp(64px, 8vw, 112px);
+    color: var(--lz-ink);
+}
+
+body.d2q-launchzone .seo-crumbs {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0;
+    margin-bottom: 28px;
+    padding: 8px 10px;
+    background: var(--lz-white);
+    border: 2px solid var(--lz-ink);
+    border-radius: 0;
+    font-family: var(--lz-font-mono);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    opacity: 1;
+}
+
+body.d2q-launchzone .seo-doc h1 {
+    font-family: var(--lz-font-display);
+    font-weight: 400;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    letter-spacing: -0.02em;
+    line-height: 1.06;
+}
+
+body.d2q-launchzone .seo-doc img {
+    border: 2px solid var(--lz-ink);
+    border-radius: 0;
+}
+
+body.d2q-launchzone .seo-cta {
+    padding: 13px 22px;
+    color: var(--lz-ink) !important;
+    background: var(--lz-warning) !important;
+    border: 2px solid var(--lz-ink) !important;
+    border-radius: 0 !important;
+    box-shadow: var(--lz-shadow-sm);
+    font-weight: 400;
+    font-family: var(--lz-font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
+}
+
+body.d2q-launchzone .seo-cta:hover {
+    background: var(--lz-ink) !important;
+    color: var(--lz-paper) !important;
+    transform: translate(-2px, -2px);
+    box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.d2q-launchzone .seo-cta {
+        transition: none;
+    }
+    body.d2q-launchzone .seo-cta:hover {
+        transform: none;
+        box-shadow: none;
+    }
+}
+
+/* ---------------------------------------------------------------------------
+   PREVIEW (uncommitted): neobrutalist SEO page polish.
+   launchzone.css:87 sets `body.d2q-launchzone a { color: inherit }`, which is
+   right for nav/buttons but leaves in-body links looking like plain text -- on
+   a product page that silently kills the related-product cross-sell. Restore a
+   deliberate link treatment scoped to the document body only.
+   --------------------------------------------------------------------------- */
+body.d2q-launchzone .seo-doc p a,
+body.d2q-launchzone .seo-doc ul a {
+    color: var(--lz-ink);
+    text-decoration: none;
+    font-weight: 600;
+    /* Thick underline that thickens on hover -- reads as neobrutalist rule
+       rather than a default browser underline. */
+    box-shadow: inset 0 -0.14em 0 var(--lz-signal);
+    transition: box-shadow 120ms steps(2, end), background-color 120ms steps(2, end);
+}
+
+body.d2q-launchzone .seo-doc p a:hover,
+body.d2q-launchzone .seo-doc ul a:hover {
+    background-color: var(--lz-signal);
+    color: var(--lz-white);
+    box-shadow: inset 0 -0.14em 0 var(--lz-ink);
+}
+
+/* Bullets were absent entirely: no list-style rule existed, so items read as
+   loose orphan lines. Use a hard square marker, not a soft disc. */
+body.d2q-launchzone .seo-doc ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0 0 8px 0;
+}
+
+body.d2q-launchzone .seo-doc ul li {
+    position: relative;
+    padding-left: 26px;
+    margin-bottom: 10px;
+    line-height: 1.55;
+}
+
+body.d2q-launchzone .seo-doc ul li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.55em;
+    width: 9px;
+    height: 9px;
+    background: var(--lz-ink);
+    /* Square, offset-shadowed marker echoes the card/button language. */
+    box-shadow: 2px 2px 0 var(--lz-signal);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.d2q-launchzone .seo-doc p a,
+    body.d2q-launchzone .seo-doc ul a { transition: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   Header + footer for the SEO product pages.
+   These pages were orphans: a breadcrumb was the only navigation, so a visitor
+   arriving from Google saw no logo, no way back to the site, and no trust
+   signals. The main site navbar is not reused here on purpose -- it needs
+   script.js for the cart, dropdown and mobile toggle, and these pages are
+   deliberately static and fast. This is a self-contained, link-only band in the
+   same neobrutalist language.
+   --------------------------------------------------------------------------- */
+.seo-topbar {
+    border-bottom: 2px solid var(--lz-ink);
+    background: var(--lz-white);
+}
+
+.seo-topbar-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+}
+
+.seo-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--lz-font-display, inherit);
+    font-weight: 800;
+    font-size: 1.05rem;
+    letter-spacing: -0.01em;
+}
+
+.seo-brand img { height: 30px; width: auto; display: block; }
+
+.seo-topnav {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-family: var(--lz-font-mono, monospace);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+/* Boxed nav items echo the breadcrumb chip, so the band reads as one system. */
+.seo-topnav a {
+    padding: 6px 10px;
+    border: 2px solid transparent;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.seo-topnav a:hover {
+    border-color: var(--lz-ink);
+    box-shadow: var(--lz-shadow-sm, 2px 2px 0 var(--lz-ink));
+    background: var(--lz-signal-soft);
+}
+
+.seo-footer {
+    margin-top: 64px;
+    border-top: 2px solid var(--lz-ink);
+    background: var(--lz-white);
+}
+
+.seo-footer-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 26px 24px 34px;
+    font-size: 0.85rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.seo-footer-inner a { font-weight: 600; }
+
+@media (max-width: 600px) {
+    .seo-topbar-inner { padding: 12px 18px; }
+    .seo-topnav { font-size: 0.66rem; }
+    .seo-footer-inner { padding: 22px 18px 28px; flex-direction: column; }
+}

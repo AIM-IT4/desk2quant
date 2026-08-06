@@ -12,20 +12,17 @@ body.d2q-launchzone .faq-hero {
     margin-bottom: 48px;
     padding: clamp(34px, 6vw, 72px);
     background-color: var(--lz-white) !important;
-    background-image:
-        linear-gradient(to right, rgba(9, 9, 9, 0.055) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(9, 9, 9, 0.055) 1px, transparent 1px) !important;
-    background-size: 32px 32px !important;
-    border: 1px solid var(--lz-ink);
-    border-radius: 4px;
+    border: 2px solid var(--lz-ink);
+    border-radius: 0;
+    box-shadow: var(--lz-shadow);
 }
 
 body.d2q-launchzone .legal-hero h1,
 body.d2q-launchzone .faq-hero h1 {
     margin-bottom: 20px;
-    font-size: clamp(3.1rem, 7vw, 6.4rem);
-    line-height: 0.94;
-    letter-spacing: -0.07em;
+    font-size: clamp(2.3rem, 4.8vw, 4rem);
+    line-height: 1.04;
+    letter-spacing: -0.02em;
 }
 
 body.d2q-launchzone .legal-hero-sub,
@@ -41,8 +38,8 @@ body.d2q-launchzone .legal-back-link {
     align-items: center;
     gap: 8px;
     padding: 9px 12px;
-    border: 1px solid var(--lz-line);
-    border-radius: 3px;
+    border: 2px solid var(--lz-ink);
+    border-radius: 0;
     font-family: var(--lz-font-mono);
     font-size: 11px;
     letter-spacing: 0.05em;
@@ -60,7 +57,7 @@ body.d2q-launchzone .legal-meta-pill {
     margin-left: -1px;
     padding: 9px 12px;
     background: var(--lz-white);
-    border: 1px solid var(--lz-line-strong);
+    border: 2px solid var(--lz-ink);
     border-radius: 0;
     font-family: var(--lz-font-mono);
     font-size: 10px;
@@ -70,8 +67,9 @@ body.d2q-launchzone .legal-toc {
     margin-bottom: 32px;
     padding: 24px;
     background: var(--lz-ink);
-    border: 1px solid var(--lz-ink);
-    border-radius: 4px;
+    border: 2px solid var(--lz-ink);
+    border-radius: 0;
+    box-shadow: var(--lz-shadow);
 }
 
 body.d2q-launchzone .legal-toc,
@@ -91,13 +89,13 @@ body.d2q-launchzone .legal-section {
     margin: 0;
     padding: clamp(30px, 5vw, 52px);
     background: var(--lz-white);
-    border: 1px solid var(--lz-line);
+    border: 2px solid var(--lz-line-strong);
     border-bottom: 0;
     border-radius: 0;
 }
 
 body.d2q-launchzone .legal-section:last-of-type {
-    border-bottom: 1px solid var(--lz-line);
+    border-bottom: 2px solid var(--lz-line-strong);
 }
 
 body.d2q-launchzone .legal-section h2 {
@@ -123,8 +121,8 @@ body.d2q-launchzone .legal-callout {
 
 body.d2q-launchzone .legal-contact-item {
     background: var(--lz-paper);
-    border: 1px solid var(--lz-line);
-    border-radius: 3px;
+    border: 2px solid var(--lz-line-strong);
+    border-radius: 0;
 }
 
 /* FAQ */
@@ -142,14 +140,14 @@ body.d2q-launchzone .faq-eyebrow::before {
 
 body.d2q-launchzone .faq-accordion {
     overflow: hidden;
-    border: 1px solid var(--lz-line);
-    border-radius: 4px;
+    border: 2px solid var(--lz-ink);
+    border-radius: 0;
 }
 
 body.d2q-launchzone .faq-item {
     margin: 0;
     border: 0 !important;
-    border-bottom: 1px solid var(--lz-line) !important;
+    border-bottom: 2px solid var(--lz-line) !important;
     border-radius: 0 !important;
 }
 
@@ -163,7 +161,7 @@ body.d2q-launchzone .faq-item summary {
 }
 
 body.d2q-launchzone .faq-item[open] summary {
-    color: var(--lz-white);
+    color: var(--lz-paper);
     background: var(--lz-ink);
 }
 
@@ -174,29 +172,30 @@ body.d2q-launchzone .faq-item-body {
 body.d2q-launchzone .faq-cta {
     margin-top: 38px;
     padding: clamp(30px, 5vw, 54px);
-    color: var(--lz-white);
+    color: var(--lz-paper);
     background: var(--lz-ink);
-    border: 1px solid var(--lz-ink);
-    border-radius: 4px;
+    border: 2px solid var(--lz-ink);
+    border-radius: 0;
+    box-shadow: var(--lz-shadow);
 }
 
 body.d2q-launchzone .faq-cta h2,
 body.d2q-launchzone .faq-cta p {
-    color: var(--lz-white);
+    color: var(--lz-paper);
 }
 
 body.d2q-launchzone .faq-cta-btn {
-    border: 1px solid var(--lz-white);
-    border-radius: 3px;
+    border: 2px solid var(--lz-paper);
+    border-radius: 0;
 }
 
 body.d2q-launchzone .faq-cta-primary {
     color: var(--lz-ink);
-    background: var(--lz-white);
+    background: var(--lz-warning);
 }
 
 body.d2q-launchzone .faq-cta-secondary {
-    color: var(--lz-white);
+    color: var(--lz-paper);
     background: transparent;
 }
 
@@ -213,12 +212,9 @@ body.d2q-launchzone > .section-container > .section-header,
 body.d2q-launchzone > .container > .section-header {
     padding: clamp(32px, 5vw, 58px);
     background-color: var(--lz-white);
-    background-image:
-        linear-gradient(to right, rgba(9, 9, 9, 0.05) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(9, 9, 9, 0.05) 1px, transparent 1px);
-    background-size: 32px 32px;
-    border: 1px solid var(--lz-ink);
-    border-radius: 4px;
+    border: 2px solid var(--lz-ink);
+    border-radius: 0;
+    box-shadow: var(--lz-shadow);
 }
 
 body.d2q-launchzone .section-tag {
@@ -235,9 +231,9 @@ body.d2q-launchzone .section-tag::before {
 }
 
 body.d2q-launchzone .section-title {
-    font-size: clamp(3rem, 7vw, 6.4rem) !important;
-    line-height: 0.95;
-    letter-spacing: -0.07em;
+    font-size: clamp(2.3rem, 4.8vw, 4rem) !important;
+    line-height: 1.04;
+    letter-spacing: -0.02em;
     /* Without this, a heading whose greedy wrap doesn't fit on one line at
        real desktop widths (font-size grows past 100px there) can dump a
        short orphan word onto its own second line, leaving a large empty
@@ -259,15 +255,16 @@ body.d2q-launchzone .testimonials-page-stats {
     gap: 0;
     margin-bottom: 34px;
     overflow: hidden;
-    border: 1px solid var(--lz-line);
-    border-radius: 4px;
+    border: 2px solid var(--lz-ink);
+    border-radius: 0;
+    box-shadow: var(--lz-shadow-sm);
 }
 
 body.d2q-launchzone .ratings-summary-card {
     padding: 26px;
     background: var(--lz-white);
     border: 0;
-    border-right: 1px solid var(--lz-line);
+    border-right: 2px solid var(--lz-ink);
     border-radius: 0;
     box-shadow: none;
 }
@@ -303,8 +300,8 @@ body.d2q-launchzone #resourcesGrid > article,
 body.d2q-launchzone #blog-grid > article,
 body.d2q-launchzone #blogGrid > article {
     background: var(--lz-white) !important;
-    border: 1px solid var(--lz-line) !important;
-    border-radius: 4px;
+    border: 2px solid var(--lz-ink) !important;
+    border-radius: 0;
 }
 
 /* My bookings */
@@ -313,13 +310,13 @@ body.d2q-launchzone .no-bookings,
 body.d2q-launchzone .reschedule-form,
 body.d2q-launchzone .meet-link {
     background: var(--lz-white) !important;
-    border: 1px solid var(--lz-line) !important;
-    border-radius: 4px !important;
+    border: 2px solid var(--lz-line-strong) !important;
+    border-radius: 0 !important;
     box-shadow: none !important;
 }
 
 body.d2q-launchzone .booking-header {
-    border-bottom: 1px solid var(--lz-line);
+    border-bottom: 2px solid var(--lz-line);
 }
 
 body.d2q-launchzone .booking-status,
@@ -335,8 +332,8 @@ body.d2q-launchzone .salary-panel,
 body.d2q-launchzone .playground-container,
 body.d2q-launchzone .editor-panel,
 body.d2q-launchzone .output-panel {
-    border-color: var(--lz-line) !important;
-    border-radius: 4px !important;
+    border-color: var(--lz-line-strong) !important;
+    border-radius: 0 !important;
     box-shadow: none !important;
 }
 
@@ -363,14 +360,20 @@ body.d2q-launchzone .playground-header p {
 
 /* Desk Simulator: keep application contrast, share the editorial geometry. */
 body.d2q-launchzone .site-nav {
-    background: rgba(247, 247, 243, 0.96);
-    border-bottom: 1px solid var(--lz-line);
+    background: rgba(6, 16, 26, 0.82);
+    border-bottom: 1px solid rgba(215, 234, 239, 0.13);
     box-shadow: none;
+    backdrop-filter: blur(18px);
 }
 
 body.d2q-launchzone .site-nav .brand,
 body.d2q-launchzone .site-nav .nav-links a {
-    color: var(--lz-ink);
+    color: var(--text, #f2f7f8);
+}
+
+body.d2q-launchzone .site-nav .brand-product {
+    color: var(--text-soft, #b4c2c9);
+    border-left-color: rgba(215, 234, 239, 0.13);
 }
 
 body.d2q-launchzone .site-nav .nav-inner {
@@ -379,13 +382,13 @@ body.d2q-launchzone .site-nav .nav-inner {
 }
 
 body.d2q-launchzone .button {
-    border-radius: 3px !important;
+    border-radius: 0 !important;
     box-shadow: none !important;
 }
 
 body.d2q-launchzone .button-primary {
-    color: var(--lz-white) !important;
-    background: var(--lz-ink) !important;
+    color: var(--lz-ink) !important;
+    background: var(--lz-warning) !important;
     border-color: var(--lz-ink) !important;
 }
 
@@ -394,6 +397,11 @@ body.d2q-launchzone .button-ghost-dark {
     color: var(--lz-ink) !important;
     background: var(--lz-white) !important;
     border-color: var(--lz-ink) !important;
+}
+
+body.d2q-launchzone .button-primary:hover {
+    color: var(--lz-paper) !important;
+    background: var(--lz-ink) !important;
 }
 
 body.d2q-launchzone .hero-layout {
@@ -406,9 +414,9 @@ body.d2q-launchzone .hero-layout {
 
 body.d2q-launchzone .hero-copy h1 {
     color: var(--lz-ink);
-    font-size: clamp(3.6rem, 7.5vw, 7.2rem);
-    line-height: 0.92;
-    letter-spacing: -0.075em;
+    font-size: clamp(2.4rem, 5vw, 4rem);
+    line-height: 1.04;
+    letter-spacing: -0.02em;
 }
 
 body.d2q-launchzone .hero-copy .hero-lede,
@@ -417,9 +425,9 @@ body.d2q-launchzone .hero-facts {
 }
 
 body.d2q-launchzone .hero-product {
-    border: 1px solid var(--lz-ink);
-    border-radius: 4px;
-    box-shadow: 8px 8px 0 var(--lz-ink);
+    border: 2px solid var(--lz-ink);
+    border-radius: 0;
+    box-shadow: var(--lz-shadow);
 }
 
 body.d2q-launchzone .mode-grid,
@@ -432,8 +440,8 @@ body.d2q-launchzone .mode-card,
 body.d2q-launchzone .case-card,
 body.d2q-launchzone .method-card,
 body.d2q-launchzone .rubric-card {
-    border: 1px solid var(--lz-line) !important;
-    border-radius: 4px !important;
+    border: 2px solid var(--lz-line-strong) !important;
+    border-radius: 0 !important;
     box-shadow: none !important;
 }
 
@@ -514,9 +522,9 @@ body.d2q-launchzone .scorecard-box {
         border-bottom: 0;
     }
 
-    body.d2q-launchzone .hero-product {
-        box-shadow: 4px 4px 0 var(--lz-ink);
-    }
+body.d2q-launchzone .hero-product {
+    box-shadow: var(--lz-shadow-sm);
+}
 }
 
 /* Final shell alignment and announcement bar. */
@@ -525,10 +533,10 @@ body.d2q-launchzone .promo-announcement-bar {
     z-index: 1200;
     min-height: 44px;
     padding: 7px var(--lz-gutter) !important;
-    color: var(--lz-white) !important;
+    color: var(--lz-paper) !important;
     background: var(--lz-ink) !important;
     border: 0 !important;
-    border-bottom: 1px solid var(--lz-ink) !important;
+    border-bottom: 2px solid var(--lz-ink) !important;
     box-shadow: none !important;
 }
 
@@ -540,7 +548,7 @@ body.d2q-launchzone .promo-announcement-bar .promo-content {
     align-items: center;
     justify-content: center;
     gap: 14px;
-    color: var(--lz-white);
+    color: var(--lz-paper);
     font-family: var(--lz-font-mono);
     font-size: 10px;
     letter-spacing: 0.025em;
@@ -551,8 +559,8 @@ body.d2q-launchzone .promo-announcement-bar .promo-code-box {
     padding: 4px 7px;
     color: var(--lz-ink);
     background: var(--lz-warning);
-    border: 1px solid var(--lz-warning);
-    border-radius: 2px;
+    border: 2px solid var(--lz-ink);
+    border-radius: 0;
     font-family: var(--lz-font-mono);
     letter-spacing: 0.06em;
 }
@@ -561,15 +569,16 @@ body.d2q-launchzone .promo-announcement-bar .btn-promo-cta {
     min-height: 30px;
     padding: 6px 12px;
     color: var(--lz-ink) !important;
-    background: var(--lz-white) !important;
-    border-color: var(--lz-white) !important;
+    background: var(--lz-warning) !important;
+    border-color: var(--lz-ink) !important;
     font-size: 10px;
     white-space: nowrap;
+    box-shadow: var(--lz-shadow-sm) !important;
 }
 
 body.d2q-launchzone .promo-announcement-bar .promo-close-btn {
     right: 14px;
-    color: var(--lz-white);
+    color: var(--lz-paper);
 }
 
 body.d2q-launchzone .navbar {
@@ -595,7 +604,7 @@ body.d2q-launchzone .hero-cta { order: 5; }
 body.d2q-launchzone .hero-stats { order: 6; }
 
 body.d2q-launchzone main > section.lead-capture {
-    color: var(--lz-white);
+    color: var(--lz-paper);
     background: var(--lz-ink) !important;
 }
 
@@ -653,7 +662,7 @@ body.d2q-launchzone .product-description-full {
     margin-bottom: 24px;
     padding: 18px 18px 18px 0;
     overflow-y: auto;
-    border-block: 1px solid var(--lz-line);
+    border-block: 2px solid var(--lz-line);
     scrollbar-color: var(--lz-ink) var(--lz-paper);
     scrollbar-width: thin;
 }
@@ -661,10 +670,10 @@ body.d2q-launchzone .product-description-full {
 body.d2q-launchzone .product-info h1 {
     color: var(--lz-ink) !important;
     background: none !important;
-    font-family: var(--lz-font-sans) !important;
-    font-size: clamp(2.35rem, 4vw, 4.6rem) !important;
-    line-height: 0.98 !important;
-    letter-spacing: -0.06em !important;
+    font-family: var(--lz-font-display) !important;
+    font-size: clamp(1.9rem, 3.6vw, 3.4rem) !important;
+    line-height: 1.05 !important;
+    letter-spacing: -0.02em !important;
     -webkit-text-fill-color: currentColor !important;
 }
 
@@ -682,7 +691,18 @@ body.d2q-launchzone .product-info #coupon-section { order: 6; }
 body.d2q-launchzone .product-info .action-buttons { order: 7; }
 body.d2q-launchzone .product-info .product-description-full { order: 8; }
 /* Desk Simulator header and terminal contrast corrections. */
-body.d2q-launchzone .site-nav .brand img,
+body.d2q-launchzone .site-nav .brand img {
+    display: block;
+    flex: 0 0 38px;
+    width: 38px;
+    height: 38px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 2px solid rgba(215, 234, 239, 0.28);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+    content: url("assets/images/desk2quant-mark.svg?v=1");
+}
+
 body.d2q-launchzone .site-footer .footer-brand img {
     display: block;
     flex: 0 0 40px;
@@ -697,12 +717,15 @@ body.d2q-launchzone .site-nav .brand {
     display: inline-flex;
     align-items: center;
     gap: 9px;
-    font-weight: 780;
+    font-family: var(--lz-font-display);
+    font-weight: 400;
+    font-size: 17px;
+    letter-spacing: -0.02em;
 }
 
 body.d2q-launchzone .site-nav .brand-product {
     padding-left: 9px;
-    border-left: 1px solid var(--lz-line);
+    border-left: 1px solid rgba(215, 234, 239, 0.13);
     font-family: var(--lz-font-mono);
     font-size: 10px;
     font-weight: 600;
@@ -723,8 +746,8 @@ body.d2q-launchzone .site-nav .nav-links a {
 }
 
 body.d2q-launchzone .hero-copy h1 {
-    font-size: clamp(3.3rem, 5.8vw, 6rem);
-    line-height: 0.94;
+    font-size: clamp(2.4rem, 5vw, 4rem);
+    line-height: 1.04;
 }
 
 body.d2q-launchzone .hero-product h2 {
@@ -810,9 +833,9 @@ body.d2q-launchzone .editorial-page-kicker::before {
 body.d2q-launchzone .editorial-page-title {
     max-width: 940px;
     margin: 0 0 24px !important;
-    font-size: clamp(3.5rem, 8vw, 7.2rem) !important;
-    line-height: 0.93;
-    letter-spacing: -0.075em;
+    font-size: clamp(2.4rem, 5vw, 4.2rem) !important;
+    line-height: 1.04;
+    letter-spacing: -0.02em;
 }
 
 body.d2q-launchzone .editorial-page-subtitle {
@@ -845,7 +868,7 @@ body.d2q-launchzone .mode-card-core {
     color: var(--lz-ink);
     background: var(--lz-white);
     border-color: var(--lz-line-strong) !important;
-    box-shadow: 7px 7px 0 var(--lz-ink) !important;
+    box-shadow: var(--lz-shadow) !important;
 }
 
 body.d2q-launchzone .mode-card-core h3 {
@@ -864,8 +887,8 @@ body.d2q-launchzone .mode-card-core .mode-list {
 
 body.d2q-launchzone .mode-card-interview {
     color: var(--lz-white);
-    border-color: #071019 !important;
-    box-shadow: 7px 7px 0 var(--lz-signal) !important;
+    border-color: var(--lz-ink) !important;
+    box-shadow: var(--lz-shadow) !important;
 }
 
 body.d2q-launchzone .mode-card-interview h3 {
@@ -881,8 +904,8 @@ body.d2q-launchzone .mode-card-interview .mode-list {
 }
 
 body.d2q-launchzone .mode-card-core .button {
-    color: var(--lz-white) !important;
-    background: var(--lz-ink) !important;
+    color: var(--lz-ink) !important;
+    background: var(--lz-warning) !important;
     border-color: var(--lz-ink) !important;
 }
 
@@ -892,3 +915,81 @@ body.d2q-launchzone .mode-card-interview .button {
     border-color: var(--lz-white) !important;
 }
 
+
+/* ============================================================
+   Desk Simulator — self-contained dark app.
+   The sitewide light-theme resets above force ink text + paper
+   panels here, which is invisible against the app's navy sections.
+   Restore the app's own dark theme with light text, scoped to the
+   simulator page (the only page with #siteNav).
+   ============================================================ */
+body.d2q-launchzone:has(#siteNav) {
+    color: var(--text, #f2f7f8);
+    background-color: var(--ink, #06101a);
+    font-family: var(--font-sans, "Inter", -apple-system, "Segoe UI", sans-serif);
+    letter-spacing: normal;
+}
+
+body.d2q-launchzone:has(#siteNav) h1,
+body.d2q-launchzone:has(#siteNav) h2,
+body.d2q-launchzone:has(#siteNav) h3,
+body.d2q-launchzone:has(#siteNav) h4 {
+    color: var(--text, #f2f7f8);
+    font-family: var(--font-sans, "Inter", -apple-system, "Segoe UI", sans-serif);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+body.d2q-launchzone:has(#siteNav) .hero {
+    background-color: transparent;
+    border-bottom: none;
+}
+
+@media (min-width: 721px) {
+    body.d2q-launchzone:has(#siteNav) .hero {
+        min-height: 790px;
+        padding: 146px 0 86px;
+    }
+
+    body.d2q-launchzone:has(#siteNav) .hero-copy h1 {
+        font-size: clamp(3.2rem, 6vw, 5.9rem);
+        line-height: 0.98;
+    }
+}
+
+@media (max-width: 720px) {
+    body.d2q-launchzone:has(#siteNav) .hero {
+        min-height: auto;
+        padding: 116px 0 72px;
+    }
+
+    body.d2q-launchzone:has(#siteNav) .hero-copy h1 {
+        font-size: clamp(3rem, 15vw, 4.8rem);
+    }
+}
+
+body.d2q-launchzone:has(#siteNav) .hero-lede {
+    color: var(--text-soft, #b4c2c9);
+}
+
+body.d2q-launchzone:has(#siteNav) .workspace {
+    background-color: #071019 !important;
+}
+
+/* The sitewide .eyebrow reskin forces ink text + block layout, which is
+   invisible against the app's navy hero. Restore the app's teal badge. */
+body.d2q-launchzone:has(#siteNav) .hero .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 24px;
+    padding: 7px 10px;
+    border: 1px solid rgba(85, 225, 196, 0.3);
+    color: var(--teal, #55e1c4) !important;
+    background: rgba(85, 225, 196, 0.06);
+    font-family: var(--font-mono, "DM Mono", monospace);
+    font-size: 0.74rem;
+    font-weight: 500;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+}
