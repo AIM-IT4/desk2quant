@@ -639,7 +639,7 @@
             document.head.appendChild(script);
         })();
     </script>
-    <script src="script.js?v=11"></script>
+    <script src="script.js?v=12"></script>
 
     <!-- Navigation -->
     <nav class="navbar">
@@ -1082,8 +1082,8 @@
                                     const rate = localPrice.rate || 1;
                                     let convertedOriginal = product.original_price * rate;
 
-                                    if (product.enable_ppp && !localPrice.isWeaker) {
-                                        convertedOriginal = convertedOriginal * 1.5;
+                                    if (product.enable_ppp) {
+                                        convertedOriginal = convertedOriginal * (localPrice.isWeaker ? 1.2 : 1.5);
                                     }
 
                                     newOriginalDisplay = `<span style="text-decoration:line-through; color:var(--text-muted); font-size:0.8em; margin-right:10px;">${localPrice.currency.symbol}${Math.round(convertedOriginal).toLocaleString()}</span>`;

@@ -1620,10 +1620,10 @@ async function convertPrice(inrPrice, countryCode, enablePPP = false) {
     // Calculate raw conversion
     let convertedAmount = inrPrice * rate;
 
-    // PPP Adjustment: Apply 1.5x multiplier for stronger currencies (Developed Markets)
-    // ONLY if PPP pricing is explicitly enabled for this product.
-    // We EXCLUDE weaker currencies to ensure fair pricing for developing nations.
-    // List includes: South Asia, SE Asia, Africa, Latin America, etc.
+    // PPP Adjustment: applies ONLY when PPP pricing is explicitly enabled for
+    // this product. Strong currencies get a 1.5x multiplier (developed
+    // markets); weaker economies get a gentler 1.2x instead of being
+    // excluded entirely.
     const weakersCurrencies = [
         'PKR', 'BDT', 'LKR', 'NPR', // South Asia
         'NGN', 'EGP', 'KES', 'GHS', 'ZAR', // Africa
@@ -1636,13 +1636,8 @@ async function convertPrice(inrPrice, countryCode, enablePPP = false) {
     let isWeaker = weakersCurrencies.includes(currency.code);
 
     if (enablePPP && currency.code !== 'INR') {
-        if (!isWeaker) {
-            // qmLog(`📈 Applying PPP Multiplier (1.5x) for ${currency.code}`);
-            convertedAmount = convertedAmount * 1.5;
-            pppApplied = true;
-        } else {
-            pppApplied = true; // Still PPP active, but regional discount pricing applied
-        }
+        convertedAmount = convertedAmount * (isWeaker ? 1.2 : 1.5);
+        pppApplied = true;
     }
 
     convertedAmount = Math.round(convertedAmount);
@@ -2114,8 +2109,8 @@ async function displaySupabaseProducts(products) {
                     const rate = localPrice.rate || 1;
                     let convertedOriginal = product.original_price * rate;
 
-                    if (product.enable_ppp && !localPrice.isWeaker) {
-                        convertedOriginal = convertedOriginal * 1.5;
+                    if (product.enable_ppp) {
+                        convertedOriginal = convertedOriginal * (localPrice.isWeaker ? 1.2 : 1.5);
                     }
 
                     const originalObj = {
