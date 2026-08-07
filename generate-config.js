@@ -2,9 +2,15 @@
 const path = require('path');
 
 // config.js content based on environment variables
+//
+// NOTE: BREVO_API_KEY is deliberately NOT emitted here anymore. This file is
+// served as a public static asset (config.js), and shipping the real Brevo
+// key in it exposed a live credential to anyone who fetched /config.js.
+// All email now goes through the /api/send-email serverless relay (which
+// reads BREVO_API_KEY from the environment server-side), so no client code
+// needs the key. The sender identity is harmless and kept for reference.
 const content = `// Auto-generated config.js
 const CONFIG = {
-    BREVO_API_KEY: '${process.env.BREVO_API_KEY || 'xkeysib-your-api-key-here'}',
     BREVO_SENDER_EMAIL: '${process.env.BREVO_SENDER_EMAIL || 'desk2quant@gmail.com'}',
     BREVO_SENDER_NAME: '${process.env.BREVO_SENDER_NAME || 'Desk2Quant'}'
 };

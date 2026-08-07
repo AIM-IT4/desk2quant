@@ -2237,10 +2237,11 @@ async function loadSessionsFromSupabase(prefetchPromise) {
             await updateBookingForm(cachedSessions);
         }
 
-        // Fire Supabase query immediately
+        // Fire Supabase query immediately. RLS seals non-public columns, so we
+        // select only the public catalog fields the homepage renders.
         const queryPromise = window.supabaseClient
             .from('sessions')
-            .select('*')
+            .select('id,name,duration,price,description,features,is_popular,is_active')
             .eq('is_active', true)
             .order('price', { ascending: true });
 
@@ -3258,11 +3259,23 @@ if (bookingForm) {
                     }
 
                     // Fetch existing bookings for this date (to prevent collision)
-                    // booking_date is DATE type, so we should query with YYYY-MM-DD
-                    const { data: bookingsData, error: bookingsError } = await window.supabaseClient
-                        .from('bookings')
-                        .select('booking_time')
-                        .eq('booking_date', dateValue); // Use dateValue (YYYY-MM-DD) directly
+                    // booking_date is DATE type, so we should query with YYYY-MM-DD.
+                    // The bookings table is RLS-sealed from the browser, so this
+                    // runs through the server-side bookings API (service role).
+                    let bookingsData = null;
+                    try {
+                        const slotResp = await fetch('/api/interview', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'bookings-slots', date: dateValue })
+                        });
+                        const slotJson = await slotResp.json();
+                        if (slotResp.ok && slotJson.success) {
+                            bookingsData = (slotJson.slots || []).map(s => ({ booking_time: s.booking_time }));
+                        }
+                    } catch (e) {
+                        console.warn('Slot check failed (proceeding without collision detection):', e);
+                    }
 
                     if (bookingsData) {
                         // DB stores times in IST. Normalize them in IST before comparing
@@ -3641,21 +3654,44 @@ async function fulfillFreeSessionBooking(response) {
         const uniqueMeetLink = generateFreeSessionLink();
         qmLog('🔗 Generated unique meeting link:', uniqueMeetLink);
 
-        // ===== STEP 0: DEDUP CHECK (prevent webhook + client-side double-fire) =====
-        if (window.supabaseClient) {
-            try {
-                const { data: existing } = await window.supabaseClient
-                    .from('bookings')
-                    .select('id')
-                    .eq('payment_id', paymentId)
-                    .limit(1);
-                if (existing && existing.length > 0) {
-                    qmLog('ℹ️ Booking already exists for payment', paymentId, '— skipping duplicate client-side insert');
+        // ===== STEP 0: DEDUP CHECK + STORE via server-side bookings API =====
+        // The bookings table is RLS-sealed from the browser, so free-session
+        // bookings are created (and deduped) server-side with the service role.
+        let freeBookingStored = false;
+        try {
+            const createResp = await fetch('/api/interview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'create-free-booking',
+                    email: booking.email,
+                    name: booking.name,
+                    phone: booking.phone,
+                    serviceName: booking.sessionType,
+                    servicePrice: booking.price,
+                    serviceDuration: booking.duration,
+                    bookingDate: booking.bookingDate || new Date(booking.date).toISOString().split('T')[0],
+                    bookingTime: booking.time,
+                    message: booking.message,
+                    paymentId,
+                    meetLink: uniqueMeetLink
+                })
+            });
+            const createJson = await createResp.json();
+            if (createResp.ok && createJson.success) {
+                if (createJson.alreadyExists) {
+                    qmLog('ℹ️ Booking already exists for payment', paymentId, '— skipping duplicate');
                     alert(`✅ Booking already confirmed!\nPayment ID: ${paymentId}\nCheck your email for details.`);
                     try { localStorage.removeItem('pendingBooking'); } catch (e) { }
                     return;
                 }
-            } catch (e) { console.warn('Dedup check failed (proceeding):', e); }
+                freeBookingStored = true;
+                qmLog('✅ Free booking stored server-side:', createJson.booking);
+            } else {
+                console.error('❌ Free booking creation failed:', createJson.error);
+            }
+        } catch (e) {
+            console.warn('Free booking create failed (proceeding to email):', e);
         }
 
         // ===== STEP 1: SEND CUSTOMER EMAIL FIRST (HIGHEST PRIORITY) =====
@@ -3744,40 +3780,11 @@ ${BUSINESS_NAME}`;
             console.error('❌ Session email failed:', error);
         }
 
-        // ===== STEP 2: STORE IN SUPABASE (SECONDARY) =====
-        qmLog('📋 Attempting to store booking in Supabase...');
-        if (window.supabaseClient) {
-            try {
-                const { data, error } = await window.supabaseClient
-                    .from('bookings')
-                    .insert({
-                        email: booking.email,
-                        name: booking.name,
-                        phone: booking.phone,
-                        service_name: booking.sessionType,
-                        service_price: booking.price,
-                        service_duration: booking.duration,
-                        // Keep display date for emails, but persist a valid DATE value.
-                        // Fallback supports an in-flight booking created before this fix.
-                        booking_date: booking.bookingDate || new Date(booking.date).toISOString().split('T')[0],
-                        booking_time: booking.time,
-                        message: booking.message,
-                        status: 'upcoming',
-                        payment_id: paymentId,
-                        meet_link: uniqueMeetLink
-                    })
-                    .select();
-
-                if (error) {
-                    console.error('❌ Supabase insert failed:', error);
-                } else {
-                    qmLog('✅ Booking stored in Supabase:', data);
-                }
-            } catch (error) {
-                console.error('❌ Error storing booking in database:', error);
-            }
-        } else {
-            console.warn('⚠️ Supabase client not available — saving booking to localStorage for webhook pickup');
+        // ===== STEP 2: STORE BOOKING (handled server-side in STEP 0) =====
+        // The booking was already persisted via the server-side bookings API in
+        // STEP 0 (dedup + insert atomically). Keep a localStorage copy only as a
+        // fallback breadcrumb for paid-session webhook pickup / diagnostics.
+        if (!freeBookingStored) {
             try {
                 localStorage.setItem('pendingBooking', JSON.stringify({
                     ...booking,
