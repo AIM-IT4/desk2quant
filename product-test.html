@@ -639,7 +639,7 @@
             document.head.appendChild(script);
         })();
     </script>
-    <script src="script.js?v=10"></script>
+    <script src="script.js?v=11"></script>
 
     <!-- Navigation -->
     <nav class="navbar">
@@ -844,7 +844,7 @@
             try {
                 const { data: product, error } = await window.supabaseClient
                     .from('products')
-                    .select('id,name,description,cover_image_url,price,original_price,created_at,coupon_code,discount_percentage')
+                    .select('id,name,description,cover_image_url,price,original_price,created_at,coupon_code,discount_percentage,enable_ppp')
                     .eq('id', id)
                     .single();
 
