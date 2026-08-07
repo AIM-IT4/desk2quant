@@ -102,7 +102,9 @@ function renderPage(p, slug, related, reviews) {
 
   <article>
     <h1>${esc(p.name)}</h1>
-    <p class="seo-price"><strong>&#8377;${esc(price)}</strong>${p.average_rating ? ` &middot; rated ${esc(p.average_rating)}/5` : ''}${p.sales_count ? ` &middot; ${esc(p.sales_count)} purchases` : ''}</p>
+    <p class="seo-price"><strong>&#8377;${esc(price)}</strong></p>
+
+    ${p.coupon_code ? `<p class="seo-coupon"><strong>Use coupon code ${esc(p.coupon_code)} at checkout for ${esc(p.discount_percentage || 10)}% off.</strong></p>` : ''}
 
     <p class="seo-cta-row">
       <a class="seo-cta" href="/product.html?id=${esc(p.id)}">View details &amp; buy</a>
