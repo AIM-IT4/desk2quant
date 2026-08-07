@@ -9,14 +9,17 @@ import {
     signDownloadToken,
     getDriveAccessToken,
     resolveServableDriveFile,
-    grantDrivePermissionOrSignedFallback as grantDrivePermission
+    grantDrivePermissionOrSignedFallback as grantDrivePermission,
+    isSupabaseStorageUrl,
+    parseSupabaseStorageUrl,
+    streamSupabaseStorageObject
 } from '../lib/secureDownload.js';
-
-// Zero-decimal currencies (Razorpay convention): the smallest unit IS the major
-// unit, so no /100 conversion. MUST stay identical to the lists in
-// lib/pricing.js and api/razorpay-webhook.js -- a divergence makes the
-// price-tamper guard compare a 100x-wrong amount and wave through underpayment.
-const ZERO_DECIMAL_CURRENCIES = ['JPY', 'KRW', 'VND', 'CLP', 'PYG', 'UGX'];
+import { SUPABASE_URL, serviceHeaders, blockIfUnconfigured } from '../lib/supabaseAdmin.js';
+// Zero-decimal currency handling lives in lib/pricing.js and is imported, not
+// re-declared -- a divergent copy makes the price-tamper guard compare a
+// 100x-wrong amount and wave through underpayment (see commit 0db1875, where a
+// stale copy undercharged Indonesia 100x).
+import { isZeroDecimalCurrency } from '../lib/pricing.js';
 
 function normalizeProductName(value) {
     return String(value || '')
@@ -41,7 +44,7 @@ function extractDriveFileId(url) {
 
 
 async function handleSignedDownload(req, res) {
-    const { fileId, email, expires, sig, name } = req.query || {};
+    const { fileId, email, expires, sig, name, store } = req.query || {};
     const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
     const GOOGLE_SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
     const GOOGLE_PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY;
@@ -49,8 +52,8 @@ async function handleSignedDownload(req, res) {
     if (!fileId || !email || !expires || !sig) {
         return res.status(400).json({ error: 'Missing download token parameters' });
     }
-    if (!RAZORPAY_KEY_SECRET || !GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY) {
-        return res.status(500).json({ error: 'Server misconfigured for download proxy' });
+    if (!RAZORPAY_KEY_SECRET) {
+        return res.status(500).json({ error: 'Server misconfigured for download proxy (missing RAZORPAY_KEY_SECRET)' });
     }
 
     const expectedSig = signDownloadToken(RAZORPAY_KEY_SECRET, fileId, email, expires);
@@ -64,7 +67,31 @@ async function handleSignedDownload(req, res) {
         return res.status(410).json({ error: 'This download link has expired. Please contact support for a new one.' });
     }
 
+    // store=sb routes to Supabase Storage; omitting store or any other value goes
+    // to the Drive path (backward compatible — all existing signed URLs still work).
+    const isSupabaseStorage = String(store).toLowerCase() === 'sb';
+
     try {
+        if (isSupabaseStorage) {
+            const { getServiceKey } = await import('../lib/supabaseAdmin.js');
+            const serviceKey = getServiceKey();
+            if (!serviceKey) {
+                console.error('grant-access download proxy: SUPABASE_SERVICE_ROLE_KEY not set, cannot stream storage object');
+                return res.status(500).json({ error: 'Server misconfigured for storage downloads' });
+            }
+            return await streamSupabaseStorageObject({
+                supabaseUrl: SUPABASE_URL,
+                serviceKey,
+                objectKey: fileId,
+                res,
+                fileName: name,
+            });
+        }
+
+        // Drive path (existing behavior)
+        if (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY) {
+            return res.status(500).json({ error: 'Server misconfigured for download proxy (missing Drive credentials)' });
+        }
         const token = await getDriveAccessToken(GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY);
         const isFolder = String(req.query?.isFolder) === '1';
         const { fileId: servableFileId, fileName: resolvedName } = await resolveServableDriveFile(token, fileId, isFolder);
@@ -113,14 +140,13 @@ export default async function handler(req, res) {
 
     const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
     const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
-    const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
-    const SUPABASE_KEY = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRudGFibXl1cmxybG5vYWpkbmphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMDEyNjUsImV4cCI6MjA4NTY3NzI2NX0.PYpNd_t_px09zi2d5WGjFVOB23sjb3ZPuAnxagYshe0';
     const GOOGLE_SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
     const GOOGLE_PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY;
 
     if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
         return res.status(500).json({ error: 'Payment gateway not configured' });
     }
+    if (blockIfUnconfigured(res, 'grant-access')) return;
 
     try {
         const { payment_id: paymentId, email } = req.body || {};
@@ -192,7 +218,7 @@ export default async function handler(req, res) {
 
             try {
                 const { getExpectedCartOrder, isWithinTolerance } = await import('../lib/pricing.js');
-                const capturedMajor = ZERO_DECIMAL_CURRENCIES.includes(String(payment.currency).toUpperCase())
+                const capturedMajor = isZeroDecimalCurrency(payment.currency)
                     ? payment.amount
                     : payment.amount / 100;
                 const expected = await getExpectedCartOrder(
@@ -212,10 +238,10 @@ export default async function handler(req, res) {
             for (const item of parsedItems) {
                 let name = item.productId;
                 let fileUrl = '';
-                if (SUPABASE_KEY) {
+                {
                     const prodResp = await fetch(
                         `${SUPABASE_URL}/rest/v1/products?id=eq.${encodeURIComponent(item.productId)}&select=name,file_url`,
-                        { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+                        { headers: serviceHeaders() }
                     );
                     if (prodResp.ok) {
                         const rows = await prodResp.json();
@@ -223,6 +249,8 @@ export default async function handler(req, res) {
                             name = rows[0].name || name;
                             fileUrl = rows[0].file_url || '';
                         }
+                    } else {
+                        console.error('grant-access (cart): product lookup failed:', prodResp.status, await prodResp.text());
                     }
                 }
 
@@ -230,6 +258,22 @@ export default async function handler(req, res) {
                 let granted = false;
                 let grantError = null;
                 let secureDownloadUrl = null;
+
+                // Supabase-hosted product: the bucket is private, so hand out a
+                // signed, expiring proxy URL instead of the raw storage URL.
+                const storageRef = parseSupabaseStorageUrl(downloadLink);
+                if (storageRef) {
+                    const baseUrl = `https://${req.headers.host}`;
+                    downloadLink = buildSignedDownloadUrl(
+                        baseUrl, RAZORPAY_KEY_SECRET, storageRef.objectKey, email,
+                        storageRef.fileName || name, false, 'sb'
+                    );
+                    granted = true;
+                    console.log(`grant-access (cart): issued signed storage URL for ${storageRef.objectKey} to ${email} (payment ${paymentId})`);
+                    items.push({ product: name, download_link: downloadLink, drive_access_granted: granted, drive_error: grantError });
+                    continue;
+                }
+
                 const driveFileId = extractDriveFileId(downloadLink);
                 if (driveFileId && GOOGLE_SERVICE_ACCOUNT_EMAIL && GOOGLE_PRIVATE_KEY) {
                     const isFolder = downloadLink.includes('/folders/');
@@ -299,7 +343,7 @@ export default async function handler(req, res) {
         if (productId) {
             try {
                 const expected = await getExpectedProductOrder(productId, payment.currency, couponCode);
-                const capturedMajor = ZERO_DECIMAL_CURRENCIES.includes(String(payment.currency).toUpperCase())
+                const capturedMajor = isZeroDecimalCurrency(payment.currency)
                     ? payment.amount
                     : payment.amount / 100;
                 if (expected.ok && !isWithinTolerance(capturedMajor, expected.amountMajor)) {
@@ -315,9 +359,9 @@ export default async function handler(req, res) {
         }
 
         // 3. Fallback: look up link in Supabase products by name
-        if (!downloadLink && productName && SUPABASE_KEY) {
+        if (!downloadLink && productName) {
             const prodResp = await fetch(`${SUPABASE_URL}/rest/v1/products?select=name,file_url`, {
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+                headers: serviceHeaders()
             });
             if (prodResp.ok) {
                 const products = await prodResp.json();
@@ -326,6 +370,8 @@ export default async function handler(req, res) {
                     ? products.find(p => normalizeProductName(p.name) === norm && p.file_url)
                     : null;
                 if (matched) downloadLink = matched.file_url;
+            } else {
+                console.error('grant-access: product name fallback failed:', prodResp.status, await prodResp.text());
             }
         }
 
@@ -333,11 +379,31 @@ export default async function handler(req, res) {
             return res.status(404).json({ error: 'No download link found for this purchase', product: productName || null });
         }
 
-        // 4. Grant Drive permission if it's a Drive link
-        const driveFileId = extractDriveFileId(downloadLink);
+        // 4. Deliver the file.
         let granted = false;
         let grantError = null;
         let secureDownloadUrl = null;
+
+        // Supabase-hosted product: bucket is private, so issue a signed,
+        // expiring proxy URL rather than the raw (now 400-ing) storage URL.
+        const storageRef = parseSupabaseStorageUrl(downloadLink);
+        if (storageRef) {
+            const baseUrl = `https://${req.headers.host}`;
+            downloadLink = buildSignedDownloadUrl(
+                baseUrl, RAZORPAY_KEY_SECRET, storageRef.objectKey, email,
+                storageRef.fileName || productName, false, 'sb'
+            );
+            console.log(`grant-access: issued signed storage URL for ${storageRef.objectKey} to ${email} (payment ${paymentId})`);
+            return res.status(200).json({
+                success: true,
+                product: productName || null,
+                download_link: downloadLink,
+                drive_access_granted: true,
+                drive_error: null
+            });
+        }
+
+        const driveFileId = extractDriveFileId(downloadLink);
 
         if (driveFileId && GOOGLE_SERVICE_ACCOUNT_EMAIL && GOOGLE_PRIVATE_KEY) {
             const isFolder = downloadLink.includes('/folders/');

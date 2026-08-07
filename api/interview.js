@@ -1,5 +1,7 @@
 import https from 'https';
 import crypto from 'crypto';
+import { isZeroDecimalCurrency } from '../lib/pricing.js';
+import { getServiceKey } from '../lib/supabaseAdmin.js';
 
 // --- Interview session tokens ------------------------------------------------
 //
@@ -112,8 +114,13 @@ export default async function handler(req, res) {
     
         try {
             const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
-        const SUPABASE_KEY = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY
-            || 'sb_publishable_OhbTYIuMYgGgmKPQJ9W7RA_rhKyaad0';
+            // RLS denies `anon` on products, so the old inline anon-key fallback
+            // here made the advisor answer from an empty catalog instead of erroring.
+            const SUPABASE_KEY = getServiceKey();
+            if (!SUPABASE_KEY) {
+                console.error('CONFIG: SUPABASE_SERVICE_ROLE_KEY is not set — advisor cannot read the catalog.');
+                return res.status(503).json({ error: 'Advisor unavailable right now.' });
+            }
             const catalog = await fetchCatalog(SUPABASE_URL, SUPABASE_KEY);
             const result = await askAdvisor({
                 groqKey: GROQ_API_KEY,
@@ -159,7 +166,7 @@ export default async function handler(req, res) {
                 return res.status(402).json({ error: `Payment not captured (status: ${payment.status})` });
             }
             const expected = await getExpectedInterviewOrder(durationMinutes, payment.currency);
-            const capturedMajor = ['JPY', 'KRW', 'VND', 'CLP', 'PYG', 'UGX'].includes(String(payment.currency).toUpperCase())
+            const capturedMajor = isZeroDecimalCurrency(payment.currency)
                 ? payment.amount
                 : payment.amount / 100;
             if (!expected.ok || !isWithinTolerance(capturedMajor, expected.amountMajor)) {
@@ -244,7 +251,9 @@ IMPORTANT:
 
             // Log to Supabase
             const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
-            const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_OhbTYIuMYgGgmKPQJ9W7RA_rhKyaad0';
+            // Service role: RLS denies `anon` INSERT on interview_sessions, so the
+            // old anon-key fallback silently dropped every session log.
+            const SUPABASE_KEY = getServiceKey();
             if (SUPABASE_URL && SUPABASE_KEY) {
                 try {
                     // Log to Supabase (Await ensures completion in serverless environments)

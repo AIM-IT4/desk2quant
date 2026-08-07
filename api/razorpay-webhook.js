@@ -3,10 +3,15 @@
 // Handles product purchases and session bookings
 
 import crypto from 'crypto';
-import { grantDrivePermissionOrSignedFallback, buildSignedDownloadUrl } from '../lib/secureDownload.js';
+import {
+    grantDrivePermissionOrSignedFallback,
+    buildSignedDownloadUrl,
+    parseSupabaseStorageUrl
+} from '../lib/secureDownload.js';
 import { createJitsiMeetingLink } from '../lib/jitsi.js';
 import { queuePostPurchaseRecommendation } from '../lib/recommendationQueue.js';
-import { getExpectedProductOrder, getExpectedSessionOrder, getExpectedCartOrder, isWithinTolerance } from '../lib/pricing.js';
+import { getExpectedProductOrder, getExpectedSessionOrder, getExpectedCartOrder, isWithinTolerance, isZeroDecimalCurrency } from '../lib/pricing.js';
+import { getServiceKey } from '../lib/supabaseAdmin.js';
 
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || 'https://desk2quant.com';
 
@@ -55,7 +60,13 @@ export default async function handler(req, res) {
     const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
     const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
     const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
-    const SUPABASE_KEY = process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRudGFibXl1cmxybG5vYWpkbmphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMDEyNjUsImV4cCI6MjA4NTY3NzI2NX0.PYpNd_t_px09zi2d5WGjFVOB23sjb3ZPuAnxagYshe0';
+    // Service-role key: RLS denies `anon` on products/purchases/bookings, so the
+    // old inline anon-key fallback here would silently fail every write and every
+    // file_url lookup. Fail loudly instead of recording nothing.
+    const SUPABASE_KEY = getServiceKey();
+    if (!SUPABASE_KEY) {
+        console.error('CONFIG: SUPABASE_SERVICE_ROLE_KEY is not set — cannot record purchases or resolve download links.');
+    }
     const BREVO_API_KEY = process.env.BREVO_API_KEY;
     // Warn loudly rather than silently misrouting. Sale alerts went to the
     // gmail fallback because ADMIN_EMAIL was simply never set, and nothing in
@@ -120,8 +131,7 @@ export default async function handler(req, res) {
             const payment = event.payload.payment.entity;
             const paymentId = payment.id;
             const currency = payment.currency;
-            const zeroDecimalCurrencies = ['JPY', 'KRW', 'VND', 'CLP', 'PYG', 'UGX'];
-            const amount = zeroDecimalCurrencies.includes(currency) ? payment.amount : payment.amount / 100;
+            const amount = isZeroDecimalCurrency(currency) ? payment.amount : payment.amount / 100;
             const customerEmail = payment.email;
             const customerName = payment.notes?.customer_name || 'Customer';
             const customerPhone = payment.notes?.customer_phone || '';
@@ -490,7 +500,21 @@ export async function handleProductPurchase(data) {
     // Google Drive Secure Sharing Flow
     let hasSharedSecurely = false;
     let fallbackToManualInfo = false;
-    const driveFileId = extractDriveFileId(downloadLink);
+
+    // Supabase-hosted product: the storage bucket is private, so the raw
+    // /object/public/ URL no longer resolves. Issue a signed, expiring,
+    // per-buyer proxy link instead. Same underpayment gate as Drive below.
+    const storageRef = parseSupabaseStorageUrl(downloadLink);
+    if (storageRef && !underpaymentFlag) {
+        downloadLink = buildSignedDownloadUrl(
+            PUBLIC_BASE_URL, process.env.RAZORPAY_KEY_SECRET, storageRef.objectKey,
+            customerEmail, storageRef.fileName || productName, false, 'sb'
+        );
+        hasSharedSecurely = true;
+        console.log(`Issued signed storage URL for ${storageRef.objectKey} to ${customerEmail}`);
+    }
+
+    const driveFileId = storageRef ? null : extractDriveFileId(downloadLink);
 
     // Do NOT grant Drive access or reveal the download link when the
     // captured amount fell short of the verified price (see price-tamper
@@ -966,7 +990,21 @@ async function handleCartPurchase(data) {
 
         let downloadLink = fileUrl || '#';
         let hasSharedSecurely = false;
-        const driveFileId = extractDriveFileId(downloadLink);
+
+        // Supabase-hosted line item: the bucket is private, so the raw
+        // /object/public/ URL no longer resolves. Hand out a signed, expiring,
+        // per-buyer proxy link instead. Same underpayment gate as Drive below.
+        const storageRef = parseSupabaseStorageUrl(downloadLink);
+        if (storageRef && !underpaymentFlag) {
+            downloadLink = buildSignedDownloadUrl(
+                PUBLIC_BASE_URL, process.env.RAZORPAY_KEY_SECRET, storageRef.objectKey,
+                customerEmail, storageRef.fileName || name, false, 'sb'
+            );
+            hasSharedSecurely = true;
+            console.log(`Issued signed storage URL for cart line "${name}" (${storageRef.objectKey}) to ${customerEmail}`);
+        }
+
+        const driveFileId = storageRef ? null : extractDriveFileId(downloadLink);
 
         if (driveFileId && !underpaymentFlag) {
             const GOOGLE_SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;

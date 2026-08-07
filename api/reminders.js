@@ -7,6 +7,7 @@
 // inside the Razorpay webhook that had no completion guarantee on serverless.
 
 import { sendRecommendationEmail } from '../lib/recommendationEmail.js';
+import { getServiceKey, blockIfUnconfigured } from '../lib/supabaseAdmin.js';
 
 // Module-scope constants so sendReminder can access them
 const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || process.env.SENDER_EMAIL || 'hello@desk2quant.com';
@@ -32,7 +33,11 @@ export default async function handler(req, res) {
 
     // Configuration from environment variables
     const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
-    const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_OhbTYIuMYgGgmKPQJ9W7RA_rhKyaad0';
+    // Service role: RLS denies `anon` on bookings/purchases and the
+    // recommendation_emails queue, so the old inline anon-key fallback made every
+    // reminder sweep a silent no-op.
+    if (blockIfUnconfigured(res, 'reminders')) return;
+    const SUPABASE_KEY = getServiceKey();
     const BREVO_API_KEY = process.env.BREVO_API_KEY;
     if (!process.env.ADMIN_EMAIL) {
         console.warn('CONFIG: ADMIN_EMAIL not set - reminder alerts fall back to hello@desk2quant.com');

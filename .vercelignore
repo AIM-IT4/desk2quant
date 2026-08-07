@@ -26,8 +26,10 @@ test/
 graft/
 
 # Build/tooling that must never be web-served.
-# NOTE: scripts/ is deliberately NOT listed here — buildCommand runs
-# `node scripts/build-seo.js`, so excluding it would break the build. It is
-# blocked from web access by the /scripts/:path* rewrite in vercel.json instead.
+# lib/, scripts/, api/_*, and generate-config.js cannot appear here because
+# buildCommand runs NODE scripts/build-seo.js AND api/*.js imports ../lib/*.js
+# at function-bundle time. Excluding them via .vercelignore would break the
+# build. They are sealed from web access by redirects in vercel.json instead
+# (redirects fire before the filesystem in Vercel's routing order).
 supabase/
 .claude/

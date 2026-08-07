@@ -4,6 +4,7 @@
 // Sends the 3 most recently added products to every customer who hasn't purchased them
 
 import { authorizeCronRequest } from '../lib/cronAuth.js';
+import { getServiceKey, blockIfUnconfigured } from '../lib/supabaseAdmin.js';
 
 export default async function handler(req, res) {
     if (req.method !== 'GET' && req.method !== 'POST') {
@@ -17,7 +18,10 @@ export default async function handler(req, res) {
     }
 
     const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
-    const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_OhbTYIuMYgGgmKPQJ9W7RA_rhKyaad0';
+    // Service role: RLS denies `anon` on products/purchases, so the old inline
+    // anon-key fallback made this campaign silently mail nobody.
+    if (blockIfUnconfigured(res, 'send-latest-products')) return;
+    const SUPABASE_KEY = getServiceKey();
     const BREVO_API_KEY = process.env.BREVO_API_KEY;
     const SENDER_EMAIL = process.env.SENDER_EMAIL || 'hello@desk2quant.com';
     const SENDER_NAME = process.env.SENDER_NAME || 'Desk2Quant';
