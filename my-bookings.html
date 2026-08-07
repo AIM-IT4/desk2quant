@@ -970,54 +970,9 @@ Do you want to proceed with cancellation?`;
                     throw new Error(data.error || 'Cancellation request failed');
                 }
 
-                // Send cancellation notification via Brevo
-                const htmlContent = `
-                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                        <h2 style="color: #ef4444;">❌ Cancellation Request Received</h2>
-                        <hr style="border: 1px solid #e5e7eb; margin: 20px 0;">
-                        <p><strong>Booking ID:</strong> ${bookingId}</p>
-                        <p><strong>Session:</strong> ${booking.service_name}</p>
-                        <p><strong>Original Date:</strong> ${formatDate(booking.booking_date)} at ${booking.booking_time}</p>
-                        <hr style="border: 1px solid #e5e7eb; margin: 20px 0;">
-                        <h3 style="color: #374151;">REFUND DETAILS:</h3>
-                        <p>• <strong>Original Amount:</strong> ₹${booking.service_price}</p>
-                        <p>• <strong>Refund Percentage:</strong> ${refundInfo.percentage}%</p>
-                        <p>• <strong>Refund Amount:</strong> ₹${refundInfo.amount}</p>
-                        <p>• <strong>Policy Applied:</strong> ${refundInfo.policyApplied}</p>
-                        <hr style="border: 1px solid #e5e7eb; margin: 20px 0;">
-                        <p style="color: #6b7280;"><strong>Status:</strong> Pending Admin Approval</p>
-                        <p style="color: #6b7280;"><strong>Processing Time:</strong> 5-7 business days after approval</p>
-                        <p style="margin-top: 20px; color: #6b7280;">You will receive another email once your refund is processed.</p>
-                        <p style="color: #6b7280;">Best regards,<br>${(window.CONFIG && window.CONFIG.BREVO_SENDER_NAME) || 'Desk2Quant'}</p>
-                    </div>
-                `;
-
-                const textContent = `
-❌ CANCELLATION REQUEST RECEIVED
-━━━━━━━━━━━━━━━━━━━━
-Booking ID: ${bookingId}
-Session: ${booking.service_name}
-Original Date: ${formatDate(booking.booking_date)} at ${booking.booking_time}
-
-REFUND DETAILS:
-• Original Amount: ₹${booking.service_price}
-• Refund Percentage: ${refundInfo.percentage}%
-• Refund Amount: ₹${refundInfo.amount}
-• Policy Applied: ${refundInfo.policyApplied}
-
-Status: Pending Admin Approval
-Processing Time: 5-7 business days after approval
-━━━━━━━━━━━━━━━━━━━━
-                `;
-
-                await sendEmailWithBrevo(
-                    booking.email,
-                    `Cancellation Request Received - Booking ${bookingId}`,
-                    htmlContent,
-                    textContent
-                );
-
-                console.log('📧 Cancellation email sent successfully');
+                // Cancellation confirmation email is sent by the server
+                // (api/interview.js cancel-booking) so it always goes out even
+                // if the browser closes. Show the success message locally.
 
                 // Show success message with refund details
                 alert(`✅ Cancellation Request Submitted!

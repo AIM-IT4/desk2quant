@@ -8,6 +8,7 @@
 
 import { sendRecommendationEmail } from '../lib/recommendationEmail.js';
 import { getServiceKey, blockIfUnconfigured } from '../lib/supabaseAdmin.js';
+import { emailShell, escapeHtml } from '../lib/emailBranding.js';
 
 // Module-scope constants so sendReminder can access them
 const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || process.env.SENDER_EMAIL || 'hello@desk2quant.com';
@@ -310,105 +311,70 @@ async function sendReminder(booking, type, config) {
 
     if (type === '24h') {
         subject = `Reminder: Session Tomorrow - ${booking.service_name}`;
-        htmlBody = `
-            <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
-                <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                    <div style="background-color: #ffffff; padding: 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
-                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;"><tr><td style="padding-right: 12px; vertical-align: middle;"><img src="https://desk2quant.com/assets/images/email-logo.png" width="32" height="32" alt="Desk2Quant" style="display: block; width: 32px; height: 32px; border: 0; outline: none; text-decoration: none; color: #1a1a1a; font-size: 20px; font-weight: bold;"></td><td style="vertical-align: middle;"><span style="color: #1a1a1a; font-size: 24px; font-weight: bold; letter-spacing: 1px;">Desk2Quant</span></td></tr></table>
-                    </div>
-                    <div style="padding: 30px;">
+        htmlBody = emailShell({ body: `
                         <div style="margin-bottom: 20px;">
-                            <span style="display: inline-block; background: #e0e7ff; color: #3730a3; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase;">Upcoming Session</span>
+                            <span style="display: inline-block; background:#ffca3a; color:#090909; padding:4px 8px; border:1px solid #090909; border-radius:0; font-size:11px; font-weight:800; text-transform:uppercase; box-shadow:2px 2px 0 #090909;">Upcoming Session</span>
                         </div>
-                        <p style="font-size: 16px; margin-bottom: 25px;">Hi <strong>${userName}</strong>, you have a session tomorrow.</p>
+                        <p style="font-size: 16px; margin-bottom: 25px;">Hi <strong>${escapeHtml(userName)}</strong>, you have a session tomorrow.</p>
                         
-                        <div style="background: #f9f8f4; padding: 20px; border-radius: 6px; margin-bottom: 20px;">
-                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Session Details</p>
-                            <h3 style="margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 1px solid #e5e5e5; padding-bottom: 15px;">${booking.service_name}</h3>
+                        <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px; margin-bottom:20px;">
+                            <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Session Details</p>
+                            <h3 style="margin: 0 0 20px 0; font-size: 18px; color: #090909; border-bottom: 1px solid #d8d8d1; padding-bottom: 15px;">${escapeHtml(booking.service_name)}</h3>
                             <table style="width: 100%; border-collapse: collapse;">
                                 <tr>
-                                    <td style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; padding: 5px 0;">Date</td>
+                                    <td style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; padding: 5px 0;">Date</td>
                                     <td style="font-size: 14px; font-weight: bold; text-align: right; padding: 5px 0;">${booking.booking_date}</td>
                                 </tr>
                                 <tr>
-                                    <td style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; padding: 5px 0;">Time</td>
+                                    <td style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; padding: 5px 0;">Time</td>
                                     <td style="font-size: 14px; font-weight: bold; text-align: right; padding: 5px 0;">${displayTime} IST</td>
                                 </tr>
                             </table>
                         </div>
-                    </div>
-                    <div style="background-color: #1a1a1a; padding: 25px 20px; text-align: center; color: #888; font-size: 12px;">
-                        <p style="margin: 0 0 10px 0;">Sent by Desk2Quant</p>
-                        <p style="margin: 0;">Have an issue? Reply to this email.</p>
-                    </div>
-                </div>
-            </div>
-        `;
+        ` });
     } else if (type === '10m') {
         subject = `Starting Soon: Your Session in 10 Minutes! ⏰`;
-        htmlBody = `
-            <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
-                <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                    <div style="background-color: #ffffff; padding: 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
-                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;"><tr><td style="padding-right: 12px; vertical-align: middle;"><img src="https://desk2quant.com/assets/images/email-logo.png" width="32" height="32" alt="Desk2Quant" style="display: block; width: 32px; height: 32px; border: 0; outline: none; text-decoration: none; color: #1a1a1a; font-size: 20px; font-weight: bold;"></td><td style="vertical-align: middle;"><span style="color: #1a1a1a; font-size: 24px; font-weight: bold; letter-spacing: 1px;">Desk2Quant</span></td></tr></table>
-                    </div>
-                    <div style="padding: 30px;">
+        htmlBody = emailShell({ body: `
                         <div style="margin-bottom: 20px;">
-                            <span style="display: inline-block; background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase;">⏰ Starts in 10 mins</span>
+                            <span style="display: inline-block; background:#0b7f79; color:#ffffff; padding:4px 8px; border:1px solid #090909; border-radius:0; font-size:11px; font-weight:800; text-transform:uppercase; box-shadow:2px 2px 0 #090909;">⏰ Starts in 10 mins</span>
                         </div>
-                        <p style="font-size: 16px; margin-bottom: 25px;">Hi <strong>${userName}</strong>, your session starts soon.</p>
+                        <p style="font-size: 16px; margin-bottom: 25px;">Hi <strong>${escapeHtml(userName)}</strong>, your session starts soon.</p>
                         
-                        <div style="background: #f9f8f4; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
-                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Session Details</p>
-                            <h3 style="margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 1px solid #e5e5e5; padding-bottom: 15px;">${booking.service_name}</h3>
+                        <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px; margin-bottom:25px;">
+                            <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Session Details</p>
+                            <h3 style="margin: 0 0 20px 0; font-size: 18px; color: #090909; border-bottom: 1px solid #d8d8d1; padding-bottom: 15px;">${escapeHtml(booking.service_name)}</h3>
                             <table style="width: 100%; border-collapse: collapse;">
                                 <tr>
-                                    <td style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; padding: 5px 0;">Date</td>
+                                    <td style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; padding: 5px 0;">Date</td>
                                     <td style="font-size: 14px; font-weight: bold; text-align: right; padding: 5px 0;">${booking.booking_date}</td>
                                 </tr>
                                 <tr>
-                                    <td style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; padding: 5px 0;">Time</td>
+                                    <td style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; padding: 5px 0;">Time</td>
                                     <td style="font-size: 14px; font-weight: bold; text-align: right; padding: 5px 0;">${displayTime} IST</td>
                                 </tr>
                             </table>
                         </div>
 
                         <center>
-                            <a href="${meetLink}" style="display: inline-block; background: #16a34a; color: #ffffff; font-weight: bold; text-decoration: none; padding: 14px 30px; border-radius: 6px; font-size: 16px; margin-bottom: 20px;">Join Meeting</a>
+                            <a href="${escapeHtml(meetLink)}" style="display: inline-block; background:#ffca3a; color:#090909; font-weight:800; text-decoration:none; padding:14px 30px; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; font-size:16px; margin-bottom:20px;">Join Meeting</a>
                         </center>
-                    </div>
-                    <div style="background-color: #1a1a1a; padding: 25px 20px; text-align: center; color: #888; font-size: 12px;">
-                        <p style="margin: 0 0 10px 0;">Please be ready with your questions.</p>
-                        <p style="margin: 0;">Sent by Desk2Quant</p>
-                    </div>
-                </div>
-            </div>
-        `;
+        ` });
     } else if (type === '5m') {
         subject = `🚨 STARTING NOW: Your Session in 5 Minutes!`;
-        htmlBody = `
-            <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
-                <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 2px solid #ef4444;">
-                    <div style="background-color: #ffffff; padding: 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
-                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;"><tr><td style="padding-right: 12px; vertical-align: middle;"><img src="https://desk2quant.com/assets/images/email-logo.png" width="32" height="32" alt="Desk2Quant" style="display: block; width: 32px; height: 32px; border: 0; outline: none; text-decoration: none; color: #1a1a1a; font-size: 20px; font-weight: bold;"></td><td style="vertical-align: middle;"><span style="color: #1a1a1a; font-size: 24px; font-weight: bold; letter-spacing: 1px;">Desk2Quant</span></td></tr></table>
-                    </div>
-                    <div style="padding: 30px;">
+        htmlBody = emailShell({ body: `
                         <div style="margin-bottom: 20px; text-align: center;">
-                            <span style="display: inline-block; background: #fee2e2; color: #991b1b; padding: 6px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; text-transform: uppercase;">🚨 STARTING NOW</span>
+                            <span style="display: inline-block; background:#d73f3f; color:#ffffff; padding:6px 12px; border:1px solid #090909; border-radius:0; font-size:13px; font-weight:800; text-transform:uppercase; box-shadow:2px 2px 0 #090909;">🚨 STARTING NOW</span>
                         </div>
-                        <p style="font-size: 18px; margin-bottom: 25px; text-align: center;">Hi <strong>${userName}</strong>, please join the meeting immediately!</p>
+                        <p style="font-size: 18px; margin-bottom: 25px; text-align: center;">Hi <strong>${escapeHtml(userName)}</strong>, please join the meeting immediately!</p>
                         
-                        <div style="background: #f9f8f4; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
-                            <h3 style="margin: 0; font-size: 18px; color: #1a1a1a; text-align: center;">${booking.service_name}</h3>
+                        <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px; margin-bottom:25px;">
+                            <h3 style="margin: 0; font-size: 18px; color: #090909; text-align: center;">${escapeHtml(booking.service_name)}</h3>
                         </div>
 
                         <center>
-                            <a href="${meetLink}" style="display: inline-block; background: #ef4444; color: #ffffff; font-weight: bold; text-decoration: none; padding: 16px 36px; border-radius: 6px; font-size: 18px; margin-bottom: 10px;">🚀 JOIN NOW</a>
+                            <a href="${escapeHtml(meetLink)}" style="display: inline-block; background:#d73f3f; color:#ffffff; font-weight:800; text-decoration:none; padding:16px 36px; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; font-size:18px; margin-bottom:10px;">🚀 JOIN NOW</a>
                         </center>
-                    </div>
-                </div>
-            </div>
-        `;
+        ` });
     }
 
     // Send email via Brevo

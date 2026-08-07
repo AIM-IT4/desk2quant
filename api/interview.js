@@ -2,6 +2,7 @@ import https from 'https';
 import crypto from 'crypto';
 import { isZeroDecimalCurrency } from '../lib/pricing.js';
 import { getServiceKey } from '../lib/supabaseAdmin.js';
+import { emailShell, escapeHtml } from '../lib/emailBranding.js';
 
 // --- Interview session tokens ------------------------------------------------
 //
@@ -254,10 +255,12 @@ async function handleBookingsAction(req, res, action) {
 
         // 5. CANCEL request (refund amounts computed client-side from the same
         //    policy the page always used; stored server-side for the admin).
+        //    The branded confirmation email is sent from here (service side),
+        //    so the customer always gets it even if their browser closes.
         if (action === 'cancel-booking') {
             const refundAmount = Number(body.refundAmount) || 0;
             const refundPercentage = Number(body.refundPercentage) || 0;
-            const booking = await fetchBooking('email');
+            const booking = await fetchBooking('email,name,service_name,service_price,booking_date,booking_time');
             if (!booking || String(booking.email || '').trim().toLowerCase() !== email) {
                 return res.status(403).json({ error: 'Booking not found for this email' });
             }
@@ -270,7 +273,67 @@ async function handleBookingsAction(req, res, action) {
                 refund_status: 'pending'
             });
             if (!ok) return res.status(502).json({ error: 'Failed to save cancellation request' });
-            return res.status(200).json({ success: true });
+
+            // Branded cancellation confirmation to the customer.
+            let emailSent = false;
+            try {
+                const BREVO_API_KEY = process.env.BREVO_API_KEY;
+                if (BREVO_API_KEY) {
+                    const SENDER_EMAIL = process.env.SENDER_EMAIL || 'hello@desk2quant.com';
+                    const SENDER_NAME = process.env.SENDER_NAME || 'Desk2Quant';
+                    const customerName = booking.name || 'there';
+                    const customerHtml = emailShell({ body: `
+                        <div style="margin-bottom: 20px;">
+                            <span style="display: inline-block; background:#ffca3a; color:#090909; padding:4px 8px; border:1px solid #090909; border-radius:0; font-size:11px; font-weight:800; text-transform:uppercase; box-shadow:2px 2px 0 #090909;">Cancellation Request</span>
+                        </div>
+                        <p style="font-size: 16px; margin-bottom: 20px; color: #090909;">Hi <strong>${escapeHtml(customerName)}</strong>, your cancellation request has been received.</p>
+
+                        <div style="background:#ffffff; padding:18px; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; margin-bottom:20px;">
+                            <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Session</p>
+                            <h3 style="margin: 0 0 12px 0; font-size: 17px; color: #090909;">${escapeHtml(booking.service_name)}</h3>
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr>
+                                    <td style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; padding: 4px 0;">Date</td>
+                                    <td style="font-size: 14px; font-weight: bold; text-align: right; padding: 4px 0; color: #090909;">${escapeHtml(booking.booking_date)}</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; padding: 4px 0;">Time</td>
+                                    <td style="font-size: 14px; font-weight: bold; text-align: right; padding: 4px 0; color: #090909;">${escapeHtml(booking.booking_time)}</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div style="background:#dff2ef; padding:18px; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; margin-bottom:20px;">
+                            <p style="font-size: 14px; font-weight: bold; color: #0b7f79; margin: 0 0 10px 0;">💰 Refund Details</p>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                                <tr><td style="padding: 4px 0; color: #666761;">Original Amount</td><td style="padding: 4px 0; text-align: right; color: #090909;">₹${escapeHtml(booking.service_price || 0)}</td></tr>
+                                <tr><td style="padding: 4px 0; color: #666761;">Refund Percentage</td><td style="padding: 4px 0; text-align: right; color: #090909;">${escapeHtml(refundPercentage)}%</td></tr>
+                                <tr style="border-top: 1px solid #d8d8d1;"><td style="padding: 10px 0 0 0; color: #0b7f79; font-weight: bold; font-size: 15px;">Refund Amount</td><td style="padding: 10px 0 0 0; text-align: right; color: #0b7f79; font-weight: bold; font-size: 17px;">₹${escapeHtml(refundAmount)}</td></tr>
+                            </table>
+                        </div>
+
+                        <div style="background:#fff3c4; padding:14px; border:1px solid #090909; border-radius:0; box-shadow:3px 3px 0 #090909; font-size:13px; color:#7c4a03; line-height:1.5;">
+                            ⏱ Refunds are credited to your original payment method within <strong>5-7 business days</strong> after approval.
+                        </div>
+                    ` });
+                    await httpRequest('https://api.brevo.com/v3/smtp/email', {
+                        method: 'POST',
+                        headers: { 'accept': 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' }
+                    }, {
+                        sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+                        replyTo: { email: SENDER_EMAIL, name: SENDER_NAME },
+                        to: [{ email: booking.email, name: customerName }],
+                        subject: `Cancellation Request Received - Booking ${bookingId}`,
+                        htmlContent: customerHtml,
+                        textContent: `Hi ${customerName},\n\nYour cancellation request has been received.\n\nSession: ${booking.service_name}\nOriginal Date: ${booking.booking_date} at ${booking.booking_time}\n\nRefund: \u20B9${refundAmount} (${refundPercentage}%)\nStatus: Pending admin approval\nProcessing: 5-7 business days after approval\n\nSent by Desk2Quant`
+                    });
+                    emailSent = true;
+                }
+            } catch (err) {
+                console.error('Cancellation email failed (booking still cancelled):', err.message);
+            }
+
+            return res.status(200).json({ success: true, emailSent });
         }
 
         // 6. ACCEPT the admin's proposed reschedule.
@@ -660,7 +723,7 @@ function markdownToHtml(text) {
     if (!text) return '';
     return text
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/^### (.*$)/gm, '<h3 style="color:#2563eb;margin-top:20px;">$1</h3>')
+        .replace(/^### (.*$)/gm, '<h3 style="color:#0b7f79;margin-top:20px;">$1</h3>')
         .replace(/^## (.*$)/gm, '<h2 style="color:#1e40af;margin-top:25px;border-bottom:1px solid #ddd;padding-bottom:5px;">$1</h2>')
         .replace(/^- (.*$)/gm, '<li style="margin-bottom:5px;">$1</li>')
         .replace(/\n/g, '<br>');
@@ -675,26 +738,19 @@ async function sendEmailReport(toEmail, toName, reportMarkdown) {
     }
 
     const htmlReport = markdownToHtml(reportMarkdown);
-    const htmlContent = `
-        <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; color: #333; line-height: 1.6;">
-            <div style="background: #1e3a8a; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
-                <h1 style="margin:0;">Desk2Quant AI Interview Results</h1>
-            </div>
-            <div style="padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
-                <p>Hi <strong>${toName}</strong>,</p>
-                <p>Here is the detailed scorecard from your recent mock interview.</p>
-                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-                
-                <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                    ${htmlReport}
-                </div>
+    const htmlContent = emailShell({ body: `
+        <p style="font-size:16px; color:#090909; margin:0 0 12px 0;">Hi <strong>${escapeHtml(toName)}</strong>,</p>
+        <p style="font-size:14px; color:#44453f; margin:0 0 20px 0;">Here is the detailed scorecard from your recent mock interview.</p>
+        <hr style="border:0; border-top:1px solid #d8d8d1; margin:20px 0;">
 
-                <div style="margin-top: 30px; text-align: center; font-size: 0.9em; color: #64748b;">
-                    <p>Keep practicing! <a href="https://desk2quant.com" style="color: #2563eb;">Book a 1:1 session</a> for personalized feedback.</p>
-                </div>
-            </div>
+        <div style="background:#ffffff; padding:20px; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; overflow-wrap:anywhere; word-break:break-word; max-width:100%;">
+            ${htmlReport}
         </div>
-    `;
+
+        <div style="margin-top:28px; text-align:center; font-size:0.9em; color:#666761;">
+            <p>Keep practicing! <a href="https://desk2quant.com" style="color:#0b7f79;">Book a 1:1 session</a> for personalized feedback.</p>
+        </div>
+    ` });
 
     const options = {
         method: 'POST',
