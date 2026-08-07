@@ -1045,11 +1045,9 @@ let exchangeRatesTimestamp = null;
 const RATES_CACHE_DURATION = 3600000; // 1 hour in milliseconds
 const RATES_CACHE_KEY = 'qm_exchange_rates';
 
-// Cache for detected country (persisted to localStorage) — avoids the slow
-// sequential IP-geolocation lookup chain on every repeat page load, which was
-// the main cause of products/sessions taking a while to appear.
-const COUNTRY_CACHE_DURATION = 86400000; // 24 hours in milliseconds
-const COUNTRY_CACHE_KEY = 'qm_user_country';
+// NOTE: no persistent country cache exists on purpose — see getUserCountry().
+// A 24h localStorage cache used to pin the detected country, so switching a
+// VPN (or travelling) never changed the currency until the cache expired.
 
 // Try immediately, retry briefly if SDK not yet loaded (e.g. slow network)
 if (!initSupabaseAndLoad()) {
@@ -1111,94 +1109,126 @@ async function getUserCountry() {
         console.warn('URL country override parse failed:', e);
     }
 
+    // In-memory cache only (session reuse). Nothing is persisted to
+    // localStorage: a cached country used to live for 24h, so switching a VPN
+    // or travelling between countries kept the OLD country (and therefore the
+    // OLD currency) until the cache expired — which is exactly what made PPP
+    // pricing look broken from China/UK VPNs. Every fresh page load now
+    // re-detects via the (fast, parallel) lookup below.
     if (userCountryCode) {
         window.userCountryCode = userCountryCode;
         return userCountryCode;
     }
 
-    // Check localStorage for a country detected on a previous visit — skips the
-    // slow sequential IP-lookup chain below on repeat loads (instant instead of
-    // up to several seconds across multiple API attempts).
-    try {
-        const stored = JSON.parse(localStorage.getItem(COUNTRY_CACHE_KEY));
-        if (stored && stored.code && (Date.now() - stored.ts) < COUNTRY_CACHE_DURATION) {
-            userCountryCode = stored.code;
-            window.userCountryCode = userCountryCode;
-            qmLog('📍 Using cached country (age:', Math.round((Date.now() - stored.ts) / 60000), 'minutes):', userCountryCode);
-            return userCountryCode;
-        }
-    } catch (_) { /* ignore parse errors */ }
-
     const fetchWithTimeout = async (url, timeout = 5000) => {
         const controller = new AbortController();
         const id = setTimeout(() => controller.abort(), timeout);
-        const response = await fetch(url, { signal: controller.signal });
-        clearTimeout(id);
-        if (!response.ok) throw new Error('HTTP status ' + response.status);
-        return response.json();
+        try {
+            const response = await fetch(url, { signal: controller.signal });
+            if (!response.ok) throw new Error('HTTP status ' + response.status);
+            return response.json();
+        } finally {
+            clearTimeout(id);
+        }
     };
 
-    try {
-        const services = [
-            { url: 'https://freeipapi.com/api/json', parse: (d) => d.countryCode },
-            { url: 'https://ipwho.is/', parse: (d) => d.success ? d.country_code : null },
-            { url: 'https://ipinfo.io/json', parse: (d) => d.country },
-            { url: 'https://ipapi.co/json/', parse: (d) => d.country_code }
-        ];
+    // Parallel race instead of the old sequential chain. Probing services one
+    // at a time (4 x 5s timeouts) could take up to 20s and usually fell back to
+    // the timezone when VPN/datacenter IPs were rate-limited — the price then
+    // stayed in INR. Firing all services at once and taking the first valid
+    // answer means a typical detection lands in well under a second, and even
+    // the all-services-blocked worst case is a single 5s timeout.
+    const services = [
+        { url: 'https://freeipapi.com/api/json', parse: (d) => d.countryCode },
+        { url: 'https://ipwho.is/', parse: (d) => d.success ? d.country_code : null },
+        { url: 'https://api.country.is/', parse: (d) => d.country },
+        { url: 'https://ipinfo.io/json', parse: (d) => d.country },
+        { url: 'https://ipapi.co/json/', parse: (d) => d.country_code }
+    ];
 
-        for (const svc of services) {
-            try {
-                qmLog('Trying IP service:', svc.url);
-                const resp = await fetchWithTimeout(svc.url, 5000);
-                const code = svc.parse(resp);
-                if (code) {
-                    userCountryCode = code;
-                    window.userCountryCode = userCountryCode;
-                    break;
-                }
-            } catch (e) {
-                console.warn('Failed:', svc.url, e.message);
-            }
+    const attempts = services.map(async (svc) => {
+        try {
+            qmLog('Trying IP service:', svc.url);
+            const resp = await fetchWithTimeout(svc.url, 5000);
+            const code = svc.parse(resp);
+            if (code && String(code).trim().length === 2) return String(code).trim().toUpperCase();
+            throw new Error('No country code from ' + svc.url);
+        } catch (e) {
+            console.warn('IP service failed:', svc.url, e.message);
+            throw e; // let Promise.any move on to the next service
         }
+    });
 
-        if (!userCountryCode) throw new Error('All IP services failed');
-    } catch (e) {
-        console.warn('IP lookup failed, trying timezone fallback:', e);
+    try {
+        // Promise.any resolves with the FIRST service that returns a valid
+        // country code; rejects with an AggregateError only if all fail.
+        userCountryCode = await Promise.any(attempts);
+        window.userCountryCode = userCountryCode;
+        qmLog('User country detected:', userCountryCode);
+        return userCountryCode;
+    } catch (_) {
+        console.warn('All IP services failed, trying timezone fallback');
         const timezoneToCountry = {
+            // South Asia
             'Asia/Kolkata': 'IN', 'Asia/Calcutta': 'IN',
-            'Asia/Dubai': 'AE',
-            'Asia/Singapore': 'SG',
-            'Europe/London': 'GB',
-            'Europe/Paris': 'FR',
-            'Europe/Berlin': 'DE',
-            'Europe/Zurich': 'CH',
+            'Asia/Karachi': 'PK', 'Asia/Dhaka': 'BD', 'Asia/Colombo': 'LK',
+            'Asia/Kathmandu': 'NP',
+            // Middle East / Gulf
+            'Asia/Dubai': 'AE', 'Asia/Qatar': 'QA', 'Asia/Riyadh': 'SA',
+            'Asia/Kuwait': 'KW', 'Asia/Bahrain': 'BH', 'Asia/Muscat': 'OM',
+            'Asia/Amman': 'JO', 'Asia/Baghdad': 'IQ', 'Asia/Beirut': 'LB',
+            'Asia/Jerusalem': 'IL', 'Asia/Tehran': 'IR',
+            // East Asia
+            'Asia/Shanghai': 'CN', 'Asia/Chongqing': 'CN', 'Asia/Harbin': 'CN', 'Asia/Urumqi': 'CN',
+            'Asia/Hong_Kong': 'HK', 'Asia/Macau': 'MO',
+            'Asia/Taipei': 'TW', 'Asia/Tokyo': 'JP', 'Asia/Seoul': 'KR',
+            'Asia/Ulaanbaatar': 'MN',
+            // South-East Asia
+            'Asia/Singapore': 'SG', 'Asia/Bangkok': 'TH', 'Asia/Kuala_Lumpur': 'MY',
+            'Asia/Jakarta': 'ID', 'Asia/Manila': 'PH', 'Asia/Ho_Chi_Minh': 'VN',
+            'Asia/Phnom_Penh': 'KH', 'Asia/Vientiane': 'LA', 'Asia/Rangoon': 'MM',
+            'Asia/Dili': 'TL',
+            // Central / West Asia
+            'Asia/Yerevan': 'AM', 'Asia/Baku': 'AZ', 'Asia/Tbilisi': 'GE',
+            'Asia/Almaty': 'KZ', 'Asia/Tashkent': 'UZ', 'Asia/Bishkek': 'KG',
+            'Asia/Dushanbe': 'TJ', 'Asia/Ashgabat': 'TM',
+            // Europe
+            'Europe/London': 'GB', 'Europe/Dublin': 'IE', 'Europe/Lisbon': 'PT',
+            'Europe/Paris': 'FR', 'Europe/Berlin': 'DE', 'Europe/Zurich': 'CH',
+            'Europe/Madrid': 'ES', 'Europe/Rome': 'IT', 'Europe/Amsterdam': 'NL',
+            'Europe/Brussels': 'BE', 'Europe/Vienna': 'AT', 'Europe/Warsaw': 'PL',
+            'Europe/Prague': 'CZ', 'Europe/Budapest': 'HU', 'Europe/Bucharest': 'RO',
+            'Europe/Sofia': 'BG', 'Europe/Zagreb': 'HR', 'Europe/Belgrade': 'RS',
+            'Europe/Stockholm': 'SE', 'Europe/Oslo': 'NO', 'Europe/Copenhagen': 'DK',
+            'Europe/Helsinki': 'FI', 'Europe/Athens': 'GR', 'Europe/Istanbul': 'TR',
+            'Europe/Kyiv': 'UA', 'Europe/Kiev': 'UA', 'Europe/Minsk': 'BY',
+            'Europe/Riga': 'LV', 'Europe/Vilnius': 'LT', 'Europe/Tallinn': 'EE',
+            'Europe/Malta': 'MT', 'Europe/Nicosia': 'CY', 'Europe/Luxembourg': 'LU',
+            'Europe/Monaco': 'MC', 'Europe/Reykjavik': 'IS',
+            // North America
             'America/New_York': 'US', 'America/Los_Angeles': 'US', 'America/Chicago': 'US',
-            'Australia/Sydney': 'AU', 'Australia/Melbourne': 'AU',
-            'Asia/Tokyo': 'JP',
-            'Asia/Seoul': 'KR',
-            'America/Toronto': 'CA', 'America/Vancouver': 'CA',
-            'Asia/Bangkok': 'TH',
-            'Asia/Kuala_Lumpur': 'MY',
-            'Europe/Warsaw': 'PL',
-            'America/Bogota': 'CO',
-            'Europe/Amsterdam': 'NL',
-            'Europe/Stockholm': 'SE',
-            'Europe/Oslo': 'NO',
-            'Europe/Copenhagen': 'DK',
-            'Asia/Hong_Kong': 'HK',
-            'Pacific/Auckland': 'NZ',
-            'Asia/Jakarta': 'ID',
-            'Asia/Manila': 'PH',
-            'Asia/Karachi': 'PK',
-            'Asia/Dhaka': 'BD',
-            'Asia/Colombo': 'LK',
-            'Asia/Qatar': 'QA',
-            'Asia/Riyadh': 'SA',
-            'Europe/Istanbul': 'TR',
-            'America/Mexico_City': 'MX',
-            'Africa/Cairo': 'EG',
-            'Africa/Lagos': 'NG',
-            'Africa/Johannesburg': 'ZA'
+            'America/Denver': 'US', 'America/Phoenix': 'US', 'America/Anchorage': 'US',
+            'Pacific/Honolulu': 'US', 'America/Toronto': 'CA', 'America/Vancouver': 'CA',
+            'America/Edmonton': 'CA', 'America/Winnipeg': 'CA', 'America/Halifax': 'CA',
+            'America/Mexico_City': 'MX', 'America/Guatemala': 'GT', 'America/Managua': 'NI',
+            'America/Tegucigalpa': 'HN', 'America/Panama': 'PA', 'America/Havana': 'CU',
+            'America/Jamaica': 'JM', 'America/Nassau': 'BS', 'America/Puerto_Rico': 'PR',
+            // South America
+            'America/Sao_Paulo': 'BR', 'America/Argentina/Buenos_Aires': 'AR',
+            'America/Santiago': 'CL', 'America/Lima': 'PE', 'America/Bogota': 'CO',
+            'America/Caracas': 'VE', 'America/Guayaquil': 'EC', 'America/Montevideo': 'UY',
+            'America/Asuncion': 'PY', 'America/La_Paz': 'BO', 'America/Santo_Domingo': 'DO',
+            'America/Port_of_Spain': 'TT',
+            // Africa
+            'Africa/Cairo': 'EG', 'Africa/Lagos': 'NG', 'Africa/Johannesburg': 'ZA',
+            'Africa/Nairobi': 'KE', 'Africa/Accra': 'GH', 'Africa/Casablanca': 'MA',
+            'Africa/Tunis': 'TN', 'Africa/Algiers': 'DZ', 'Africa/Addis_Ababa': 'ET',
+            'Africa/Dar_es_Salaam': 'TZ', 'Africa/Kampala': 'UG', 'Africa/Kigali': 'RW',
+            'Africa/Dakar': 'SN', 'Africa/Abidjan': 'CI',
+            // Oceania
+            'Australia/Sydney': 'AU', 'Australia/Melbourne': 'AU', 'Australia/Brisbane': 'AU',
+            'Australia/Perth': 'AU', 'Australia/Adelaide': 'AU', 'Pacific/Auckland': 'NZ',
+            'Pacific/Fiji': 'FJ', 'Pacific/Guam': 'GU'
         };
         try {
             const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -1212,12 +1242,6 @@ async function getUserCountry() {
 
     qmLog('User country detected:', userCountryCode);
     window.userCountryCode = userCountryCode;
-
-    // Persist to localStorage so the next page load can skip the lookup entirely.
-    try {
-        localStorage.setItem(COUNTRY_CACHE_KEY, JSON.stringify({ code: userCountryCode, ts: Date.now() }));
-    } catch (_) { /* quota exceeded */ }
-
     return userCountryCode;
 }
 
