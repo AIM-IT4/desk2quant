@@ -1,16 +1,18 @@
 ﻿// ================================
-// DOMAIN MIGRATION GUARD
+// CANONICAL DOMAIN GUARD
 // ================================
-// Since the site moved from desk2quant.vercel.app to desk2quant.com, any
-// leftover *.vercel.app URL (old shared links, deployment/preview URLs that
-// the server-side host redirect in vercel.json can't match by name) must
-// forward to the canonical .com domain BEFORE any checkout code can run --
-// Razorpay is registered to desk2quant.com, so opening the checkout modal
-// from the old domain fails the payment.
-// Runs synchronously at parse time; location.replace() keeps history clean.
+// Razorpay is registered to desk2quant.com, so opening a checkout from any
+// other host fails the payment. Every host that is not the canonical domain —
+// old *.vercel.app shared links, Vercel preview/deployment URLs, www, custom
+// aliases — must forward to desk2quant.com BEFORE any checkout code can run.
+// Localhost is allowed for development. Runs synchronously at parse time;
+// location.replace() keeps history clean. (A copy of this guard is also
+// inlined in every page's <head> so it runs even if script.js is slow/blocked.)
 (function () {
     try {
-        if (location.hostname.toLowerCase().endsWith('.vercel.app')) {
+        const host = location.hostname.toLowerCase();
+        const isDev = /^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])$/.test(host);
+        if (!isDev && host !== 'desk2quant.com') {
             location.replace(
                 'https://desk2quant.com' + location.pathname + location.search + location.hash
             );
