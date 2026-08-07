@@ -34,6 +34,39 @@
       ],
       "destination": "https://desk2quant.com/:path+",
       "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "desk2quant.vercel.app"
+        }
+      ],
+      "destination": "https://desk2quant.com/",
+      "permanent": true
+    },
+    {
+      "source": "/:path+/",
+      "has": [
+        {
+          "type": "host",
+          "value": "desk2quant.vercel.app"
+        }
+      ],
+      "destination": "https://desk2quant.com/:path+/",
+      "permanent": true
+    },
+    {
+      "source": "/:path+",
+      "has": [
+        {
+          "type": "host",
+          "value": "desk2quant.vercel.app"
+        }
+      ],
+      "destination": "https://desk2quant.com/:path+",
+      "permanent": true
     }
   ],
   "rewrites": [

@@ -1,4 +1,26 @@
 ﻿// ================================
+// DOMAIN MIGRATION GUARD
+// ================================
+// Since the site moved from desk2quant.vercel.app to desk2quant.com, any
+// leftover *.vercel.app URL (old shared links, deployment/preview URLs that
+// the server-side host redirect in vercel.json can't match by name) must
+// forward to the canonical .com domain BEFORE any checkout code can run --
+// Razorpay is registered to desk2quant.com, so opening the checkout modal
+// from the old domain fails the payment.
+// Runs synchronously at parse time; location.replace() keeps history clean.
+(function () {
+    try {
+        if (location.hostname.toLowerCase().endsWith('.vercel.app')) {
+            location.replace(
+                'https://desk2quant.com' + location.pathname + location.search + location.hash
+            );
+        }
+    } catch (e) {
+        /* never block the page on this */
+    }
+})();
+
+// ================================
 // DEBUG LOGGING
 // ================================
 // Production consoles were carrying ~90 emoji-tagged progress lines
