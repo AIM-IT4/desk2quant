@@ -648,7 +648,7 @@
             document.head.appendChild(script);
         })();
     </script>
-    <script src="script.js?v=6"></script>
+    <script src="script.js?v=11"></script>
 
     <!-- Navigation -->
     <nav class="navbar">
@@ -913,9 +913,11 @@
 
         async function loadProduct(id) {
             try {
+                // RLS seals non-public columns (file_url, ratings, coupon codes) from
+                // browser reads; select only the public catalog columns.
                 const { data: product, error } = await window.supabaseClient
                     .from('products')
-                    .select('*')
+                    .select('id,name,description,cover_image_url,price,original_price,created_at,coupon_code,discount_percentage')
                     .eq('id', id)
                     .single();
 
