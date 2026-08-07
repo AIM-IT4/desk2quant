@@ -1875,7 +1875,7 @@ async function loadProductsFromSupabase(prefetchPromise) {
         // Fire Supabase query immediately
         const queryPromise = window.supabaseClient
             .from('products')
-            .select('id,name,description,cover_image_url,price,original_price,created_at')
+            .select('id,name,description,cover_image_url,price,original_price,created_at,coupon_code,discount_percentage')
             .order('created_at', { ascending: false });
 
         // Handle prefetch (country + rates) separately so it doesn't block products if it fails
@@ -2136,7 +2136,7 @@ async function displaySupabaseProducts(products) {
 window.openProductModal = async function (id) {
     if (!window.supabaseClient) return;
     try {
-        const { data: product, error } = await window.supabaseClient.from('products').select('id,name,description,cover_image_url,price,original_price,created_at').eq('id', id).single();
+        const { data: product, error } = await window.supabaseClient.from('products').select('id,name,description,cover_image_url,price,original_price,created_at,coupon_code,discount_percentage').eq('id', id).single();
         if (error || !product) return;
 
         const modal = document.getElementById('productModal');
