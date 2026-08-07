@@ -1290,6 +1290,7 @@ const CURRENCY_MAP = {
     'DK': { code: 'DKK', symbol: 'kr', name: 'Danish Krone' },
     'SG': { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar' },
     'HK': { code: 'HKD', symbol: 'HK$', name: 'Hong Kong Dollar' },
+    'MO': { code: 'HKD', symbol: 'HK$', name: 'Hong Kong Dollar' },   // Macau (HKD-pegged)
     'NZ': { code: 'NZD', symbol: 'NZ$', name: 'New Zealand Dollar' },
     // Emerging markets
     'BR': { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
