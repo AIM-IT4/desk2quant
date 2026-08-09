@@ -202,8 +202,12 @@ export default async function handler(req, res) {
                 console.error('grant-access: order notes fallback (cart detection) failed:', err.message);
             }
         }
-        if (cartType === 'cart' && cartItemsRaw) {
-            const parsedItems = String(cartItemsRaw)
+        // A payment whose order says type=cart is a cart purchase, period. If its
+        // items can't be read from the payment or order notes, fail closed with
+        // the cart-specific error instead of falling through to the single-item
+        // path (which would return a misleading "No download link found").
+        if (cartType === 'cart') {
+            const parsedItems = String(cartItemsRaw || '')
                 .split(',')
                 .filter(Boolean)
                 .map((triple) => {
@@ -340,22 +344,31 @@ export default async function handler(req, res) {
                 console.error('⚠️ grant-access: product name resolution error:', err.message);
             }
         }
-        if (productId) {
-            try {
-                const expected = await getExpectedProductOrder(productId, payment.currency, couponCode);
-                const capturedMajor = isZeroDecimalCurrency(payment.currency)
-                    ? payment.amount
-                    : payment.amount / 100;
-                if (expected.ok && !isWithinTolerance(capturedMajor, expected.amountMajor)) {
-                    console.error('🚨 grant-access: underpayment detected, refusing to grant:', { paymentId, productId, capturedMajor, expected });
-                    return res.status(402).json({ error: 'Captured amount does not match the product price. This purchase has been flagged for review.' });
-                }
-            } catch (err) {
-                console.error('grant-access price verification error:', err.message);
-                return res.status(500).json({ error: 'Could not verify payment amount. Please try again or contact support.' });
-            }
-        } else {
-            console.warn('⚠️ grant-access: no product_id on payment/order notes; cannot verify price for:', productName, '(paymentId:', paymentId, ') — legacy checkout path');
+        if (!productId) {
+            // Fail closed: grant-access is the customer-facing fallback, but a
+            // purchase whose product_id cannot be resolved (by id or name) is
+            // not one we can verify or fulfil safely. All current checkouts go
+            // through create-order.js, which always stamps product_id.
+            console.error('🚨 grant-access: no product_id resolvable for:', productName, '(paymentId:', paymentId, ') — refusing to grant');
+            return res.status(500).json({ error: 'Could not verify this purchase. Please contact support with your payment id.' });
+        }
+        let expected;
+        try {
+            expected = await getExpectedProductOrder(productId, payment.currency, couponCode);
+        } catch (err) {
+            console.error('grant-access price verification error:', err.message);
+            return res.status(500).json({ error: 'Could not verify payment amount. Please try again or contact support.' });
+        }
+        if (!expected.ok) {
+            console.error('🚨 grant-access: product_id does not resolve:', { paymentId, productId });
+            return res.status(500).json({ error: 'Could not verify this purchase. Please contact support with your payment id.' });
+        }
+        const capturedMajor = isZeroDecimalCurrency(payment.currency)
+            ? payment.amount
+            : payment.amount / 100;
+        if (!isWithinTolerance(capturedMajor, expected.amountMajor)) {
+            console.error('🚨 grant-access: underpayment detected, refusing to grant:', { paymentId, productId, capturedMajor, expected });
+            return res.status(402).json({ error: 'Captured amount does not match the product price. This purchase has been flagged for review.' });
         }
 
         // 3. Fallback: look up link in Supabase products by name

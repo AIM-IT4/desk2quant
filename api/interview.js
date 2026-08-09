@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { isZeroDecimalCurrency } from '../lib/pricing.js';
 import { getServiceKey } from '../lib/supabaseAdmin.js';
 import { emailShell, escapeHtml } from '../lib/emailBranding.js';
+import { signBookingToken, verifyBookingToken } from '../lib/bookingTokens.js';
 
 // --- Interview session tokens ------------------------------------------------
 //
@@ -142,8 +143,13 @@ async function handleBookingsAction(req, res, action) {
 
     try {
         // 1. LIST a customer's bookings by email (public columns only).
+        // The signed manage token from the confirmation email is required — a
+        // bare email alone is not enough to read booking details / meeting links.
         if (action === 'my-bookings') {
             if (!email) return res.status(400).json({ error: 'email is required' });
+            if (!verifyBookingToken(email, body.token)) {
+                return res.status(403).json({ error: 'This manage link is invalid or expired. Use the \u201cManage booking\u201d link from your confirmation email, or contact support.' });
+            }
             const resp = await fetch(
                 `${SUPABASE_URL}/rest/v1/bookings?email=eq.${encodeURIComponent(email)}&select=${BOOKINGS_PUBLIC_COLUMNS}&order=created_at.desc`,
                 { headers }
@@ -206,7 +212,9 @@ async function handleBookingsAction(req, res, action) {
             });
             if (!ins.ok) return res.status(502).json({ error: 'Failed to create booking' });
             const created = await ins.json();
-            return res.status(200).json({ success: true, booking: Array.isArray(created) ? created[0] : created });
+            // Return the signed manage token so the client can embed the
+            // "Manage booking" link in the confirmation email it sends.
+            return res.status(200).json({ success: true, booking: Array.isArray(created) ? created[0] : created, manageToken: signBookingToken(email) });
         }
 
         // --- Mutations: bookingId + matching email required ---
@@ -240,8 +248,8 @@ async function handleBookingsAction(req, res, action) {
             const reason = String(body.reason || '').trim();
             if (!date || !time) return res.status(400).json({ error: 'date and time are required' });
             const booking = await fetchBooking('email');
-            if (!booking || String(booking.email || '').trim().toLowerCase() !== email) {
-                return res.status(403).json({ error: 'Booking not found for this email' });
+            if (!booking || String(booking.email || '').trim().toLowerCase() !== email || !verifyBookingToken(email, body.token)) {
+                return res.status(403).json({ error: 'Booking not found for this email, or the manage link is invalid. Use the link from your confirmation email.' });
             }
             const ok = await patchBooking({
                 requested_date: date,
@@ -261,8 +269,8 @@ async function handleBookingsAction(req, res, action) {
             const refundAmount = Number(body.refundAmount) || 0;
             const refundPercentage = Number(body.refundPercentage) || 0;
             const booking = await fetchBooking('email,name,service_name,service_price,booking_date,booking_time');
-            if (!booking || String(booking.email || '').trim().toLowerCase() !== email) {
-                return res.status(403).json({ error: 'Booking not found for this email' });
+            if (!booking || String(booking.email || '').trim().toLowerCase() !== email || !verifyBookingToken(email, body.token)) {
+                return res.status(403).json({ error: 'Booking not found for this email, or the manage link is invalid. Use the link from your confirmation email.' });
             }
             const ok = await patchBooking({
                 status: 'cancellation_requested',
@@ -339,8 +347,8 @@ async function handleBookingsAction(req, res, action) {
         // 6. ACCEPT the admin's proposed reschedule.
         if (action === 'accept-admin-reschedule') {
             const booking = await fetchBooking('email,admin_proposed_date,admin_proposed_time,meet_link,name,service_name');
-            if (!booking || String(booking.email || '').trim().toLowerCase() !== email) {
-                return res.status(403).json({ error: 'Booking not found for this email' });
+            if (!booking || String(booking.email || '').trim().toLowerCase() !== email || !verifyBookingToken(email, body.token)) {
+                return res.status(403).json({ error: 'Booking not found for this email, or the manage link is invalid. Use the link from your confirmation email.' });
             }
             if (!booking.admin_proposed_date || !booking.admin_proposed_time) {
                 return res.status(400).json({ error: 'No admin-proposed schedule to accept' });
@@ -365,8 +373,8 @@ async function handleBookingsAction(req, res, action) {
             const time = String(body.time || '').trim();
             if (!date || !time) return res.status(400).json({ error: 'date and time are required' });
             const booking = await fetchBooking('email');
-            if (!booking || String(booking.email || '').trim().toLowerCase() !== email) {
-                return res.status(403).json({ error: 'Booking not found for this email' });
+            if (!booking || String(booking.email || '').trim().toLowerCase() !== email || !verifyBookingToken(email, body.token)) {
+                return res.status(403).json({ error: 'Booking not found for this email, or the manage link is invalid. Use the link from your confirmation email.' });
             }
             const ok = await patchBooking({
                 requested_date: date,

@@ -401,7 +401,7 @@
         <div class="search-box">
             <h3 style="margin-bottom: 20px;">Find Your Bookings</h3>
             <p style="color: var(--text-muted); margin-bottom: 20px;">
-                Enter the email address you used to book your session
+                Use the <strong>Manage Booking</strong> link from your confirmation email to view, reschedule, or cancel. (For security, bookings can no longer be managed by email alone.)
             </p>
             <div class="search-controls">
                 <input type="email" id="searchEmail" placeholder="your@email.com">
@@ -454,6 +454,10 @@
                 textContent
             );
         }
+        // Signed manage token from the confirmation email link
+        // (my-bookings.html?email=..&tk=..). Required by every bookings action.
+        let bookingManageToken = '';
+
         // Search bookings by email via the server-side bookings API.
         // (The bookings table is RLS-sealed from the browser; the API runs with
         // the service-role key and returns only the requested email's rows.)
@@ -472,7 +476,7 @@
                 const resp = await fetch('/api/interview', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'my-bookings', email })
+                    body: JSON.stringify({ action: 'my-bookings', email, token: bookingManageToken })
                 });
                 const data = await resp.json();
                 if (!resp.ok || !data.success) {
@@ -719,6 +723,7 @@
                         action: 'reschedule-booking',
                         bookingId,
                         email,
+                        token: bookingManageToken,
                         date: newDate,
                         time: newTime,
                         reason
@@ -783,7 +788,8 @@ Status: Pending admin approval
                     body: JSON.stringify({
                         action: 'accept-admin-reschedule',
                         bookingId,
-                        email: bookingEmail
+                        email: bookingEmail,
+                        token: bookingManageToken
                     })
                 });
                 const data = await resp.json();
@@ -869,6 +875,7 @@ Status: CONFIRMED
                         action: 'counter-propose',
                         bookingId,
                         email,
+                        token: bookingManageToken,
                         date: newDate,
                         time: newTime
                     })
@@ -911,7 +918,7 @@ Status: Pending admin approval
                 const resp = await fetch('/api/interview', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'my-bookings', email: bookingEmail })
+                    body: JSON.stringify({ action: 'my-bookings', email: bookingEmail, token: bookingManageToken })
                 });
                 const data = await resp.json();
                 const all = (data && data.success && data.bookings) ? data.bookings : [];
@@ -959,6 +966,7 @@ Do you want to proceed with cancellation?`;
                         action: 'cancel-booking',
                         bookingId,
                         email: booking.email,
+                        token: bookingManageToken,
                         refundAmount: refundInfo.amount,
                         refundPercentage: refundInfo.percentage
                     })
@@ -1072,6 +1080,24 @@ You will receive an email confirmation once your refund is processed.`);
                 searchBookings();
             }
         });
+
+        // Deep link from the confirmation email: my-bookings.html?email=..&tk=..
+        // Prefill the search box, store the token, and load the bookings right away.
+        (function () {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const linkEmail = params.get('email');
+                const linkToken = params.get('tk');
+                if (linkEmail && linkToken) {
+                    bookingManageToken = linkToken;
+                    const input = document.getElementById('searchEmail');
+                    if (input) input.value = linkEmail;
+                    searchBookings();
+                }
+            } catch (e) {
+                console.error('Failed to apply manage link:', e);
+            }
+        })();
     </script>
     <script src="ui-components.js?v=1" defer></script>
 </body>

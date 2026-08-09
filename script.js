@@ -1051,20 +1051,28 @@ const RATES_CACHE_KEY = 'qm_exchange_rates';
 // A 24h localStorage cache used to pin the detected country, so switching a
 // VPN (or travelling) never changed the currency until the cache expired.
 
-// Try immediately, retry briefly if SDK not yet loaded (e.g. slow network)
-if (!initSupabaseAndLoad()) {
-    let retries = 0;
-    const retryInterval = setInterval(() => {
-        retries++;
-        if (initSupabaseAndLoad() || retries >= 60) { // Max 3s (60 * 50ms)
-            clearInterval(retryInterval);
-            if (retries >= 60) {
-                console.error('❌ Supabase SDK not loaded after 3s');
-                qmLog('⚠️ Continuing without Supabase - using default links');
+// Defer the first init attempt to the next macrotask. The loaders read the
+// cache-key consts (PRODUCTS_CACHE_KEY / SESSIONS_CACHE_KEY) declared further
+// down this file, and a synchronous call here hits the temporal dead zone
+// before those are defined -- `Cannot access 'X' before initialization` --
+// which silently killed live product/session loading (the static fallback
+// cards rendered, but Supabase data never hydrated).
+// Try immediately (next tick), retry briefly if SDK not yet loaded.
+setTimeout(function () {
+    if (!initSupabaseAndLoad()) {
+        let retries = 0;
+        const retryInterval = setInterval(() => {
+            retries++;
+            if (initSupabaseAndLoad() || retries >= 60) { // Max 3s (60 * 50ms)
+                clearInterval(retryInterval);
+                if (retries >= 60) {
+                    console.error('❌ Supabase SDK not loaded after 3s');
+                    qmLog('⚠️ Continuing without Supabase - using default links');
+                }
             }
-        }
-    }, 50);
-}
+        }, 50);
+    }
+}, 0);
 
 // ================================
 // RAZORPAY LAZY LOADER
@@ -3729,6 +3737,12 @@ async function fulfillFreeSessionBooking(response) {
             console.warn('Free booking create failed (proceeding to email):', e);
         }
 
+        // Signed manage link: the bookings self-service requires this token, so
+        // the confirmation email carries the customer's only way to view,
+        // reschedule, or cancel (a bare email is no longer sufficient).
+        const manageToken = (createJson && createJson.success && createJson.manageToken) ? createJson.manageToken : '';
+        const manageUrl = `${window.location.origin}/my-bookings.html?email=${encodeURIComponent(booking.email)}&tk=${encodeURIComponent(manageToken)}`;
+
         // ===== STEP 1: SEND CUSTOMER EMAIL FIRST (HIGHEST PRIORITY) =====
         qmLog('📧 Sending session confirmation to customer:', booking.email);
 
@@ -3766,8 +3780,9 @@ async function fulfillFreeSessionBooking(response) {
                         </div>
 
                         <div style="background: #fffbeb; padding: 20px; border-radius: 6px; border-left: 4px solid #f59e0b;">
-                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Need to Reschedule?</p>
-                            <p style="margin: 0; font-size: 14px; color: #1a1a1a;">Visit <a href="${window.location.origin}/my-bookings.html" style="color: #2563eb; text-decoration: none;">My Bookings</a> and enter your email (<strong>${booking.email}</strong>) to view and reschedule.</p>
+                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Need to Reschedule or Cancel?</p>
+                            <p style="margin: 0 0 12px 0; font-size: 14px; color: #1a1a1a;">View, reschedule, or cancel your booking anytime with this secure link:</p>
+                            <p style="margin: 0;"><a href="${manageUrl}" style="display: inline-block; background: #10b981; color: #ffffff; font-weight: bold; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-size: 13px;">Manage Booking</a></p>
                         </div>
                     </div>
                     <div style="background-color: #1a1a1a; padding: 25px 20px; text-align: center; color: #888; font-size: 12px;">
@@ -3791,9 +3806,9 @@ Payment ID: ${paymentId}
 JOIN YOUR SESSION HERE:
 ${uniqueMeetLink}
 
-Need to Reschedule?
-Visit: ${window.location.origin}/my-bookings.html
-Enter your email (${booking.email}) to view and reschedule.
+Need to Reschedule or Cancel?
+Open your secure manage link:
+${manageUrl}
 
 Best regards,
 ${BUSINESS_NAME}`;
@@ -3924,9 +3939,9 @@ Payment ID: ${paymentId}
 
 📩 IMPORTANT: Please check your Spam/Junk folder if you don't see the email in your Inbox.
 
-🔄 Need to Reschedule?
-Visit: ${window.location.origin}/my-bookings.html
-Enter your email to view and reschedule your session.
+🔄 Need to Reschedule or Cancel?
+Open your secure manage link:
+${manageUrl}
 
 Thank you for booking!`);
 

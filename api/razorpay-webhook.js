@@ -13,6 +13,7 @@ import { queuePostPurchaseRecommendation } from '../lib/recommendationQueue.js';
 import { getExpectedProductOrder, getExpectedSessionOrder, getExpectedCartOrder, isWithinTolerance, isZeroDecimalCurrency } from '../lib/pricing.js';
 import { getServiceKey } from '../lib/supabaseAdmin.js';
 import { emailShell, escapeHtml } from '../lib/emailBranding.js';
+import { signBookingToken } from '../lib/bookingTokens.js';
 
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || 'https://desk2quant.com';
 
@@ -331,27 +332,33 @@ export async function handleProductPurchase(data) {
     // notes/amount, bypassing create-order.js entirely). So independently
     // re-derive the real minimum acceptable INR price here, from productId,
     // and refuse to grant access if what was actually captured falls short.
+    // Fail closed: every current checkout goes through create-order.js, which
+    // always stamps product_id, so a captured product payment without a
+    // resolvable product_id (or a price we cannot verify) must NOT be granted
+    // access. Throwing makes the webhook return 500 so Razorpay retries, instead
+    // of silently fulfilling an unverifiable payment.
     let underpaymentFlag = null;
-    if (productId) {
-        try {
-            const expected = await getExpectedProductOrder(productId, currency, couponCode);
-            if (expected.ok && !isWithinTolerance(inrAmount, expected.amountInr)) {
-                underpaymentFlag = {
-                    expectedInr: expected.amountInr,
-                    capturedInr: inrAmount,
-                    discountPercent: expected.discountPercent
-                };
-                console.error('🚨 UNDERPAYMENT DETECTED — refusing to grant access:', {
-                    paymentId, productName, productId, ...underpaymentFlag
-                });
-            } else if (!expected.ok) {
-                console.warn('⚠️ Could not verify product price (product_id missing/unmatched); proceeding without price check:', productId, expected.error);
-            }
-        } catch (err) {
-            console.error('⚠️ Price verification error (proceeding without hard block):', err.message);
-        }
-    } else {
-        console.warn('⚠️ No product_id on payment notes; cannot verify price for:', productName, '(paymentId:', paymentId, ') — legacy checkout path, review manually if suspicious');
+    if (!productId) {
+        throw new Error(`Refusing to fulfil product purchase without product_id (paymentId: ${paymentId}, product: ${productName})`);
+    }
+    let expected;
+    try {
+        expected = await getExpectedProductOrder(productId, currency, couponCode);
+    } catch (err) {
+        throw new Error(`Product price verification failed (paymentId: ${paymentId}, productId: ${productId}): ${err.message}`);
+    }
+    if (!expected.ok) {
+        throw new Error(`Cannot verify product price — product_id does not resolve (paymentId: ${paymentId}, productId: ${productId}, product: ${productName}): ${expected.error || 'unknown'}`);
+    }
+    if (!isWithinTolerance(inrAmount, expected.amountInr)) {
+        underpaymentFlag = {
+            expectedInr: expected.amountInr,
+            capturedInr: inrAmount,
+            discountPercent: expected.discountPercent
+        };
+        console.error('🚨 UNDERPAYMENT DETECTED — refusing to grant access:', {
+            paymentId, productName, productId, ...underpaymentFlag
+        });
     }
 
     const PRODUCT_DOWNLOAD_LINKS = {
@@ -557,8 +564,12 @@ export async function handleProductPurchase(data) {
     }
 
     if (!frontendAlreadyProcessed) {
+        // Fail closed: the purchases row is the durable record of this sale. If
+        // it cannot be written, throw so the webhook 500s and Razorpay retries —
+        // a customer must not be charged with no record and no download email.
+        let insertResp;
         try {
-            const insertResp = await fetch(`${SUPABASE_URL}/rest/v1/purchases`, {
+            insertResp = await fetch(`${SUPABASE_URL}/rest/v1/purchases`, {
                 method: 'POST',
                 headers: {
                     'apikey': SUPABASE_KEY,
@@ -581,14 +592,16 @@ export async function handleProductPurchase(data) {
                     ...(isoCreatedAt ? { created_at: isoCreatedAt } : {})
                 })
             });
-            if (insertResp.ok) {
-                console.log('✅ Purchase logged to Supabase by webhook. PaymentId:', paymentId);
-            } else {
-                const errBody = await insertResp.text();
-                console.error('❌ SUPABASE INSERT FAILED. Status:', insertResp.status, '| Body:', errBody, '| PaymentId:', paymentId);
-            }
         } catch (err) {
             console.error('❌ Error logging to Supabase (network):', err.message, '| PaymentId:', paymentId);
+            throw new Error(`Failed to record purchase in Supabase (paymentId: ${paymentId}): ${err.message}`);
+        }
+        if (insertResp.ok) {
+            console.log('✅ Purchase logged to Supabase by webhook. PaymentId:', paymentId);
+        } else {
+            const errBody = await insertResp.text();
+            console.error('❌ SUPABASE INSERT FAILED. Status:', insertResp.status, '| Body:', errBody, '| PaymentId:', paymentId);
+            throw new Error(`Failed to record purchase in Supabase (${insertResp.status}) (paymentId: ${paymentId}): ${errBody}`);
         }
     }
 
@@ -890,28 +903,34 @@ async function handleCartPurchase(data) {
         .filter((item) => item.productId);
 
     if (parsedItems.length === 0) {
-        console.error('Cart webhook: no items parsed from cart_items note:', cartItemsRaw);
-        return;
+        // Fail closed: a cart payment with no readable items must not be
+        // acknowledged-and-forgotten (charged customer, no record). Throw so
+        // Razorpay retries; grant-access can recover the items from order notes.
+        throw new Error(`Cart webhook: no items parsed from cart_items note (paymentId: ${paymentId}): ${cartItemsRaw}`);
     }
 
     console.log(`Processing cart purchase: ${parsedItems.length} item(s) for ${customerEmail}`);
 
     // Price-tamper guard (defense in depth, mirrors handleProductPurchase).
+    // Fail closed: if the cart total cannot be verified, throw so the webhook
+    // 500s and Razorpay retries instead of fulfilling an unverifiable payment.
     let underpaymentFlag = null;
+    let expected;
     try {
-        const expected = await getExpectedCartOrder(
+        expected = await getExpectedCartOrder(
             parsedItems.map((i) => ({ product_id: i.productId, quantity: i.quantity, coupon_code: i.couponCode })),
             currency,
             couponCode
         );
-        if (expected.ok && !isWithinTolerance(inrAmount, expected.amountInr)) {
-            underpaymentFlag = { expectedInr: expected.amountInr, capturedInr: inrAmount };
-            console.error('🚨 UNDERPAYMENT DETECTED (cart) — refusing to grant access:', { paymentId, ...underpaymentFlag });
-        } else if (!expected.ok) {
-            console.warn('⚠️ Could not verify cart price; proceeding without price check:', expected.error);
-        }
     } catch (err) {
-        console.error('⚠️ Cart price verification error (proceeding without hard block):', err.message);
+        throw new Error(`Cart price verification failed (paymentId: ${paymentId}): ${err.message}`);
+    }
+    if (!expected.ok) {
+        throw new Error(`Cannot verify cart price (paymentId: ${paymentId}): ${expected.error || 'unknown'}`);
+    }
+    if (!isWithinTolerance(inrAmount, expected.amountInr)) {
+        underpaymentFlag = { expectedInr: expected.amountInr, capturedInr: inrAmount };
+        console.error('🚨 UNDERPAYMENT DETECTED (cart) — refusing to grant access:', { paymentId, ...underpaymentFlag });
     }
 
     // Idempotency: skip if this payment was already fully processed.
@@ -1002,6 +1021,10 @@ async function handleCartPurchase(data) {
 
     // Log one purchases row per line item, sharing the same payment_id so
     // admin views can group them, but each keeping its own product_name.
+    // Fail closed: the purchases rows are the durable record of this cart sale.
+    // If they cannot be written, throw so the webhook 500s and Razorpay retries —
+    // a customer must not be charged with no record and no order email.
+    let insertResp;
     try {
         const rows = lineResults.map((line) => ({
             customer_email: customerEmail,
@@ -1015,7 +1038,7 @@ async function handleCartPurchase(data) {
             download_link: underpaymentFlag ? null : line.downloadLink,
             ...(isoCreatedAt ? { created_at: isoCreatedAt } : {})
         }));
-        const insertResp = await fetch(`${SUPABASE_URL}/rest/v1/purchases`, {
+        insertResp = await fetch(`${SUPABASE_URL}/rest/v1/purchases`, {
             method: 'POST',
             headers: {
                 apikey: SUPABASE_KEY,
@@ -1025,14 +1048,16 @@ async function handleCartPurchase(data) {
             },
             body: JSON.stringify(rows)
         });
-        if (insertResp.ok) {
-            console.log(`✅ Cart purchase logged to Supabase (${rows.length} line items). PaymentId:`, paymentId);
-        } else {
-            const errBody = await insertResp.text();
-            console.error('❌ SUPABASE CART INSERT FAILED. Status:', insertResp.status, '| Body:', errBody, '| PaymentId:', paymentId);
-        }
     } catch (err) {
         console.error('❌ Error logging cart purchase to Supabase (network):', err.message, '| PaymentId:', paymentId);
+        throw new Error(`Failed to record cart purchase in Supabase (paymentId: ${paymentId}): ${err.message}`);
+    }
+    if (insertResp.ok) {
+        console.log(`✅ Cart purchase logged to Supabase (${lineResults.length} line items). PaymentId:`, paymentId);
+    } else {
+        const errBody = await insertResp.text();
+        console.error('❌ SUPABASE CART INSERT FAILED. Status:', insertResp.status, '| Body:', errBody, '| PaymentId:', paymentId);
+        throw new Error(`Failed to record cart purchase in Supabase (${insertResp.status}) (paymentId: ${paymentId}): ${errBody}`);
     }
 
     // Single combined confirmation email listing every item + its link.
@@ -1143,34 +1168,40 @@ async function handleSessionBooking(data) {
     // client-controlled-amount risk applies. Re-derive the real minimum
     // price from session_id and refuse to auto-confirm/send the meeting
     // link if what was captured falls short.
+    // Fail closed: sessions are booked through create-order.js too, which always
+    // stamps session_id, so a captured session payment without a resolvable
+    // session_id (or an unverifiable price) must NOT create a booking. Throw so
+    // the webhook 500s and Razorpay retries instead of fulfilling an
+    // unverifiable payment.
     let underpaymentFlag = null;
     const sessionId = notes.session_id || null;
     const couponCode = notes.coupon_code || null;
-    if (sessionId) {
-        try {
-            const expected = await getExpectedSessionOrder(sessionId, currency, couponCode);
-            // Use Razorpay's own authoritative INR figure (base_amount/base_currency,
-            // computed by the caller) -- NOT notes.inr_amount, which is a
-            // client-stamped value at checkout time and must never be trusted for
-            // a security check.
-            const capturedInr = (typeof inrAmount === 'number' && !Number.isNaN(inrAmount)) ? inrAmount : amount;
-            if (expected.ok && !isWithinTolerance(capturedInr, expected.amountInr)) {
-                underpaymentFlag = {
-                    expectedInr: expected.amountInr,
-                    capturedInr,
-                    discountPercent: expected.discountPercent
-                };
-                console.error('🚨 UNDERPAYMENT DETECTED on session booking — flagging for review:', {
-                    paymentId, sessionName, sessionId, ...underpaymentFlag
-                });
-            } else if (!expected.ok) {
-                console.warn('⚠️ Could not verify session price (session_id missing/unmatched); proceeding without price check:', sessionId, expected.error);
-            }
-        } catch (err) {
-            console.error('⚠️ Session price verification error (proceeding without hard block):', err.message);
-        }
-    } else {
-        console.warn('⚠️ No session_id on payment notes; cannot verify price for booking:', sessionName, '(paymentId:', paymentId, ') — legacy checkout path, review manually if suspicious');
+    if (!sessionId) {
+        throw new Error(`Refusing to create booking without session_id (paymentId: ${paymentId}, session: ${sessionName})`);
+    }
+    let expected;
+    try {
+        expected = await getExpectedSessionOrder(sessionId, currency, couponCode);
+    } catch (err) {
+        throw new Error(`Session price verification failed (paymentId: ${paymentId}, sessionId: ${sessionId}): ${err.message}`);
+    }
+    if (!expected.ok) {
+        throw new Error(`Cannot verify session price — session_id does not resolve (paymentId: ${paymentId}, sessionId: ${sessionId}, session: ${sessionName}): ${expected.error || 'unknown'}`);
+    }
+    // Use Razorpay's own authoritative INR figure (base_amount/base_currency,
+    // computed by the caller) -- NOT notes.inr_amount, which is a
+    // client-stamped value at checkout time and must never be trusted for
+    // a security check.
+    const capturedInr = (typeof inrAmount === 'number' && !Number.isNaN(inrAmount)) ? inrAmount : amount;
+    if (!isWithinTolerance(capturedInr, expected.amountInr)) {
+        underpaymentFlag = {
+            expectedInr: expected.amountInr,
+            capturedInr,
+            discountPercent: expected.discountPercent
+        };
+        console.error('🚨 UNDERPAYMENT DETECTED on session booking — flagging for review:', {
+            paymentId, sessionName, sessionId, ...underpaymentFlag
+        });
     }
 
     let displayTime = sessionTime;
@@ -1307,6 +1338,11 @@ async function handleSessionBooking(data) {
     // captured amount didn't meet the verified price -- see price-tamper
     // guard above; an admin alert is sent instead, further down).
     if (BREVO_API_KEY && customerEmail && !underpaymentFlag) {
+        // Signed manage link: the bookings self-service requires this token, so
+        // the customer's only way to view/reschedule/cancel is this link from
+        // their confirmation email (a bare email is no longer sufficient).
+        const manageToken = signBookingToken(customerEmail) || '';
+        const manageUrl = `${PUBLIC_BASE_URL}/my-bookings.html?email=${encodeURIComponent(customerEmail)}&tk=${encodeURIComponent(manageToken)}`;
         const customerHtml = emailShell({ body: `
                         <div style="margin-bottom: 20px;">
                             <span style="display: inline-block; background:#ffca3a; color:#090909; padding:4px 8px; border:1px solid #090909; border-radius:0; font-size:11px; font-weight:800; text-transform:uppercase; box-shadow:2px 2px 0 #090909; margin-right:10px;">New Booking</span>
@@ -1338,8 +1374,11 @@ async function handleSessionBooking(data) {
                         </center>
 
                         <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px; margin-bottom:20px;">
-                            <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Need to Reschedule?</p>
-                            <p style="font-size: 14px; margin: 0; color: #090909;">You can view and manage your bookings on our website.</p>
+                            <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Need to Reschedule or Cancel?</p>
+                            <p style="font-size: 14px; margin: 0 0 14px 0; color: #090909;">View, reschedule, or cancel your booking anytime:</p>
+                            <center>
+                                <a href="${manageUrl}" style="display: inline-block; background:#0b7f79; color:#ffffff; font-weight:800; text-decoration:none; padding:12px 26px; border:1px solid #090909; border-radius:0; box-shadow:3px 3px 0 #090909; font-size:14px;">Manage Booking</a>
+                            </center>
                         </div>
                         <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px;">
                             <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Order Details</p>
@@ -1363,7 +1402,7 @@ async function handleSessionBooking(data) {
                     to: [{ email: customerEmail, name: customerName }],
                     subject: `Booking Confirmed: ${sessionName}`,
                     htmlContent: customerHtml,
-                    textContent: `Hi ${customerName},\n\nYour session is confirmed!\n\nSession: ${sessionName}\nDate: ${sessionDate}\nTime: ${displayTime} (${sessionDuration} mins)\nAmount Paid: ₹${sessionPrice}\n\nJoin Meeting Link:\n${meetLink}\n\nPayment ID: ${paymentId}\n\nNeed to reschedule? You can view and manage your bookings on our website.\n\nHave an issue? Reply to this email.\n\nSent by Desk2Quant`
+                    textContent: `Hi ${customerName},\n\nYour session is confirmed!\n\nSession: ${sessionName}\nDate: ${sessionDate}\nTime: ${displayTime} (${sessionDuration} mins)\nAmount Paid: ₹${sessionPrice}\n\nJoin Meeting Link:\n${meetLink}\n\nPayment ID: ${paymentId}\n\nNeed to reschedule or cancel? Open your manage link:\n${manageUrl}\n\nHave an issue? Reply to this email.\n\nSent by Desk2Quant`
                 })
             });
 

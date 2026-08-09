@@ -1712,7 +1712,7 @@ Brief Q&A"></textarea>
             </div>
 
             <!-- Main Script (Includes Email Logic & Config) -->
-            <script src="script.js?v=14"></script>
+            <script src="script.js?v=15"></script>
 
             <script>
                 // Global variables and functions
@@ -5203,9 +5203,10 @@ Desk2Quant
                             throw updateError;
                         }
 
-                        // 5. Send email to customer
-                        const myBookingsLink = window.location.origin + '/my-bookings.html';
-
+                        // 5. Send email to customer. NOTE: bookings can only be
+                        // managed via the signed link in the booking confirmation
+                        // email (a bare email is no longer accepted), so point the
+                        // customer there instead of a generic page link.
                         const htmlContent = `
                                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
                                         <h2 style="color: #a855f7;">📅 Session Reschedule Request</h2>
@@ -5225,8 +5226,7 @@ Desk2Quant
                                             ${reason ? `<p>📝 Reason: ${reason}</p>` : ''}
                                         </div>
 
-                                        <p>Please visit your bookings page to respond:</p>
-                                        <a href="${myBookingsLink}" style="display: inline-block; background: linear-gradient(135deg, #6366f1, #a855f7); color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 10px 0;">View My Bookings</a>
+                                        <p>To respond, open the <strong>Manage Booking</strong> link from your booking confirmation email (or reply to this email). You can either:</p>
 
                                         <p style="margin-top: 20px;">You can either:</p>
                                         <ul>
@@ -5254,7 +5254,7 @@ PROPOSED NEW SCHEDULE:
 - Time: ${proposedTime}
 ${reason ? '- Reason: ' + reason : ''}
 
-Please visit your bookings page to respond: ${myBookingsLink}
+To respond, open the Manage Booking link from your booking confirmation email (or reply to this email).
 
 You can either:
 - Accept the proposed new time
