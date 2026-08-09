@@ -2463,39 +2463,31 @@ const PRODUCT_DOWNLOAD_LINKS = {
 };
 
 // Fetch dynamic links from Supabase
+// file_url is RLS-sealed from the browser (anon gets 401), so the free-product
+// download flow can no longer read it via the Supabase client. The server-side
+// /api/products route (service key) exposes downloadUrl for FREE products only
+// -- paid file_urls stay sealed. This fetches those free links once at init so
+// the "Download" button works for Resources Map / Quant Formula Sheet / ATS
+// Resume instead of falling back to the stale legacy static map.
 async function fetchProductLinks() {
     try {
-        if (!window.supabaseClient) {
-            console.error('Supabase client not initialized');
-            qmLog('📚 Using default download links');
+        const resp = await fetch('/api/products', {
+            headers: { 'Accept': 'application/json' }
+        });
+        if (!resp.ok) {
+            qmLog('📚 Using default download links - /api/products returned ' + resp.status);
             return;
         }
-
-        const { data, error } = await window.supabaseClient
-            .from('products')
-            .select('name, file_url');
-
-        if (error) {
-            if (error.status === 401) {
-                console.error('❌ Supabase authentication failed (401): Invalid API key');
-                qmLog('📚 Using default download links - check Supabase configuration');
-            } else {
-                console.error('Error fetching Supabase products:', error);
+        const payload = await resp.json();
+        const freeItems = (payload && payload.freeResources && payload.freeResources.items) || [];
+        let updated = 0;
+        freeItems.forEach(product => {
+            if (product && product.name && product.downloadUrl) {
+                PRODUCT_DOWNLOAD_LINKS[product.name] = product.downloadUrl;
+                updated++;
             }
-            qmLog('📚 Continuing with default download links');
-            return;
-        }
-
-        if (data && data.length > 0) {
-            qmLog('📚 Loaded ' + data.length + ' products from Supabase');
-            data.forEach(product => {
-                PRODUCT_DOWNLOAD_LINKS[product.name] = product.file_url;
-                // Log for debugging
-                qmLog(`🔗 Link updated for: ${product.name} `);
-            });
-        } else {
-            qmLog('📚 No products found in Supabase, using default links');
-        }
+        });
+        qmLog('📚 Loaded ' + updated + ' free download link(s) via /api/products');
     } catch (err) {
         console.error('Failed to fetch product links:', err);
         qmLog('📚 Continuing with default download links');
@@ -2642,7 +2634,28 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
     if (amount <= 0) {
         qmLog('🆓 Free product detected');
         if (releaseBtn) releaseBtn();
-        if (downloadLink && downloadLink !== 'YOUR_DRIVE_LINK_HERE') {
+        let freeLink = (downloadLink && downloadLink !== 'YOUR_DRIVE_LINK_HERE') ? downloadLink : '';
+        // file_url is RLS-sealed from the browser; if the init-time
+        // fetchProductLinks() hasn't populated the map yet (or this product
+        // wasn't in it), resolve the free download link via /api/products
+        // (server-side, exposes FREE downloadUrl only).
+        if (!freeLink) {
+            try {
+                const freeResp = await fetch('/api/products', { headers: { 'Accept': 'application/json' } });
+                if (freeResp.ok) {
+                    const freePayload = await freeResp.json();
+                    const freeItems = (freePayload && freePayload.freeResources && freePayload.freeResources.items) || [];
+                    const matched = freeItems.find(p => p && p.name && p.name.trim().toLowerCase() === String(productName).trim().toLowerCase());
+                    if (matched && matched.downloadUrl) {
+                        freeLink = matched.downloadUrl;
+                        PRODUCT_DOWNLOAD_LINKS[productName] = freeLink;
+                    }
+                }
+            } catch (freeErr) {
+                console.warn('Free link resolution via /api/products failed:', freeErr);
+            }
+        }
+        if (freeLink && freeLink !== 'YOUR_DRIVE_LINK_HERE') {
             // Name/email come from the pre-checkout details form. If a page
             // reached here without them we just skip the confirmation email
             // rather than blocking the download behind a native prompt().
@@ -2650,13 +2663,13 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
             const customerEmail = (userDetails && userDetails.email) ? userDetails.email : '';
 
             if (customerEmail && customerEmail.includes('@')) {
-                sendProductEmail(customerEmail, productName, 'FREE', downloadLink, customerName, 0, 'INR');
+                sendProductEmail(customerEmail, productName, 'FREE', freeLink, customerName, 0, 'INR');
             }
             if (typeof window.showSuccessModal === 'function') {
-                window.showSuccessModal(productName, downloadLink);
+                window.showSuccessModal(productName, freeLink);
             } else {
                 showToast('🎉 Free download ready — opening it now.', 'success');
-                window.open(downloadLink, '_blank');
+                window.open(freeLink, '_blank');
             }
         } else {
             showToast('⚠️ Download link not configured. Please contact support.', 'error', 0);
@@ -4369,17 +4382,21 @@ document.addEventListener('DOMContentLoaded', function () {
         submitBtn.textContent = 'Sending...';
 
         try {
-            // Look up the current Quant Formula Sheet file_url directly (not the
-            // hardcoded fallback map) so this always sends the latest file.
+            // Look up the current Quant Formula Sheet link server-side (file_url is
+            // RLS-sealed from the browser, so the direct Supabase query 401s and
+            // silently fell back to a #resources anchor). /api/products exposes
+            // downloadUrl for FREE products only -- exactly this lead magnet.
             let downloadLink = 'https://desk2quant.com/#resources';
-            if (window.supabaseClient) {
-                const { data } = await window.supabaseClient
-                    .from('products')
-                    .select('file_url')
-                    .ilike('name', '%Quant Formula Sheet%')
-                    .limit(1)
-                    .maybeSingle();
-                if (data && data.file_url) downloadLink = data.file_url;
+            try {
+                const leadResp = await fetch('/api/products', { headers: { 'Accept': 'application/json' } });
+                if (leadResp.ok) {
+                    const leadPayload = await leadResp.json();
+                    const leadItems = (leadPayload && leadPayload.freeResources && leadPayload.freeResources.items) || [];
+                    const leadMatch = leadItems.find(p => p && p.name && /quant formula sheet/i.test(p.name));
+                    if (leadMatch && leadMatch.downloadUrl) downloadLink = leadMatch.downloadUrl;
+                }
+            } catch (leadFetchErr) {
+                console.warn('Lead magnet link resolution failed:', leadFetchErr);
             }
 
             await sendProductEmail(email, 'Quant Formula Sheet', 'FREE_LEAD', downloadLink, 'Quant', 0, 'INR');

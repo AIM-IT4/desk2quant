@@ -1223,9 +1223,18 @@ async function handleSessionBooking(data) {
             );
             if (dayResp.ok) {
                 const sameDay = await dayResp.json();
+                // The frontend sends 12-hour "4:00 PM" in notes while the DB
+                // normalizes booking_time to 24-hour "16:00:00". Parse both:
+                // HH:MM(:SS) with optional AM/PM suffix -> minutes since midnight.
                 const toMin = (t) => {
-                    const p = String(t || '').split(':');
-                    return (parseInt(p[0], 10) || 0) * 60 + (parseInt(p[1], 10) || 0);
+                    const raw = String(t || '').trim().toLowerCase();
+                    const m = raw.match(/^(\d{1,2}):(\d{2})/);
+                    if (!m) return 0;
+                    let h = parseInt(m[1], 10);
+                    const min = parseInt(m[2], 10);
+                    if (/pm/.test(raw) && h < 12) h += 12;
+                    if (/am/.test(raw) && h === 12) h = 0;
+                    return h * 60 + min;
                 };
                 const newStart = toMin(sessionTime);
                 const newEnd = newStart + (parseInt(sessionDuration, 10) || 30);
