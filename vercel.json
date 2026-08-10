@@ -3,6 +3,11 @@
   "outputDirectory": ".",
   "redirects": [
     {
+      "source": "/api/reminders.js",
+      "destination": "/api/reminders",
+      "permanent": false
+    },
+    {
       "source": "/index.html",
       "destination": "/",
       "permanent": true
