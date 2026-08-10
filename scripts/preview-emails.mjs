@@ -12,6 +12,7 @@
 // checkout` of that path silently replaced a fresh preview with an outdated
 // design. The generated file is gitignored so the two can't be confused again.
 import { readFileSync, writeFileSync } from 'node:fs';
+import { emailShell, escapeHtml as realEscapeHtml } from '../lib/emailBranding.js';
 
 // Sample values standing in for the template's interpolations. Anything the
 // template references but isn't listed here renders as the placeholder name,
@@ -47,6 +48,16 @@ const SAMPLE = {
     // Default to the purchase wording; the session wording is substituted by
     // scripts/preview-purchase-flow.mjs for the booking flow.
     triggerText: 'purchasing <strong>Python for Quants: Complete Interview Guide</strong>',
+    // Server-side cancellation email (api/interview.js cancel-booking) reads
+    // these from the fetched booking row.
+    refundAmount: '1,499',
+    refundPercentage: '50',
+    booking: {
+        service_name: '1:1 Quant Interview Mock',
+        service_price: '2,999',
+        booking_date: '12 August 2026',
+        booking_time: '7:30 PM IST'
+    },
     // Cart path maps over lineResults; empty array renders an empty table.
     lineResults: [
         { name: 'Stochastic Calculus for Quant Interviews', downloadLink: 'https://drive.google.com/file/d/1a2B/view' },
@@ -62,7 +73,7 @@ const SAMPLE = {
 const SAMPLE_CARDS = ['Brainteasers for Quant Interviews', 'C++ for Low-Latency Trading', 'Options Pricing Masterclass']
     .map((n, i) => `
         <div style="background:#ffffff; border-radius:12px; margin-bottom:16px; border:1px solid #eef2f6; padding:18px;">
-            <h3 style="margin:0 0 6px 0; font-size:15px; color:#0f172a; font-weight:700;">${n}</h3>
+            <h3 style="margin:0 0 6px 0; font-size:15px; color:#090909; font-weight:800;">${n}</h3>
             <p style="margin:0 0 10px 0; font-size:13px; color:#64748b;">Sample description for preview purposes only.</p>
             <span style="font-size:13px; color:#999; text-decoration:line-through;">₹${1499 + i * 500}</span>
             <span style="font-size:18px; font-weight:800; color:#0369a1; margin-left:8px;">₹${Math.round((1499 + i * 500) * 0.8)}</span>
@@ -88,6 +99,7 @@ SAMPLE.itemsHtml = SAMPLE.lineResults.map((l) => `
 const FILES = [
     'api/razorpay-webhook.js',
     'api/reminders.js',
+    'api/interview.js',
     'api/send-latest-products.js',
     'api/send-promo-latest.js',
     'api/send-single-buyer-offers.js',
@@ -107,11 +119,22 @@ function extractTemplates(src, file) {
     // Missing shape 2 is what made an earlier run silently under-report the
     // promo senders while still printing a plausible-looking template count.
     const re = new RegExp(
-        '(?:(?:const\\s+|let\\s+|var\\s+)?(\\w*[Hh]tml\\w*)\\s*=|(return))\\s*' + BACKTICK,
+        // Shape 1 (plain literal):  `const customerHtml = \``
+        // Shape 2 (shell):          `const customerHtml = emailShell({ admin: true, body: \``
+        '(?:(?:const\\s+|let\\s+|var\\s+)?(\\w*[Hh]tml\\w*)\\s*=|(return))\\s*'
+        + '(emailShell\\s*\\(\\s*\\{[^}]*?\\s*body\\s*:\\s*)?' + BACKTICK,
         'g'
     );
     let m;
     while ((m = re.exec(src))) {
+        // The optional emailShell( prefix (group 3) tells us the template is
+        // wrapped in the shared navy-dark shell and must be rendered through
+        // the real emailShell() so the preview shows the actual shipped
+        // header/footer. Inspect it for the admin flag.
+        const shellPrefix = m[3] || '';
+        const isShell = /emailShell\s*\(/.test(shellPrefix);
+        const admin = /admin\s*:\s*true/.test(shellPrefix);
+
         // Walk to the matching closing backtick. These templates nest --
         // ${items.map(i => `<tr>...`)} puts whole template literals inside
         // interpolations -- so a naive "first unescaped backtick" scan stops
@@ -135,13 +158,14 @@ function extractTemplates(src, file) {
         }
         if (k >= src.length) continue;
         const body = src.slice(start, k);
-        // Both shapes over-match: `priceHtml` / `coverImg` are small inline
+        // Plain literals over-match: `priceHtml` / `coverImg` are small inline
         // fragments, not whole emails. Keep anything that opens its own
         // top-level document/section -- that covers the branded card templates
         // AND the plain admin alerts (a bare `<div>` wrapping an `<h2>`, no
-        // card wrapper). Filtering on the card wrapper alone silently dropped
-        // all five admin alerts.
-        const isEmail = /<!DOCTYPE|<body|max-width:\s*\d+px/i.test(body)
+        // card wrapper). Shell-wrapped templates are emails by construction
+        // (emailShell always emits the full document), so skip the sniff.
+        const isEmail = isShell
+            || /<!DOCTYPE|<body|max-width:\s*\d+px/i.test(body)
             || /^\s*<div[^>]*font-family/i.test(body);
         if (!isEmail) { re.lastIndex = k; continue; }
         // For `return \`` matches, label by the nearest preceding function name.
@@ -150,7 +174,7 @@ function extractTemplates(src, file) {
             const decls = src.slice(0, m.index).match(/function\s+(\w+)/g);
             name = decls ? decls[decls.length - 1].replace(/function\s+/, '') : 'return';
         }
-        found.push({ file, name, body });
+        found.push({ file, name, body, isShell, admin });
         re.lastIndex = k;
     }
     return found;
@@ -160,23 +184,40 @@ function extractTemplates(src, file) {
 // the module's own functions aren't in scope -- without these the Proxy returns
 // a string for `escapeHtml` and the render dies on "not a function".
 const HELPERS = {
-    escapeHtml: (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
-        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
-    )),
-    stripHtml: (s) => String(s ?? '').replace(/<[^>]*>/g, '')
+    // Use the REAL escapeHtml from lib/emailBranding.js so the preview matches
+    // what ships (and fails loudly if that module ever breaks).
+    escapeHtml: realEscapeHtml,
+    stripHtml: (s) => String(s ?? '').replace(/<[^>]*>/g, ''),
+    // api/razorpay-webhook.js calls these module-local functions inside the
+    // purchase-confirmation template. Stub the gauntlet block (sample payment
+    // id => renders the playground CTA); the text variant returns '' for the
+    // same id here, which matches a non-gauntlet purchase in production.
+    gauntletPlaygroundBlock: (productId, productName, paymentId) =>
+        `
+            <div style="background: #ecf7f6; border: 1px solid #b9dedb; padding: 22px; border-radius: 6px; margin-bottom: 20px;">
+                <p style="font-size: 11px; color: #065c58; text-transform: uppercase; font-weight: bold; margin: 0 0 12px 0; letter-spacing: 0.5px;">Run it in your browser</p>
+                <p style="font-size: 14px; margin: 0 0 14px 0; color: #1a1a1a; line-height: 1.55;">
+                    Sample gauntlet playground block for <strong>${productName}</strong> (${paymentId}).
+                </p>
+            </div>
+        `,
+    gauntletPlaygroundText: () => ''
 };
 
 // Render by evaluating the literal with SAMPLE keys in scope. Unknown
 // identifiers resolve via a Proxy to their own name so a missing sample value
 // shows up as visible text instead of throwing.
-function render(body) {
+function render(body, isShell, admin) {
     const scope = new Proxy({ ...SAMPLE, ...HELPERS }, {
         has: () => true,
         get: (t, k) => (k in t ? t[k] : (typeof k === 'string' ? `[${k}]` : undefined))
     });
     const fn = new Function('scope', `with (scope) { return ${BACKTICK}${body}${BACKTICK}; }`);
     try {
-        return fn(scope);
+        const rendered = fn(scope);
+        // Wrap the body in the real shared shell so the preview shows the
+        // exact header/footer the production email ships with.
+        return isShell ? emailShell({ body: rendered, admin }) : rendered;
     } catch (err) {
         return `<pre style="color:#b91c1c">render failed: ${err.message}</pre>`;
     }
@@ -191,8 +232,8 @@ const LOGO_DATA = 'data:image/png;base64,' + readFileSync('assets/images/email-l
 const templates = FILES.flatMap((f) => extractTemplates(readFileSync(f, 'utf8'), f));
 const failures = [];
 
-const sections = templates.map(({ file, name }, i) => {
-    const html = render(templates[i].body).split(LOGO_URL).join(LOGO_DATA);
+const sections = templates.map(({ file, name, isShell, admin }, i) => {
+    const html = render(templates[i].body, isShell, admin).split(LOGO_URL).join(LOGO_DATA);
     // A failed render previously showed only as small red text inside one
     // section, which is easy to scroll past -- and did get scrolled past,
     // making two logo-bearing templates look like they had no logo. Collect

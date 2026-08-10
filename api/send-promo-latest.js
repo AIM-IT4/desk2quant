@@ -8,6 +8,7 @@
 //   bulk send:  GET /api/send-promo-latest?secret=SECRET
 
 import { authorizeCronRequest } from '../lib/cronAuth.js';
+import { getServiceKey, blockIfUnconfigured } from '../lib/supabaseAdmin.js';
 
 export default async function handler(req, res) {
     if (req.method !== 'GET' && req.method !== 'POST') {
@@ -22,7 +23,10 @@ export default async function handler(req, res) {
     }
 
     const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
-    const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_OhbTYIuMYgGgmKPQJ9W7RA_rhKyaad0';
+    // Service role: RLS denies `anon` on products/purchases, so the old inline
+    // anon-key fallback made this campaign silently mail nobody.
+    if (blockIfUnconfigured(res, 'send-promo-latest')) return;
+    const SUPABASE_KEY = getServiceKey();
     const BREVO_API_KEY = process.env.BREVO_API_KEY;
     const SENDER_EMAIL = process.env.SENDER_EMAIL || 'hello@desk2quant.com';
     const SENDER_NAME = process.env.SENDER_NAME || 'Desk2Quant';
@@ -226,54 +230,54 @@ export default async function handler(req, res) {
 
 function buildPromoEmail(product, discountCode, discountPercent) {
     const coverImg = product.cover_image_url
-        ? `<img src="${product.cover_image_url}" alt="${escapeHtml(product.name)}" style="width:100%; max-height:320px; object-fit:contain; border-radius:12px; background:#f4f1ec; margin-bottom:20px;">`
+        ? `<img src="${product.cover_image_url}" alt="${escapeHtml(product.name)}" style="width:100%; max-height:320px; object-fit:contain; border-radius:0; background:#f7f7f3; border:1px solid #090909; margin-bottom:20px;">`
         : '';
 
     const desc = stripHtml(product.description || '').substring(0, 200);
 
-    let priceHtml = `<span style="font-size:32px; font-weight:800; color:#1a1a1a;">₹${product.price}</span>`;
+    let priceHtml = `<span style="font-size:32px; font-weight:800; color:#090909;">₹${product.price}</span>`;
     if (product.original_price && product.original_price > product.price) {
         const savings = product.original_price - product.price;
         const discountPct = Math.round((savings / product.original_price) * 100);
         priceHtml = `
             <span style="font-size:18px; color:#999; text-decoration:line-through; margin-right:10px;">₹${product.original_price}</span>
-            <span style="font-size:32px; font-weight:800; color:#dc2626;">₹${product.price}</span>
-            <span style="display:inline-block; background:#dcfce7; color:#16a34a; font-size:13px; font-weight:700; padding:4px 12px; border-radius:20px; margin-left:10px;">SAVE ${discountPct}%</span>`;
+            <span style="font-size:32px; font-weight:800; color:#d73f3f;">₹${product.price}</span>
+            <span style="display:inline-block; background:#0b7f79; color:#ffffff; font-size:13px; font-weight:800; padding:4px 12px; border:1px solid #090909; border-radius:0; margin-left:10px; box-shadow:2px 2px 0 #090909;">SAVE ${discountPct}%</span>`;
     }
 
     const productUrl = `https://desk2quant.com/product.html?id=${product.id}`;
 
     return `
-    <div style="font-family:'Segoe UI',Arial,sans-serif; background-color:#f4f1ec; padding:0; margin:0;">
-        <div style="max-width:620px; margin:0 auto; padding:20px;">
+    <div style="font-family:'Segoe UI',Arial,sans-serif; background-color:#f7f7f3; padding:16px 0; margin:0;">
+        <div style="max-width:620px; margin:0 auto; padding:0; border:1px solid #090909; border-radius:0; box-shadow:8px 8px 0 #090909; background:#ffffff;">
 
             <!-- Header -->
-            <div style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%); border-radius:16px 16px 0 0; padding:40px 30px; text-align:center;">
-                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 6px auto;"><tr><td style="padding-right:12px; vertical-align:middle;"><img src="https://desk2quant.com/assets/images/email-logo.png" width="40" height="40" alt="Desk2Quant" style="display:block; width:40px; height:40px; border:0; outline:none; text-decoration:none; background:#ffffff; border-radius:11px;"></td><td style="vertical-align:middle;"><span style="font-size:28px; font-weight:800; color:#ffffff; letter-spacing:1px;">Desk2Quant</span></td></tr></table>
-                <div style="font-size:13px; color:#a0aec0; letter-spacing:2px; text-transform:uppercase;">Just Launched 🚀</div>
+            <div style="background:#ffca3a; border-bottom:1px solid #090909; padding:40px 30px; text-align:center;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 6px auto;"><tr><td style="padding-right:12px; vertical-align:middle;"><img src="https://desk2quant.com/assets/images/email-logo.png" width="40" height="40" alt="Desk2Quant" style="display:block; width:40px; height:40px; border:0; outline:none; text-decoration:none; background:#ffffff; border:1px solid #090909; border-radius:2px;"></td><td style="vertical-align:middle;"><span style="font-size:28px; font-weight:800; color:#090909; letter-spacing:1px;">Desk2Quant</span></td></tr></table>
+                <div style="font-size:13px; color:#4a4a42; letter-spacing:2px; text-transform:uppercase; font-weight:700;">Just Launched 🚀</div>
             </div>
 
             <!-- Hero Banner -->
-            <div style="background:linear-gradient(135deg,#7c3aed,#6366f1,#3b82f6); padding:35px 30px; text-align:center;">
+            <div style="background:#ffffff; border-bottom:1px solid #090909; padding:35px 30px; text-align:center;">
                 <div style="font-size:44px; margin-bottom:10px;">✨</div>
-                <h1 style="color:#ffffff; font-size:26px; font-weight:800; margin:0 0 10px 0; line-height:1.3;">Brand New Resource Alert!</h1>
-                <p style="color:#ddd6fe; font-size:15px; margin:0; line-height:1.5;">We just dropped something incredible.<br>Be one of the first to grab it!</p>
+                <h1 style="color:#090909; font-size:26px; font-weight:800; margin:0 0 10px 0; line-height:1.3;">Brand New Resource Alert!</h1>
+                <p style="color:#44453f; font-size:15px; margin:0; line-height:1.5;">We just dropped something incredible.<br>Be one of the first to grab it!</p>
             </div>
 
             <!-- Body -->
-            <div style="background:#ffffff; padding:30px; border-left:1px solid #eee; border-right:1px solid #eee;">
-                <p style="font-size:16px; color:#333; margin:0 0 8px 0;">Hi there 👋</p>
-                <p style="font-size:15px; color:#555; margin:0 0 25px 0; line-height:1.6;">
+            <div style="background:#ffffff; padding:30px;">
+                <p style="font-size:16px; color:#090909; margin:0 0 8px 0;">Hi there 👋</p>
+                <p style="font-size:15px; color:#44453f; margin:0 0 25px 0; line-height:1.6;">
                     We're thrilled to announce the launch of our <strong>newest digital resource</strong> — crafted to take your quant skills to the next level.
                 </p>
 
                 <!-- Product Showcase Card -->
-                <div style="background:linear-gradient(135deg,#fafafa,#f5f3ff); border-radius:16px; overflow:hidden; border:2px solid #e5e7eb; margin-bottom:25px;">
+                <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; overflow:hidden; margin-bottom:25px;">
                     <div style="padding:24px; text-align:center;">
                         ${coverImg}
-                        <div style="display:inline-block; background:linear-gradient(135deg,#7c3aed,#6366f1); color:#fff; font-size:11px; font-weight:700; padding:5px 14px; border-radius:20px; margin-bottom:14px; letter-spacing:1px; text-transform:uppercase;">✨ Just Launched</div>
-                        <h2 style="margin:10px 0; font-size:22px; color:#1a1a1a; font-weight:800; line-height:1.3;">${escapeHtml(product.name)}</h2>
-                        <p style="margin:0 0 18px 0; font-size:14px; color:#666; line-height:1.6; max-width:480px; margin-left:auto; margin-right:auto;">${desc}...</p>
+                        <div style="display:inline-block; background:#ffca3a; color:#090909; font-size:11px; font-weight:800; padding:5px 14px; border:1px solid #090909; border-radius:0; margin-bottom:14px; letter-spacing:1px; text-transform:uppercase; box-shadow:2px 2px 0 #090909;">✨ Just Launched</div>
+                        <h2 style="margin:10px 0; font-size:22px; color:#090909; font-weight:800; line-height:1.3;">${escapeHtml(product.name)}</h2>
+                        <p style="margin:0 0 18px 0; font-size:14px; color:#666761; line-height:1.6; max-width:480px; margin-left:auto; margin-right:auto;">${desc}...</p>
 
                         <!-- Price -->
                         <div style="margin:16px 0; display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;">
@@ -281,23 +285,23 @@ function buildPromoEmail(product, discountCode, discountPercent) {
                         </div>
 
                         <!-- CTA Button -->
-                        <a href="${productUrl}" style="display:inline-block; background:linear-gradient(135deg,#7c3aed,#6366f1); color:#ffffff; font-weight:700; text-decoration:none; padding:14px 40px; border-radius:10px; font-size:16px; letter-spacing:0.3px; margin-top:8px; box-shadow:0 4px 14px rgba(99,102,241,0.4);">
+                        <a href="${productUrl}" style="display:inline-block; background:#0b7f79; color:#ffffff; font-weight:800; text-decoration:none; padding:14px 40px; border:1px solid #090909; border-radius:0; font-size:16px; letter-spacing:0.3px; margin-top:8px; box-shadow:3px 3px 0 #090909;">
                             🛒 Get It Now →
                         </a>
                     </div>
                 </div>
 
                 <!-- Personalised Coupon Box -->
-                <div style="background:#fef2f2; border:2px dashed #ef4444; border-radius:16px; padding:24px; text-align:center; margin-bottom:25px; box-sizing:border-box;">
-                    <span style="display:inline-block; background:#fee2e2; color:#ef4444; font-size:11px; font-weight:700; padding:4px 12px; border-radius:20px; margin-bottom:10px; letter-spacing:1px; text-transform:uppercase;">🎟️ Exclusive Offer</span>
-                    <h3 style="margin:0 0 6px 0; font-size:18px; color:#991b1b; font-weight:800;">Get ${discountPercent}% OFF</h3>
+                <div style="background:#ffca3a; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:24px; text-align:center; margin-bottom:25px; box-sizing:border-box;">
+                    <span style="display:inline-block; background:#090909; color:#ffca3a; font-size:11px; font-weight:800; padding:4px 12px; border:1px solid #090909; border-radius:0; margin-bottom:10px; letter-spacing:1px; text-transform:uppercase;">🎟️ Exclusive Offer</span>
+                    <h3 style="margin:0 0 6px 0; font-size:18px; color:#090909; font-weight:800;">Get ${discountPercent}% OFF</h3>
                     <p style="margin:0 0 16px 0; font-size:14px; color:#7f1d1d; line-height:1.4;">Use your exclusive customer launch coupon at checkout:</p>
-                    <div style="display:inline-block; background:#ffffff; border:2px solid #ef4444; color:#ef4444; font-family:monospace; font-size:22px; font-weight:800; padding:10px 32px; border-radius:8px; letter-spacing:2px; box-shadow:0 2px 8px rgba(239,68,68,0.1);">${discountCode}</div>
+                    <div style="display:inline-block; max-width:100%; background:#ffffff; border:1px solid #090909; color:#090909; font-family:monospace; font-size:22px; font-weight:800; padding:10px 20px; border-radius:0; letter-spacing:1px; box-shadow:2px 2px 0 #090909; overflow-wrap:anywhere; word-break:break-all;">${discountCode}</div>
                 </div>
 
                 <!-- Why Buy Section -->
-                <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:20px; margin-bottom:20px;">
-                    <h3 style="margin:0 0 12px 0; font-size:16px; color:#92400e; font-weight:700;">Why you'll love this:</h3>
+                <div style="background:#fff3c4; border:1px solid #090909; border-radius:0; box-shadow:3px 3px 0 #090909; padding:20px; margin-bottom:20px;">
+                    <h3 style="margin:0 0 12px 0; font-size:16px; color:#090909; font-weight:700;">Why you'll love this:</h3>
                     <table style="width:100%; border:none;">
                         <tr>
                             <td style="padding:6px 0; font-size:14px; color:#78350f; vertical-align:top; width:28px;">✅</td>
@@ -327,18 +331,18 @@ function buildPromoEmail(product, discountCode, discountPercent) {
 
                 <!-- Secondary CTA -->
                 <div style="text-align:center; margin-top:20px;">
-                    <a href="https://desk2quant.com/#products" style="display:inline-block; background:linear-gradient(135deg,#ea580c,#f97316); color:#ffffff; font-weight:700; text-decoration:none; padding:12px 32px; border-radius:8px; font-size:14px; letter-spacing:0.3px;">Browse All Products →</a>
+                    <a href="https://desk2quant.com/#products" style="display:inline-block; background:#090909; color:#ffffff; font-weight:800; text-decoration:none; padding:12px 32px; border:1px solid #090909; border-radius:0; font-size:14px; letter-spacing:0.3px; box-shadow:3px 3px 0 #0b7f79;">Browse All Products →</a>
                 </div>
             </div>
 
             <!-- Footer -->
-            <div style="background:#1a1a2e; border-radius:0 0 16px 16px; padding:25px; text-align:center;">
-                <p style="color:#888; font-size:12px; margin:0 0 8px 0; line-height:1.6;">
+            <div style="background:#f7f7f3; border-top:1px solid #090909; padding:25px; text-align:center;">
+                <p style="color:#666761; font-size:12px; margin:0 0 8px 0; line-height:1.6;">
                     You're receiving this because you previously purchased from Desk2Quant.<br>
                     Questions? Simply reply to this email.
                 </p>
                 <p style="margin:0;">
-                    <a href="https://desk2quant.com" style="color:#818cf8; text-decoration:none; font-size:13px; font-weight:600;">desk2quant.com</a>
+                    <a href="https://desk2quant.com" style="color:#090909; text-decoration:none; font-size:13px; font-weight:600;">desk2quant.com</a>
                 </p>
             </div>
 

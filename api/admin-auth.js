@@ -39,6 +39,21 @@ export default async function handler(req, res) {
         return res.status(200).json({ success: true });
     }
 
+    if (action === 'get-key') {
+        // Admin panel bootstrap: after the password is verified, hand over the
+        // service-role key IN MEMORY ONLY so the browser's admin client can read
+        // and write the RLS-sealed tables (products/sessions/bookings/purchases).
+        // The key is never persisted (localStorage/sessionStorage) and is not
+        // present in any static file -- it only exists in this response, gated
+        // behind the same ADMIN_PASSWORD check as the login itself.
+        const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || null;
+        if (!key) {
+            console.error('SERVER ERROR: no Supabase service key configured for admin get-key');
+            return res.status(500).json({ success: false, error: 'Server configuration error' });
+        }
+        return res.status(200).json({ success: true, serviceKey: key });
+    }
+
     if (action === 'revenue') {
         return handleRevenueLookup(req, res);
     }

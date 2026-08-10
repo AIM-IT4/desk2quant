@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+<script>/* CANONICAL-HOST-GUARD v1: Razorpay is registered to desk2quant.com - force canonical host + root path before any checkout code runs. */!function(){try{var h=location.hostname.toLowerCase(),dev=/^(localhost|127.0.0.1|0.0.0.0|[::1])$/.test(h);if(!dev&&h!=='desk2quant.com'){location.replace('https://desk2quant.com'+location.pathname+location.search+location.hash)}else if(location.pathname==='/index.html'){location.replace('https://desk2quant.com/'+location.search+location.hash)}}catch(e){}}();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Details | Desk2Quant</title>
@@ -639,7 +640,7 @@
             document.head.appendChild(script);
         })();
     </script>
-    <script src="script.js"></script>
+    <script src="script.js?v=16"></script>
 
     <!-- Navigation -->
     <nav class="navbar">
@@ -844,7 +845,7 @@
             try {
                 const { data: product, error } = await window.supabaseClient
                     .from('products')
-                    .select('*')
+                    .select('id,name,description,cover_image_url,price,original_price,created_at,coupon_code,discount_percentage,enable_ppp')
                     .eq('id', id)
                     .single();
 
@@ -1082,8 +1083,8 @@
                                     const rate = localPrice.rate || 1;
                                     let convertedOriginal = product.original_price * rate;
 
-                                    if (product.enable_ppp && !localPrice.isWeaker) {
-                                        convertedOriginal = convertedOriginal * 1.5;
+                                    if (product.enable_ppp) {
+                                        convertedOriginal = convertedOriginal * (localPrice.isWeaker ? 1.2 : 1.5);
                                     }
 
                                     newOriginalDisplay = `<span style="text-decoration:line-through; color:var(--text-muted); font-size:0.8em; margin-right:10px;">${localPrice.currency.symbol}${Math.round(convertedOriginal).toLocaleString()}</span>`;

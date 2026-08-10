@@ -3,10 +3,17 @@
 // Handles product purchases and session bookings
 
 import crypto from 'crypto';
-import { grantDrivePermissionOrSignedFallback, buildSignedDownloadUrl } from '../lib/secureDownload.js';
+import {
+    grantDrivePermissionOrSignedFallback,
+    buildSignedDownloadUrl,
+    parseSupabaseStorageUrl
+} from '../lib/secureDownload.js';
 import { createJitsiMeetingLink } from '../lib/jitsi.js';
 import { queuePostPurchaseRecommendation } from '../lib/recommendationQueue.js';
-import { getExpectedProductOrder, getExpectedSessionOrder, getExpectedCartOrder, isWithinTolerance } from '../lib/pricing.js';
+import { getExpectedProductOrder, getExpectedSessionOrder, getExpectedCartOrder, isWithinTolerance, isZeroDecimalCurrency } from '../lib/pricing.js';
+import { getServiceKey } from '../lib/supabaseAdmin.js';
+import { emailShell, escapeHtml } from '../lib/emailBranding.js';
+import { signBookingToken } from '../lib/bookingTokens.js';
 
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || 'https://desk2quant.com';
 
@@ -55,7 +62,13 @@ export default async function handler(req, res) {
     const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
     const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
     const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
-    const SUPABASE_KEY = process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRudGFibXl1cmxybG5vYWpkbmphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMDEyNjUsImV4cCI6MjA4NTY3NzI2NX0.PYpNd_t_px09zi2d5WGjFVOB23sjb3ZPuAnxagYshe0';
+    // Service-role key: RLS denies `anon` on products/purchases/bookings, so the
+    // old inline anon-key fallback here would silently fail every write and every
+    // file_url lookup. Fail loudly instead of recording nothing.
+    const SUPABASE_KEY = getServiceKey();
+    if (!SUPABASE_KEY) {
+        console.error('CONFIG: SUPABASE_SERVICE_ROLE_KEY is not set — cannot record purchases or resolve download links.');
+    }
     const BREVO_API_KEY = process.env.BREVO_API_KEY;
     // Warn loudly rather than silently misrouting. Sale alerts went to the
     // gmail fallback because ADMIN_EMAIL was simply never set, and nothing in
@@ -120,8 +133,7 @@ export default async function handler(req, res) {
             const payment = event.payload.payment.entity;
             const paymentId = payment.id;
             const currency = payment.currency;
-            const zeroDecimalCurrencies = ['JPY', 'KRW', 'VND', 'CLP', 'PYG', 'UGX'];
-            const amount = zeroDecimalCurrencies.includes(currency) ? payment.amount : payment.amount / 100;
+            const amount = isZeroDecimalCurrency(currency) ? payment.amount : payment.amount / 100;
             const customerEmail = payment.email;
             const customerName = payment.notes?.customer_name || 'Customer';
             const customerPhone = payment.notes?.customer_phone || '';
@@ -320,27 +332,33 @@ export async function handleProductPurchase(data) {
     // notes/amount, bypassing create-order.js entirely). So independently
     // re-derive the real minimum acceptable INR price here, from productId,
     // and refuse to grant access if what was actually captured falls short.
+    // Fail closed: every current checkout goes through create-order.js, which
+    // always stamps product_id, so a captured product payment without a
+    // resolvable product_id (or a price we cannot verify) must NOT be granted
+    // access. Throwing makes the webhook return 500 so Razorpay retries, instead
+    // of silently fulfilling an unverifiable payment.
     let underpaymentFlag = null;
-    if (productId) {
-        try {
-            const expected = await getExpectedProductOrder(productId, currency, couponCode);
-            if (expected.ok && !isWithinTolerance(inrAmount, expected.amountInr)) {
-                underpaymentFlag = {
-                    expectedInr: expected.amountInr,
-                    capturedInr: inrAmount,
-                    discountPercent: expected.discountPercent
-                };
-                console.error('🚨 UNDERPAYMENT DETECTED — refusing to grant access:', {
-                    paymentId, productName, productId, ...underpaymentFlag
-                });
-            } else if (!expected.ok) {
-                console.warn('⚠️ Could not verify product price (product_id missing/unmatched); proceeding without price check:', productId, expected.error);
-            }
-        } catch (err) {
-            console.error('⚠️ Price verification error (proceeding without hard block):', err.message);
-        }
-    } else {
-        console.warn('⚠️ No product_id on payment notes; cannot verify price for:', productName, '(paymentId:', paymentId, ') — legacy checkout path, review manually if suspicious');
+    if (!productId) {
+        throw new Error(`Refusing to fulfil product purchase without product_id (paymentId: ${paymentId}, product: ${productName})`);
+    }
+    let expected;
+    try {
+        expected = await getExpectedProductOrder(productId, currency, couponCode);
+    } catch (err) {
+        throw new Error(`Product price verification failed (paymentId: ${paymentId}, productId: ${productId}): ${err.message}`);
+    }
+    if (!expected.ok) {
+        throw new Error(`Cannot verify product price — product_id does not resolve (paymentId: ${paymentId}, productId: ${productId}, product: ${productName}): ${expected.error || 'unknown'}`);
+    }
+    if (!isWithinTolerance(inrAmount, expected.amountInr)) {
+        underpaymentFlag = {
+            expectedInr: expected.amountInr,
+            capturedInr: inrAmount,
+            discountPercent: expected.discountPercent
+        };
+        console.error('🚨 UNDERPAYMENT DETECTED — refusing to grant access:', {
+            paymentId, productName, productId, ...underpaymentFlag
+        });
     }
 
     const PRODUCT_DOWNLOAD_LINKS = {
@@ -490,7 +508,21 @@ export async function handleProductPurchase(data) {
     // Google Drive Secure Sharing Flow
     let hasSharedSecurely = false;
     let fallbackToManualInfo = false;
-    const driveFileId = extractDriveFileId(downloadLink);
+
+    // Supabase-hosted product: the storage bucket is private, so the raw
+    // /object/public/ URL no longer resolves. Issue a signed, expiring,
+    // per-buyer proxy link instead. Same underpayment gate as Drive below.
+    const storageRef = parseSupabaseStorageUrl(downloadLink);
+    if (storageRef && !underpaymentFlag) {
+        downloadLink = buildSignedDownloadUrl(
+            PUBLIC_BASE_URL, process.env.RAZORPAY_KEY_SECRET, storageRef.objectKey,
+            customerEmail, storageRef.fileName || productName, false, 'sb'
+        );
+        hasSharedSecurely = true;
+        console.log(`Issued signed storage URL for ${storageRef.objectKey} to ${customerEmail}`);
+    }
+
+    const driveFileId = storageRef ? null : extractDriveFileId(downloadLink);
 
     // Do NOT grant Drive access or reveal the download link when the
     // captured amount fell short of the verified price (see price-tamper
@@ -532,8 +564,12 @@ export async function handleProductPurchase(data) {
     }
 
     if (!frontendAlreadyProcessed) {
+        // Fail closed: the purchases row is the durable record of this sale. If
+        // it cannot be written, throw so the webhook 500s and Razorpay retries —
+        // a customer must not be charged with no record and no download email.
+        let insertResp;
         try {
-            const insertResp = await fetch(`${SUPABASE_URL}/rest/v1/purchases`, {
+            insertResp = await fetch(`${SUPABASE_URL}/rest/v1/purchases`, {
                 method: 'POST',
                 headers: {
                     'apikey': SUPABASE_KEY,
@@ -556,49 +592,45 @@ export async function handleProductPurchase(data) {
                     ...(isoCreatedAt ? { created_at: isoCreatedAt } : {})
                 })
             });
-            if (insertResp.ok) {
-                console.log('✅ Purchase logged to Supabase by webhook. PaymentId:', paymentId);
-            } else {
-                const errBody = await insertResp.text();
-                console.error('❌ SUPABASE INSERT FAILED. Status:', insertResp.status, '| Body:', errBody, '| PaymentId:', paymentId);
-            }
         } catch (err) {
             console.error('❌ Error logging to Supabase (network):', err.message, '| PaymentId:', paymentId);
+            throw new Error(`Failed to record purchase in Supabase (paymentId: ${paymentId}): ${err.message}`);
+        }
+        if (insertResp.ok) {
+            console.log('✅ Purchase logged to Supabase by webhook. PaymentId:', paymentId);
+        } else {
+            const errBody = await insertResp.text();
+            console.error('❌ SUPABASE INSERT FAILED. Status:', insertResp.status, '| Body:', errBody, '| PaymentId:', paymentId);
+            throw new Error(`Failed to record purchase in Supabase (${insertResp.status}) (paymentId: ${paymentId}): ${errBody}`);
         }
     }
 
     if (BREVO_API_KEY && customerEmail && !underpaymentFlag) {
-        const customerHtml = `
-            <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
-                <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                    <div style="background-color: #ffffff; padding: 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
-                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;"><tr><td style="padding-right: 12px; vertical-align: middle;"><img src="https://desk2quant.com/assets/images/email-logo.png" width="32" height="32" alt="Desk2Quant" style="display: block; width: 32px; height: 32px; border: 0; outline: none; text-decoration: none; color: #1a1a1a; font-size: 20px; font-weight: bold;"></td><td style="vertical-align: middle;"><span style="color: #1a1a1a; font-size: 24px; font-weight: bold; letter-spacing: 1px;">Desk2Quant</span></td></tr></table>
-                    </div>
-                    <div style="padding: 30px;">
+        const customerHtml = emailShell({ body: `
                         <div style="margin-bottom: 20px;">
-                            <span style="display: inline-block; background: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; margin-right: 10px;">New Purchase</span>
-                            <span style="display: inline-block; background: #d1fae5; color: #065f46; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase;">Confirmed</span>
+                            <span style="display: inline-block; background:#ffca3a; color:#090909; padding:4px 8px; border:1px solid #090909; border-radius:0; font-size:11px; font-weight:800; text-transform:uppercase; box-shadow:2px 2px 0 #090909; margin-right:10px;">New Purchase</span>
+                            <span style="display: inline-block; background:#0b7f79; color:#ffffff; padding:4px 8px; border:1px solid #090909; border-radius:0; font-size:11px; font-weight:800; text-transform:uppercase; box-shadow:2px 2px 0 #090909;">Confirmed</span>
                         </div>
-                        <p style="font-size: 16px; margin-bottom: 25px;">Hi <strong>${customerName}</strong>, thank you for purchasing from Desk2Quant.</p>
+                        <p style="font-size: 16px; margin-bottom: 25px;">Hi <strong>${escapeHtml(customerName)}</strong>, thank you for purchasing from Desk2Quant.</p>
                         
                         ${hasSharedSecurely ? `
-                        <div style="background: #e0f2fe; padding: 15px; border-radius: 6px; border-left: 4px solid #0284c7; margin-bottom: 25px; font-size: 13px; color: #0369a1; line-height: 1.5;">
-                            <strong>🔒 Secured Resource:</strong> We have shared this resource with your email address <strong>${customerEmail}</strong>. Please ensure you are logged into Google Drive with this email address to view it.
+                        <div style="background:#dff2ef; border:1px solid #090909; border-radius:0; box-shadow:3px 3px 0 #090909; padding:15px; margin-bottom:25px; font-size:13px; color:#064e4a; line-height:1.5;">
+                            <strong>🔒 Secured Resource:</strong> We have shared this resource with your email address <strong>${escapeHtml(customerEmail)}</strong>. Please ensure you are logged into Google Drive with this email address to view it.
                         </div>
                         ` : ''}
                         
                         ${fallbackToManualInfo ? `
-                        <div style="background: #fffbeb; padding: 15px; border-radius: 6px; border-left: 4px solid #d97706; margin-bottom: 25px; font-size: 13px; color: #b45309; line-height: 1.5;">
-                            <strong>⚠️ Custom Share Access:</strong> We attempted to automatically share this secure Google Drive resource with <strong>${customerEmail}</strong>. If your email is not associated with a Google Account, or if you cannot access the link, please reply to this email with your Google/Gmail address, and we will grant access manually!
+                        <div style="background:#fff3c4; border:1px solid #090909; border-radius:0; box-shadow:3px 3px 0 #090909; padding:15px; margin-bottom:25px; font-size:13px; color:#7c4a03; line-height:1.5;">
+                            <strong>⚠️ Custom Share Access:</strong> We attempted to automatically share this secure Google Drive resource with <strong>${escapeHtml(customerEmail)}</strong>. If your email is not associated with a Google Account, or if you cannot access the link, please reply to this email with your Google/Gmail address, and we will grant access manually!
                         </div>
                         ` : ''}
 
-                        <div style="background: #f9f8f4; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
-                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Digital Product</p>
-                            <h3 style="margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 1px solid #e5e5e5; padding-bottom: 15px;">${productName}</h3>
+                        <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px; margin-bottom:25px;">
+                            <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Digital Product</p>
+                            <h3 style="margin: 0 0 20px 0; font-size: 18px; color: #090909; border-bottom: 1px solid #d8d8d1; padding-bottom: 15px;">${escapeHtml(productName)}</h3>
                             <table style="width: 100%; border-collapse: collapse;">
                                 <tr>
-                                    <td style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold;">Amount</td>
+                                    <td style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold;">Amount</td>
                                     <td style="font-size: 14px; font-weight: bold; text-align: right;">${currency} ${amount}</td>
                                 </tr>
                             </table>
@@ -606,40 +638,33 @@ export async function handleProductPurchase(data) {
                         
                         ${gauntletPlaygroundBlock(productId, productName, paymentId)}
                         <center>
-                            <a href="${downloadLink}" style="display: inline-block; background: #e95836; color: #ffffff; font-weight: bold; text-decoration: none; padding: 14px 30px; border-radius: 6px; font-size: 16px; margin-bottom: 30px;">Download / View Resource</a>
+                            <a href="${downloadLink}" style="display: inline-block; background:#ffca3a; color:#090909; font-weight:800; text-decoration:none; padding:14px 30px; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; font-size:16px; margin-bottom:30px;">Download / View Resource</a>
                         </center>
  
-                        <div style="background: #f9f8f4; padding: 20px; border-radius: 6px; margin-bottom: 20px;">
-                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Direct Link Backup</p>
-                            <p style="font-size: 14px; margin: 0 0 8px 0; color: #1a1a1a;">If the button does not open in your email app, copy and paste this link into your browser:</p>
+                        <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px; margin-bottom:20px;">
+                            <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Direct Link Backup</p>
+                            <p style="font-size: 14px; margin: 0 0 8px 0; color: #090909;">If the button does not open in your email app, copy and paste this link into your browser:</p>
                             <p style="font-size: 13px; margin: 0; word-break: break-all;">
-                                <a href="${downloadLink}" style="color: #2563eb; text-decoration: underline;">${downloadLink}</a>
+                                <a href="${downloadLink}" style="color: #0b7f79; text-decoration: underline; word-break: break-all; overflow-wrap: anywhere;">${downloadLink}</a>
                             </p>
                         </div>
 
-                        <div style="background: #f9f8f4; padding: 20px; border-radius: 6px; margin-bottom: 20px;">
-                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Purchase Details</p>
+                        <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px; margin-bottom:20px;">
+                            <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Purchase Details</p>
                             <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                                <tr><td style="padding: 5px 0; color: #666; width: 30%;">Name</td><td style="padding: 5px 0; color: #1a1a1a;">${customerName}</td></tr>
-                                <tr><td style="padding: 5px 0; color: #666;">Email</td><td style="padding: 5px 0; color: #1a1a1a;"><a href="mailto:${customerEmail}" style="color: #2563eb; text-decoration: none;">${customerEmail}</a></td></tr>
-                                <tr><td style="padding: 5px 0; color: #666;">Phone</td><td style="padding: 5px 0; color: #1a1a1a;">${customerPhone || 'N/A'}</td></tr>
+                                <tr><td style="padding: 5px 0; color: #666761; width: 30%;">Name</td><td style="padding: 5px 0; color: #090909;">${escapeHtml(customerName)}</td></tr>
+                                <tr><td style="padding: 5px 0; color: #666761;">Email</td><td style="padding: 5px 0; color: #090909; word-break: break-all;"><a href="mailto:${escapeHtml(customerEmail)}" style="color: #0b7f79; text-decoration: none;">${escapeHtml(customerEmail)}</a></td></tr>
+                                <tr><td style="padding: 5px 0; color: #666761;">Phone</td><td style="padding: 5px 0; color: #090909;">${escapeHtml(customerPhone || 'N/A')}</td></tr>
                             </table>
                         </div>
 
-                        <div style="background: #f9f8f4; padding: 20px; border-radius: 6px;">
-                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Order Details</p>
+                        <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px;">
+                            <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Order Details</p>
                             <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                                <tr><td style="padding: 5px 0; color: #666; width: 30%;">Payment ID</td><td style="padding: 5px 0; color: #1a1a1a;">${paymentId}</td></tr>
+                                <tr><td style="padding: 5px 0; color: #666761; width: 30%;">Payment ID</td><td style="padding: 5px 0; color: #090909; word-break: break-all;">${paymentId}</td></tr>
                             </table>
                         </div>
-                    </div>
-                    <div style="background-color: #1a1a1a; padding: 25px 20px; text-align: center; color: #888; font-size: 12px;">
-                        <p style="margin: 0 0 10px 0;">Sent by Desk2Quant</p>
-                        <p style="margin: 0;">Have an issue? Reply to this email.</p>
-                    </div>
-                </div>
-            </div>
-        `;
+        ` });
 
         try {
             const emailResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -673,26 +698,13 @@ export async function handleProductPurchase(data) {
     if (BREVO_API_KEY && underpaymentFlag) {
         // B4: Send a clear explanation to the customer so they're not left
         // wondering why they were charged and got nothing.
-        const customerHtml = `
-            <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
-                <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                    <div style="background-color: #ffffff; padding: 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
-                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;"><tr><td style="padding-right: 12px; vertical-align: middle;"><img src="https://desk2quant.com/assets/images/email-logo.png" width="32" height="32" alt="Desk2Quant" style="display: block; width: 32px; height: 32px; border: 0; outline: none; text-decoration: none; color: #1a1a1a; font-size: 20px; font-weight: bold;"></td><td style="vertical-align: middle;"><span style="color: #1a1a1a; font-size: 24px; font-weight: bold; letter-spacing: 1px;">Desk2Quant</span></td></tr></table>
-                    </div>
-                    <div style="padding: 30px;">
-                        <h2 style="color: #991b1b; margin: 0 0 20px 0;">Payment received, awaiting review</h2>
-                        <p style="font-size: 16px; margin-bottom: 20px;">Hi <strong>${customerName}</strong>,</p>
-                        <p style="font-size: 14px; line-height: 1.6; margin-bottom: 20px;">We received your payment for <strong>${productName}</strong>, but the amount doesn't match our current pricing. This can happen if a discount expired mid-checkout or if there was an unintended mismatch.</p>
+        const customerHtml = emailShell({ body: `
+                        <h2 style="color: #d73f3f; margin: 0 0 20px 0;">Payment received, awaiting review</h2>
+                        <p style="font-size: 16px; margin-bottom: 20px;">Hi <strong>${escapeHtml(customerName)}</strong>,</p>
+                        <p style="font-size: 14px; line-height: 1.6; margin-bottom: 20px;">We received your payment for <strong>${escapeHtml(productName)}</strong>, but the amount doesn't match our current pricing. This can happen if a discount expired mid-checkout or if there was an unintended mismatch.</p>
                         <p style="font-size: 14px; line-height: 1.6; margin-bottom: 20px;">We're reviewing your order manually and will send your download link or refund within 24 hours. If you have questions, reply to this email with your <strong>Payment ID: ${paymentId}</strong>.</p>
                         <p style="font-size: 14px; line-height: 1.6; margin-bottom: 0;">Thanks for your patience.</p>
-                    </div>
-                    <div style="background-color: #1a1a1a; padding: 25px 20px; text-align: center; color: #888; font-size: 12px;">
-                        <p style="margin: 0 0 10px 0;">Sent by Desk2Quant</p>
-                        <p style="margin: 0;">Have an issue? Reply to this email.</p>
-                    </div>
-                </div>
-            </div>
-        `;
+        ` });
         try {
             await fetch('https://api.brevo.com/v3/smtp/email', {
                 method: 'POST',
@@ -712,20 +724,18 @@ export async function handleProductPurchase(data) {
 
         // Distinct admin alert so the underpayment is impossible to miss.
         try {
-            const alertHtml = `
-                <div style="font-family: Arial, sans-serif; padding: 20px; color: #1a1a1a;">
-                    <h2 style="color: #991b1b;">🚨 Underpaid purchase attempt blocked</h2>
-                    <p>A payment was captured for <strong>${productName}</strong> but the amount fell short of the verified price. Access/download link were <strong>NOT</strong> granted.</p>
+            const alertHtml = emailShell({ admin: true, body: `
+                    <h2 style="color: #d73f3f;">🚨 Underpaid purchase attempt blocked</h2>
+                    <p>A payment was captured for <strong>${escapeHtml(productName)}</strong> but the amount fell short of the verified price. Access/download link were <strong>NOT</strong> granted.</p>
                     <table style="border-collapse: collapse;">
-                        <tr><td style="padding:4px 10px;color:#666;">Customer</td><td style="padding:4px 10px;">${customerName} (${customerEmail})</td></tr>
-                        <tr><td style="padding:4px 10px;color:#666;">Payment ID</td><td style="padding:4px 10px;">${paymentId}</td></tr>
-                        <tr><td style="padding:4px 10px;color:#666;">Captured (INR)</td><td style="padding:4px 10px;">${underpaymentFlag.capturedInr}</td></tr>
-                        <tr><td style="padding:4px 10px;color:#666;">Expected minimum (INR)</td><td style="padding:4px 10px;">${underpaymentFlag.expectedInr}</td></tr>
-                        <tr><td style="padding:4px 10px;color:#666;">Coupon used</td><td style="padding:4px 10px;">${couponCode || 'none'} (${underpaymentFlag.discountPercent}% resolved)</td></tr>
+                        <tr><td style="padding:4px 10px;color:#666761;">Customer</td><td style="padding:4px 10px;">${escapeHtml(customerName)} (${escapeHtml(customerEmail)})</td></tr>
+                        <tr><td style="padding:4px 10px;color:#666761;">Payment ID</td><td style="padding:4px 10px; word-break: break-all;">${paymentId}</td></tr>
+                        <tr><td style="padding:4px 10px;color:#666761;">Captured (INR)</td><td style="padding:4px 10px;">${underpaymentFlag.capturedInr}</td></tr>
+                        <tr><td style="padding:4px 10px;color:#666761;">Expected minimum (INR)</td><td style="padding:4px 10px;">${underpaymentFlag.expectedInr}</td></tr>
+                        <tr><td style="padding:4px 10px;color:#666761;">Coupon used</td><td style="padding:4px 10px;">${escapeHtml(couponCode || 'none')} (${underpaymentFlag.discountPercent}% resolved)</td></tr>
                     </table>
                     <p>If this was a legitimate discount our pricing rules don't know about, grant access manually and consider updating lib/pricing.js.</p>
-                </div>
-            `;
+            ` });
             await fetch('https://api.brevo.com/v3/smtp/email', {
                 method: 'POST',
                 headers: { 'accept': 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
@@ -735,7 +745,7 @@ export async function handleProductPurchase(data) {
                     to: ADMIN_EMAIL.split(',').map(email => ({ email: email.trim() })).filter(item => item.email),
                     subject: `🚨 Underpayment blocked: ${productName}`,
                     htmlContent: alertHtml,
-                    textContent: `Underpaid purchase blocked.\nProduct: ${productName}\nCustomer: ${customerName} (${customerEmail})\nPaymentId: ${paymentId}\nCaptured INR: ${underpaymentFlag.capturedInr}\nExpected min INR: ${underpaymentFlag.expectedInr}\nCoupon: ${couponCode || 'none'}`
+                    textContent: `Underpaid purchase blocked.\nProduct: ${productName}\nCustomer: ${escapeHtml(customerName)} (${escapeHtml(customerEmail)})\nPaymentId: ${paymentId}\nCaptured INR: ${underpaymentFlag.capturedInr}\nExpected min INR: ${underpaymentFlag.expectedInr}\nCoupon: ${couponCode || 'none'}`
                 })
             });
         } catch (err) {
@@ -744,43 +754,34 @@ export async function handleProductPurchase(data) {
     }
 
     if (BREVO_API_KEY && !underpaymentFlag) {
-        const adminHtml = `
-            <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
-                <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                    <div style="background-color: #ffffff; padding: 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
-                        <span style="color: #1a1a1a; font-size: 24px; font-weight: bold; letter-spacing: 1px;">Desk2Quant Admin</span>
-                    </div>
-                    <div style="padding: 30px;">
+        const adminHtml = emailShell({ admin: true, body: `
                         <div style="margin-bottom: 20px;">
-                            <span style="display: inline-block; background: #d1fae5; color: #065f46; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase;">New Sale Received</span>
+                            <span style="display: inline-block; background:#0b7f79; color:#ffffff; padding:4px 8px; border:1px solid #090909; border-radius:0; font-size:11px; font-weight:800; text-transform:uppercase; box-shadow:2px 2px 0 #090909;">New Sale Received</span>
                         </div>
-                        <p style="font-size: 16px; margin-bottom: 25px;"><strong>${customerName}</strong> just purchased a digital product.</p>
+                        <p style="font-size: 16px; margin-bottom: 25px;"><strong>${escapeHtml(customerName)}</strong> just purchased a digital product.</p>
                         
-                        <div style="background: #f9f8f4; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
-                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Product Sold</p>
-                            <h3 style="margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 1px solid #e5e5e5; padding-bottom: 15px;">${productName}</h3>
+                        <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px; margin-bottom:25px;">
+                            <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Product Sold</p>
+                            <h3 style="margin: 0 0 20px 0; font-size: 18px; color: #090909; border-bottom: 1px solid #d8d8d1; padding-bottom: 15px;">${escapeHtml(productName)}</h3>
                             <table style="width: 100%; border-collapse: collapse;">
                                 <tr>
-                                    <td style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold;">Amount Received</td>
-                                    <td style="font-size: 14px; font-weight: bold; text-align: right; color: #16a34a;">${currency} ${amount}</td>
+                                    <td style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold;">Amount Received</td>
+                                    <td style="font-size: 14px; font-weight: bold; text-align: right; color: #0b7f79;">${currency} ${amount}</td>
                                 </tr>
                             </table>
                         </div>
 
-                        <div style="background: #f9f8f4; padding: 20px; border-radius: 6px;">
-                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Customer Details</p>
+                        <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px;">
+                            <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Customer Details</p>
                             <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                                <tr><td style="padding: 5px 0; color: #666; width: 30%;">Name</td><td style="padding: 5px 0; color: #1a1a1a;">${customerName}</td></tr>
-                                <tr><td style="padding: 5px 0; color: #666;">Email</td><td style="padding: 5px 0; color: #1a1a1a;"><a href="mailto:${customerEmail}" style="color: #2563eb; text-decoration: none;">${customerEmail}</a></td></tr>
-                                <tr><td style="padding: 5px 0; color: #666;">Phone</td><td style="padding: 5px 0; color: #1a1a1a;">${customerPhone || 'Not provided'}</td></tr>
-                                <tr><td style="padding: 5px 0; color: #666;">Download Link</td><td style="padding: 5px 0; color: #1a1a1a; word-break: break-all;">${downloadLink}</td></tr>
-                                <tr><td style="padding: 5px 0; border-top: 1px solid #e5e5e5; margin-top: 5px; color: #666;">Payment ID</td><td style="padding: 5px 0; border-top: 1px solid #e5e5e5; margin-top: 5px; color: #1a1a1a;">${paymentId} (Webhook)</td></tr>
+                                <tr><td style="padding: 5px 0; color: #666761; width: 30%;">Name</td><td style="padding: 5px 0; color: #090909;">${escapeHtml(customerName)}</td></tr>
+                                <tr><td style="padding: 5px 0; color: #666761;">Email</td><td style="padding: 5px 0; color: #090909; word-break: break-all;"><a href="mailto:${escapeHtml(customerEmail)}" style="color: #0b7f79; text-decoration: none;">${escapeHtml(customerEmail)}</a></td></tr>
+                                <tr><td style="padding: 5px 0; color: #666761;">Phone</td><td style="padding: 5px 0; color: #090909;">${escapeHtml(customerPhone || 'Not provided')}</td></tr>
+                                <tr><td style="padding: 5px 0; color: #666761;">Download Link</td><td style="padding: 5px 0; color: #090909; word-break: break-all;">${downloadLink}</td></tr>
+                                <tr><td style="padding: 5px 0; border-top: 1px solid #d8d8d1; margin-top: 5px; color: #666761;">Payment ID</td><td style="padding: 5px 0; border-top: 1px solid #d8d8d1; margin-top: 5px; color: #090909; word-break: break-all;">${paymentId} (Webhook)</td></tr>
                             </table>
                         </div>
-                    </div>
-                </div>
-            </div>
-        `;
+        ` });
 
         try {
             const adminEmailResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -863,17 +864,17 @@ function gauntletPlaygroundBlock(productId, productName, paymentId) {
 
     const url = 'https://desk2quant.com/gauntlet-playground.html?project=' + slug;
     return `
-                        <div style="background: #ecf7f6; border: 1px solid #b9dedb; padding: 22px; border-radius: 6px; margin-bottom: 20px;">
-                            <p style="font-size: 11px; color: #065c58; text-transform: uppercase; font-weight: bold; margin: 0 0 12px 0; letter-spacing: 0.5px;">Run it in your browser</p>
-                            <p style="font-size: 14px; margin: 0 0 14px 0; color: #1a1a1a; line-height: 1.55;">
+                        <div style="background:#dff2ef; border:1px solid #090909; padding:22px; border-radius:0; box-shadow:4px 4px 0 #090909; margin-bottom:20px;">
+                            <p style="font-size: 11px; color: #0b7f79; text-transform: uppercase; font-weight: bold; margin: 0 0 12px 0; letter-spacing: 0.5px;">Run it in your browser</p>
+                            <p style="font-size: 14px; margin: 0 0 14px 0; color: #090909; line-height: 1.55;">
                                 You do not have to install anything. Open the playground to write Python in the browser, run the public self-checks, and get an <strong>instant graded scorecard</strong> from the hidden test suite.
                             </p>
                             <center>
-                                <a href="${url}" style="display: inline-block; background: #065c58; color: #ffffff; font-weight: bold; text-decoration: none; padding: 13px 26px; border-radius: 6px; font-size: 15px;">Open the playground</a>
+                                <a href="${url}" style="display: inline-block; background:#0b7f79; color:#ffffff; font-weight:800; text-decoration:none; padding:13px 26px; border:1px solid #090909; border-radius:0; box-shadow:3px 3px 0 #090909; font-size:15px;">Open the playground</a>
                             </center>
                             <p style="font-size: 13px; margin: 14px 0 0 0; color: #444; line-height: 1.55;">
                                 To unlock it, enter the email you paid with and this payment id:<br>
-                                <span style="font-family: monospace; font-size: 14px; color: #1a1a1a; font-weight: bold;">${paymentId}</span>
+                                <span style="font-family: monospace; font-size: 14px; color: #090909; font-weight: bold; word-break: break-all;">${paymentId}</span>
                             </p>
                         </div>
 `;
@@ -902,28 +903,34 @@ async function handleCartPurchase(data) {
         .filter((item) => item.productId);
 
     if (parsedItems.length === 0) {
-        console.error('Cart webhook: no items parsed from cart_items note:', cartItemsRaw);
-        return;
+        // Fail closed: a cart payment with no readable items must not be
+        // acknowledged-and-forgotten (charged customer, no record). Throw so
+        // Razorpay retries; grant-access can recover the items from order notes.
+        throw new Error(`Cart webhook: no items parsed from cart_items note (paymentId: ${paymentId}): ${cartItemsRaw}`);
     }
 
     console.log(`Processing cart purchase: ${parsedItems.length} item(s) for ${customerEmail}`);
 
     // Price-tamper guard (defense in depth, mirrors handleProductPurchase).
+    // Fail closed: if the cart total cannot be verified, throw so the webhook
+    // 500s and Razorpay retries instead of fulfilling an unverifiable payment.
     let underpaymentFlag = null;
+    let expected;
     try {
-        const expected = await getExpectedCartOrder(
+        expected = await getExpectedCartOrder(
             parsedItems.map((i) => ({ product_id: i.productId, quantity: i.quantity, coupon_code: i.couponCode })),
             currency,
             couponCode
         );
-        if (expected.ok && !isWithinTolerance(inrAmount, expected.amountInr)) {
-            underpaymentFlag = { expectedInr: expected.amountInr, capturedInr: inrAmount };
-            console.error('🚨 UNDERPAYMENT DETECTED (cart) — refusing to grant access:', { paymentId, ...underpaymentFlag });
-        } else if (!expected.ok) {
-            console.warn('⚠️ Could not verify cart price; proceeding without price check:', expected.error);
-        }
     } catch (err) {
-        console.error('⚠️ Cart price verification error (proceeding without hard block):', err.message);
+        throw new Error(`Cart price verification failed (paymentId: ${paymentId}): ${err.message}`);
+    }
+    if (!expected.ok) {
+        throw new Error(`Cannot verify cart price (paymentId: ${paymentId}): ${expected.error || 'unknown'}`);
+    }
+    if (!isWithinTolerance(inrAmount, expected.amountInr)) {
+        underpaymentFlag = { expectedInr: expected.amountInr, capturedInr: inrAmount };
+        console.error('🚨 UNDERPAYMENT DETECTED (cart) — refusing to grant access:', { paymentId, ...underpaymentFlag });
     }
 
     // Idempotency: skip if this payment was already fully processed.
@@ -966,7 +973,21 @@ async function handleCartPurchase(data) {
 
         let downloadLink = fileUrl || '#';
         let hasSharedSecurely = false;
-        const driveFileId = extractDriveFileId(downloadLink);
+
+        // Supabase-hosted line item: the bucket is private, so the raw
+        // /object/public/ URL no longer resolves. Hand out a signed, expiring,
+        // per-buyer proxy link instead. Same underpayment gate as Drive below.
+        const storageRef = parseSupabaseStorageUrl(downloadLink);
+        if (storageRef && !underpaymentFlag) {
+            downloadLink = buildSignedDownloadUrl(
+                PUBLIC_BASE_URL, process.env.RAZORPAY_KEY_SECRET, storageRef.objectKey,
+                customerEmail, storageRef.fileName || name, false, 'sb'
+            );
+            hasSharedSecurely = true;
+            console.log(`Issued signed storage URL for cart line "${name}" (${storageRef.objectKey}) to ${customerEmail}`);
+        }
+
+        const driveFileId = storageRef ? null : extractDriveFileId(downloadLink);
 
         if (driveFileId && !underpaymentFlag) {
             const GOOGLE_SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
@@ -1000,6 +1021,10 @@ async function handleCartPurchase(data) {
 
     // Log one purchases row per line item, sharing the same payment_id so
     // admin views can group them, but each keeping its own product_name.
+    // Fail closed: the purchases rows are the durable record of this cart sale.
+    // If they cannot be written, throw so the webhook 500s and Razorpay retries —
+    // a customer must not be charged with no record and no order email.
+    let insertResp;
     try {
         const rows = lineResults.map((line) => ({
             customer_email: customerEmail,
@@ -1013,7 +1038,7 @@ async function handleCartPurchase(data) {
             download_link: underpaymentFlag ? null : line.downloadLink,
             ...(isoCreatedAt ? { created_at: isoCreatedAt } : {})
         }));
-        const insertResp = await fetch(`${SUPABASE_URL}/rest/v1/purchases`, {
+        insertResp = await fetch(`${SUPABASE_URL}/rest/v1/purchases`, {
             method: 'POST',
             headers: {
                 apikey: SUPABASE_KEY,
@@ -1023,53 +1048,42 @@ async function handleCartPurchase(data) {
             },
             body: JSON.stringify(rows)
         });
-        if (insertResp.ok) {
-            console.log(`✅ Cart purchase logged to Supabase (${rows.length} line items). PaymentId:`, paymentId);
-        } else {
-            const errBody = await insertResp.text();
-            console.error('❌ SUPABASE CART INSERT FAILED. Status:', insertResp.status, '| Body:', errBody, '| PaymentId:', paymentId);
-        }
     } catch (err) {
         console.error('❌ Error logging cart purchase to Supabase (network):', err.message, '| PaymentId:', paymentId);
+        throw new Error(`Failed to record cart purchase in Supabase (paymentId: ${paymentId}): ${err.message}`);
+    }
+    if (insertResp.ok) {
+        console.log(`✅ Cart purchase logged to Supabase (${lineResults.length} line items). PaymentId:`, paymentId);
+    } else {
+        const errBody = await insertResp.text();
+        console.error('❌ SUPABASE CART INSERT FAILED. Status:', insertResp.status, '| Body:', errBody, '| PaymentId:', paymentId);
+        throw new Error(`Failed to record cart purchase in Supabase (${insertResp.status}) (paymentId: ${paymentId}): ${errBody}`);
     }
 
     // Single combined confirmation email listing every item + its link.
     if (BREVO_API_KEY && customerEmail && !underpaymentFlag) {
         const itemsHtml = lineResults.map((line) => `
                             <tr>
-                                <td style="padding:10px 0;border-bottom:1px solid #e5e5e5;">
-                                    <strong>${line.name}</strong>${line.quantity > 1 ? ` &times; ${line.quantity}` : ''}<br>
-                                    <a href="${line.downloadLink}" style="color:#2563eb;text-decoration:underline;font-size:13px;">Download / View Resource</a>
+                                <td style="padding:10px 0;border-bottom:1px solid #d8d8d1;">
+                                    <strong>${escapeHtml(line.name)}</strong>${line.quantity > 1 ? ` &times; ${line.quantity}` : ''}<br>
+                                    <a href="${line.downloadLink}" style="color:#0b7f79;text-decoration:underline;font-size:13px;">Download / View Resource</a>
                                 </td>
                             </tr>`).join('');
-        const customerHtml = `
-            <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
-                <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                    <div style="background-color: #ffffff; padding: 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
-                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;"><tr><td style="padding-right: 12px; vertical-align: middle;"><img src="https://desk2quant.com/assets/images/email-logo.png" width="32" height="32" alt="Desk2Quant" style="display: block; width: 32px; height: 32px; border: 0; outline: none; text-decoration: none; color: #1a1a1a; font-size: 20px; font-weight: bold;"></td><td style="vertical-align: middle;"><span style="color: #1a1a1a; font-size: 24px; font-weight: bold; letter-spacing: 1px;">Desk2Quant</span></td></tr></table>
-                    </div>
-                    <div style="padding: 30px;">
-                        <p style="font-size: 16px; margin-bottom: 20px;">Hi <strong>${customerName}</strong>, thank you for your order of ${lineResults.length} item${lineResults.length > 1 ? 's' : ''} from Desk2Quant.</p>
-                        <div style="background: #f9f8f4; padding: 20px; border-radius: 6px; margin-bottom: 20px;">
-                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0;">Your Order</p>
+        const customerHtml = emailShell({ body: `
+                        <p style="font-size: 16px; margin-bottom: 20px;">Hi <strong>${escapeHtml(customerName)}</strong>, thank you for your order of ${lineResults.length} item${lineResults.length > 1 ? 's' : ''} from Desk2Quant.</p>
+                        <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px; margin-bottom:20px;">
+                            <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0;">Your Order</p>
                             <table style="width:100%;border-collapse:collapse;">${itemsHtml}</table>
                             <p style="margin-top:16px;font-size:14px;"><strong>Total paid:</strong> ${currency} ${amount}</p>
                         </div>
-                        <div style="background: #f9f8f4; padding: 20px; border-radius: 6px;">
-                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0;">Order Details</p>
+                        <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px;">
+                            <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0;">Order Details</p>
                             <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                                <tr><td style="padding: 5px 0; color: #666; width: 30%;">Email</td><td style="padding: 5px 0;"><a href="mailto:${customerEmail}" style="color:#2563eb;text-decoration:none;">${customerEmail}</a></td></tr>
-                                <tr><td style="padding: 5px 0; color: #666;">Payment ID</td><td style="padding: 5px 0;">${paymentId}</td></tr>
+                                <tr><td style="padding: 5px 0; color: #666761; width: 30%;">Email</td><td style="padding: 5px 0; word-break: break-all;"><a href="mailto:${escapeHtml(customerEmail)}" style="color:#0b7f79;text-decoration:none;">${escapeHtml(customerEmail)}</a></td></tr>
+                                <tr><td style="padding: 5px 0; color: #666761;">Payment ID</td><td style="padding: 5px 0; word-break: break-all;">${paymentId}</td></tr>
                             </table>
                         </div>
-                    </div>
-                    <div style="background-color: #1a1a1a; padding: 25px 20px; text-align: center; color: #888; font-size: 12px;">
-                        <p style="margin: 0 0 10px 0;">Sent by Desk2Quant</p>
-                        <p style="margin: 0;">Have an issue? Reply to this email.</p>
-                    </div>
-                </div>
-            </div>
-        `;
+        ` });
         try {
             const emailResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
                 method: 'POST',
@@ -1095,14 +1109,12 @@ async function handleCartPurchase(data) {
 
     if (BREVO_API_KEY && !underpaymentFlag) {
         try {
-            const adminHtml = `
-                <div style="font-family: Arial, sans-serif; padding: 20px; color: #1a1a1a;">
+            const adminHtml = emailShell({ admin: true, body: `
                     <h2>New Cart Sale (${lineResults.length} items)</h2>
-                    <p><strong>${customerName}</strong> (${customerEmail}) just purchased:</p>
-                    <ul>${lineResults.map((l) => `<li>${l.name}${l.quantity > 1 ? ` × ${l.quantity}` : ''}</li>`).join('')}</ul>
+                    <p><strong>${escapeHtml(customerName)}</strong> (${escapeHtml(customerEmail)}) just purchased:</p>
+                    <ul>${lineResults.map((l) => `<li>${escapeHtml(l.name)}${l.quantity > 1 ? ` × ${l.quantity}` : ''}</li>`).join('')}</ul>
                     <p>Total: ${currency} ${amount} | Payment ID: ${paymentId}</p>
-                </div>
-            `;
+            ` });
             await fetch('https://api.brevo.com/v3/smtp/email', {
                 method: 'POST',
                 headers: { accept: 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
@@ -1112,7 +1124,7 @@ async function handleCartPurchase(data) {
                     to: ADMIN_EMAIL.split(',').map((email) => ({ email: email.trim() })).filter((item) => item.email),
                     subject: `New Cart Sale: ${lineResults.length} item(s)`,
                     htmlContent: adminHtml,
-                    textContent: `New cart sale.\n${customerName} (${customerEmail})\nItems: ${lineResults.map((l) => l.name).join(', ')}\nTotal: ${currency} ${amount}\nPaymentId: ${paymentId}`
+                    textContent: `New cart sale.\n${escapeHtml(customerName)} (${escapeHtml(customerEmail)})\nItems: ${lineResults.map((l) => l.name).join(', ')}\nTotal: ${currency} ${amount}\nPaymentId: ${paymentId}`
                 })
             });
         } catch (err) {
@@ -1156,34 +1168,40 @@ async function handleSessionBooking(data) {
     // client-controlled-amount risk applies. Re-derive the real minimum
     // price from session_id and refuse to auto-confirm/send the meeting
     // link if what was captured falls short.
+    // Fail closed: sessions are booked through create-order.js too, which always
+    // stamps session_id, so a captured session payment without a resolvable
+    // session_id (or an unverifiable price) must NOT create a booking. Throw so
+    // the webhook 500s and Razorpay retries instead of fulfilling an
+    // unverifiable payment.
     let underpaymentFlag = null;
     const sessionId = notes.session_id || null;
     const couponCode = notes.coupon_code || null;
-    if (sessionId) {
-        try {
-            const expected = await getExpectedSessionOrder(sessionId, currency, couponCode);
-            // Use Razorpay's own authoritative INR figure (base_amount/base_currency,
-            // computed by the caller) -- NOT notes.inr_amount, which is a
-            // client-stamped value at checkout time and must never be trusted for
-            // a security check.
-            const capturedInr = (typeof inrAmount === 'number' && !Number.isNaN(inrAmount)) ? inrAmount : amount;
-            if (expected.ok && !isWithinTolerance(capturedInr, expected.amountInr)) {
-                underpaymentFlag = {
-                    expectedInr: expected.amountInr,
-                    capturedInr,
-                    discountPercent: expected.discountPercent
-                };
-                console.error('🚨 UNDERPAYMENT DETECTED on session booking — flagging for review:', {
-                    paymentId, sessionName, sessionId, ...underpaymentFlag
-                });
-            } else if (!expected.ok) {
-                console.warn('⚠️ Could not verify session price (session_id missing/unmatched); proceeding without price check:', sessionId, expected.error);
-            }
-        } catch (err) {
-            console.error('⚠️ Session price verification error (proceeding without hard block):', err.message);
-        }
-    } else {
-        console.warn('⚠️ No session_id on payment notes; cannot verify price for booking:', sessionName, '(paymentId:', paymentId, ') — legacy checkout path, review manually if suspicious');
+    if (!sessionId) {
+        throw new Error(`Refusing to create booking without session_id (paymentId: ${paymentId}, session: ${sessionName})`);
+    }
+    let expected;
+    try {
+        expected = await getExpectedSessionOrder(sessionId, currency, couponCode);
+    } catch (err) {
+        throw new Error(`Session price verification failed (paymentId: ${paymentId}, sessionId: ${sessionId}): ${err.message}`);
+    }
+    if (!expected.ok) {
+        throw new Error(`Cannot verify session price — session_id does not resolve (paymentId: ${paymentId}, sessionId: ${sessionId}, session: ${sessionName}): ${expected.error || 'unknown'}`);
+    }
+    // Use Razorpay's own authoritative INR figure (base_amount/base_currency,
+    // computed by the caller) -- NOT notes.inr_amount, which is a
+    // client-stamped value at checkout time and must never be trusted for
+    // a security check.
+    const capturedInr = (typeof inrAmount === 'number' && !Number.isNaN(inrAmount)) ? inrAmount : amount;
+    if (!isWithinTolerance(capturedInr, expected.amountInr)) {
+        underpaymentFlag = {
+            expectedInr: expected.amountInr,
+            capturedInr,
+            discountPercent: expected.discountPercent
+        };
+        console.error('🚨 UNDERPAYMENT DETECTED on session booking — flagging for review:', {
+            paymentId, sessionName, sessionId, ...underpaymentFlag
+        });
     }
 
     let displayTime = sessionTime;
@@ -1236,9 +1254,18 @@ async function handleSessionBooking(data) {
             );
             if (dayResp.ok) {
                 const sameDay = await dayResp.json();
+                // The frontend sends 12-hour "4:00 PM" in notes while the DB
+                // normalizes booking_time to 24-hour "16:00:00". Parse both:
+                // HH:MM(:SS) with optional AM/PM suffix -> minutes since midnight.
                 const toMin = (t) => {
-                    const p = String(t || '').split(':');
-                    return (parseInt(p[0], 10) || 0) * 60 + (parseInt(p[1], 10) || 0);
+                    const raw = String(t || '').trim().toLowerCase();
+                    const m = raw.match(/^(\d{1,2}):(\d{2})/);
+                    if (!m) return 0;
+                    let h = parseInt(m[1], 10);
+                    const min = parseInt(m[2], 10);
+                    if (/pm/.test(raw) && h < 12) h += 12;
+                    if (/am/.test(raw) && h === 12) h = 0;
+                    return h * 60 + min;
                 };
                 const newStart = toMin(sessionTime);
                 const newEnd = newStart + (parseInt(sessionDuration, 10) || 30);
@@ -1311,60 +1338,55 @@ async function handleSessionBooking(data) {
     // captured amount didn't meet the verified price -- see price-tamper
     // guard above; an admin alert is sent instead, further down).
     if (BREVO_API_KEY && customerEmail && !underpaymentFlag) {
-        const customerHtml = `
-            <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
-                <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                    <div style="background-color: #ffffff; padding: 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
-                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;"><tr><td style="padding-right: 12px; vertical-align: middle;"><img src="https://desk2quant.com/assets/images/email-logo.png" width="32" height="32" alt="Desk2Quant" style="display: block; width: 32px; height: 32px; border: 0; outline: none; text-decoration: none; color: #1a1a1a; font-size: 20px; font-weight: bold;"></td><td style="vertical-align: middle;"><span style="color: #1a1a1a; font-size: 24px; font-weight: bold; letter-spacing: 1px;">Desk2Quant</span></td></tr></table>
-                    </div>
-                    <div style="padding: 30px;">
+        // Signed manage link: the bookings self-service requires this token, so
+        // the customer's only way to view/reschedule/cancel is this link from
+        // their confirmation email (a bare email is no longer sufficient).
+        const manageToken = signBookingToken(customerEmail) || '';
+        const manageUrl = `${PUBLIC_BASE_URL}/my-bookings.html?email=${encodeURIComponent(customerEmail)}&tk=${encodeURIComponent(manageToken)}`;
+        const customerHtml = emailShell({ body: `
                         <div style="margin-bottom: 20px;">
-                            <span style="display: inline-block; background: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; margin-right: 10px;">New Booking</span>
-                            <span style="display: inline-block; background: #d1fae5; color: #065f46; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase;">Confirmed</span>
+                            <span style="display: inline-block; background:#ffca3a; color:#090909; padding:4px 8px; border:1px solid #090909; border-radius:0; font-size:11px; font-weight:800; text-transform:uppercase; box-shadow:2px 2px 0 #090909; margin-right:10px;">New Booking</span>
+                            <span style="display: inline-block; background:#0b7f79; color:#ffffff; padding:4px 8px; border:1px solid #090909; border-radius:0; font-size:11px; font-weight:800; text-transform:uppercase; box-shadow:2px 2px 0 #090909;">Confirmed</span>
                         </div>
-                        <p style="font-size: 16px; margin-bottom: 25px;">Hi <strong>${customerName}</strong>, your session is confirmed.</p>
+                        <p style="font-size: 16px; margin-bottom: 25px;">Hi <strong>${escapeHtml(customerName)}</strong>, your session is confirmed.</p>
                         
-                        <div style="background: #f9f8f4; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
-                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Session Details</p>
-                            <h3 style="margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 1px solid #e5e5e5; padding-bottom: 15px;">${sessionName}</h3>
+                        <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px; margin-bottom:25px;">
+                            <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Session Details</p>
+                            <h3 style="margin: 0 0 20px 0; font-size: 18px; color: #090909; border-bottom: 1px solid #d8d8d1; padding-bottom: 15px;">${escapeHtml(sessionName)}</h3>
                             <table style="width: 100%; border-collapse: collapse;">
                                 <tr>
-                                    <td style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; padding: 5px 0;">Date</td>
+                                    <td style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; padding: 5px 0;">Date</td>
                                     <td style="font-size: 14px; font-weight: bold; text-align: right; padding: 5px 0;">${sessionDate}</td>
                                 </tr>
                                 <tr>
-                                    <td style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; padding: 5px 0;">Time</td>
+                                    <td style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; padding: 5px 0;">Time</td>
                                     <td style="font-size: 14px; font-weight: bold; text-align: right; padding: 5px 0;">${displayTime} (${sessionDuration} mins)</td>
                                 </tr>
                                 <tr>
-                                    <td style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; padding: 5px 0; border-top: 1px solid #e5e5e5; margin-top: 5px;">Amount Paid</td>
-                                    <td style="font-size: 14px; font-weight: bold; text-align: right; padding: 5px 0; border-top: 1px solid #e5e5e5; margin-top: 5px;">${currency === 'INR' ? '₹' : (currency || '$')}${sessionPrice}</td>
+                                    <td style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; padding: 5px 0; border-top: 1px solid #d8d8d1; margin-top: 5px;">Amount Paid</td>
+                                    <td style="font-size: 14px; font-weight: bold; text-align: right; padding: 5px 0; border-top: 1px solid #d8d8d1; margin-top: 5px;">${currency === 'INR' ? '₹' : (currency || '$')}${sessionPrice}</td>
                                 </tr>
                             </table>
                         </div>
                         
                         <center>
-                            <a href="${meetLink}" style="display: inline-block; background: #e95836; color: #ffffff; font-weight: bold; text-decoration: none; padding: 14px 30px; border-radius: 6px; font-size: 16px; margin-bottom: 30px;">Join Meeting</a>
+                            <a href="${meetLink}" style="display: inline-block; background:#ffca3a; color:#090909; font-weight:800; text-decoration:none; padding:14px 30px; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; font-size:16px; margin-bottom:30px;">Join Meeting</a>
                         </center>
 
-                        <div style="background: #f9f8f4; padding: 20px; border-radius: 6px; margin-bottom: 20px;">
-                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Need to Reschedule?</p>
-                            <p style="font-size: 14px; margin: 0; color: #1a1a1a;">You can view and manage your bookings on our website.</p>
+                        <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px; margin-bottom:20px;">
+                            <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Need to Reschedule or Cancel?</p>
+                            <p style="font-size: 14px; margin: 0 0 14px 0; color: #090909;">View, reschedule, or cancel your booking anytime:</p>
+                            <center>
+                                <a href="${manageUrl}" style="display: inline-block; background:#0b7f79; color:#ffffff; font-weight:800; text-decoration:none; padding:12px 26px; border:1px solid #090909; border-radius:0; box-shadow:3px 3px 0 #090909; font-size:14px;">Manage Booking</a>
+                            </center>
                         </div>
-                        <div style="background: #f9f8f4; padding: 20px; border-radius: 6px;">
-                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Order Details</p>
+                        <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px;">
+                            <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Order Details</p>
                             <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                                <tr><td style="padding: 5px 0; color: #666; width: 30%;">Payment ID</td><td style="padding: 5px 0; color: #1a1a1a;">${paymentId}</td></tr>
+                                <tr><td style="padding: 5px 0; color: #666761; width: 30%;">Payment ID</td><td style="padding: 5px 0; color: #090909; word-break: break-all;">${paymentId}</td></tr>
                             </table>
                         </div>
-                    </div>
-                    <div style="background-color: #1a1a1a; padding: 25px 20px; text-align: center; color: #888; font-size: 12px;">
-                        <p style="margin: 0 0 10px 0;">Sent by Desk2Quant</p>
-                        <p style="margin: 0;">Have an issue? Reply to this email.</p>
-                    </div>
-                </div>
-            </div>
-        `;
+        ` });
 
         try {
             const emailResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -1380,7 +1402,7 @@ async function handleSessionBooking(data) {
                     to: [{ email: customerEmail, name: customerName }],
                     subject: `Booking Confirmed: ${sessionName}`,
                     htmlContent: customerHtml,
-                    textContent: `Hi ${customerName},\n\nYour session is confirmed!\n\nSession: ${sessionName}\nDate: ${sessionDate}\nTime: ${displayTime} (${sessionDuration} mins)\nAmount Paid: ₹${sessionPrice}\n\nJoin Meeting Link:\n${meetLink}\n\nPayment ID: ${paymentId}\n\nNeed to reschedule? You can view and manage your bookings on our website.\n\nHave an issue? Reply to this email.\n\nSent by Desk2Quant`
+                    textContent: `Hi ${customerName},\n\nYour session is confirmed!\n\nSession: ${sessionName}\nDate: ${sessionDate}\nTime: ${displayTime} (${sessionDuration} mins)\nAmount Paid: ₹${sessionPrice}\n\nJoin Meeting Link:\n${meetLink}\n\nPayment ID: ${paymentId}\n\nNeed to reschedule or cancel? Open your manage link:\n${manageUrl}\n\nHave an issue? Reply to this email.\n\nSent by Desk2Quant`
                 })
             });
 
@@ -1400,19 +1422,17 @@ async function handleSessionBooking(data) {
     // and wasn't auto-confirmed.
     if (BREVO_API_KEY && underpaymentFlag) {
         try {
-            const alertHtml = `
-                <div style="font-family: Arial, sans-serif; padding: 20px; color: #1a1a1a;">
-                    <h2 style="color: #991b1b;">🚨 Underpaid session booking blocked</h2>
-                    <p>A payment was captured for <strong>${sessionName}</strong> but the amount fell short of the verified price. The booking was logged as <strong>pending</strong> (not auto-confirmed) and no meeting link was sent.</p>
+            const alertHtml = emailShell({ admin: true, body: `
+                    <h2 style="color: #d73f3f;">🚨 Underpaid session booking blocked</h2>
+                    <p>A payment was captured for <strong>${escapeHtml(sessionName)}</strong> but the amount fell short of the verified price. The booking was logged as <strong>pending</strong> (not auto-confirmed) and no meeting link was sent.</p>
                     <table style="border-collapse: collapse;">
-                        <tr><td style="padding:4px 10px;color:#666;">Customer</td><td style="padding:4px 10px;">${customerName} (${customerEmail})</td></tr>
-                        <tr><td style="padding:4px 10px;color:#666;">Payment ID</td><td style="padding:4px 10px;">${paymentId}</td></tr>
-                        <tr><td style="padding:4px 10px;color:#666;">Captured (INR)</td><td style="padding:4px 10px;">${underpaymentFlag.capturedInr}</td></tr>
-                        <tr><td style="padding:4px 10px;color:#666;">Expected minimum (INR)</td><td style="padding:4px 10px;">${underpaymentFlag.expectedInr}</td></tr>
-                        <tr><td style="padding:4px 10px;color:#666;">Coupon used</td><td style="padding:4px 10px;">${couponCode || 'none'} (${underpaymentFlag.discountPercent}% resolved)</td></tr>
+                        <tr><td style="padding:4px 10px;color:#666761;">Customer</td><td style="padding:4px 10px;">${escapeHtml(customerName)} (${escapeHtml(customerEmail)})</td></tr>
+                        <tr><td style="padding:4px 10px;color:#666761;">Payment ID</td><td style="padding:4px 10px; word-break: break-all;">${paymentId}</td></tr>
+                        <tr><td style="padding:4px 10px;color:#666761;">Captured (INR)</td><td style="padding:4px 10px;">${underpaymentFlag.capturedInr}</td></tr>
+                        <tr><td style="padding:4px 10px;color:#666761;">Expected minimum (INR)</td><td style="padding:4px 10px;">${underpaymentFlag.expectedInr}</td></tr>
+                        <tr><td style="padding:4px 10px;color:#666761;">Coupon used</td><td style="padding:4px 10px;">${escapeHtml(couponCode || 'none')} (${underpaymentFlag.discountPercent}% resolved)</td></tr>
                     </table>
-                </div>
-            `;
+            ` });
             await fetch('https://api.brevo.com/v3/smtp/email', {
                 method: 'POST',
                 headers: { 'accept': 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
@@ -1422,7 +1442,7 @@ async function handleSessionBooking(data) {
                     to: ADMIN_EMAIL.split(',').map(email => ({ email: email.trim() })).filter(item => item.email),
                     subject: `🚨 Underpayment blocked: ${sessionName}`,
                     htmlContent: alertHtml,
-                    textContent: `Underpaid session booking blocked.\nSession: ${sessionName}\nCustomer: ${customerName} (${customerEmail})\nPaymentId: ${paymentId}\nCaptured INR: ${underpaymentFlag.capturedInr}\nExpected min INR: ${underpaymentFlag.expectedInr}\nCoupon: ${couponCode || 'none'}`
+                    textContent: `Underpaid session booking blocked.\nSession: ${sessionName}\nCustomer: ${escapeHtml(customerName)} (${escapeHtml(customerEmail)})\nPaymentId: ${paymentId}\nCaptured INR: ${underpaymentFlag.capturedInr}\nExpected min INR: ${underpaymentFlag.expectedInr}\nCoupon: ${couponCode || 'none'}`
                 })
             });
         } catch (err) {
@@ -1432,52 +1452,43 @@ async function handleSessionBooking(data) {
 
     // 4. Send admin notification email
     if (BREVO_API_KEY && !underpaymentFlag) {
-        const adminHtml = `
-            <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
-                <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                    <div style="background-color: #ffffff; padding: 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
-                        <span style="color: #1a1a1a; font-size: 24px; font-weight: bold; letter-spacing: 1px;">Desk2Quant Admin</span>
-                    </div>
-                    <div style="padding: 30px;">
+        const adminHtml = emailShell({ admin: true, body: `
                         <div style="margin-bottom: 20px;">
-                            <span style="display: inline-block; background: #d1fae5; color: #065f46; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase;">New Booking Received</span>
+                            <span style="display: inline-block; background:#0b7f79; color:#ffffff; padding:4px 8px; border:1px solid #090909; border-radius:0; font-size:11px; font-weight:800; text-transform:uppercase; box-shadow:2px 2px 0 #090909;">New Booking Received</span>
                         </div>
-                        <p style="font-size: 16px; margin-bottom: 25px;"><strong>${customerName}</strong> just booked a new session.</p>
+                        <p style="font-size: 16px; margin-bottom: 25px;"><strong>${escapeHtml(customerName)}</strong> just booked a new session.</p>
                         
-                        <div style="background: #f9f8f4; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
-                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Session Booked</p>
-                            <h3 style="margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 1px solid #e5e5e5; padding-bottom: 15px;">${sessionName}</h3>
+                        <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px; margin-bottom:25px;">
+                            <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Session Booked</p>
+                            <h3 style="margin: 0 0 20px 0; font-size: 18px; color: #090909; border-bottom: 1px solid #d8d8d1; padding-bottom: 15px;">${escapeHtml(sessionName)}</h3>
                             <table style="width: 100%; border-collapse: collapse;">
                                 <tr>
-                                    <td style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; padding: 5px 0;">Date & Time</td>
+                                    <td style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; padding: 5px 0;">Date & Time</td>
                                     <td style="font-size: 14px; font-weight: bold; text-align: right; padding: 5px 0;">${sessionDate} at ${displayTime}</td>
                                 </tr>
                                 <tr>
-                                    <td style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; padding: 5px 0;">Amount Received</td>
-                                    <td style="font-size: 14px; font-weight: bold; text-align: right; color: #16a34a; padding: 5px 0;">${currency === 'INR' ? '₹' : (currency || '$')}${sessionPrice}</td>
+                                    <td style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; padding: 5px 0;">Amount Received</td>
+                                    <td style="font-size: 14px; font-weight: bold; text-align: right; color: #0b7f79; padding: 5px 0;">${currency === 'INR' ? '₹' : (currency || '$')}${sessionPrice}</td>
                                 </tr>
                                 <tr>
                                     <td colspan="2" style="padding: 15px 0 5px 0;">
-                                        <a href="${meetLink}" style="color: #e95836; font-weight: bold; text-decoration: none; font-size: 14px;">🔗 Join Meeting</a>
+                                        <a href="${meetLink}" style="color: #0b7f79; font-weight: bold; text-decoration: none; font-size: 14px;">🔗 Join Meeting</a>
                                     </td>
                                 </tr>
                             </table>
                         </div>
 
-                        <div style="background: #f9f8f4; padding: 20px; border-radius: 6px;">
-                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Customer Details</p>
+                        <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px;">
+                            <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Customer Details</p>
                             <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                                <tr><td style="padding: 5px 0; color: #666; width: 30%;">Name</td><td style="padding: 5px 0; color: #1a1a1a;">${customerName}</td></tr>
-                                <tr><td style="padding: 5px 0; color: #666;">Email</td><td style="padding: 5px 0; color: #1a1a1a;"><a href="mailto:${customerEmail}" style="color: #2563eb; text-decoration: none;">${customerEmail}</a></td></tr>
-                                <tr><td style="padding: 5px 0; color: #666;">Phone</td><td style="padding: 5px 0; color: #1a1a1a;">${customerPhone || 'Not provided'}</td></tr>
-                                <tr><td style="padding: 5px 0; color: #666; vertical-align: top;">Message</td><td style="padding: 5px 0; color: #1a1a1a;">${customerMessage || 'None'}</td></tr>
-                                <tr><td style="padding: 5px 0; border-top: 1px solid #e5e5e5; margin-top: 5px; color: #666;">Payment ID</td><td style="padding: 5px 0; border-top: 1px solid #e5e5e5; margin-top: 5px; color: #1a1a1a;">${paymentId}</td></tr>
+                                <tr><td style="padding: 5px 0; color: #666761; width: 30%;">Name</td><td style="padding: 5px 0; color: #090909;">${escapeHtml(customerName)}</td></tr>
+                                <tr><td style="padding: 5px 0; color: #666761;">Email</td><td style="padding: 5px 0; color: #090909; word-break: break-all;"><a href="mailto:${escapeHtml(customerEmail)}" style="color: #0b7f79; text-decoration: none;">${escapeHtml(customerEmail)}</a></td></tr>
+                                <tr><td style="padding: 5px 0; color: #666761;">Phone</td><td style="padding: 5px 0; color: #090909;">${escapeHtml(customerPhone || 'Not provided')}</td></tr>
+                                <tr><td style="padding: 5px 0; color: #666761; vertical-align: top;">Message</td><td style="padding: 5px 0; color: #090909;">${escapeHtml(customerMessage || 'None')}</td></tr>
+                                <tr><td style="padding: 5px 0; border-top: 1px solid #d8d8d1; margin-top: 5px; color: #666761;">Payment ID</td><td style="padding: 5px 0; border-top: 1px solid #d8d8d1; margin-top: 5px; color: #090909;">${paymentId}</td></tr>
                             </table>
                         </div>
-                    </div>
-                </div>
-            </div>
-        `;
+        ` });
 
         try {
             const adminEmailResponse = await fetch('https://api.brevo.com/v3/smtp/email', {

@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+<script>/* CANONICAL-HOST-GUARD v1: Razorpay is registered to desk2quant.com - force canonical host + root path before any checkout code runs. */!function(){try{var h=location.hostname.toLowerCase(),dev=/^(localhost|127.0.0.1|0.0.0.0|[::1])$/.test(h);if(!dev&&h!=='desk2quant.com'){location.replace('https://desk2quant.com'+location.pathname+location.search+location.hash)}else if(location.pathname==='/index.html'){location.replace('https://desk2quant.com/'+location.search+location.hash)}}catch(e){}}();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Desk2Quant Admin</title>
@@ -796,7 +797,7 @@
                     <i class="fas fa-star"></i> Reviews
                 </a>
                 <div style="margin-top: 10px; border-top: 1px solid var(--border-subtle); padding-top: 10px;">
-                    <a class="nav-item" href="index.html" target="_blank">
+                    <a class="nav-item" href="/" target="_blank">
                         <i class="fas fa-external-link-alt"></i> View Site
                     </a>
                 </div>
@@ -1711,7 +1712,7 @@ Brief Q&A"></textarea>
             </div>
 
             <!-- Main Script (Includes Email Logic & Config) -->
-            <script src="script.js"></script>
+            <script src="script.js?v=16"></script>
 
             <script>
                 // Global variables and functions
@@ -1788,6 +1789,34 @@ Brief Q&A"></textarea>
                             // live-Razorpay revenue lookup can re-authenticate itself;
                             // that endpoint re-validates the password server-side anyway.
                             window.__adminSessionPwd = pwd;
+
+                            // Fetch the service-role key (password-gated, in-memory
+                            // only) so the admin client can read/write the RLS-sealed
+                            // tables. Falls back gracefully if the endpoint is not
+                            // available -- the admin data calls will surface the error.
+                            try {
+                                const keyResp = await fetch('/api/admin-auth', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ password: pwd, action: 'get-key' })
+                                });
+                                const keyData = await keyResp.json();
+                                if (keyResp.ok && keyData.success && keyData.serviceKey) {
+                                    window.__adminServiceKey = keyData.serviceKey;
+                                    // Force the next ensureSupabaseClient() (or inline
+                                    // init) to rebuild with the privileged key. If an
+                                    // earlier init already created a client with the
+                                    // anon fallback, this discards that stale client
+                                    // so the admin panel talks to Supabase as admin.
+                                    window.supabaseAdminClient = null;
+                                    console.log('✅ Admin service key loaded (in memory only)');
+                                } else {
+                                    console.warn('⚠️ Admin service key unavailable:', keyData.error);
+                                }
+                            } catch (e) {
+                                console.warn('⚠️ Admin service key fetch failed:', e);
+                            }
+
                             document.getElementById('loginOverlay').style.display = 'none';
                             document.getElementById('adminLayout').style.display = 'flex';
 
@@ -1939,7 +1968,7 @@ Brief Q&A"></textarea>
                         // ... (keep existing)
                         if (typeof window.supabase !== 'undefined') {
                             if (!window.supabaseAdminClient) {
-                                window.supabaseAdminClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                                window.supabaseAdminClient = window.supabase.createClient(SUPABASE_URL, window.__adminServiceKey || SUPABASE_KEY);
                             }
                         }
                     } catch (e) { console.error(e); }
@@ -3202,20 +3231,27 @@ Desk2Quant
                 window.rejectCancellation = rejectCancellation;
 
                 const SUPABASE_PROJECT_URL = 'https://dntabmyurlrlnoajdnja.supabase.co';
-                const SUPABASE_JWT_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRudGFibXl1cmxybG5vYWpkbmphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMDEyNjUsImV4cCI6MjA4NTY3NzI2NX0.PYpNd_t_px09zi2d5WGjFVOB23sjb3ZPuAnxagYshe0';
+                // RLS seals the tables the admin manages (products/sessions/bookings/
+                // purchases), so the anon key is no longer enough. After login the
+                // page fetches the service-role key (password-gated, in memory only)
+                // into window.__adminServiceKey; fall back to the anon key as a
+                // last resort so the panel still renders if the key fetch failed.
+                function getAdminSupabaseKey() {
+                    return window.__adminServiceKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRudGFibXl1cmxybG5vYWpkbmphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMDEyNjUsImV4cCI6MjA4NTY3NzI2NX0.PYpNd_t_px09zi2d5WGjFVOB23sjb3ZPuAnxagYshe0';
+                };
 
                 // Robust initialization with retries
                 async function ensureSupabaseClient() {
                     if (window.supabaseAdminClient) return true;
                     if (typeof window.supabase !== 'undefined') {
-                        window.supabaseAdminClient = window.supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_JWT_KEY);
+                        window.supabaseAdminClient = window.supabase.createClient(SUPABASE_PROJECT_URL, getAdminSupabaseKey());
                         return true;
                     }
                     console.log('🔄 Supabase SDK not ready, waiting...');
                     for (let i = 0; i < 20; i++) {
                         await new Promise(r => setTimeout(r, 500));
                         if (typeof window.supabase !== 'undefined') {
-                            window.supabaseAdminClient = window.supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_JWT_KEY);
+                            window.supabaseAdminClient = window.supabase.createClient(SUPABASE_PROJECT_URL, getAdminSupabaseKey());
                             console.log('✅ Supabase initialized after retry');
                             return true;
                         }
@@ -5167,9 +5203,10 @@ Desk2Quant
                             throw updateError;
                         }
 
-                        // 5. Send email to customer
-                        const myBookingsLink = window.location.origin + '/my-bookings.html';
-
+                        // 5. Send email to customer. NOTE: bookings can only be
+                        // managed via the signed link in the booking confirmation
+                        // email (a bare email is no longer accepted), so point the
+                        // customer there instead of a generic page link.
                         const htmlContent = `
                                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
                                         <h2 style="color: #a855f7;">📅 Session Reschedule Request</h2>
@@ -5189,8 +5226,7 @@ Desk2Quant
                                             ${reason ? `<p>📝 Reason: ${reason}</p>` : ''}
                                         </div>
 
-                                        <p>Please visit your bookings page to respond:</p>
-                                        <a href="${myBookingsLink}" style="display: inline-block; background: linear-gradient(135deg, #6366f1, #a855f7); color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 10px 0;">View My Bookings</a>
+                                        <p>To respond, open the <strong>Manage Booking</strong> link from your booking confirmation email (or reply to this email). You can either:</p>
 
                                         <p style="margin-top: 20px;">You can either:</p>
                                         <ul>
@@ -5218,7 +5254,7 @@ PROPOSED NEW SCHEDULE:
 - Time: ${proposedTime}
 ${reason ? '- Reason: ' + reason : ''}
 
-Please visit your bookings page to respond: ${myBookingsLink}
+To respond, open the Manage Booking link from your booking confirmation email (or reply to this email).
 
 You can either:
 - Accept the proposed new time

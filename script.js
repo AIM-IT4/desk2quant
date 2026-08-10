@@ -1,16 +1,18 @@
-﻿// ================================
-// DOMAIN MIGRATION GUARD
 // ================================
-// Since the site moved from desk2quant.vercel.app to desk2quant.com, any
-// leftover *.vercel.app URL (old shared links, deployment/preview URLs that
-// the server-side host redirect in vercel.json can't match by name) must
-// forward to the canonical .com domain BEFORE any checkout code can run --
-// Razorpay is registered to desk2quant.com, so opening the checkout modal
-// from the old domain fails the payment.
-// Runs synchronously at parse time; location.replace() keeps history clean.
+// CANONICAL DOMAIN GUARD
+// ================================
+// Razorpay is registered to desk2quant.com, so opening a checkout from any
+// other host fails the payment. Every host that is not the canonical domain —
+// old *.vercel.app shared links, Vercel preview/deployment URLs, www, custom
+// aliases — must forward to desk2quant.com BEFORE any checkout code can run.
+// Localhost is allowed for development. Runs synchronously at parse time;
+// location.replace() keeps history clean. (A copy of this guard is also
+// inlined in every page's <head> so it runs even if script.js is slow/blocked.)
 (function () {
     try {
-        if (location.hostname.toLowerCase().endsWith('.vercel.app')) {
+        const host = location.hostname.toLowerCase();
+        const isDev = /^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])$/.test(host);
+        if (!isDev && host !== 'desk2quant.com') {
             location.replace(
                 'https://desk2quant.com' + location.pathname + location.search + location.hash
             );
@@ -1052,19 +1054,18 @@ let exchangeRatesTimestamp = null;
 const RATES_CACHE_DURATION = 3600000; // 1 hour in milliseconds
 const RATES_CACHE_KEY = 'qm_exchange_rates';
 
-// Cache for detected country (persisted to localStorage) — avoids the slow
-// sequential IP-geolocation lookup chain on every repeat page load, which was
-// the main cause of products/sessions taking a while to appear.
-const COUNTRY_CACHE_DURATION = 86400000; // 24 hours in milliseconds
-const COUNTRY_CACHE_KEY = 'qm_user_country';
+// NOTE: no persistent country cache exists on purpose — see getUserCountry().
+// A 24h localStorage cache used to pin the detected country, so switching a
+// VPN (or travelling) never changed the currency until the cache expired.
 
-// Defer the very first attempt until after this file has fully evaluated.
-// The loaders (loadProductsFromSupabase -> sortProducts, loadSessionsFromSupabase
-// -> convertPrice, ...) touch module-level consts declared later in the file
-// (VERIFIED_BESTSELLER_IDS, CURRENCY_MAP, the cache keys...). Running them
-// mid-evaluation hits the temporal dead zone when the SDK happens to be loaded
-// synchronously (e.g. warm CDN cache), silently killing products/sessions.
-function startSupabaseInit() {
+// Defer the first init attempt to the next macrotask. The loaders read the
+// cache-key consts (PRODUCTS_CACHE_KEY / SESSIONS_CACHE_KEY) declared further
+// down this file, and a synchronous call here hits the temporal dead zone
+// before those are defined -- `Cannot access 'X' before initialization` --
+// which silently killed live product/session loading (the static fallback
+// cards rendered, but Supabase data never hydrated).
+// Try immediately (next tick), retry briefly if SDK not yet loaded.
+setTimeout(function () {
     if (!initSupabaseAndLoad()) {
         let retries = 0;
         const retryInterval = setInterval(() => {
@@ -1078,11 +1079,7 @@ function startSupabaseInit() {
             }
         }, 50);
     }
-}
-
-// Evaluate everything first (all consts initialized), then kick off the loads.
-setTimeout(startSupabaseInit, 0);
-
+}, 0);
 // ================================
 // RAZORPAY LAZY LOADER
 // The checkout SDK used to be a blocking <script> on every page. It boots an
@@ -1128,94 +1125,126 @@ async function getUserCountry() {
         console.warn('URL country override parse failed:', e);
     }
 
+    // In-memory cache only (session reuse). Nothing is persisted to
+    // localStorage: a cached country used to live for 24h, so switching a VPN
+    // or travelling between countries kept the OLD country (and therefore the
+    // OLD currency) until the cache expired — which is exactly what made PPP
+    // pricing look broken from China/UK VPNs. Every fresh page load now
+    // re-detects via the (fast, parallel) lookup below.
     if (userCountryCode) {
         window.userCountryCode = userCountryCode;
         return userCountryCode;
     }
 
-    // Check localStorage for a country detected on a previous visit — skips the
-    // slow sequential IP-lookup chain below on repeat loads (instant instead of
-    // up to several seconds across multiple API attempts).
-    try {
-        const stored = JSON.parse(localStorage.getItem(COUNTRY_CACHE_KEY));
-        if (stored && stored.code && (Date.now() - stored.ts) < COUNTRY_CACHE_DURATION) {
-            userCountryCode = stored.code;
-            window.userCountryCode = userCountryCode;
-            qmLog('📍 Using cached country (age:', Math.round((Date.now() - stored.ts) / 60000), 'minutes):', userCountryCode);
-            return userCountryCode;
-        }
-    } catch (_) { /* ignore parse errors */ }
-
     const fetchWithTimeout = async (url, timeout = 5000) => {
         const controller = new AbortController();
         const id = setTimeout(() => controller.abort(), timeout);
-        const response = await fetch(url, { signal: controller.signal });
-        clearTimeout(id);
-        if (!response.ok) throw new Error('HTTP status ' + response.status);
-        return response.json();
+        try {
+            const response = await fetch(url, { signal: controller.signal });
+            if (!response.ok) throw new Error('HTTP status ' + response.status);
+            return response.json();
+        } finally {
+            clearTimeout(id);
+        }
     };
 
-    try {
-        const services = [
-            { url: 'https://freeipapi.com/api/json', parse: (d) => d.countryCode },
-            { url: 'https://ipwho.is/', parse: (d) => d.success ? d.country_code : null },
-            { url: 'https://ipinfo.io/json', parse: (d) => d.country },
-            { url: 'https://ipapi.co/json/', parse: (d) => d.country_code }
-        ];
+    // Parallel race instead of the old sequential chain. Probing services one
+    // at a time (4 x 5s timeouts) could take up to 20s and usually fell back to
+    // the timezone when VPN/datacenter IPs were rate-limited — the price then
+    // stayed in INR. Firing all services at once and taking the first valid
+    // answer means a typical detection lands in well under a second, and even
+    // the all-services-blocked worst case is a single 5s timeout.
+    const services = [
+        { url: 'https://freeipapi.com/api/json', parse: (d) => d.countryCode },
+        { url: 'https://ipwho.is/', parse: (d) => d.success ? d.country_code : null },
+        { url: 'https://api.country.is/', parse: (d) => d.country },
+        { url: 'https://ipinfo.io/json', parse: (d) => d.country },
+        { url: 'https://ipapi.co/json/', parse: (d) => d.country_code }
+    ];
 
-        for (const svc of services) {
-            try {
-                qmLog('Trying IP service:', svc.url);
-                const resp = await fetchWithTimeout(svc.url, 5000);
-                const code = svc.parse(resp);
-                if (code) {
-                    userCountryCode = code;
-                    window.userCountryCode = userCountryCode;
-                    break;
-                }
-            } catch (e) {
-                console.warn('Failed:', svc.url, e.message);
-            }
+    const attempts = services.map(async (svc) => {
+        try {
+            qmLog('Trying IP service:', svc.url);
+            const resp = await fetchWithTimeout(svc.url, 5000);
+            const code = svc.parse(resp);
+            if (code && String(code).trim().length === 2) return String(code).trim().toUpperCase();
+            throw new Error('No country code from ' + svc.url);
+        } catch (e) {
+            console.warn('IP service failed:', svc.url, e.message);
+            throw e; // let Promise.any move on to the next service
         }
+    });
 
-        if (!userCountryCode) throw new Error('All IP services failed');
-    } catch (e) {
-        console.warn('IP lookup failed, trying timezone fallback:', e);
+    try {
+        // Promise.any resolves with the FIRST service that returns a valid
+        // country code; rejects with an AggregateError only if all fail.
+        userCountryCode = await Promise.any(attempts);
+        window.userCountryCode = userCountryCode;
+        qmLog('User country detected:', userCountryCode);
+        return userCountryCode;
+    } catch (_) {
+        console.warn('All IP services failed, trying timezone fallback');
         const timezoneToCountry = {
+            // South Asia
             'Asia/Kolkata': 'IN', 'Asia/Calcutta': 'IN',
-            'Asia/Dubai': 'AE',
-            'Asia/Singapore': 'SG',
-            'Europe/London': 'GB',
-            'Europe/Paris': 'FR',
-            'Europe/Berlin': 'DE',
-            'Europe/Zurich': 'CH',
+            'Asia/Karachi': 'PK', 'Asia/Dhaka': 'BD', 'Asia/Colombo': 'LK',
+            'Asia/Kathmandu': 'NP',
+            // Middle East / Gulf
+            'Asia/Dubai': 'AE', 'Asia/Qatar': 'QA', 'Asia/Riyadh': 'SA',
+            'Asia/Kuwait': 'KW', 'Asia/Bahrain': 'BH', 'Asia/Muscat': 'OM',
+            'Asia/Amman': 'JO', 'Asia/Baghdad': 'IQ', 'Asia/Beirut': 'LB',
+            'Asia/Jerusalem': 'IL', 'Asia/Tehran': 'IR',
+            // East Asia
+            'Asia/Shanghai': 'CN', 'Asia/Chongqing': 'CN', 'Asia/Harbin': 'CN', 'Asia/Urumqi': 'CN',
+            'Asia/Hong_Kong': 'HK', 'Asia/Macau': 'MO',
+            'Asia/Taipei': 'TW', 'Asia/Tokyo': 'JP', 'Asia/Seoul': 'KR',
+            'Asia/Ulaanbaatar': 'MN',
+            // South-East Asia
+            'Asia/Singapore': 'SG', 'Asia/Bangkok': 'TH', 'Asia/Kuala_Lumpur': 'MY',
+            'Asia/Jakarta': 'ID', 'Asia/Manila': 'PH', 'Asia/Ho_Chi_Minh': 'VN',
+            'Asia/Phnom_Penh': 'KH', 'Asia/Vientiane': 'LA', 'Asia/Rangoon': 'MM',
+            'Asia/Dili': 'TL',
+            // Central / West Asia
+            'Asia/Yerevan': 'AM', 'Asia/Baku': 'AZ', 'Asia/Tbilisi': 'GE',
+            'Asia/Almaty': 'KZ', 'Asia/Tashkent': 'UZ', 'Asia/Bishkek': 'KG',
+            'Asia/Dushanbe': 'TJ', 'Asia/Ashgabat': 'TM',
+            // Europe
+            'Europe/London': 'GB', 'Europe/Dublin': 'IE', 'Europe/Lisbon': 'PT',
+            'Europe/Paris': 'FR', 'Europe/Berlin': 'DE', 'Europe/Zurich': 'CH',
+            'Europe/Madrid': 'ES', 'Europe/Rome': 'IT', 'Europe/Amsterdam': 'NL',
+            'Europe/Brussels': 'BE', 'Europe/Vienna': 'AT', 'Europe/Warsaw': 'PL',
+            'Europe/Prague': 'CZ', 'Europe/Budapest': 'HU', 'Europe/Bucharest': 'RO',
+            'Europe/Sofia': 'BG', 'Europe/Zagreb': 'HR', 'Europe/Belgrade': 'RS',
+            'Europe/Stockholm': 'SE', 'Europe/Oslo': 'NO', 'Europe/Copenhagen': 'DK',
+            'Europe/Helsinki': 'FI', 'Europe/Athens': 'GR', 'Europe/Istanbul': 'TR',
+            'Europe/Kyiv': 'UA', 'Europe/Kiev': 'UA', 'Europe/Minsk': 'BY',
+            'Europe/Riga': 'LV', 'Europe/Vilnius': 'LT', 'Europe/Tallinn': 'EE',
+            'Europe/Malta': 'MT', 'Europe/Nicosia': 'CY', 'Europe/Luxembourg': 'LU',
+            'Europe/Monaco': 'MC', 'Europe/Reykjavik': 'IS',
+            // North America
             'America/New_York': 'US', 'America/Los_Angeles': 'US', 'America/Chicago': 'US',
-            'Australia/Sydney': 'AU', 'Australia/Melbourne': 'AU',
-            'Asia/Tokyo': 'JP',
-            'Asia/Seoul': 'KR',
-            'America/Toronto': 'CA', 'America/Vancouver': 'CA',
-            'Asia/Bangkok': 'TH',
-            'Asia/Kuala_Lumpur': 'MY',
-            'Europe/Warsaw': 'PL',
-            'America/Bogota': 'CO',
-            'Europe/Amsterdam': 'NL',
-            'Europe/Stockholm': 'SE',
-            'Europe/Oslo': 'NO',
-            'Europe/Copenhagen': 'DK',
-            'Asia/Hong_Kong': 'HK',
-            'Pacific/Auckland': 'NZ',
-            'Asia/Jakarta': 'ID',
-            'Asia/Manila': 'PH',
-            'Asia/Karachi': 'PK',
-            'Asia/Dhaka': 'BD',
-            'Asia/Colombo': 'LK',
-            'Asia/Qatar': 'QA',
-            'Asia/Riyadh': 'SA',
-            'Europe/Istanbul': 'TR',
-            'America/Mexico_City': 'MX',
-            'Africa/Cairo': 'EG',
-            'Africa/Lagos': 'NG',
-            'Africa/Johannesburg': 'ZA'
+            'America/Denver': 'US', 'America/Phoenix': 'US', 'America/Anchorage': 'US',
+            'Pacific/Honolulu': 'US', 'America/Toronto': 'CA', 'America/Vancouver': 'CA',
+            'America/Edmonton': 'CA', 'America/Winnipeg': 'CA', 'America/Halifax': 'CA',
+            'America/Mexico_City': 'MX', 'America/Guatemala': 'GT', 'America/Managua': 'NI',
+            'America/Tegucigalpa': 'HN', 'America/Panama': 'PA', 'America/Havana': 'CU',
+            'America/Jamaica': 'JM', 'America/Nassau': 'BS', 'America/Puerto_Rico': 'PR',
+            // South America
+            'America/Sao_Paulo': 'BR', 'America/Argentina/Buenos_Aires': 'AR',
+            'America/Santiago': 'CL', 'America/Lima': 'PE', 'America/Bogota': 'CO',
+            'America/Caracas': 'VE', 'America/Guayaquil': 'EC', 'America/Montevideo': 'UY',
+            'America/Asuncion': 'PY', 'America/La_Paz': 'BO', 'America/Santo_Domingo': 'DO',
+            'America/Port_of_Spain': 'TT',
+            // Africa
+            'Africa/Cairo': 'EG', 'Africa/Lagos': 'NG', 'Africa/Johannesburg': 'ZA',
+            'Africa/Nairobi': 'KE', 'Africa/Accra': 'GH', 'Africa/Casablanca': 'MA',
+            'Africa/Tunis': 'TN', 'Africa/Algiers': 'DZ', 'Africa/Addis_Ababa': 'ET',
+            'Africa/Dar_es_Salaam': 'TZ', 'Africa/Kampala': 'UG', 'Africa/Kigali': 'RW',
+            'Africa/Dakar': 'SN', 'Africa/Abidjan': 'CI',
+            // Oceania
+            'Australia/Sydney': 'AU', 'Australia/Melbourne': 'AU', 'Australia/Brisbane': 'AU',
+            'Australia/Perth': 'AU', 'Australia/Adelaide': 'AU', 'Pacific/Auckland': 'NZ',
+            'Pacific/Fiji': 'FJ', 'Pacific/Guam': 'GU'
         };
         try {
             const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -1229,12 +1258,6 @@ async function getUserCountry() {
 
     qmLog('User country detected:', userCountryCode);
     window.userCountryCode = userCountryCode;
-
-    // Persist to localStorage so the next page load can skip the lookup entirely.
-    try {
-        localStorage.setItem(COUNTRY_CACHE_KEY, JSON.stringify({ code: userCountryCode, ts: Date.now() }));
-    } catch (_) { /* quota exceeded */ }
-
     return userCountryCode;
 }
 
@@ -1283,6 +1306,7 @@ const CURRENCY_MAP = {
     'DK': { code: 'DKK', symbol: 'kr', name: 'Danish Krone' },
     'SG': { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar' },
     'HK': { code: 'HKD', symbol: 'HK$', name: 'Hong Kong Dollar' },
+    'MO': { code: 'HKD', symbol: 'HK$', name: 'Hong Kong Dollar' },   // Macau (HKD-pegged)
     'NZ': { code: 'NZD', symbol: 'NZ$', name: 'New Zealand Dollar' },
     // Emerging markets
     'BR': { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
@@ -1612,10 +1636,10 @@ async function convertPrice(inrPrice, countryCode, enablePPP = false) {
     // Calculate raw conversion
     let convertedAmount = inrPrice * rate;
 
-    // PPP Adjustment: Apply 1.5x multiplier for stronger currencies (Developed Markets)
-    // ONLY if PPP pricing is explicitly enabled for this product.
-    // We EXCLUDE weaker currencies to ensure fair pricing for developing nations.
-    // List includes: South Asia, SE Asia, Africa, Latin America, etc.
+    // PPP Adjustment: applies ONLY when PPP pricing is explicitly enabled for
+    // this product. Strong currencies get a 1.5x multiplier (developed
+    // markets); weaker economies get a gentler 1.2x instead of being
+    // excluded entirely.
     const weakersCurrencies = [
         'PKR', 'BDT', 'LKR', 'NPR', // South Asia
         'NGN', 'EGP', 'KES', 'GHS', 'ZAR', // Africa
@@ -1628,13 +1652,8 @@ async function convertPrice(inrPrice, countryCode, enablePPP = false) {
     let isWeaker = weakersCurrencies.includes(currency.code);
 
     if (enablePPP && currency.code !== 'INR') {
-        if (!isWeaker) {
-            // qmLog(`📈 Applying PPP Multiplier (1.5x) for ${currency.code}`);
-            convertedAmount = convertedAmount * 1.5;
-            pppApplied = true;
-        } else {
-            pppApplied = true; // Still PPP active, but regional discount pricing applied
-        }
+        convertedAmount = convertedAmount * (isWeaker ? 1.2 : 1.5);
+        pppApplied = true;
     }
 
     convertedAmount = Math.round(convertedAmount);
@@ -1890,7 +1909,7 @@ async function loadProductsFromSupabase(prefetchPromise) {
         // Fire Supabase query immediately
         const queryPromise = window.supabaseClient
             .from('products')
-            .select('id,name,description,cover_image_url,price,original_price,created_at,coupon_code,discount_percentage')
+            .select('id,name,description,cover_image_url,price,original_price,created_at,coupon_code,discount_percentage,enable_ppp')
             .order('created_at', { ascending: false });
 
         // Handle prefetch (country + rates) separately so it doesn't block products if it fails
@@ -2104,8 +2123,8 @@ async function displaySupabaseProducts(products) {
                     const rate = localPrice.rate || 1;
                     let convertedOriginal = product.original_price * rate;
 
-                    if (product.enable_ppp && !localPrice.isWeaker) {
-                        convertedOriginal = convertedOriginal * 1.5;
+                    if (product.enable_ppp) {
+                        convertedOriginal = convertedOriginal * (localPrice.isWeaker ? 1.2 : 1.5);
                     }
 
                     const originalObj = {
@@ -2151,7 +2170,7 @@ async function displaySupabaseProducts(products) {
 window.openProductModal = async function (id) {
     if (!window.supabaseClient) return;
     try {
-        const { data: product, error } = await window.supabaseClient.from('products').select('id,name,description,cover_image_url,price,original_price,created_at,coupon_code,discount_percentage').eq('id', id).single();
+        const { data: product, error } = await window.supabaseClient.from('products').select('id,name,description,cover_image_url,price,original_price,created_at,coupon_code,discount_percentage,enable_ppp').eq('id', id).single();
         if (error || !product) return;
 
         const modal = document.getElementById('productModal');
@@ -2456,39 +2475,31 @@ const PRODUCT_DOWNLOAD_LINKS = {
 };
 
 // Fetch dynamic links from Supabase
+// file_url is RLS-sealed from the browser (anon gets 401), so the free-product
+// download flow can no longer read it via the Supabase client. The server-side
+// /api/products route (service key) exposes downloadUrl for FREE products only
+// -- paid file_urls stay sealed. This fetches those free links once at init so
+// the "Download" button works for Resources Map / Quant Formula Sheet / ATS
+// Resume instead of falling back to the stale legacy static map.
 async function fetchProductLinks() {
     try {
-        if (!window.supabaseClient) {
-            console.error('Supabase client not initialized');
-            qmLog('📚 Using default download links');
+        const resp = await fetch('/api/products', {
+            headers: { 'Accept': 'application/json' }
+        });
+        if (!resp.ok) {
+            qmLog('📚 Using default download links - /api/products returned ' + resp.status);
             return;
         }
-
-        const { data, error } = await window.supabaseClient
-            .from('products')
-            .select('name, file_url');
-
-        if (error) {
-            if (error.status === 401) {
-                console.error('❌ Supabase authentication failed (401): Invalid API key');
-                qmLog('📚 Using default download links - check Supabase configuration');
-            } else {
-                console.error('Error fetching Supabase products:', error);
+        const payload = await resp.json();
+        const freeItems = (payload && payload.freeResources && payload.freeResources.items) || [];
+        let updated = 0;
+        freeItems.forEach(product => {
+            if (product && product.name && product.downloadUrl) {
+                PRODUCT_DOWNLOAD_LINKS[product.name] = product.downloadUrl;
+                updated++;
             }
-            qmLog('📚 Continuing with default download links');
-            return;
-        }
-
-        if (data && data.length > 0) {
-            qmLog('📚 Loaded ' + data.length + ' products from Supabase');
-            data.forEach(product => {
-                PRODUCT_DOWNLOAD_LINKS[product.name] = product.file_url;
-                // Log for debugging
-                qmLog(`🔗 Link updated for: ${product.name} `);
-            });
-        } else {
-            qmLog('📚 No products found in Supabase, using default links');
-        }
+        });
+        qmLog('📚 Loaded ' + updated + ' free download link(s) via /api/products');
     } catch (err) {
         console.error('Failed to fetch product links:', err);
         qmLog('📚 Continuing with default download links');
@@ -2635,7 +2646,28 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
     if (amount <= 0) {
         qmLog('🆓 Free product detected');
         if (releaseBtn) releaseBtn();
-        if (downloadLink && downloadLink !== 'YOUR_DRIVE_LINK_HERE') {
+        let freeLink = (downloadLink && downloadLink !== 'YOUR_DRIVE_LINK_HERE') ? downloadLink : '';
+        // file_url is RLS-sealed from the browser; if the init-time
+        // fetchProductLinks() hasn't populated the map yet (or this product
+        // wasn't in it), resolve the free download link via /api/products
+        // (server-side, exposes FREE downloadUrl only).
+        if (!freeLink) {
+            try {
+                const freeResp = await fetch('/api/products', { headers: { 'Accept': 'application/json' } });
+                if (freeResp.ok) {
+                    const freePayload = await freeResp.json();
+                    const freeItems = (freePayload && freePayload.freeResources && freePayload.freeResources.items) || [];
+                    const matched = freeItems.find(p => p && p.name && p.name.trim().toLowerCase() === String(productName).trim().toLowerCase());
+                    if (matched && matched.downloadUrl) {
+                        freeLink = matched.downloadUrl;
+                        PRODUCT_DOWNLOAD_LINKS[productName] = freeLink;
+                    }
+                }
+            } catch (freeErr) {
+                console.warn('Free link resolution via /api/products failed:', freeErr);
+            }
+        }
+        if (freeLink && freeLink !== 'YOUR_DRIVE_LINK_HERE') {
             // Name/email come from the pre-checkout details form. If a page
             // reached here without them we just skip the confirmation email
             // rather than blocking the download behind a native prompt().
@@ -2643,13 +2675,13 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
             const customerEmail = (userDetails && userDetails.email) ? userDetails.email : '';
 
             if (customerEmail && customerEmail.includes('@')) {
-                sendProductEmail(customerEmail, productName, 'FREE', downloadLink, customerName, 0, 'INR');
+                sendProductEmail(customerEmail, productName, 'FREE', freeLink, customerName, 0, 'INR');
             }
             if (typeof window.showSuccessModal === 'function') {
-                window.showSuccessModal(productName, downloadLink);
+                window.showSuccessModal(productName, freeLink);
             } else {
                 showToast('🎉 Free download ready — opening it now.', 'success');
-                window.open(downloadLink, '_blank');
+                window.open(freeLink, '_blank');
             }
         } else {
             showToast('⚠️ Download link not configured. Please contact support.', 'error', 0);
@@ -3709,6 +3741,12 @@ async function fulfillFreeSessionBooking(response) {
             console.warn('Free booking create failed (proceeding to email):', e);
         }
 
+        // Signed manage link: the bookings self-service requires this token, so
+        // the confirmation email carries the customer's only way to view,
+        // reschedule, or cancel (a bare email is no longer sufficient).
+        const manageToken = (createJson && createJson.success && createJson.manageToken) ? createJson.manageToken : '';
+        const manageUrl = `${window.location.origin}/my-bookings.html?email=${encodeURIComponent(booking.email)}&tk=${encodeURIComponent(manageToken)}`;
+
         // ===== STEP 1: SEND CUSTOMER EMAIL FIRST (HIGHEST PRIORITY) =====
         qmLog('📧 Sending session confirmation to customer:', booking.email);
 
@@ -3746,8 +3784,9 @@ async function fulfillFreeSessionBooking(response) {
                         </div>
 
                         <div style="background: #fffbeb; padding: 20px; border-radius: 6px; border-left: 4px solid #f59e0b;">
-                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Need to Reschedule?</p>
-                            <p style="margin: 0; font-size: 14px; color: #1a1a1a;">Visit <a href="${window.location.origin}/my-bookings.html" style="color: #2563eb; text-decoration: none;">My Bookings</a> and enter your email (<strong>${booking.email}</strong>) to view and reschedule.</p>
+                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Need to Reschedule or Cancel?</p>
+                            <p style="margin: 0 0 12px 0; font-size: 14px; color: #1a1a1a;">View, reschedule, or cancel your booking anytime with this secure link:</p>
+                            <p style="margin: 0;"><a href="${manageUrl}" style="display: inline-block; background: #10b981; color: #ffffff; font-weight: bold; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-size: 13px;">Manage Booking</a></p>
                         </div>
                     </div>
                     <div style="background-color: #1a1a1a; padding: 25px 20px; text-align: center; color: #888; font-size: 12px;">
@@ -3771,9 +3810,9 @@ Payment ID: ${paymentId}
 JOIN YOUR SESSION HERE:
 ${uniqueMeetLink}
 
-Need to Reschedule?
-Visit: ${window.location.origin}/my-bookings.html
-Enter your email (${booking.email}) to view and reschedule.
+Need to Reschedule or Cancel?
+Open your secure manage link:
+${manageUrl}
 
 Best regards,
 ${BUSINESS_NAME}`;
@@ -3904,9 +3943,9 @@ Payment ID: ${paymentId}
 
 📩 IMPORTANT: Please check your Spam/Junk folder if you don't see the email in your Inbox.
 
-🔄 Need to Reschedule?
-Visit: ${window.location.origin}/my-bookings.html
-Enter your email to view and reschedule your session.
+🔄 Need to Reschedule or Cancel?
+Open your secure manage link:
+${manageUrl}
 
 Thank you for booking!`);
 
@@ -4362,17 +4401,21 @@ document.addEventListener('DOMContentLoaded', function () {
         submitBtn.textContent = 'Sending...';
 
         try {
-            // Look up the current Quant Formula Sheet file_url directly (not the
-            // hardcoded fallback map) so this always sends the latest file.
+            // Look up the current Quant Formula Sheet link server-side (file_url is
+            // RLS-sealed from the browser, so the direct Supabase query 401s and
+            // silently fell back to a #resources anchor). /api/products exposes
+            // downloadUrl for FREE products only -- exactly this lead magnet.
             let downloadLink = 'https://desk2quant.com/#resources';
-            if (window.supabaseClient) {
-                const { data } = await window.supabaseClient
-                    .from('products')
-                    .select('file_url')
-                    .ilike('name', '%Quant Formula Sheet%')
-                    .limit(1)
-                    .maybeSingle();
-                if (data && data.file_url) downloadLink = data.file_url;
+            try {
+                const leadResp = await fetch('/api/products', { headers: { 'Accept': 'application/json' } });
+                if (leadResp.ok) {
+                    const leadPayload = await leadResp.json();
+                    const leadItems = (leadPayload && leadPayload.freeResources && leadPayload.freeResources.items) || [];
+                    const leadMatch = leadItems.find(p => p && p.name && /quant formula sheet/i.test(p.name));
+                    if (leadMatch && leadMatch.downloadUrl) downloadLink = leadMatch.downloadUrl;
+                }
+            } catch (leadFetchErr) {
+                console.warn('Lead magnet link resolution failed:', leadFetchErr);
             }
 
             await sendProductEmail(email, 'Quant Formula Sheet', 'FREE_LEAD', downloadLink, 'Quant', 0, 'INR');

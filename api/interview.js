@@ -1,5 +1,9 @@
 import https from 'https';
 import crypto from 'crypto';
+import { isZeroDecimalCurrency } from '../lib/pricing.js';
+import { getServiceKey } from '../lib/supabaseAdmin.js';
+import { emailShell, escapeHtml } from '../lib/emailBranding.js';
+import { signBookingToken, verifyBookingToken } from '../lib/bookingTokens.js';
 
 // --- Interview session tokens ------------------------------------------------
 //
@@ -71,6 +75,327 @@ function httpRequest(url, options, postData) {
     });
 }
 
+// --- Bookings self-service -------------------------------------------------
+//
+// The `bookings` table is sealed from the anon role by RLS, so my-bookings.html
+// and the homepage booking form's slot-collision check can no longer read or
+// write it directly from the browser. These actions run with the service-role
+// key. They live here -- not in their own route -- because the Vercel Hobby
+// plan caps this project at 12 serverless functions and all 12 are already in
+// use (same reason the advisor chat lives here).
+//
+// Every mutation re-fetches the booking first and refuses unless the supplied
+// email matches the booking's email, so knowing a booking id no longer lets
+// anyone cancel or reschedule someone else's session.
+const BOOKINGS_ACTIONS = new Set([
+    'my-bookings',             // { email }            -> bookings for that email
+    'bookings-slots',          // { date }             -> taken times for a date
+    'create-free-booking',     // { booking fields }   -> insert a FREE session booking (deduped)
+    'reschedule-booking',      // { bookingId, email, date, time, reason }
+    'cancel-booking',          // { bookingId, email, refundAmount, refundPercentage }
+    'accept-admin-reschedule', // { bookingId, email }
+    'counter-propose'          // { bookingId, email, date, time }
+]);
+
+// Columns the my-bookings page renders (plus id/email for mutations). Exposing
+// phone / payment_id / message here would leak more customer data than the UI
+// needs, so the list is explicit.
+const BOOKINGS_PUBLIC_COLUMNS = [
+    'id', 'email', 'name', 'service_name', 'service_price', 'service_duration',
+    'booking_date', 'booking_time', 'status', 'meet_link',
+    'admin_proposed_date', 'admin_proposed_time', 'admin_reschedule_reason',
+    'requested_date', 'requested_time', 'refund_amount', 'refund_percentage', 'created_at'
+].join(',');
+
+// Light per-IP limiter for the mutating bookings actions, so a rogue page can't
+// spam free bookings or reschedule requests. Same in-memory sliding-window
+// approach as api/send-email.js (per-instance, not global -- good enough to
+// stop the obvious abuse).
+const BOOKINGS_RATE_MAX = 20;
+const BOOKINGS_RATE_WINDOW_MS = 60 * 1000;
+const bookingsRateBuckets = new Map();
+
+function isBookingsRateLimited(req) {
+    const forwarded = String(req.headers?.['x-forwarded-for'] || '');
+    const ip = forwarded.split(',')[0].trim() || 'unknown';
+    const now = Date.now();
+    const hits = (bookingsRateBuckets.get(ip) || []).filter((t) => now - t < BOOKINGS_RATE_WINDOW_MS);
+    hits.push(now);
+    bookingsRateBuckets.set(ip, hits);
+    if (bookingsRateBuckets.size > 5000) {
+        for (const [key, times] of bookingsRateBuckets) {
+            if (!times.some((t) => now - t < BOOKINGS_RATE_WINDOW_MS)) bookingsRateBuckets.delete(key);
+        }
+    }
+    return hits.length > BOOKINGS_RATE_MAX;
+}
+
+async function handleBookingsAction(req, res, action) {
+    const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
+    const { getServiceKey } = await import('../lib/supabaseAdmin.js');
+    const key = getServiceKey();
+    if (!key) {
+        return res.status(503).json({ error: 'Service is not fully configured. Please contact support.' });
+    }
+    const headers = { apikey: key, Authorization: `Bearer ${key}` };
+    const body = req.body || {};
+    const email = String(body.email || '').trim().toLowerCase();
+
+    try {
+        // 1. LIST a customer's bookings by email (public columns only).
+        // The signed manage token from the confirmation email is required — a
+        // bare email alone is not enough to read booking details / meeting links.
+        if (action === 'my-bookings') {
+            if (!email) return res.status(400).json({ error: 'email is required' });
+            if (!verifyBookingToken(email, body.token)) {
+                return res.status(403).json({ error: 'This manage link is invalid or expired. Use the \u201cManage booking\u201d link from your confirmation email, or contact support.' });
+            }
+            const resp = await fetch(
+                `${SUPABASE_URL}/rest/v1/bookings?email=eq.${encodeURIComponent(email)}&select=${BOOKINGS_PUBLIC_COLUMNS}&order=created_at.desc`,
+                { headers }
+            );
+            if (!resp.ok) return res.status(502).json({ error: 'Failed to load bookings' });
+            const rows = await resp.json();
+            return res.status(200).json({ success: true, bookings: rows });
+        }
+
+        // 2. SLOTS already taken on a date (homepage collision check).
+        if (action === 'bookings-slots') {
+            const date = String(body.date || '').trim();
+            if (!date) return res.status(400).json({ error: 'date is required' });
+            const resp = await fetch(
+                `${SUPABASE_URL}/rest/v1/bookings?booking_date=eq.${encodeURIComponent(date)}&select=booking_time,status`,
+                { headers }
+            );
+            if (!resp.ok) return res.status(502).json({ error: 'Failed to load slots' });
+            const rows = await resp.json();
+            return res.status(200).json({ success: true, slots: rows });
+        }
+
+        // Mutations get a light rate limit (create, reschedule, cancel, accept,
+        // counter-propose all write rows). Reads (list/slots) are free.
+        if (['create-free-booking', 'reschedule-booking', 'cancel-booking',
+             'accept-admin-reschedule', 'counter-propose'].includes(action)
+            && isBookingsRateLimited(req)) {
+            return res.status(429).json({ error: 'Too many requests. Please wait a moment and try again.' });
+        }
+
+        // 3. CREATE a free session booking (deduped by payment_id).
+        if (action === 'create-free-booking') {
+            const { name, phone, serviceName, servicePrice, serviceDuration, bookingDate, bookingTime, message, paymentId, meetLink } = body;
+            if (!email || !serviceName || !bookingDate || !bookingTime) {
+                return res.status(400).json({ error: 'Missing required booking fields' });
+            }
+            const dup = await fetch(
+                `${SUPABASE_URL}/rest/v1/bookings?payment_id=eq.${encodeURIComponent(paymentId || '')}&select=id`,
+                { headers }
+            );
+            const dupRows = dup.ok ? await dup.json() : [];
+            if (Array.isArray(dupRows) && dupRows.length > 0) {
+                return res.status(200).json({ success: true, alreadyExists: true });
+            }
+            const ins = await fetch(`${SUPABASE_URL}/rest/v1/bookings`, {
+                method: 'POST',
+                headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+                body: JSON.stringify({
+                    email, name, phone,
+                    service_name: serviceName,
+                    service_price: Number(servicePrice) || 0,
+                    service_duration: Number(serviceDuration) || null,
+                    booking_date: bookingDate,
+                    booking_time: bookingTime,
+                    message: message || null,
+                    status: 'upcoming',
+                    payment_id: paymentId || `FREE_SESSION_${Date.now()}`,
+                    meet_link: meetLink || null
+                })
+            });
+            if (!ins.ok) return res.status(502).json({ error: 'Failed to create booking' });
+            const created = await ins.json();
+            // Return the signed manage token so the client can embed the
+            // "Manage booking" link in the confirmation email it sends.
+            return res.status(200).json({ success: true, booking: Array.isArray(created) ? created[0] : created, manageToken: signBookingToken(email) });
+        }
+
+        // --- Mutations: bookingId + matching email required ---
+        const bookingId = String(body.bookingId || '').trim();
+        if (!bookingId || !email) return res.status(400).json({ error: 'bookingId and email are required' });
+
+        const updHeaders = { ...headers, 'Content-Type': 'application/json' };
+
+        const fetchBooking = async (select) => {
+            const resp = await fetch(
+                `${SUPABASE_URL}/rest/v1/bookings?id=eq.${encodeURIComponent(bookingId)}&select=${select}`,
+                { headers }
+            );
+            const rows = resp.ok ? await resp.json() : [];
+            return Array.isArray(rows) ? rows[0] : null;
+        };
+
+        const patchBooking = async (payload) => {
+            const resp = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${encodeURIComponent(bookingId)}`, {
+                method: 'PATCH',
+                headers: updHeaders,
+                body: JSON.stringify(payload)
+            });
+            return resp.ok;
+        };
+
+        // 4. RESCHEDULE request.
+        if (action === 'reschedule-booking') {
+            const date = String(body.date || '').trim();
+            const time = String(body.time || '').trim();
+            const reason = String(body.reason || '').trim();
+            if (!date || !time) return res.status(400).json({ error: 'date and time are required' });
+            const booking = await fetchBooking('email');
+            if (!booking || String(booking.email || '').trim().toLowerCase() !== email || !verifyBookingToken(email, body.token)) {
+                return res.status(403).json({ error: 'Booking not found for this email, or the manage link is invalid. Use the link from your confirmation email.' });
+            }
+            const ok = await patchBooking({
+                requested_date: date,
+                requested_time: time,
+                reschedule_reason: reason,
+                status: 'reschedule_requested'
+            });
+            if (!ok) return res.status(502).json({ error: 'Failed to save reschedule request' });
+            return res.status(200).json({ success: true });
+        }
+
+        // 5. CANCEL request (refund amounts computed client-side from the same
+        //    policy the page always used; stored server-side for the admin).
+        //    The branded confirmation email is sent from here (service side),
+        //    so the customer always gets it even if their browser closes.
+        if (action === 'cancel-booking') {
+            const refundAmount = Number(body.refundAmount) || 0;
+            const refundPercentage = Number(body.refundPercentage) || 0;
+            const booking = await fetchBooking('email,name,service_name,service_price,booking_date,booking_time');
+            if (!booking || String(booking.email || '').trim().toLowerCase() !== email || !verifyBookingToken(email, body.token)) {
+                return res.status(403).json({ error: 'Booking not found for this email, or the manage link is invalid. Use the link from your confirmation email.' });
+            }
+            const ok = await patchBooking({
+                status: 'cancellation_requested',
+                cancellation_requested_at: new Date().toISOString(),
+                cancellation_reason: 'User requested cancellation',
+                refund_amount: refundAmount,
+                refund_percentage: refundPercentage,
+                refund_status: 'pending'
+            });
+            if (!ok) return res.status(502).json({ error: 'Failed to save cancellation request' });
+
+            // Branded cancellation confirmation to the customer.
+            let emailSent = false;
+            try {
+                const BREVO_API_KEY = process.env.BREVO_API_KEY;
+                if (BREVO_API_KEY) {
+                    const SENDER_EMAIL = process.env.SENDER_EMAIL || 'hello@desk2quant.com';
+                    const SENDER_NAME = process.env.SENDER_NAME || 'Desk2Quant';
+                    const customerName = booking.name || 'there';
+                    const customerHtml = emailShell({ body: `
+                        <div style="margin-bottom: 20px;">
+                            <span style="display: inline-block; background:#ffca3a; color:#090909; padding:4px 8px; border:1px solid #090909; border-radius:0; font-size:11px; font-weight:800; text-transform:uppercase; box-shadow:2px 2px 0 #090909;">Cancellation Request</span>
+                        </div>
+                        <p style="font-size: 16px; margin-bottom: 20px; color: #090909;">Hi <strong>${escapeHtml(customerName)}</strong>, your cancellation request has been received.</p>
+
+                        <div style="background:#ffffff; padding:18px; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; margin-bottom:20px;">
+                            <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Session</p>
+                            <h3 style="margin: 0 0 12px 0; font-size: 17px; color: #090909;">${escapeHtml(booking.service_name)}</h3>
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr>
+                                    <td style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; padding: 4px 0;">Date</td>
+                                    <td style="font-size: 14px; font-weight: bold; text-align: right; padding: 4px 0; color: #090909;">${escapeHtml(booking.booking_date)}</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; padding: 4px 0;">Time</td>
+                                    <td style="font-size: 14px; font-weight: bold; text-align: right; padding: 4px 0; color: #090909;">${escapeHtml(booking.booking_time)}</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div style="background:#dff2ef; padding:18px; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; margin-bottom:20px;">
+                            <p style="font-size: 14px; font-weight: bold; color: #0b7f79; margin: 0 0 10px 0;">💰 Refund Details</p>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                                <tr><td style="padding: 4px 0; color: #666761;">Original Amount</td><td style="padding: 4px 0; text-align: right; color: #090909;">₹${escapeHtml(booking.service_price || 0)}</td></tr>
+                                <tr><td style="padding: 4px 0; color: #666761;">Refund Percentage</td><td style="padding: 4px 0; text-align: right; color: #090909;">${escapeHtml(refundPercentage)}%</td></tr>
+                                <tr style="border-top: 1px solid #d8d8d1;"><td style="padding: 10px 0 0 0; color: #0b7f79; font-weight: bold; font-size: 15px;">Refund Amount</td><td style="padding: 10px 0 0 0; text-align: right; color: #0b7f79; font-weight: bold; font-size: 17px;">₹${escapeHtml(refundAmount)}</td></tr>
+                            </table>
+                        </div>
+
+                        <div style="background:#fff3c4; padding:14px; border:1px solid #090909; border-radius:0; box-shadow:3px 3px 0 #090909; font-size:13px; color:#7c4a03; line-height:1.5;">
+                            ⏱ Refunds are credited to your original payment method within <strong>5-7 business days</strong> after approval.
+                        </div>
+                    ` });
+                    await httpRequest('https://api.brevo.com/v3/smtp/email', {
+                        method: 'POST',
+                        headers: { 'accept': 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' }
+                    }, {
+                        sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+                        replyTo: { email: SENDER_EMAIL, name: SENDER_NAME },
+                        to: [{ email: booking.email, name: customerName }],
+                        subject: `Cancellation Request Received - Booking ${bookingId}`,
+                        htmlContent: customerHtml,
+                        textContent: `Hi ${customerName},\n\nYour cancellation request has been received.\n\nSession: ${booking.service_name}\nOriginal Date: ${booking.booking_date} at ${booking.booking_time}\n\nRefund: \u20B9${refundAmount} (${refundPercentage}%)\nStatus: Pending admin approval\nProcessing: 5-7 business days after approval\n\nSent by Desk2Quant`
+                    });
+                    emailSent = true;
+                }
+            } catch (err) {
+                console.error('Cancellation email failed (booking still cancelled):', err.message);
+            }
+
+            return res.status(200).json({ success: true, emailSent });
+        }
+
+        // 6. ACCEPT the admin's proposed reschedule.
+        if (action === 'accept-admin-reschedule') {
+            const booking = await fetchBooking('email,admin_proposed_date,admin_proposed_time,meet_link,name,service_name');
+            if (!booking || String(booking.email || '').trim().toLowerCase() !== email || !verifyBookingToken(email, body.token)) {
+                return res.status(403).json({ error: 'Booking not found for this email, or the manage link is invalid. Use the link from your confirmation email.' });
+            }
+            if (!booking.admin_proposed_date || !booking.admin_proposed_time) {
+                return res.status(400).json({ error: 'No admin-proposed schedule to accept' });
+            }
+            const ok = await patchBooking({
+                booking_date: booking.admin_proposed_date,
+                booking_time: booking.admin_proposed_time,
+                status: 'confirmed',
+                customer_response: 'accepted',
+                admin_proposed_date: null,
+                admin_proposed_time: null,
+                admin_reschedule_reason: null,
+                admin_reschedule_requested_at: null
+            });
+            if (!ok) return res.status(502).json({ error: 'Failed to accept new schedule' });
+            return res.status(200).json({ success: true, booking });
+        }
+
+        // 7. COUNTER-propose a different time.
+        if (action === 'counter-propose') {
+            const date = String(body.date || '').trim();
+            const time = String(body.time || '').trim();
+            if (!date || !time) return res.status(400).json({ error: 'date and time are required' });
+            const booking = await fetchBooking('email');
+            if (!booking || String(booking.email || '').trim().toLowerCase() !== email || !verifyBookingToken(email, body.token)) {
+                return res.status(403).json({ error: 'Booking not found for this email, or the manage link is invalid. Use the link from your confirmation email.' });
+            }
+            const ok = await patchBooking({
+                requested_date: date,
+                requested_time: time,
+                status: 'reschedule_requested',
+                customer_response: 'counter_proposed',
+                admin_proposed_date: null,
+                admin_proposed_time: null,
+                admin_reschedule_reason: null
+            });
+            if (!ok) return res.status(502).json({ error: 'Failed to save counter-proposal' });
+            return res.status(200).json({ success: true });
+        }
+
+        return res.status(400).json({ error: 'Unknown bookings action' });
+    } catch (err) {
+        console.error('Bookings action error:', err.message);
+        return res.status(500).json({ error: 'Something went wrong. Please try again.' });
+    }
+}
+
 export default async function handler(req, res) {
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -79,6 +404,13 @@ export default async function handler(req, res) {
 
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+    // Bookings self-service runs before the Groq gate: it needs the service-role
+    // key, not Groq.
+    const reqAction = req.body && req.body.action;
+    if (typeof reqAction === 'string' && BOOKINGS_ACTIONS.has(reqAction)) {
+        return handleBookingsAction(req, res, reqAction);
+    }
 
     console.log('--- API Request Received ---');
     const GROQ_API_KEY = process.env.GROQ_API_KEY;
@@ -112,8 +444,13 @@ export default async function handler(req, res) {
     
         try {
             const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
-        const SUPABASE_KEY = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY
-            || 'sb_publishable_OhbTYIuMYgGgmKPQJ9W7RA_rhKyaad0';
+            // RLS denies `anon` on products, so the old inline anon-key fallback
+            // here made the advisor answer from an empty catalog instead of erroring.
+            const SUPABASE_KEY = getServiceKey();
+            if (!SUPABASE_KEY) {
+                console.error('CONFIG: SUPABASE_SERVICE_ROLE_KEY is not set — advisor cannot read the catalog.');
+                return res.status(503).json({ error: 'Advisor unavailable right now.' });
+            }
             const catalog = await fetchCatalog(SUPABASE_URL, SUPABASE_KEY);
             const result = await askAdvisor({
                 groqKey: GROQ_API_KEY,
@@ -159,7 +496,7 @@ export default async function handler(req, res) {
                 return res.status(402).json({ error: `Payment not captured (status: ${payment.status})` });
             }
             const expected = await getExpectedInterviewOrder(durationMinutes, payment.currency);
-            const capturedMajor = ['JPY', 'KRW', 'VND', 'CLP', 'PYG', 'UGX'].includes(String(payment.currency).toUpperCase())
+            const capturedMajor = isZeroDecimalCurrency(payment.currency)
                 ? payment.amount
                 : payment.amount / 100;
             if (!expected.ok || !isWithinTolerance(capturedMajor, expected.amountMajor)) {
@@ -244,7 +581,9 @@ IMPORTANT:
 
             // Log to Supabase
             const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
-            const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_OhbTYIuMYgGgmKPQJ9W7RA_rhKyaad0';
+            // Service role: RLS denies `anon` INSERT on interview_sessions, so the
+            // old anon-key fallback silently dropped every session log.
+            const SUPABASE_KEY = getServiceKey();
             if (SUPABASE_URL && SUPABASE_KEY) {
                 try {
                     // Log to Supabase (Await ensures completion in serverless environments)
@@ -392,7 +731,7 @@ function markdownToHtml(text) {
     if (!text) return '';
     return text
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/^### (.*$)/gm, '<h3 style="color:#2563eb;margin-top:20px;">$1</h3>')
+        .replace(/^### (.*$)/gm, '<h3 style="color:#0b7f79;margin-top:20px;">$1</h3>')
         .replace(/^## (.*$)/gm, '<h2 style="color:#1e40af;margin-top:25px;border-bottom:1px solid #ddd;padding-bottom:5px;">$1</h2>')
         .replace(/^- (.*$)/gm, '<li style="margin-bottom:5px;">$1</li>')
         .replace(/\n/g, '<br>');
@@ -407,26 +746,19 @@ async function sendEmailReport(toEmail, toName, reportMarkdown) {
     }
 
     const htmlReport = markdownToHtml(reportMarkdown);
-    const htmlContent = `
-        <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; color: #333; line-height: 1.6;">
-            <div style="background: #1e3a8a; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
-                <h1 style="margin:0;">Desk2Quant AI Interview Results</h1>
-            </div>
-            <div style="padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
-                <p>Hi <strong>${toName}</strong>,</p>
-                <p>Here is the detailed scorecard from your recent mock interview.</p>
-                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-                
-                <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                    ${htmlReport}
-                </div>
+    const htmlContent = emailShell({ body: `
+        <p style="font-size:16px; color:#090909; margin:0 0 12px 0;">Hi <strong>${escapeHtml(toName)}</strong>,</p>
+        <p style="font-size:14px; color:#44453f; margin:0 0 20px 0;">Here is the detailed scorecard from your recent mock interview.</p>
+        <hr style="border:0; border-top:1px solid #d8d8d1; margin:20px 0;">
 
-                <div style="margin-top: 30px; text-align: center; font-size: 0.9em; color: #64748b;">
-                    <p>Keep practicing! <a href="https://desk2quant.com" style="color: #2563eb;">Book a 1:1 session</a> for personalized feedback.</p>
-                </div>
-            </div>
+        <div style="background:#ffffff; padding:20px; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; overflow-wrap:anywhere; word-break:break-word; max-width:100%;">
+            ${htmlReport}
         </div>
-    `;
+
+        <div style="margin-top:28px; text-align:center; font-size:0.9em; color:#666761;">
+            <p>Keep practicing! <a href="https://desk2quant.com" style="color:#0b7f79;">Book a 1:1 session</a> for personalized feedback.</p>
+        </div>
+    ` });
 
     const options = {
         method: 'POST',

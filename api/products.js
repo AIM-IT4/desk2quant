@@ -1,5 +1,6 @@
 import { gradeSubmission } from '../lib/gauntletGrading.js';
 import { verifyProjectEntitlement } from './_gauntlet-entitlement.js';
+import { getServiceKey, blockIfUnconfigured } from '../lib/supabaseAdmin.js';
 
 export default async function handler(req, res) {
     // CORS
@@ -26,7 +27,12 @@ export default async function handler(req, res) {
     res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
 
     const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
-    const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_OhbTYIuMYgGgmKPQJ9W7RA_rhKyaad0';
+    // Service role: RLS denies `anon` SELECT on products, so the old inline
+    // anon-key fallback made this route return an empty catalog — the storefront
+    // renders "no products" instead of failing visibly. file_url is stripped
+    // below before anything reaches the client.
+    if (blockIfUnconfigured(res, 'products')) return;
+    const SUPABASE_KEY = getServiceKey();
 
     try {
         // Use fetch (same pattern as razorpay-webhook.js and reminders.js)

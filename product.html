@@ -1,7 +1,8 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
+<script>/* CANONICAL-HOST-GUARD v1: Razorpay is registered to desk2quant.com - force canonical host + root path before any checkout code runs. */!function(){try{var h=location.hostname.toLowerCase(),dev=/^(localhost|127.0.0.1|0.0.0.0|[::1])$/.test(h);if(!dev&&h!=='desk2quant.com'){location.replace('https://desk2quant.com'+location.pathname+location.search+location.hash)}else if(location.pathname==='/index.html'){location.replace('https://desk2quant.com/'+location.search+location.hash)}}catch(e){}}();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title id="p-meta-title">Product Details | Desk2Quant</title>
@@ -632,8 +633,7 @@
 
 
     <link rel="stylesheet" href="launchzone.css?v=8">
-    <link rel="stylesheet" href="launchzone-pages.css?v=10">
-</head>
+    <link rel="stylesheet" href="launchzone-pages.css?v=10"></head>
 
 <body class="d2q-reference d2q-launchzone">
     <!-- Setup config for script.js to pick up -->
@@ -648,20 +648,18 @@
             document.head.appendChild(script);
         })();
     </script>
-    <script src="script.js?v=11"></script>
-
+    <script src="script.js?v=16"></script>
     <!-- Navigation -->
     <nav class="navbar">
         <div class="nav-container">
-            <a href="index.html" class="logo"
+            <a href="/" class="logo"
                 style="text-decoration: none; display: flex; align-items: center; gap: 10px;">
                 <img src="assets/images/desk2quant-logo.png?v=3" alt="Desk2Quant" class="logo-img">
                 <span class="logo-icon" style="display:none;">📊</span>
                 <span class="logo-text">Desk2Quant</span>
             </a>
             <ul class="nav-links">
-                <li><a href="index.html#products">All Products</a></li>
-                <li><a href="/?scrollTo=bookingForm" class="nav-cta">Book Session</a></li>
+                <li><a href="/#products">All Products</a></li>                <li><a href="/?scrollTo=bookingForm" class="nav-cta">Book Session</a></li>
             </ul>
             <div class="nav-actions">
                 <button class="cart-trigger-btn" id="cartTriggerBtn" type="button" aria-label="Open cart" aria-haspopup="dialog">
@@ -719,8 +717,7 @@
                     <button id="p-cart-add-btn" class="cart-add-btn" type="button" title="Add to cart" aria-label="Add to cart" style="display:none;">
                         <i class="fas fa-plus"></i>
                     </button>
-                    <a href="index.html#products" class="btn btn-secondary">
-                        Browse More
+                    <a href="/#products" class="btn btn-secondary">                        Browse More
                     </a>
                 </div>
             </div>
@@ -730,8 +727,7 @@
             <h2 style="color: #ef4444; margin-bottom: 20px;">Product Not Found</h2>
             <p style="color: var(--text-secondary); margin-bottom: 30px;">The product you are looking for does not exist
                 or has been removed.</p>
-            <a href="index.html" class="btn btn-primary">Return Home</a>
-        </div>
+            <a href="/" class="btn btn-primary">Return Home</a>        </div>
     </div>
 
     <!-- Product Preview Section -->
@@ -917,7 +913,7 @@
                 // browser reads; select only the public catalog columns.
                 const { data: product, error } = await window.supabaseClient
                     .from('products')
-                    .select('id,name,description,cover_image_url,price,original_price,created_at,coupon_code,discount_percentage')
+                    .select('id,name,description,cover_image_url,price,original_price,created_at,coupon_code,discount_percentage,enable_ppp')
                     .eq('id', id)
                     .single();
 
@@ -1215,8 +1211,8 @@
                                     const rate = localPrice.rate || 1;
                                     let convertedOriginal = product.original_price * rate;
 
-                                    if (product.enable_ppp && !localPrice.isWeaker) {
-                                        convertedOriginal = convertedOriginal * 1.5;
+                                    if (product.enable_ppp) {
+                                        convertedOriginal = convertedOriginal * (localPrice.isWeaker ? 1.2 : 1.5);
                                     }
 
                                     newOriginalDisplay = `<span style="text-decoration:line-through; color:var(--text-muted); font-size:0.8em; margin-right:10px;">${localPrice.currency.symbol}${Math.round(convertedOriginal).toLocaleString()}</span>`;

@@ -69,6 +69,7 @@ function renderPage(p, slug, related, reviews) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
+<script>/* CANONICAL-HOST-GUARD v1: Razorpay is registered to desk2quant.com - force canonical host + root path before any checkout code runs. */!function(){try{var h=location.hostname.toLowerCase(),dev=/^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])$/.test(h);if(!dev&&h!=='desk2quant.com'){location.replace('https://desk2quant.com'+location.pathname+location.search+location.hash)}else if(location.pathname==='/index.html'){location.replace('https://desk2quant.com/'+location.search+location.hash)}}catch(e){}}();</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${esc(title)}</title>
@@ -103,7 +104,9 @@ function renderPage(p, slug, related, reviews) {
 
   <article>
     <h1>${esc(p.name)}</h1>
-    <p class="seo-price"><strong>&#8377;${esc(price)}</strong>${p.average_rating ? ` &middot; rated ${esc(p.average_rating)}/5` : ''}${p.sales_count ? ` &middot; ${esc(p.sales_count)} purchases` : ''}</p>
+    <p class="seo-price"><strong>&#8377;${esc(price)}</strong></p>
+
+    ${p.coupon_code ? `<p class="seo-coupon"><strong>Use coupon code ${esc(p.coupon_code)} at checkout for ${esc(p.discount_percentage || 10)}% off.</strong></p>` : ''}
 
     <p class="seo-cta-row">
       <a class="seo-cta" href="/product.html?id=${esc(p.id)}">View details &amp; buy</a>

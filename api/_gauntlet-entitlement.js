@@ -8,15 +8,14 @@
 // Not a route: filename is underscore-prefixed so Vercel does not count it
 // against the 12-function Hobby cap.
 
+import { isZeroDecimalCurrency } from '../lib/pricing.js';
+
 // project slug -> the Supabase product id that unlocks it
 export const PROJECT_PRODUCTS = {
     '01-sofr-curve': 'eb4ee16b-8a1f-475c-9dbf-e03993528ac9'
 };
 
 const norm = (v) => String(v || '').trim().toLowerCase();
-
-// Must stay identical to the list in lib/pricing.js and api/grant-access.js.
-const ZERO_DECIMAL_CURRENCIES = ['JPY', 'KRW', 'VND', 'CLP', 'PYG', 'UGX'];
 
 /**
  * SECURITY: order notes are attacker-influenceable (a raw Razorpay Checkout
@@ -30,7 +29,7 @@ async function verifyAmount(payment, productId, couponCode) {
         const { getExpectedProductOrder, isWithinTolerance } = await import('../lib/pricing.js');
         const expected = await getExpectedProductOrder(productId, payment.currency, couponCode);
         if (!expected.ok) return null; // price unresolvable -- fall back to notes match
-        const capturedMajor = ZERO_DECIMAL_CURRENCIES.includes(String(payment.currency).toUpperCase())
+        const capturedMajor = isZeroDecimalCurrency(payment.currency)
             ? payment.amount
             : payment.amount / 100;
         if (!isWithinTolerance(capturedMajor, expected.amountMajor)) {
@@ -127,7 +126,7 @@ export async function verifyProjectEntitlement(slug, paymentId, email) {
                     }));
                 const expected = await getExpectedCartOrder(items, payment.currency, notes.coupon_code || null);
                 if (expected.ok) {
-                    const capturedMajor = ZERO_DECIMAL_CURRENCIES.includes(String(payment.currency).toUpperCase())
+                    const capturedMajor = isZeroDecimalCurrency(payment.currency)
                         ? payment.amount
                         : payment.amount / 100;
                     if (!isWithinTolerance(capturedMajor, expected.amountMajor)) {

@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+<script>/* CANONICAL-HOST-GUARD v1: Razorpay is registered to desk2quant.com - force canonical host + root path before any checkout code runs. */!function(){try{var h=location.hostname.toLowerCase(),dev=/^(localhost|127.0.0.1|0.0.0.0|[::1])$/.test(h);if(!dev&&h!=='desk2quant.com'){location.replace('https://desk2quant.com'+location.pathname+location.search+location.hash)}else if(location.pathname==='/index.html'){location.replace('https://desk2quant.com/'+location.search+location.hash)}}catch(e){}}();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Bookings & Reschedule | Desk2Quant</title>
@@ -20,7 +21,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         // Load config.js if it exists, otherwise gracefully fallback
         (function () {
@@ -381,14 +381,14 @@
 
         <div class="nav-container"
             style="max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between;">
-            <a href="index.html" class="logo"
+            <a href="/" class="logo"
                 style="text-decoration: none; display: flex; align-items: center; gap: 10px;">
                 <img src="assets/images/desk2quant-logo.png?v=3" alt="Desk2Quant" class="logo-img">
                 <span class="logo-icon" style="display:none;">📊</span>
                 <span class="logo-text">Desk2Quant</span>
 
             </a>
-            <a href="index.html" style="color: var(--text-secondary); font-weight: 500;">← Back to Home</a>
+            <a href="/" style="color: var(--text-secondary); font-weight: 500;">← Back to Home</a>
         </div>
     </nav>
 
@@ -401,7 +401,7 @@
         <div class="search-box">
             <h3 style="margin-bottom: 20px;">Find Your Bookings</h3>
             <p style="color: var(--text-muted); margin-bottom: 20px;">
-                Enter the email address you used to book your session
+                Use the <strong>Manage Booking</strong> link from your confirmation email to view, reschedule, or cancel. (For security, bookings can no longer be managed by email alone.)
             </p>
             <div class="search-controls">
                 <input type="email" id="searchEmail" placeholder="your@email.com">
@@ -421,17 +421,6 @@
     </div>
 
     <script>
-        // Supabase Config
-        const SUPABASE_URL = 'https://dntabmyurlrlnoajdnja.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_OhbTYIuMYgGgmKPQJ9W7RA_rhKyaad0';
-
-        // Initialize Supabase
-        document.addEventListener('DOMContentLoaded', function () {
-            if (typeof window.supabase !== 'undefined') {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            }
-        });
-
         const ADMIN_EMAIL = 'hello@desk2quant.com';
 
         // Send email through the secure Brevo backend.
@@ -465,7 +454,13 @@
                 textContent
             );
         }
-        // Search bookings by email
+        // Signed manage token from the confirmation email link
+        // (my-bookings.html?email=..&tk=..). Required by every bookings action.
+        let bookingManageToken = '';
+
+        // Search bookings by email via the server-side bookings API.
+        // (The bookings table is RLS-sealed from the browser; the API runs with
+        // the service-role key and returns only the requested email's rows.)
         async function searchBookings() {
             const email = document.getElementById('searchEmail').value.trim();
             const container = document.getElementById('bookingsContainer');
@@ -478,18 +473,17 @@
             container.innerHTML = '<p style="text-align: center; padding: 60px;"><i class="fas fa-spinner fa-spin" style="font-size: 2.5em; color: var(--accent-primary); filter: drop-shadow(0 0 10px rgba(244, 63, 94, 0.4));"></i><br><br><span style="color: var(--text-secondary); font-weight: 500;">Loading your bookings...</span></p>';
 
             try {
-                // Query the actual bookings table from Supabase
-                const { data: bookings, error } = await supabase
-                    .from('bookings')
-                    .select('*')
-                    .eq('email', email)
-                    .order('created_at', { ascending: false });
-
-                if (error) {
-                    throw error;
+                const resp = await fetch('/api/interview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'my-bookings', email, token: bookingManageToken })
+                });
+                const data = await resp.json();
+                if (!resp.ok || !data.success) {
+                    throw new Error(data.error || 'Failed to load bookings');
                 }
 
-                displayBookings(bookings);
+                displayBookings(data.bookings || []);
 
             } catch (error) {
                 container.innerHTML = `
@@ -583,7 +577,7 @@
 
 
                             <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
-                                <button onclick="acceptAdminReschedule('${booking.id}')" class="btn" style="background: linear-gradient(135deg, #22c55e, #16a34a);">
+                                <button onclick="acceptAdminReschedule('${booking.id}', '${booking.email}')" class="btn" style="background: linear-gradient(135deg, #22c55e, #16a34a);">
                                     <i class="fas fa-check"></i> Accept New Time
                                 </button>
                                 <button onclick="toggleCounterProposeForm('${booking.id}')" class="btn btn-secondary">
@@ -665,7 +659,7 @@
                                 <button onclick="toggleRescheduleForm('${booking.id}')" class="btn btn-secondary">
                                     <i class="fas fa-calendar-alt"></i> Reschedule Session
                                 </button>
-                                <button onclick="cancelBooking('${booking.id}')" class="btn btn-secondary" style="border-color: var(--error); color: var(--error);">
+                                <button onclick="cancelBooking('${booking.id}', '${booking.email}')" class="btn btn-secondary" style="border-color: var(--error); color: var(--error);">
                                     <i class="fas fa-times"></i> Cancel Session
                                 </button>
                             </div>
@@ -721,21 +715,24 @@
             }
 
             try {
-                // Update booking in Supabase database - store as reschedule request
-                const { data, error } = await supabase
-                    .from('bookings')
-                    .update({
-                        requested_date: newDate,
-                        requested_time: newTime,
-                        reschedule_reason: reason,
-                        status: 'reschedule_requested'
+                // Update booking via the server-side bookings API.
+                const resp = await fetch('/api/interview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'reschedule-booking',
+                        bookingId,
+                        email,
+                        token: bookingManageToken,
+                        date: newDate,
+                        time: newTime,
+                        reason
                     })
-                    .eq('id', bookingId)
-                    .select();
-
-                if (error) {
-                    console.error('❌ Database update failed:', error);
-                    throw error;
+                });
+                const data = await resp.json();
+                if (!resp.ok || !data.success) {
+                    console.error('❌ Database update failed:', data.error);
+                    throw new Error(data.error || 'Failed to submit reschedule request');
                 }
 
                 console.log('✅ Reschedule request submitted:', data);
@@ -777,42 +774,29 @@ Status: Pending admin approval
         }
 
         // Accept admin's proposed reschedule
-        async function acceptAdminReschedule(bookingId) {
+        async function acceptAdminReschedule(bookingId, bookingEmail) {
             if (!confirm('✓ Accept this new time?\n\nYour session will be updated to the proposed schedule.')) {
                 return;
             }
 
             try {
-                // 1. Fetch booking to get admin's proposed date/time
-                const { data: booking, error: fetchError } = await supabase
-                    .from('bookings')
-                    .select('*')
-                    .eq('id', bookingId)
-                    .single();
-
-                if (fetchError || !booking) {
-                    throw fetchError || new Error('Booking not found');
-                }
-
-                // 2. Update booking with proposed date/time
-                const { error: updateError } = await supabase
-                    .from('bookings')
-                    .update({
-                        booking_date: booking.admin_proposed_date,
-                        booking_time: booking.admin_proposed_time,
-                        status: 'confirmed',
-                        customer_response: 'accepted',
-                        // Clear admin proposal fields
-                        admin_proposed_date: null,
-                        admin_proposed_time: null,
-                        admin_reschedule_reason: null,
-                        admin_reschedule_requested_at: null
+                // 1+2. Accept the admin's proposed schedule via the server-side
+                // bookings API (fetches + updates atomically, returns the booking).
+                const resp = await fetch('/api/interview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'accept-admin-reschedule',
+                        bookingId,
+                        email: bookingEmail,
+                        token: bookingManageToken
                     })
-                    .eq('id', bookingId);
-
-                if (updateError) {
-                    throw updateError;
+                });
+                const data = await resp.json();
+                if (!resp.ok || !data.success) {
+                    throw new Error(data.error || 'Booking not found');
                 }
+                const booking = data.booking;
 
                 // 3. Notify admin through Brevo
                 await sendAdminNotification(
@@ -883,23 +867,22 @@ Status: CONFIRMED
             }
 
             try {
-                // Update booking with customer's counter-proposal
-                const { error: updateError } = await supabase
-                    .from('bookings')
-                    .update({
-                        requested_date: newDate,
-                        requested_time: newTime,
-                        status: 'reschedule_requested',
-                        customer_response: 'counter_proposed',
-                        // Clear admin proposal fields
-                        admin_proposed_date: null,
-                        admin_proposed_time: null,
-                        admin_reschedule_reason: null
+                // Update booking with customer's counter-proposal via the server API
+                const resp = await fetch('/api/interview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'counter-propose',
+                        bookingId,
+                        email,
+                        token: bookingManageToken,
+                        date: newDate,
+                        time: newTime
                     })
-                    .eq('id', bookingId);
-
-                if (updateError) {
-                    throw updateError;
+                });
+                const data = await resp.json();
+                if (!resp.ok || !data.success) {
+                    throw new Error(data.error || 'Failed to submit counter-proposal');
                 }
 
                 await sendAdminNotification(
@@ -928,15 +911,23 @@ Status: Pending admin approval
         }
 
         // Cancel booking with refund calculation
-        async function cancelBooking(bookingId) {
+        async function cancelBooking(bookingId, bookingEmail) {
             // First, get the booking details to calculate refund
-            const { data: booking, error: fetchError } = await supabase
-                .from('bookings')
-                .select('*')
-                .eq('id', bookingId)
-                .single();
+            let booking = null;
+            try {
+                const resp = await fetch('/api/interview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'my-bookings', email: bookingEmail, token: bookingManageToken })
+                });
+                const data = await resp.json();
+                const all = (data && data.success && data.bookings) ? data.bookings : [];
+                booking = all.find(b => String(b.id) === String(bookingId)) || null;
+            } catch (e) {
+                booking = null;
+            }
 
-            if (fetchError || !booking) {
+            if (!booking) {
                 alert('❌ Error fetching booking details. Please try again.');
                 return;
             }
@@ -966,76 +957,31 @@ Do you want to proceed with cancellation?`;
             }
 
             try {
-                // Update booking in Supabase with cancellation details
+                // Update booking with cancellation details via the server API
                 console.log('📤 Updating booking with cancellation...', bookingId);
-                const { data: updateData, error: updateError } = await supabase
-                    .from('bookings')
-                    .update({
-                        status: 'cancellation_requested',
-                        cancellation_requested_at: new Date().toISOString(),
-                        cancellation_reason: 'User requested cancellation',
-                        refund_amount: refundInfo.amount,
-                        refund_percentage: refundInfo.percentage,
-                        refund_status: 'pending'
+                const resp = await fetch('/api/interview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'cancel-booking',
+                        bookingId,
+                        email: booking.email,
+                        token: bookingManageToken,
+                        refundAmount: refundInfo.amount,
+                        refundPercentage: refundInfo.percentage
                     })
-                    .eq('id', bookingId)
-                    .select();
+                });
+                const data = await resp.json();
+                console.log('📤 Update result:', data);
 
-                console.log('📤 Update result:', { updateData, updateError });
-
-                if (updateError) {
-                    console.error('❌ Update error:', updateError);
-                    throw updateError;
+                if (!resp.ok || !data.success) {
+                    console.error('❌ Update error:', data.error);
+                    throw new Error(data.error || 'Cancellation request failed');
                 }
 
-                // Send cancellation notification via Brevo
-                const htmlContent = `
-                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                        <h2 style="color: #ef4444;">❌ Cancellation Request Received</h2>
-                        <hr style="border: 1px solid #e5e7eb; margin: 20px 0;">
-                        <p><strong>Booking ID:</strong> ${bookingId}</p>
-                        <p><strong>Session:</strong> ${booking.service_name}</p>
-                        <p><strong>Original Date:</strong> ${formatDate(booking.booking_date)} at ${booking.booking_time}</p>
-                        <hr style="border: 1px solid #e5e7eb; margin: 20px 0;">
-                        <h3 style="color: #374151;">REFUND DETAILS:</h3>
-                        <p>• <strong>Original Amount:</strong> ₹${booking.service_price}</p>
-                        <p>• <strong>Refund Percentage:</strong> ${refundInfo.percentage}%</p>
-                        <p>• <strong>Refund Amount:</strong> ₹${refundInfo.amount}</p>
-                        <p>• <strong>Policy Applied:</strong> ${refundInfo.policyApplied}</p>
-                        <hr style="border: 1px solid #e5e7eb; margin: 20px 0;">
-                        <p style="color: #6b7280;"><strong>Status:</strong> Pending Admin Approval</p>
-                        <p style="color: #6b7280;"><strong>Processing Time:</strong> 5-7 business days after approval</p>
-                        <p style="margin-top: 20px; color: #6b7280;">You will receive another email once your refund is processed.</p>
-                        <p style="color: #6b7280;">Best regards,<br>${getBrevoSenderName()}</p>
-                    </div>
-                `;
-
-                const textContent = `
-❌ CANCELLATION REQUEST RECEIVED
-━━━━━━━━━━━━━━━━━━━━
-Booking ID: ${bookingId}
-Session: ${booking.service_name}
-Original Date: ${formatDate(booking.booking_date)} at ${booking.booking_time}
-
-REFUND DETAILS:
-• Original Amount: ₹${booking.service_price}
-• Refund Percentage: ${refundInfo.percentage}%
-• Refund Amount: ₹${refundInfo.amount}
-• Policy Applied: ${refundInfo.policyApplied}
-
-Status: Pending Admin Approval
-Processing Time: 5-7 business days after approval
-━━━━━━━━━━━━━━━━━━━━
-                `;
-
-                await sendEmailWithBrevo(
-                    booking.email,
-                    `Cancellation Request Received - Booking ${bookingId}`,
-                    htmlContent,
-                    textContent
-                );
-
-                console.log('📧 Cancellation email sent successfully');
+                // Cancellation confirmation email is sent by the server
+                // (api/interview.js cancel-booking) so it always goes out even
+                // if the browser closes. Show the success message locally.
 
                 // Show success message with refund details
                 alert(`✅ Cancellation Request Submitted!
@@ -1134,6 +1080,24 @@ You will receive an email confirmation once your refund is processed.`);
                 searchBookings();
             }
         });
+
+        // Deep link from the confirmation email: my-bookings.html?email=..&tk=..
+        // Prefill the search box, store the token, and load the bookings right away.
+        (function () {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const linkEmail = params.get('email');
+                const linkToken = params.get('tk');
+                if (linkEmail && linkToken) {
+                    bookingManageToken = linkToken;
+                    const input = document.getElementById('searchEmail');
+                    if (input) input.value = linkEmail;
+                    searchBookings();
+                }
+            } catch (e) {
+                console.error('Failed to apply manage link:', e);
+            }
+        })();
     </script>
     <script src="ui-components.js?v=1" defer></script>
 </body>
