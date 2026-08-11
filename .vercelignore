@@ -30,6 +30,9 @@ emailjs_template.html
 temp_template/
 archive/
 
+# Design scratch example — never deployed.
+_neobrutalism-example.html
+
 # graft's cache contains extracted source INCLUDING the gauntlet reference
 # solutions. It is in .gitignore, but Vercel CLI uses THIS file instead of
 # .gitignore, so without this line a `vercel --prod` from a dev machine would
