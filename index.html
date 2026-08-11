@@ -105,7 +105,7 @@
     <link rel="stylesheet" href="salary-styles.css">
 
 
-    <link rel="stylesheet" href="launchzone.css?v=8">
+    <link rel="stylesheet" href="launchzone.css?v=15">
     <link rel="stylesheet" href="launchzone-pages.css?v=10">
 </head>
 
@@ -256,6 +256,44 @@
             </div>
         </section>
 
+        <section class="about-desksection">
+            <div class="section-container">
+                <div class="about-grid">
+                    <figure class="about-figure reveal-up">
+                        <div class="fig-stack">
+                        <picture class="fig-bg">
+                            <source srcset="assets/images/classroom-lecture.webp" type="image/webp">
+                            <source srcset="assets/images/classroom-lecture.jpg" type="image/jpeg">
+                            <img src="assets/images/classroom-lecture.png" alt="Real quant finance training — instructor-led sessions with live portfolio modeling, interviews, and hands-on practice" loading="lazy">
+                        </picture>
+                        <video class="fig-video" autoplay loop muted playsinline preload="auto" poster="assets/images/classroom-lecture.jpg" aria-hidden="true" tabindex="-1">
+                            <source src="assets/images/classroom-lecture.mp4" type="video/mp4">
+                        </video>
+                        </div>
+                        <figcaption>Real desk training, not just theory</figcaption>
+                    </figure>
+                    <div class="about-body">
+                        <span class="section-label" aria-label="About Desk2Quant" style="color: var(--accent-primary);">About Desk2Quant</span>
+                        <h2>Learn the models that real trading desks use</h2>
+                        <p>
+                            Desk2Quant bridges the gap between textbook quant finance and what you actually need on the desk.
+                            Every resource is built from hands-on experience — pricing, risk, model validation, and the
+                            kind of interview questions that separate confident candidates from the rest.
+                        </p>
+                        <ul class="about-list">
+                            <li>Practitioner-led content covering pricing, risk, XVA, and numerical methods</li>
+                            <li>Python, C++, and real desk workflows — not abstract math without application</li>
+                            <li>Interview prep built from actual front-office and risk quant hiring processes</li>
+                        </ul>
+                        <div class="about-cta">
+                            <a href="#products" class="btn btn-primary">Browse resources <i class="fas fa-arrow-right"></i></a>
+                            <a href="#contact" class="btn btn-secondary">Book 1-on-1 <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section class="home-flow" id="choose-path" aria-labelledby="choose-path-heading">
             <div class="section-container">
                 <div class="flow-heading reveal-up">
@@ -306,6 +344,40 @@
                         <button type="submit" class="btn btn-primary" id="leadCaptureSubmit">Send Me the Sheet <i class="fas fa-arrow-right"></i></button>
                     </form>
                     <p class="lead-capture-note" id="leadCaptureNote">No spam. Unsubscribe anytime.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="learn-band">
+            <div class="section-container">
+                <div class="learn-band-grid">
+                    <div class="learn-band-copy">
+                        <span class="section-label" aria-label="Learn. Practice. Master." style="color: var(--lz-warning);">Learn. Practice. Master.</span>
+                        <h2>From models to mastery — your quant desk starts here</h2>
+                        <p>
+                            Whether you&#8217;re preparing for a quant interview, moving from theory to production,
+                            or deepening your risk and pricing skills, Desk2Quant gives you the practitioner&#8217;s
+                            edge — with real code, real case studies, and real interview pressure.
+                        </p>
+                        <div class="learn-value-tags">
+                            <span class="tag">Pricing &amp; Risk</span>
+                            <span class="tag">Python &amp; C++</span>
+                            <span class="tag">Interview Prep</span>
+                            <span class="tag">Numerical Methods</span>
+                            <span class="tag">Stochastic Calculus</span>
+                            <span class="tag">Trading Systems</span>
+                        </div>
+                        <a href="#products" class="btn btn-primary" style="box-shadow: 4px 4px 0 rgba(255,255,255,0.25) !important;">Explore resources <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    <figure class="learn-band-figure reveal-up">
+                        <div class="fig-stack">
+                        <picture class="fig-bg">
+                            <source srcset="assets/images/study-collab.webp" type="image/webp">
+                            <source srcset="assets/images/study-collab.jpg" type="image/jpeg">
+                            <img src="assets/images/study-collab.png" alt="Collaborative quant study — practitioners learning pricing, risk modeling, Python, C++, and interview preparation together" loading="lazy">
+                        </picture>
+                        </div>
+                    </figure>
                 </div>
             </div>
         </section>
@@ -1236,6 +1308,43 @@
     </div>
     <script src="ui-components.js?v=1" defer></script>
     <script src="advisor-widget.js?v=1" defer></script>
+    <script>
+        // Hero figure video: plays the AI-animated MP4 (Viggle/Runway export) when
+        // available; falls back to the Ken Burns still if the file is missing.
+        // Autoplay is retried when the figure scrolls into view, because Chromium
+        // power-saving pauses offscreen videos and would otherwise deadlock the
+        // hidden-until-playing swap.
+        (function () {
+            var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            document.querySelectorAll('.fig-video').forEach(function (video) {
+                var source = video.querySelector('source');
+                if (reduceMotion || !source || !source.getAttribute('src')) return;
+                video.addEventListener('error', function () {
+                    video.classList.remove('is-live');
+                }, true);
+                video.addEventListener('playing', function () {
+                    video.classList.add('is-live');
+                });
+                function attemptPlay() {
+                    var p = video.play();
+                    if (p && p.catch) p.catch(function () {});
+                }
+                if ('IntersectionObserver' in window) {
+                    var io = new IntersectionObserver(function (entries) {
+                        entries.forEach(function (entry) {
+                            if (entry.isIntersecting) {
+                                attemptPlay();
+                                io.disconnect();
+                            }
+                        });
+                    }, { rootMargin: '200px' });
+                    io.observe(video);
+                } else {
+                    attemptPlay();
+                }
+            });
+        })();
+    </script>
 </body>
 
 </html>

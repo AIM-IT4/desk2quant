@@ -4,7 +4,8 @@
   "description": "QuantMentor Portfolio Website",
   "main": "script.js",
   "scripts": {
-    "build": "node generate-config.js"
+    "build": "node generate-config.js",
+    "dev": "node scripts/dev-server.js"
   },
   "keywords": [],
   "author": "Amit Kumar Jha",
