@@ -1300,3 +1300,45 @@ body.d2q-launchzone:has(#siteNav) .hero-lede {
 body.d2q-launchzone:has(#siteNav) .hero-facts {
     color: var(--lz-ink-soft);
 }
+/* Landing color fixes: rubric card, audience list, check list */
+body.d2q-launchzone #landingView .rubric-card {
+    color: var(--lz-ink);
+    background: var(--lz-white);
+}
+
+body.d2q-launchzone #landingView .rubric-header strong {
+    color: var(--lz-signal);
+}
+
+body.d2q-launchzone #landingView .rubric-row {
+    border-bottom: 1px solid var(--lz-line);
+}
+
+body.d2q-launchzone #landingView .rubric-row > span {
+    color: var(--lz-muted);
+}
+
+body.d2q-launchzone #landingView .rubric-row > div {
+    background: var(--lz-line);
+}
+
+body.d2q-launchzone #landingView .rubric-callout {
+    color: var(--lz-signal);
+}
+
+body.d2q-launchzone #landingView .audience-list {
+    border-top: 1px solid var(--lz-line);
+}
+
+body.d2q-launchzone #landingView .audience-list article {
+    border-bottom: 1px solid var(--lz-line);
+}
+
+body.d2q-launchzone #landingView .audience-list article > span {
+    color: var(--lz-signal);
+}
+
+body.d2q-launchzone #landingView .check-list li::before {
+    color: var(--lz-paper);
+    background: var(--lz-ink);
+}
