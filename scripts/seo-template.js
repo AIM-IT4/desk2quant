@@ -106,7 +106,7 @@ function renderPage(p, slug, related, reviews) {
 <meta name="description" content="${esc(desc)}">
 <link rel="canonical" href="${esc(url)}">
 <meta name="robots" content="index,follow,max-image-preview:large">
-<link rel="icon" type="image/png" href="/assets/images/desk2quant-logo.png?v=3">
+<link rel="icon" type="image/svg+xml" href="/assets/images/desk2quant-favicon.svg">
 <meta property="og:type" content="product">
 <meta property="og:site_name" content="Desk2Quant">
 <meta property="og:url" content="${esc(url)}">

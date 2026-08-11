@@ -170,7 +170,7 @@ async function main() {
 <meta name="description" content="Browse all ${products.length} Desk2Quant resources: derivatives pricing, XVA, model validation, numerical methods, interview preparation and more.">
 <link rel="canonical" href="${SITE}/products/">
 <meta name="robots" content="index,follow">
-<link rel="icon" type="image/png" href="/assets/images/desk2quant-logo.png?v=3">
+<link rel="icon" type="image/svg+xml" href="/assets/images/desk2quant-favicon.svg">
 <meta property="og:type" content="website">
 <meta property="og:url" content="${SITE}/products/">
 <meta property="og:title" content="All Quant Finance Resources | Desk2Quant">
