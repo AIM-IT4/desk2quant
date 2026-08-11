@@ -1184,6 +1184,7 @@ body.d2q-launchzone .lead-capture-form input {
 }
 
 body.d2q-launchzone .lead-capture-form .btn {
+    flex-shrink: 0;
     color: var(--lz-ink) !important;
     background: var(--lz-warning) !important;
     border-color: var(--lz-ink) !important;
