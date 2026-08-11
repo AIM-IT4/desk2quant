@@ -129,7 +129,7 @@ ${jsonLd.map(data => `<script type="application/ld+json">${safeJson(data)}</scri
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/styles.css">
 <link rel="stylesheet" href="/launchzone.css?v=8">
-<link rel="stylesheet" href="/launchzone-pages.css?v=10">
+<link rel="stylesheet" href="/launchzone-pages.css?v=11">
 <link rel="stylesheet" href="/seo-guide.css?v=2">
 </head>`;
 }

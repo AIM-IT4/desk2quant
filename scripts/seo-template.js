@@ -122,7 +122,7 @@ function renderPage(p, slug, related, reviews) {
 <script type="application/ld+json">${safeJson(faq)}</script>
 <link rel="stylesheet" href="/styles.css">
 <link rel="stylesheet" href="/launchzone.css?v=8">
-<link rel="stylesheet" href="/launchzone-pages.css?v=10">
+<link rel="stylesheet" href="/launchzone-pages.css?v=11">
 <link rel="stylesheet" href="/seo-product.css?v=3">
 </head>
 <body class="d2q-launchzone">

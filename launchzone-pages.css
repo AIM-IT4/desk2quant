@@ -440,9 +440,9 @@ body.d2q-launchzone .mode-card,
 body.d2q-launchzone .case-card,
 body.d2q-launchzone .method-card,
 body.d2q-launchzone .rubric-card {
-    border: 2px solid var(--lz-line-strong) !important;
+    border: 2px solid var(--lz-ink) !important;
     border-radius: 0 !important;
-    box-shadow: none !important;
+    box-shadow: var(--lz-shadow-sm) !important;
 }
 
 body.d2q-launchzone .section-kicker,
@@ -867,7 +867,7 @@ body.d2q-launchzone .mode-card {
 body.d2q-launchzone .mode-card-core {
     color: var(--lz-ink);
     background: var(--lz-white);
-    border-color: var(--lz-line-strong) !important;
+    border-color: var(--lz-ink) !important;
     box-shadow: var(--lz-shadow) !important;
 }
 
@@ -886,21 +886,22 @@ body.d2q-launchzone .mode-card-core .mode-list {
 }
 
 body.d2q-launchzone .mode-card-interview {
-    color: var(--lz-white);
+    color: var(--lz-ink);
+    background: var(--lz-white);
     border-color: var(--lz-ink) !important;
     box-shadow: var(--lz-shadow) !important;
 }
 
 body.d2q-launchzone .mode-card-interview h3 {
-    color: var(--lz-white) !important;
+    color: var(--lz-ink) !important;
 }
 
 body.d2q-launchzone .mode-card-interview p {
-    color: #c4d2d5;
+    color: var(--lz-muted);
 }
 
 body.d2q-launchzone .mode-card-interview .mode-list {
-    color: #eef7f7;
+    color: var(--lz-ink-soft);
 }
 
 body.d2q-launchzone .mode-card-core .button {
@@ -992,4 +993,289 @@ body.d2q-launchzone:has(#siteNav) .hero .eyebrow {
     font-weight: 500;
     letter-spacing: 0.09em;
     text-transform: uppercase;
+}
+/* ============================================================
+   Desk Simulator: neobrutalist LANDING adaptation.
+   The marketing surface (#landingView, site-nav, site-footer)
+   matches the launchzone home language; the workspace stays dark.
+   ============================================================ */
+body.d2q-launchzone .site-nav {
+    background: var(--lz-paper);
+    border-bottom: 2px solid var(--lz-ink);
+    box-shadow: none;
+    backdrop-filter: none;
+}
+
+body.d2q-launchzone .site-nav .brand,
+body.d2q-launchzone .site-nav .nav-links a {
+    color: var(--lz-ink);
+}
+
+body.d2q-launchzone .site-nav .brand img {
+    content: url("assets/images/desk2quant-mark.svg?v=1");
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+body.d2q-launchzone .site-nav .nav-cta,
+body.d2q-launchzone .site-nav .nav-links .button,
+body.d2q-launchzone .site-nav .button {
+    color: var(--lz-ink) !important;
+    background: var(--lz-warning) !important;
+    border: 2px solid var(--lz-ink);
+    border-radius: 0;
+    box-shadow: var(--lz-shadow-sm);
+}
+
+/* Landing shell */
+body.d2q-launchzone #landingView {
+    background: var(--lz-paper);
+    color: var(--lz-ink);
+    font-family: var(--lz-font-sans);
+}
+
+body.d2q-launchzone #landingView h1,
+body.d2q-launchzone #landingView h2,
+body.d2q-launchzone #landingView h3 {
+    color: var(--lz-ink);
+    font-family: var(--lz-font-display);
+    letter-spacing: -0.02em;
+}
+
+/* Hero: cream with ink type */
+body.d2q-launchzone .hero {
+    background: var(--lz-paper);
+    min-height: 0;
+}
+
+body.d2q-launchzone .hero .hero-glow {
+    display: none;
+}
+
+body.d2q-launchzone .hero .eyebrow {
+    padding: 6px 12px;
+    color: var(--lz-ink);
+    background: var(--lz-warning);
+    border: 2px solid var(--lz-ink);
+    box-shadow: var(--lz-shadow-sm);
+    font-family: var(--lz-font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+body.d2q-launchzone .hero .hero-lede {
+    color: var(--lz-ink-soft);
+}
+
+body.d2q-launchzone .hero .live-pill {
+    color: var(--lz-ink);
+    background: var(--lz-white);
+    border: 2px solid var(--lz-ink);
+    border-radius: 0;
+    box-shadow: var(--lz-shadow-sm);
+    font-family: var(--lz-font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+/* Landing buttons: hard frames, yellow primary */
+body.d2q-launchzone #landingView .button {
+    min-height: 46px;
+    padding: 12px 20px;
+    border: 2px solid var(--lz-ink);
+    border-radius: 0;
+    box-shadow: var(--lz-shadow-sm);
+    font-family: var(--lz-font-mono);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease, color 150ms ease;
+}
+
+body.d2q-launchzone #landingView .button:hover {
+    transform: translate(-2px, -3px);
+    box-shadow: var(--lz-shadow);
+}
+
+body.d2q-launchzone #landingView .button-primary {
+    color: var(--lz-ink);
+    background: var(--lz-warning);
+    box-shadow: var(--lz-shadow-sm);
+}
+
+body.d2q-launchzone #landingView .button-primary:hover {
+    color: var(--lz-paper);
+    background: var(--lz-ink);
+}
+
+body.d2q-launchzone #landingView .button-light {
+    color: var(--lz-ink);
+    background: var(--lz-white);
+}
+
+body.d2q-launchzone #landingView .button-light:hover {
+    color: var(--lz-paper);
+    background: var(--lz-ink);
+}
+
+body.d2q-launchzone #landingView .button-ghost {
+    color: var(--lz-ink);
+    background: transparent;
+}
+
+body.d2q-launchzone #landingView .button-ghost:hover {
+    color: var(--lz-paper);
+    background: var(--lz-ink);
+}
+
+body.d2q-launchzone #landingView .button-ghost-dark {
+    color: var(--lz-paper);
+    background: var(--lz-ink);
+}
+
+body.d2q-launchzone #landingView .button-ghost-dark:hover {
+    color: var(--lz-ink);
+    background: var(--lz-paper);
+}
+
+/* Light sections: unify to cream + mono kickers */
+body.d2q-launchzone #landingView .mode-section,
+body.d2q-launchzone #landingView .case-section,
+body.d2q-launchzone #landingView .score-section,
+body.d2q-launchzone #landingView .audience-section,
+body.d2q-launchzone #landingView .faq-section {
+    color: var(--lz-ink);
+    background: var(--lz-paper);
+}
+
+body.d2q-launchzone #landingView .section-kicker {
+    color: var(--lz-ink);
+    font-family: var(--lz-font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+body.d2q-launchzone #landingView .section-heading-note {
+    color: var(--lz-muted);
+}
+
+/* Cards: white, 2px ink border, hard shadow */
+body.d2q-launchzone #landingView .mode-card,
+body.d2q-launchzone #landingView .case-card,
+body.d2q-launchzone #landingView .score-card,
+body.d2q-launchzone #landingView .audience-card,
+body.d2q-launchzone #landingView .product-hunt-review {
+    background: var(--lz-white);
+    border: 2px solid var(--lz-ink);
+    border-radius: 0;
+    box-shadow: var(--lz-shadow-sm);
+    transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+body.d2q-launchzone #landingView .mode-card:hover,
+body.d2q-launchzone #landingView .case-card:hover {
+    transform: translate(-2px, -3px);
+    box-shadow: var(--lz-shadow);
+}
+
+body.d2q-launchzone #landingView .mode-card-top .mode-tag,
+body.d2q-launchzone #landingView .case-card .case-tag,
+body.d2q-launchzone #landingView .mode-tag {
+    color: var(--lz-ink);
+    background: var(--lz-warning);
+    border: 2px solid var(--lz-ink);
+    border-radius: 0;
+    font-family: var(--lz-font-mono);
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+/* FAQ: white framed cards */
+body.d2q-launchzone #landingView .faq-list details {
+    margin-bottom: 14px;
+    background: var(--lz-white);
+    border: 2px solid var(--lz-ink);
+    box-shadow: var(--lz-shadow-sm);
+}
+
+body.d2q-launchzone #landingView .faq-list details:last-child {
+    border: 2px solid var(--lz-ink);
+}
+
+body.d2q-launchzone #landingView .faq-list summary {
+    color: var(--lz-ink);
+}
+
+body.d2q-launchzone #landingView .faq-list details p {
+    color: var(--lz-muted);
+}
+
+/* Final CTA: yellow band with an ink button */
+body.d2q-launchzone #landingView .final-cta {
+    color: var(--lz-ink);
+    background: var(--lz-warning);
+    border-top: 2px solid var(--lz-ink);
+    border-bottom: 2px solid var(--lz-ink);
+}
+
+body.d2q-launchzone #landingView .final-cta .button {
+    color: var(--lz-paper);
+    background: var(--lz-ink);
+}
+
+body.d2q-launchzone #landingView .final-cta .button:hover {
+    color: var(--lz-ink);
+    background: var(--lz-paper);
+}
+
+/* Footer: ink, matching the home footer */
+body.d2q-launchzone .site-footer {
+    color: var(--lz-muted);
+    background: var(--lz-ink);
+    border-top: 2px solid var(--lz-ink);
+}
+
+body.d2q-launchzone .site-footer a,
+body.d2q-launchzone .site-footer .footer-brand,
+body.d2q-launchzone .site-footer .brand {
+    color: var(--lz-paper);
+}
+
+/* Method section stays dark (on-brand ink band), but frame its cards */
+body.d2q-launchzone #landingView .method-section {
+    color: var(--lz-paper);
+}
+
+body.d2q-launchzone #landingView .method-section .section-kicker {
+    color: var(--lz-warning);
+}
+
+body.d2q-launchzone #landingView .method-card,
+body.d2q-launchzone #landingView .method-step {
+    background: rgba(255, 255, 255, 0.06);
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-radius: 0;
+}
+/* Beat the earlier :has(#siteNav) transparent-hero rule (same specificity, later wins). */
+body.d2q-launchzone:has(#siteNav) .hero {
+    background: var(--lz-paper);
+    border-bottom: none;
+}
+
+body.d2q-launchzone:has(#siteNav) .hero-lede {
+    color: var(--lz-ink-soft);
+}
+
+body.d2q-launchzone:has(#siteNav) .hero-facts {
+    color: var(--lz-ink-soft);
 }
