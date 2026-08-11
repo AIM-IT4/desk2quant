@@ -1834,7 +1834,7 @@ function buildProductCatalogJsonLd(products) {
                 name: product.name,
                 description: description,
                 url: url,
-                image: product.cover_image_url || 'https://desk2quant.com/assets/images/desk2quant-logo.png?v=3',
+                image: product.cover_image_url || 'https://desk2quant.com/assets/images/desk2quant-mark.svg?v=1',
                 offers: {
                     '@type': 'Offer',
                     price: String(product.price),
@@ -4156,7 +4156,7 @@ const BLOG_INDEX_SEO = Object.freeze({
     title: 'Blog & Articles | Desk2Quant',
     description: 'Read expert articles on quant finance, algorithms, market microstructure, career advice, and technical interview preparation from Desk2Quant.',
     url: 'https://desk2quant.com/blog.html',
-    image: 'https://desk2quant.com/assets/images/desk2quant-logo.png'
+    image: 'https://desk2quant.com/assets/images/desk2quant-mark.svg?v=1'
 });
 
 function setBlogMetaContent(id, content) {

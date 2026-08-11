@@ -379,7 +379,7 @@ window.MathJax = {
       '@type': 'Organization',
       '@id': `${SITE}/#organization`,
       name: 'Desk2Quant',
-      logo: { '@type': 'ImageObject', url: `${SITE}/assets/images/desk2quant-logo.png?v=3` }
+      logo: { '@type': 'ImageObject', url: `${SITE}/assets/images/desk2quant-mark.svg?v=1` }
     },
     inLanguage: 'en'
   };

@@ -12,7 +12,7 @@ function renderPage(p, slug, related, reviews) {
   const title = `${p.name} | Desk2Quant`;
   const desc = clamp(p.description, 158) ||
     'Practitioner-built quantitative finance resource from Desk2Quant.';
-  const img = p.cover_image_url || `${SITE}/assets/images/desk2quant-logo.png`;
+  const img = p.cover_image_url || `${SITE}/assets/images/desk2quant-mark.svg?v=1`;
   const price = Number(p.price) || 0;
 
   const jsonLd = {

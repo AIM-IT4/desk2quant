@@ -152,7 +152,7 @@ function renderGuide(guide) {
       '@type': 'Organization',
       name: 'Desk2Quant',
       url: `${SITE}/`,
-      logo: { '@type': 'ImageObject', url: `${SITE}/assets/images/desk2quant-logo.png?v=3` }
+      logo: { '@type': 'ImageObject', url: `${SITE}/assets/images/desk2quant-mark.svg?v=1` }
     },
     mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
     isPartOf: { '@type': 'WebSite', name: 'Desk2Quant', url: `${SITE}/` }
