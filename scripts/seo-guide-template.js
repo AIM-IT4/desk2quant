@@ -128,7 +128,9 @@ ${jsonLd.map(data => `<script type="application/ld+json">${safeJson(data)}</scri
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/styles.css">
-<link rel="stylesheet" href="/seo-guide.css?v=1">
+<link rel="stylesheet" href="/launchzone.css?v=8">
+<link rel="stylesheet" href="/launchzone-pages.css?v=10">
+<link rel="stylesheet" href="/seo-guide.css?v=2">
 </head>`;
 }
 
@@ -181,7 +183,7 @@ function renderGuide(guide) {
   return `<!DOCTYPE html>
 <html lang="en">
 ${renderHead({ title: guide.metaTitle, description: guide.description, canonical, jsonLd: [articleLd, breadcrumbLd, faqLd], articleType: guide.schemaType })}
-<body class="guide-page">
+<body class="guide-page d2q-launchzone">
 ${renderHeader()}
 <main id="guide-content" class="guide-main">
   <nav class="guide-crumbs" aria-label="Breadcrumb">
@@ -319,7 +321,7 @@ function renderGuidesIndex() {
   return `<!DOCTYPE html>
 <html lang="en">
 ${renderHead({ title: 'Quant Finance Interview & Technical Guides | Desk2Quant', description, canonical, type: 'website', jsonLd: [collectionLd, breadcrumbLd] })}
-<body class="guide-page guide-index-page">
+<body class="guide-page guide-index-page d2q-launchzone">
 ${renderHeader()}
 <main id="guide-content" class="guide-main">
   <nav class="guide-crumbs" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span aria-current="page">Guides</span></nav>
