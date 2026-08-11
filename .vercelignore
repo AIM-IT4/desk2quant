@@ -18,6 +18,17 @@ _couponfix_backup/
 
 # Tests are not needed at runtime.
 test/
+index-test.html
+product-test.html
+test-payment.html
+
+# Email previews, archived senders, and temporary design exports are source
+# artifacts, not public web pages. Leaving them in the static output creates
+# thin/duplicate URLs that search crawlers can discover.
+email-templates/
+emailjs_template.html
+temp_template/
+archive/
 
 # graft's cache contains extracted source INCLUDING the gauntlet reference
 # solutions. It is in .gitignore, but Vercel CLI uses THIS file instead of

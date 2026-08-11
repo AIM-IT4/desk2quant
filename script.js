@@ -23,6 +23,38 @@
 })();
 
 // ================================
+// CANONICAL PRODUCT URLS
+// ================================
+// The storefront remains interactive on product.html?id=..., but search and
+// share signals point at the server-rendered /products/<slug>.html page. The
+// shared helper is loaded on catalog/product pages and is also consumed by the
+// build-time generator, preventing the browser and generated pages drifting.
+function getProductSeoPath(product) {
+    const helper = window.Desk2QuantProductSeo;
+    if (helper) return helper.getProductPath(product);
+
+    const fallbackSlug = String(product?.name || 'product')
+        .toLowerCase()
+        .replace(/&/g, ' and ')
+        .replace(/\+/g, ' plus ')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 70)
+        .replace(/-+$/g, '') || 'product';
+    return `/products/${fallbackSlug}.html`;
+}
+
+function getProductSeoUrl(product) {
+    const helper = window.Desk2QuantProductSeo;
+    return helper
+        ? helper.getProductUrl(product)
+        : `https://desk2quant.com${getProductSeoPath(product)}`;
+}
+
+window.getProductSeoPath = getProductSeoPath;
+window.getProductSeoUrl = getProductSeoUrl;
+
+// ================================
 // DEBUG LOGGING
 // ================================
 // Production consoles were carrying ~90 emoji-tagged progress lines
@@ -1670,10 +1702,16 @@ function formatPrice(priceObj) {
 }
 
 function getBlogHref(blog) {
-    const identifier = blog.slug
-        ? `slug=${encodeURIComponent(blog.slug)}`
-        : `id=${encodeURIComponent(blog.id)}`;
-    return `blog.html?${identifier}`;
+    if (blog.slug) {
+        const slug = String(blog.slug)
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .slice(0, 90)
+            .replace(/-+$/g, '');
+        if (slug) return `/blog/${slug}.html`;
+    }
+    return `blog.html?id=${encodeURIComponent(blog.id)}`;
 }
 
 function copyBlogCardLink(button, blogHref) {
@@ -1780,7 +1818,7 @@ function buildProductCatalogJsonLd(products) {
         const rawDesc = stripMarkdown((product.description || '').replace(/<[^>]*>?/gm, ''));
         const description = truncateText(rawDesc, 200) ||
             'Premium digital resource for quantitative finance professionals from Desk2Quant.';
-        const url = `https://desk2quant.com/product.html?id=${product.id}`;
+        const url = getProductSeoUrl(product);
 
         return {
             '@type': 'ListItem',
@@ -2094,8 +2132,10 @@ async function displaySupabaseProducts(products) {
             const btnText = isFree ? 'Download' : 'Buy Now';
 
             const visual = getProductCardVisual(product.name);
-            const productHref = `${window.location.pathname.includes('-test') ? 'product-test.html' : 'product.html'}?id=${encodeURIComponent(product.id)}`;
-            productCard.dataset.detailHref = productHref;
+            const isTestCatalog = window.location.pathname.includes('-test');
+            const checkoutHref = `${isTestCatalog ? 'product-test.html' : 'product.html'}?id=${encodeURIComponent(product.id)}`;
+            const productSeoHref = isTestCatalog ? checkoutHref : getProductSeoPath(product);
+            productCard.dataset.detailHref = checkoutHref;
 
             // Handle sanitized description
             const rawDesc = product.description || '';
@@ -2142,7 +2182,7 @@ async function displaySupabaseProducts(products) {
                     <span class="reference-cover-label">${visual.label}</span>
                 </div>
                 <div class="product-content">
-                    <h3 class="product-title"><a class="card-detail-link" href="${productHref}">${product.name}</a> <button class="share-btn" type="button" onclick="event.preventDefault();copyProductLink('${product.id}')" title="Copy share link" aria-label="Copy share link for ${product.name}" style="background:none;border:none;color:var(--d2q-muted);cursor:pointer;font-size:0.75em;margin-left:6px;transition:color 0.2s;vertical-align:middle;"><i class="fas fa-share-alt"></i></button></h3>
+                    <h3 class="product-title"><a class="card-detail-link" href="${productSeoHref}">${product.name}</a> <button class="share-btn" type="button" onclick="event.preventDefault();copyProductLink('${product.id}')" title="Copy share link" aria-label="Copy share link for ${product.name}" style="background:none;border:none;color:var(--d2q-muted);cursor:pointer;font-size:0.75em;margin-left:6px;transition:color 0.2s;vertical-align:middle;"><i class="fas fa-share-alt"></i></button></h3>
                     <div class="product-description">${truncateText(stripMarkdown(displayDesc.replace(/<[^>]*>?/gm, '')), 250)}</div>
                     <div class="product-footer">
                         <div class="product-card-price-row">
@@ -4518,7 +4558,14 @@ window.copyProductLink = function (id) {
     const safeId = String(id).trim(); // Ensure it is a clean string
     qmLog('🔗 copyProductLink called with ID:', safeId);
 
-    const shareUrl = `${window.location.origin}/product.html?id=${safeId}`;
+    const catalog = [
+        ...(Array.isArray(window.allProducts) ? window.allProducts : []),
+        ...(Array.isArray(window.allPaidProducts) ? window.allPaidProducts : [])
+    ];
+    const product = catalog.find(item => String(item?.id) === safeId);
+    const shareUrl = product
+        ? getProductSeoUrl(product)
+        : `https://desk2quant.com/product.html?id=${encodeURIComponent(safeId)}`;
     qmLog('🔗 Generated Share URL:', shareUrl);
 
     if (navigator.clipboard && navigator.clipboard.writeText) {

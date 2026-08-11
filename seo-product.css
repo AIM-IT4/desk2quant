@@ -24,6 +24,49 @@
 }
 .seo-price { font-size: 1.05rem; opacity: 0.85; margin: 0 0 24px; }
 .seo-doc img { max-width: 100%; height: auto; border-radius: 10px; }
+.seo-article-body { overflow-wrap: anywhere; }
+.seo-article-body h3 { font-size: 1.1rem; margin: 30px 0 10px; }
+.seo-article-body h4,
+.seo-article-body h5,
+.seo-article-body h6 { margin: 24px 0 8px; }
+.seo-article-body table {
+    display: block;
+    width: 100%;
+    margin: 24px 0;
+    overflow-x: auto;
+    border-collapse: collapse;
+}
+.seo-article-body th,
+.seo-article-body td {
+    padding: 10px 12px;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    text-align: left;
+    vertical-align: top;
+}
+.seo-article-body pre {
+    margin: 24px 0;
+    padding: 16px;
+    overflow-x: auto;
+    border-radius: 10px;
+    background: #0f172a;
+    color: #e2e8f0;
+    line-height: 1.55;
+}
+.seo-article-body :not(pre) > code,
+.seo-article-body kbd,
+.seo-article-body samp {
+    padding: 0.12em 0.32em;
+    border-radius: 4px;
+    background: rgba(148, 163, 184, 0.16);
+}
+.seo-article-body blockquote {
+    margin: 24px 0;
+    padding-left: 18px;
+    border-left: 3px solid #2563eb;
+    opacity: 0.9;
+}
+.seo-article-body figure { margin: 24px 0; }
+.seo-article-body figcaption { margin-top: 8px; font-size: 0.9rem; opacity: 0.75; }
 .seo-cta-row { margin: 28px 0; }
 .seo-cta {
     display: inline-block;

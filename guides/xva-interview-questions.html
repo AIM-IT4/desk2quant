@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>/* Canonical host guard; permanent redirects are configured at the edge. */!function(){try{var p=location.protocol,h=location.hostname.toLowerCase(),local=['localhost','127.0.0.1','0.0.0.0','::1','[::1]'].indexOf(h)>-1;if(/^https?:$/.test(p)&&!local&&h!=='desk2quant.com')location.replace('https://desk2quant.com'+location.pathname+location.search+location.hash)}catch(e){}}();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XVA Interview Questions: CVA, FVA &amp; MVA | Desk2Quant</title>
+<meta name="description" content="Prepare for XVA interview questions covering exposure simulation, CVA, DVA, FVA, MVA, netting, collateral, wrong-way risk, sensitivities, and controls.">
+<meta name="author" content="Desk2Quant Editorial Team">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<link rel="canonical" href="https://desk2quant.com/guides/xva-interview-questions.html">
+<link rel="icon" type="image/png" href="/assets/images/desk2quant-logo.png?v=3">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Desk2Quant">
+<meta property="og:url" content="https://desk2quant.com/guides/xva-interview-questions.html">
+<meta property="og:title" content="XVA Interview Questions: CVA, FVA &amp; MVA | Desk2Quant">
+<meta property="og:description" content="Prepare for XVA interview questions covering exposure simulation, CVA, DVA, FVA, MVA, netting, collateral, wrong-way risk, sensitivities, and controls.">
+<meta property="og:image" content="https://desk2quant.com/assets/images/desk2quant-editorial-og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="article:published_time" content="2026-08-11">
+<meta property="article:modified_time" content="2026-08-11">
+<meta property="article:section" content="Quantitative Finance Education">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="https://desk2quant.com/guides/xva-interview-questions.html">
+<meta name="twitter:title" content="XVA Interview Questions: CVA, FVA &amp; MVA | Desk2Quant">
+<meta name="twitter:description" content="Prepare for XVA interview questions covering exposure simulation, CVA, DVA, FVA, MVA, netting, collateral, wrong-way risk, sensitivities, and controls.">
+<meta name="twitter:image" content="https://desk2quant.com/assets/images/desk2quant-editorial-og.jpg">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"XVA Interview Questions: Exposure, Credit, Funding, and Margin","name":"XVA Interview Questions: Exposure, Credit, Funding, and Margin","description":"Prepare for XVA interview questions covering exposure simulation, CVA, DVA, FVA, MVA, netting, collateral, wrong-way risk, sensitivities, and controls.","image":{"@type":"ImageObject","url":"https://desk2quant.com/assets/images/desk2quant-editorial-og.jpg","width":1200,"height":630},"datePublished":"2026-08-11","dateModified":"2026-08-11","inLanguage":"en","isAccessibleForFree":true,"proficiencyLevel":"Intermediate","keywords":"XVA interview questions, CVA interview, counterparty credit risk interview, FVA MVA","author":{"@type":"Organization","name":"Desk2Quant Editorial Team","url":"https://desk2quant.com/"},"publisher":{"@type":"Organization","name":"Desk2Quant","url":"https://desk2quant.com/","logo":{"@type":"ImageObject","url":"https://desk2quant.com/assets/images/desk2quant-logo.png?v=3"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://desk2quant.com/guides/xva-interview-questions.html"},"isPartOf":{"@type":"WebSite","name":"Desk2Quant","url":"https://desk2quant.com/"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://desk2quant.com/"},{"@type":"ListItem","position":2,"name":"Quant Finance Guides","item":"https://desk2quant.com/guides/"},{"@type":"ListItem","position":3,"name":"XVA Interview Questions: Exposure, Credit, Funding, and Margin","item":"https://desk2quant.com/guides/xva-interview-questions.html"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What topics appear in an XVA interview?","acceptedAnswer":{"@type":"Answer","text":"Expect future exposure simulation, CVA, DVA, FVA, MVA, KVA, netting, collateral, default curves, recovery, wrong-way risk, sensitivities, numerical methods, controls, and trade lifecycle questions."}},{"@type":"Question","name":"What is the simplest way to explain CVA?","acceptedAnswer":{"@type":"Answer","text":"CVA is the present value of expected loss from counterparty default. It combines future positive exposure, probability of default, loss given default, discounting, and any dependence between exposure and credit quality."}},{"@type":"Question","name":"Why is XVA computationally expensive?","acceptedAnswer":{"@type":"Answer","text":"Many trades must be valued across many future dates and correlated scenarios, then aggregated under agreement rules and integrated with credit, funding, margin, or capital quantities. Sensitivities multiply that workload."}},{"@type":"Question","name":"Do XVA interviews require coding?","acceptedAnswer":{"@type":"Answer","text":"Often yes. Python, C++, SQL, numerical methods, simulation, data handling, and performance can all appear, especially for implementation, analytics, or model validation roles."}}]}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/seo-guide.css?v=1">
+</head>
+<body class="guide-page">
+<a class="guide-skip-link" href="#guide-content">Skip to guide content</a>
+<header class="guide-site-header">
+  <div class="guide-site-header__inner">
+    <a class="guide-brand" href="/" aria-label="Desk2Quant home">
+      <img src="/assets/images/desk2quant-logo.png?v=3" width="36" height="36" alt="">
+      <span>Desk2Quant</span>
+    </a>
+    <nav class="guide-site-nav" aria-label="Primary navigation">
+      <a href="/guides/">Guides</a>
+      <a href="/products/">Resources</a>
+      <a href="/desk-simulator.html">Desk Simulator</a>
+      <a class="guide-site-nav__cta" href="/interview.html">AI Interview</a>
+    </nav>
+  </div>
+</header>
+<main id="guide-content" class="guide-main">
+  <nav class="guide-crumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a><span aria-hidden="true">/</span><a href="/guides/">Guides</a><span aria-hidden="true">/</span><span aria-current="page">XVA Interview Questions: Exposure, Credit, Funding, and Margin</span>
+  </nav>
+  <article>
+    <header class="guide-hero">
+      <p class="guide-eyebrow">Counterparty credit and valuation adjustments</p>
+      <h1>XVA Interview Questions: Exposure, Credit, Funding, and Margin</h1>
+      <p class="guide-dek">Prepare for XVA interview questions covering exposure simulation, CVA, DVA, FVA, MVA, netting, collateral, wrong-way risk, sensitivities, and controls.</p>
+      <div class="guide-meta"><span>Desk2Quant Editorial Team</span><span>15 minute read</span><time datetime="2026-08-11">Updated August 11, 2026</time></div>
+    </header>
+
+    <div class="guide-layout">
+      <aside class="guide-toc" aria-label="On this page">
+        <p class="guide-toc__title">On this page</p>
+        <ol><li><a href="#exposure">Build the future exposure picture first</a></li>
+<li><a href="#adjustments">Distinguish the major valuation adjustments</a></li>
+<li><a href="#netting-collateral">Treat legal agreement terms as model inputs</a></li>
+<li><a href="#wwr-dependencies">Explain wrong-way risk and dependencies</a></li>
+<li><a href="#implementation-controls">Discuss implementation, sensitivities, and controls</a></li>
+          <li><a href="#interview-drills">Interview drills</a></li>
+          <li><a href="#study-plan">Study plan</a></li>
+          <li><a href="#frequent-mistakes">Frequent mistakes</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ol>
+      </aside>
+
+      <div class="guide-article-body">
+        <div class="guide-intro">
+          <p>XVA interviews test whether you can connect pricing, exposure, counterparty credit, funding, collateral, and simulation. Memorizing an integral for CVA is not enough. You need to explain what is simulated, where netting enters, how default and exposure interact, and which assumptions drive the number.</p>
+          <p>Use a layered answer: trade and agreement mechanics, future exposure, probability and discounting, adjustment definition, numerical implementation, sensitivities, and controls. That structure remains useful as the interviewer changes products or asks about production.</p>
+        </div>
+
+        <aside class="guide-answer-box" aria-label="Quick answer">
+          <p class="guide-answer-box__label">Quick answer</p>
+          <p>Start with future portfolio value under the netting and collateral agreement. Convert positive or negative exposure into default, funding, capital, or margin costs under a consistent pricing framework. Then explain simulation, dependencies, sensitivities, validation, and limitations.</p>
+        </aside>
+
+        <section class="guide-outcomes" aria-labelledby="outcomes-title">
+          <h2 id="outcomes-title">What this guide helps you do</h2>
+          <ul class="guide-check-list">
+  <li>Explain the exposure engine that sits beneath XVA metrics.</li>
+  <li>Distinguish CVA, DVA, FVA, MVA, KVA, and collateral effects.</li>
+  <li>Describe netting, collateral, closeout, and wrong-way risk clearly.</li>
+  <li>Discuss numerical architecture, hedging, and model controls.</li>
+</ul>
+        </section>
+
+        <section class="guide-section" id="exposure">
+    <h2>1. Build the future exposure picture first</h2>
+    <p>Future exposure is a distribution of portfolio values across future dates and market scenarios, after applying the relevant netting and collateral terms. Positive exposure represents potential loss if the counterparty defaults and does not pay; negative exposure is relevant to the institution&#39;s own default and funding view.</p>
+    <p>Expected exposure is a mean profile, potential future exposure is a quantile profile, and expected positive exposure summarizes positive values over time under a defined weighting. Always state measure, netting set, collateral assumptions, time grid, and treatment of exercise or path dependence.</p>
+    <ul class="guide-bullet-list">
+  <li>Simulate correlated market factors on a future time grid.</li>
+  <li>Revalue or approximate every trade in the netting set at each state.</li>
+  <li>Apply collateral calls, thresholds, minimum transfer amounts, lag, and margin period of risk.</li>
+  <li>Aggregate positive and negative exposure consistently with closeout terms.</li>
+</ul>
+
+
+  </section>
+
+        <section class="guide-section" id="adjustments">
+    <h2>2. Distinguish the major valuation adjustments</h2>
+    <p>CVA reflects the expected discounted loss from counterparty default, typically combining positive exposure, loss given default, and default probability. DVA is the symmetric own-default component under the selected valuation framework. FVA relates to funding costs and benefits, while MVA focuses on the cost of funding initial margin. KVA represents the cost of capital, and ColVA captures collateral remuneration effects in some decompositions.</p>
+    <p>Definitions and allocation conventions differ across institutions. Say which framework you are using, avoid double counting, and explain interactions rather than presenting every adjustment as an independent add-on.</p>
+
+    <div class="guide-table-wrap" tabindex="0" role="region" aria-label="XVA components at interview depth">
+    <table class="guide-table">
+      <caption>XVA components at interview depth</caption>
+      <thead><tr><th scope="col">Adjustment</th><th scope="col">Primary driver</th><th scope="col">Key question</th></tr></thead>
+      <tbody><tr><td>CVA</td><td>Positive exposure, counterparty default, recovery</td><td>How are exposure and default dependence modeled?</td></tr>
+<tr><td>DVA</td><td>Negative exposure and own default</td><td>How is own credit represented and interpreted?</td></tr>
+<tr><td>FVA</td><td>Funding requirement and funding spread</td><td>What is funded, and how is double counting avoided?</td></tr>
+<tr><td>MVA</td><td>Initial-margin profile and funding cost</td><td>How is future initial margin estimated efficiently?</td></tr>
+<tr><td>KVA</td><td>Capital profile and target return</td><td>Which capital measure and allocation are used?</td></tr></tbody>
+    </table>
+  </div>
+
+  </section>
+
+        <section class="guide-section" id="netting-collateral">
+    <h2>3. Treat legal agreement terms as model inputs</h2>
+    <p>Netting can reduce exposure because positive and negative trade values offset within an enforceable netting set. Collateral adds path-dependent operational rules: thresholds, independent amounts, call frequency, eligible assets, haircuts, disputes, settlement lag, and closeout period.</p>
+    <p>A trade-level CVA calculation that ignores the agreement can materially misstate risk. Explain how trades map to counterparties and agreements, how legal enforceability is represented, and what happens when agreement data is missing or inconsistent.</p>
+
+
+    <aside class="guide-callout"><h3>Why collateral does not make exposure zero</h3><p>Thresholds, transfer amounts, call frequency, settlement lag, disputes, market moves during closeout, and collateral value changes leave residual exposure even for collateralized portfolios.</p></aside>
+  </section>
+
+        <section class="guide-section" id="wwr-dependencies">
+    <h2>4. Explain wrong-way risk and dependencies</h2>
+    <p>Wrong-way risk occurs when exposure tends to increase as counterparty credit quality deteriorates. General wrong-way risk comes from broad economic dependence; specific wrong-way risk comes from a direct structural link, such as exposure to an asset closely tied to the counterparty.</p>
+    <p>A deterministic exposure profile multiplied by marginal default probabilities misses this dependence. Possible treatments include stressed parameters, copulas, joint factor-credit models, scenario overlays, or conservative add-ons. The choice depends on data, materiality, and use.</p>
+
+
+
+  </section>
+
+        <section class="guide-section" id="implementation-controls">
+    <h2>5. Discuss implementation, sensitivities, and controls</h2>
+    <p>Full revaluation across many paths, dates, and trades is expensive. Production engines use regression, proxies, grids, adjoints, path reuse, netting-level aggregation, and distributed computation. Every approximation needs convergence, benchmark, stability, and reconciliation evidence.</p>
+    <p>XVA sensitivities support hedging and explain PnL, but may be noisy because market dynamics, credit curves, collateral, and simulation interact. Common controls include trade population reconciliation, curve and agreement-data checks, independent benchmarks, path and time-grid convergence, sensitivity bump tests, and unexplained-PnL thresholds.</p>
+    <ul class="guide-bullet-list">
+  <li>Separate market simulation, trade valuation, aggregation, and adjustment integration for testing.</li>
+  <li>Version trades, agreements, curves, model configuration, and random seeds.</li>
+  <li>Benchmark simplified portfolios with deterministic or analytical expectations.</li>
+  <li>Monitor coverage, runtime fallbacks, approximation error, and reconciliation breaks.</li>
+</ul>
+
+
+  </section>
+
+        <section class="guide-section" id="interview-drills">
+          <p class="guide-section-kicker">Practise aloud</p>
+          <h2>Interview drills with answer direction</h2>
+          <div class="guide-drills">
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 1</p>
+              <h3>What is CVA?</h3>
+              <p><strong>Answer direction:</strong> CVA is the adjustment for expected discounted counterparty default loss, driven by future positive exposure, default likelihood, recovery, discounting, and their dependence under the chosen framework.</p>
+            </article>
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 2</p>
+              <h3>What is the difference between CVA and PFE?</h3>
+              <p><strong>Answer direction:</strong> CVA is a valuation adjustment integrating expected default loss over time. PFE is a high quantile of the future exposure distribution at a date or horizon and is a risk measure, not a price adjustment.</p>
+            </article>
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 3</p>
+              <h3>How does netting affect CVA?</h3>
+              <p><strong>Answer direction:</strong> Values offset within an enforceable netting set before positive exposure is taken. Because the positive-part operation is nonlinear, netting-set CVA is not generally the sum of standalone trade CVAs.</p>
+            </article>
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 4</p>
+              <h3>What is wrong-way risk?</h3>
+              <p><strong>Answer direction:</strong> It is adverse dependence between exposure and counterparty credit quality, so exposure is high when default is more likely. Explain whether the dependence is general or counterparty-specific and how it is modeled or controlled.</p>
+            </article>
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 5</p>
+              <h3>How would you validate an XVA engine?</h3>
+              <p><strong>Answer direction:</strong> Review theory and agreement mapping; test market simulation, valuation, collateral, default curves, aggregation, and integration separately; benchmark simple portfolios; run path and grid convergence; reconcile populations and sensitivities; assess limitations.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="guide-section" id="study-plan">
+          <p class="guide-section-kicker">Turn reading into practice</p>
+          <h2>A focused study plan</h2>
+          <ol class="guide-plan">
+            <li><span>Layer 1</span><div><h3>Trades and agreements</h3><p>Review cash flows, optionality, netting sets, CSAs, collateral mechanics, and closeout.</p></div></li>
+            <li><span>Layer 2</span><div><h3>Exposure</h3><p>Build future value distributions and distinguish EE, EPE, PFE, and negative exposure.</p></div></li>
+            <li><span>Layer 3</span><div><h3>Adjustments</h3><p>Derive the drivers and interactions of CVA, DVA, FVA, MVA, KVA, and ColVA.</p></div></li>
+            <li><span>Layer 4</span><div><h3>Production</h3><p>Practise simulation architecture, approximations, sensitivities, validation, and controls.</p></div></li>
+          </ol>
+        </section>
+
+        <section class="guide-section" id="frequent-mistakes">
+          <p class="guide-section-kicker">Self-review</p>
+          <h2>Frequent mistakes to catch early</h2>
+          <ul class="guide-warning-list">
+  <li>Defining CVA without the netting, collateral, recovery, and dependence assumptions.</li>
+  <li>Confusing expected exposure with a PFE quantile.</li>
+  <li>Treating agreement terms as operational detail rather than exposure inputs.</li>
+  <li>Adding XVA components without checking interactions and double counting.</li>
+</ul>
+        </section>
+
+        <section class="guide-resources" aria-labelledby="resources-title">
+          <p class="guide-section-kicker">Continue with structured practice</p>
+          <h2 id="resources-title">Relevant Desk2Quant resources</h2>
+          <div class="guide-resource-grid">
+            <article><h3><a href="/products/xva-calculus-lab.html">XVA Calculus Lab: Counterparty Credit Risk</a></h3><p>Work through CVA, DVA, FVA, MVA, KVA, ColVA, sensitivities, and counterparty-risk calculations.</p><a class="guide-text-link" href="/products/xva-calculus-lab.html">Explore this resource <span aria-hidden="true">&rarr;</span></a></article>
+            <article><h3><a href="/products/trade-lifecycle-for-quants-from-booking-to-pnl-risk-xva-and-model-vali.html">Trade Lifecycle for Quants</a></h3><p>Understand where XVA enters booking, valuation, PnL, collateral, risk, and validation workflows.</p><a class="guide-text-link" href="/products/trade-lifecycle-for-quants-from-booking-to-pnl-risk-xva-and-model-vali.html">Explore this resource <span aria-hidden="true">&rarr;</span></a></article>
+            <article><h3><a href="/products/credit-models-quant-interview-playbook.html">Credit Models: Quant Interview Playbook</a></h3><p>Deepen default modeling, recovery, credit curves, migration, and wrong-way-risk intuition.</p><a class="guide-text-link" href="/products/credit-models-quant-interview-playbook.html">Explore this resource <span aria-hidden="true">&rarr;</span></a></article>
+            <article><h3><a href="/products/greeks-vols-ycurves-numerical-meth-mc-and-xva-guide.html">Greeks, Vols, Yield Curves, Numerical Methods, Monte Carlo &amp; XVA Guide</a></h3><p>Connect XVA sensitivities to volatility, curves, Monte Carlo, and daily desk diagnostics.</p><a class="guide-text-link" href="/products/greeks-vols-ycurves-numerical-meth-mc-and-xva-guide.html">Explore this resource <span aria-hidden="true">&rarr;</span></a></article>
+          </div>
+        </section>
+
+        <section class="guide-section" aria-labelledby="related-title">
+          <p class="guide-section-kicker">Keep building</p>
+          <h2 id="related-title">Related quant finance guides</h2>
+          <div class="guide-related-grid">
+            <a href="/guides/risk-quant-interview.html"><span>Market and enterprise risk</span><strong>Risk Quant Interview Guide: Models, Controls, and Decisions</strong><small>Prepare for market and risk quant interviews: VaR, expected shortfall, stress testing, backtesting, products, data, model risk, and communication.</small></a>
+            <a href="/guides/model-validation-interview.html"><span>Independent model challenge</span><strong>Model Validation Quant Interview: A Practical Preparation Guide</strong><small>Prepare for model validation quant interviews: conceptual soundness, data, implementation testing, benchmarking, outcomes analysis, findings, and governance.</small></a>
+            <a href="/guides/stochastic-calculus-interview.html"><span>Pricing mathematics</span><strong>Stochastic Calculus for Quant Interviews: Concepts to Explain Clearly</strong><small>Prepare stochastic calculus for quant interviews: Brownian motion, Ito calculus, SDEs, martingales, risk-neutral pricing, PDE links, and practical questions.</small></a>
+          </div>
+        </section>
+
+        <section class="guide-section guide-faq" id="faq">
+          <p class="guide-section-kicker">Common questions</p>
+          <h2>Frequently asked questions</h2>
+          <details><summary>What topics appear in an XVA interview?</summary><p>Expect future exposure simulation, CVA, DVA, FVA, MVA, KVA, netting, collateral, default curves, recovery, wrong-way risk, sensitivities, numerical methods, controls, and trade lifecycle questions.</p></details>
+          <details><summary>What is the simplest way to explain CVA?</summary><p>CVA is the present value of expected loss from counterparty default. It combines future positive exposure, probability of default, loss given default, discounting, and any dependence between exposure and credit quality.</p></details>
+          <details><summary>Why is XVA computationally expensive?</summary><p>Many trades must be valued across many future dates and correlated scenarios, then aggregated under agreement rules and integrated with credit, funding, margin, or capital quantities. Sensitivities multiply that workload.</p></details>
+          <details><summary>Do XVA interviews require coding?</summary><p>Often yes. Python, C++, SQL, numerical methods, simulation, data handling, and performance can all appear, especially for implementation, analytics, or model validation roles.</p></details>
+        </section>
+
+        <aside class="guide-next-step">
+          <div><p class="guide-section-kicker">Practise under pressure</p><h2>Turn the framework into a live answer</h2><p>Use the free AI interview practice tool, then review your assumptions, structure, checks, and conclusion.</p></div>
+          <a href="/interview.html">Start an AI interview</a>
+        </aside>
+      </div>
+    </div>
+  </article>
+</main>
+<footer class="guide-footer">
+  <div class="guide-footer__inner">
+    <div>
+      <a class="guide-brand guide-brand--footer" href="/">Desk2Quant</a>
+      <p>Practitioner-built preparation for quantitative finance interviews and desk work.</p>
+    </div>
+    <nav aria-label="Footer navigation">
+      <a href="/guides/">All guides</a>
+      <a href="/products/">All resources</a>
+      <a href="/faq.html">FAQ</a>
+      <a href="/privacy.html">Privacy</a>
+      <a href="/terms.html">Terms</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

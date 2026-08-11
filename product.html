@@ -8,6 +8,7 @@
     <title id="p-meta-title">Product Details | Desk2Quant</title>
     <meta id="p-meta-description" name="description"
         content="View detailed product information, pricing, and features for Desk2Quant premium quant finance resources and study materials.">
+    <meta name="robots" content="noindex,follow">
     <link id="p-meta-canonical" rel="canonical" href="https://desk2quant.com/product.html">
     <link rel="icon" type="image/png" href="assets/images/desk2quant-logo.png?v=3">
     <link rel="apple-touch-icon" href="assets/images/desk2quant-logo.png?v=3">
@@ -649,7 +650,8 @@
             document.head.appendChild(script);
         })();
     </script>
-    <script src="script.js?v=15"></script>
+    <script src="product-seo.js?v=1"></script>
+    <script src="script.js?v=16"></script>
 
     <!-- Navigation -->
     <nav class="navbar">
@@ -867,8 +869,18 @@
             return maxLen && text.length > maxLen ? text.slice(0, maxLen - 1).trim() + '…' : text;
         }
 
-        function updateProductSEO(product, id) {
-            const pageUrl = `https://desk2quant.com/product.html?id=${id}`;
+        function updateProductSEO(product) {
+            const productSeo = window.Desk2QuantProductSeo;
+            const pageUrl = productSeo
+                ? productSeo.getProductUrl(product)
+                : `https://desk2quant.com/products/${String(product.name || 'product')
+                    .toLowerCase()
+                    .replace(/&/g, ' and ')
+                    .replace(/\+/g, ' plus ')
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-+|-+$/g, '')
+                    .slice(0, 70)
+                    .replace(/-+$/g, '') || 'product'}.html`;
             const title = `${product.name} | Desk2Quant`;
             const description = plainTextFromHtml(product.description, 160) ||
                 'Premium digital resource for quantitative finance professionals from Desk2Quant.';
@@ -902,13 +914,6 @@
                     availability: 'https://schema.org/InStock'
                 }
             };
-            if (product.average_rating) {
-                jsonLd.aggregateRating = {
-                    '@type': 'AggregateRating',
-                    ratingValue: product.average_rating,
-                    reviewCount: product.sales_count && product.sales_count > 0 ? product.sales_count : 1
-                };
-            }
             document.getElementById('p-product-jsonld').textContent = JSON.stringify(jsonLd);
         }
 
@@ -929,7 +934,7 @@
                 }
 
                 // SEO: set per-product title/description/canonical/OG/Twitter/JSON-LD
-                updateProductSEO(product, id);
+                updateProductSEO(product);
 
                 // Make this product available to the shared cart module (addToCart
                 // looks it up by id from window.allProducts / window.allPaidProducts).

@@ -1,0 +1,62 @@
+name: Weekly SEO health and Google visibility
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: weekly-seo-check
+  cancel-in-progress: true
+
+jobs:
+  seo:
+    name: Technical health and Search Console report
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run local SEO regression tests
+        id: local_seo
+        run: npm run test:seo
+
+      - name: Test Search Console report calculations
+        id: gsc_self_test
+        if: always()
+        run: npm run test:search-console
+
+      - name: Run live production SEO smoke check
+        id: technical_seo
+        if: always()
+        run: npm run check:seo
+
+      - name: Generate Google Search Console visibility report
+        id: search_console
+        if: always()
+        env:
+          GSC_SERVICE_ACCOUNT_JSON: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
+          GSC_SITE_URL: ${{ vars.GSC_SITE_URL || 'sc-domain:desk2quant.com' }}
+          LOCAL_SEO_STATUS: ${{ steps.local_seo.outcome }}
+          GSC_SELF_TEST_STATUS: ${{ steps.gsc_self_test.outcome }}
+          TECHNICAL_SEO_STATUS: ${{ steps.technical_seo.outcome }}
+        run: npm run check:search-console
+
+      - name: Upload Search Console report
+        if: ${{ always() && steps.search_console.outputs.report_generated == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: desk2quant-search-console-${{ github.run_number }}
+          path: ${{ steps.search_console.outputs.report_path }}
+          if-no-files-found: error
+          retention-days: 90

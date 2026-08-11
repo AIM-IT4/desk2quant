@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>/* CANONICAL-HOST-GUARD v1 */!function(){try{var h=location.hostname.toLowerCase(),d=/^(localhost|127.0.0.1|0.0.0.0|[::1])$/.test(h);if(!d&&h!=='desk2quant.com')location.replace('https://desk2quant.com'+location.pathname+location.search+location.hash)}catch(e){}}();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your First 90 Days as a Quant: What Nobody Tells You | Desk2Quant</title>
+<meta name="description" content="The theory got you through the interview. Here is what actually happens in months one to three on a real desk — tracing numbers nobody documented, learning…">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://desk2quant.com/blog/first-90-days-as-a-quant-what-nobody-tells-you.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Desk2Quant">
+<meta property="og:url" content="https://desk2quant.com/blog/first-90-days-as-a-quant-what-nobody-tells-you.html">
+<meta property="og:title" content="Your First 90 Days as a Quant: What Nobody Tells You | Desk2Quant">
+<meta property="og:description" content="The theory got you through the interview. Here is what actually happens in months one to three on a real desk — tracing numbers nobody documented, learning…">
+<meta property="og:image" content="https://desk2quant.vercel.app/assets/images/blog-first-90-days-cover.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Your First 90 Days as a Quant: What Nobody Tells You | Desk2Quant">
+<meta name="twitter:description" content="The theory got you through the interview. Here is what actually happens in months one to three on a real desk — tracing numbers nobody documented, learning…">
+<meta name="twitter:image" content="https://desk2quant.vercel.app/assets/images/blog-first-90-days-cover.svg">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Your First 90 Days as a Quant: What Nobody Tells You","description":"The theory got you through the interview. Here is what actually happens in months one to three on a real desk — tracing numbers nobody documented, learning…","image":["https://desk2quant.vercel.app/assets/images/blog-first-90-days-cover.svg"],"url":"https://desk2quant.com/blog/first-90-days-as-a-quant-what-nobody-tells-you.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://desk2quant.com/blog/first-90-days-as-a-quant-what-nobody-tells-you.html"},"author":{"@type":"Person","name":"Amit Kumar Jha"},"publisher":{"@type":"Organization","@id":"https://desk2quant.com/#organization","name":"Desk2Quant","logo":{"@type":"ImageObject","url":"https://desk2quant.com/assets/images/desk2quant-logo.png?v=3"}},"inLanguage":"en","datePublished":"2026-08-02T07:11:55.104186+00:00","dateModified":"2026-08-02T07:11:55.104186+00:00"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://desk2quant.com/"},{"@type":"ListItem","position":2,"name":"Articles","item":"https://desk2quant.com/blog.html"},{"@type":"ListItem","position":3,"name":"Your First 90 Days as a Quant: What Nobody Tells You","item":"https://desk2quant.com/blog/first-90-days-as-a-quant-what-nobody-tells-you.html"}]}</script>
+<link rel="icon" type="image/png" href="/assets/images/desk2quant-logo.png?v=3">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/seo-product.css?v=1">
+
+</head>
+<body>
+<main class="seo-doc">
+  <nav class="seo-crumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a> <span>/</span>
+    <a href="/blog.html">Articles</a> <span>/</span>
+    <span aria-current="page">Your First 90 Days as a Quant: What Nobody Tells You</span>
+  </nav>
+  <article>
+    <p class="seo-kicker">Quant finance article &middot; 2 August 2026</p>
+    <h1>Your First 90 Days as a Quant: What Nobody Tells You</h1>
+    <p><img src="https://desk2quant.vercel.app/assets/images/blog-first-90-days-cover.svg" alt="Your First 90 Days as a Quant: What Nobody Tells You" width="840" fetchpriority="high"></p>
+    <div class="seo-article-body">
+      <p>Nobody warns you about the first morning. You have spent years on stochastic calculus, you can derive Black–Scholes from three different starting points, and you have solved more brainteasers than you care to count. Then you sit down at a real desk, someone hands you a laptop, and the first thing you are asked to do is figure out why a number in yesterday&#39;s report is off by 4,000 rupees.</p>
+
+      <p>This is the gap nobody prepares you for. Not the gap between undergraduate and graduate mathematics — the gap between <em>knowing a model</em> and <em>supporting one</em>. What follows is an honest account of what the first ninety days actually look like, and what separates the juniors who become indispensable from the ones who stay stuck.</p>
+
+      <h2>Days 1–30: You are not there to be clever</h2>
+
+      <p>The single most common mistake a new quant makes is arriving ready to improve things. You have read the literature. You can see that the desk&#39;s volatility interpolation is crude, that the calibration could use a better optimiser, that half the codebase would be cleaner in a different paradigm. You are probably right about all of it. Say none of it yet.</p>
+
+      <p>In month one your actual job is to become fluent in a system nobody has documented. Where does the end-of-day price file come from? Which of the four spreadsheets called <code>risk_final_v2</code> is the real one? Why does the overnight batch fail every third Tuesday? None of this is intellectually difficult. All of it is essential, and none of it is written down.</p>
+
+      <p>The juniors who do well in month one behave like investigators. They trace one number end to end — from the trade booking, through the pricing library, into the risk report — and they ask about every hop. The juniors who struggle spend month one waiting to be given a well-specified problem. That problem is not coming.</p>
+
+      <h3>What to actually do</h3>
+
+      <ul>
+        <li><strong>Pick one product and follow it all the way through.</strong> One vanilla swap, booked to settled. You will learn more from this than from any course.</li>
+        <li><strong>Write down what you learn.</strong> The tribal knowledge you are absorbing is not in any manual. Your notes will become the onboarding document for the next hire, and that is visible, valued work.</li>
+        <li><strong>Ask questions in batches.</strong> Interrupting a trader six times before lunch is how you become invisible in a bad way. Collect five questions, ask them in one go.</li>
+        <li><strong>Learn the vocabulary before the mathematics.</strong> When someone says the basis has blown out, or a trade has gone stale, you need to react without translating in your head first.</li>
+      </ul>
+
+      <h2>Days 30–60: The PnL will teach you everything</h2>
+
+      <p>Somewhere in month two you will be handed the daily PnL explain. It looks like a chore. It is actually the best education available on a trading floor, and it is where your models stop being abstractions.</p>
+
+      <p>Here is the idea. The desk made or lost some amount of money yesterday. Your risk model says it <em>should</em> have made or lost a different amount, based on the Greeks and the market moves. The difference is unexplained PnL, and your job is to make it small.</p>
+
+      <p>To first order, the day&#39;s PnL decomposes roughly as delta times the spot move, plus half gamma times the spot move squared, plus vega times the change in implied volatility, plus theta for the day that passed. Write that out, plug in yesterday&#39;s numbers, and compare to what the books actually show.</p>
+
+      <p>The residual is where the education lives. A persistent unexplained gap means one of several things, and learning to tell them apart quickly is a genuine professional skill:</p>
+
+      <ul>
+        <li><strong>A missing risk factor.</strong> You hedged delta and vega but the position is quietly short correlation, and nobody was watching it.</li>
+        <li><strong>Stale or wrong market data.</strong> The vol surface did not update for one tenor. This is far more common than anyone admits.</li>
+        <li><strong>Higher-order effects you ignored.</strong> Big spot move, and now the cross-derivatives you dropped from the approximation actually matter.</li>
+        <li><strong>A genuine booking error.</strong> Someone fat-fingered a notional. You will find these, and finding them early makes you popular.</li>
+      </ul>
+
+      <p>Notice what is happening here. You are not being asked to build a better model. You are being asked to explain why the existing model disagrees with reality — which, it turns out, is what quantitative finance mostly is.</p>
+
+      <div>
+        <p>Learn PnL explain properly</p>
+        <p>Most candidates have never seen a real PnL attribution before their first day. <a href="/products/pnl-attribution-and-desk-diagnostics-for-quants.html">PnL Attribution &amp; Desk Diagnostics for Quants</a> walks through the decomposition, the common residual causes, and how desks actually investigate a break — the exact workflow described above.</p>
+        <a href="/products/pnl-attribution-and-desk-diagnostics-for-quants.html">View the pack — ₹499</a>
+      </div>
+
+      <h2>Days 60–90: Learning to defend a number</h2>
+
+      <p>By month three you will produce something someone else relies on. A revised curve, a recalibrated surface, a change to how a product is marked. And then a trader, a risk manager, or a model validator will challenge it.</p>
+
+      <p>This is the moment that defines your first year. Not whether your number is right — often it is — but whether you can defend it under pressure without either collapsing or digging in.</p>
+
+      <p>A good defence has a specific shape, and it is worth rehearsing before you need it:</p>
+
+      <ul>
+        <li><strong>State what the model assumes.</strong> Every model is wrong somewhere. Knowing precisely where yours breaks is strength, not weakness.</li>
+        <li><strong>Show the sensitivity.</strong> &quot;If that input is off by ten percent, the number moves by this much&quot; is a far better answer than insisting the input is correct.</li>
+        <li><strong>Separate the modelling choice from the bug.</strong> &quot;That is a deliberate approximation, here is why&quot; and &quot;that is an error, I will fix it&quot; are different sentences. Confusing them destroys trust.</li>
+        <li><strong>Concede quickly when you are wrong.</strong> The fastest way to build credibility on a desk is to be visibly willing to be corrected.</li>
+      </ul>
+
+      <p>Model validators are not your adversaries, though it can feel that way in month three. Their job is to find the conditions under which your model fails. If you have already found those conditions and documented them, the conversation becomes collaborative instead of defensive.</p>
+
+      <h2>What nobody tells you</h2>
+
+      <p>Three things surprise almost every new quant.</p>
+
+      <p><strong>The mathematics is easier than expected; the plumbing is harder.</strong> You will spend more time on data quality, reconciliation, and why two systems disagree than on stochastic calculus. This is not a failure of the job. It is the job.</p>
+
+      <p><strong>Communication compounds faster than technical skill.</strong> The quant who explains a complex result in two clear sentences gets pulled into more interesting work than the quant with deeper theory and murky explanations. Every time.</p>
+
+      <p><strong>Nobody is checking your work as carefully as you assume.</strong> This is unsettling at first and then clarifying. Your own discipline — sanity checks, reconciliation, questioning a number that looks too clean — is the real control.</p>
+
+      <h2>The honest summary</h2>
+
+      <p>The first ninety days are not about proving you are the smartest person on the floor. They are about becoming someone whose numbers can be trusted, who finds problems before they escalate, and who can explain a model to someone who will not read the appendix.</p>
+
+      <p>The theory got you through the interview. What keeps you on the desk is judgement — and judgement is built by tracing numbers, explaining breaks, and defending your reasoning until it becomes instinct.</p>
+
+      <div>
+        <p>Prepare for the desk, not just the interview</p>
+        <p>Desk2Quant resources are written by a practising quantitative risk modeller and focus on how models are used, challenged, and defended in production.</p>
+        <ul>
+          <li><a href="/products/trade-lifecycle-for-quants-from-booking-to-pnl-risk-xva-and-model-vali.html">Trade Lifecycle for Quants</a> — follow a trade from booking to settlement, exactly as described in month one.</li>
+          <li><a href="/products/pnl-attribution-and-desk-diagnostics-for-quants.html">PnL Attribution &amp; Desk Diagnostics</a> — the month-two skill, taught properly.</li>
+          <li><a href="/products/quantitative-finance-for-absolute-beginners-from-desk-to-quant.html">Quantitative Finance for Absolute Beginners</a> — if you are still targeting your first role.</li>
+        </ul>
+        <a href="/products/">Browse all resources</a>
+      </div>
+
+      <p><em>Written from experience in quantitative risk modelling at a global investment bank. Views are personal and educational, and do not represent any employer.</em></p>
+    </div>
+    <hr>
+    <p>Continue with the <a href="/guides/">quant interview guides</a> or browse the
+      <a href="/products/">Desk2Quant resource catalog</a>.</p>
+  </article>
+</main>
+</body>
+</html>

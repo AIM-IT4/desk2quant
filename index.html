@@ -17,43 +17,33 @@
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "ProfessionalService",
-      "name": "Desk2Quant",
-      "image": "https://desk2quant.com/assets/images/desk2quant-logo.png?v=3",
-      "@id": "https://desk2quant.com/",
-      "url": "https://desk2quant.com/",
-      "telephone": "",
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "",
-        "addressLocality": "London",
-        "addressRegion": "",
-        "postalCode": "",
-        "addressCountry": "UK"
-      },
-      "geo": {
-        "@type": "GeoCoordinates",
-        "latitude": 51.5074,
-        "longitude": -0.1278
-      },
-      "openingHoursSpecification": {
-        "@type": "OpeningHoursSpecification",
-        "dayOfWeek": [
-          "Monday",
-          "Tuesday",
-          "Wednesday",
-          "Thursday",
-          "Friday"
-        ],
-        "opens": "09:00",
-        "closes": "18:00"
-      },
-      "sameAs": [
-        "https://www.linkedin.com/in/akjha002/",
-        "https://github.com/AIM-IT4",
-        "https://x.com/Akjha2023"
-      ],
-      "priceRange": "$$"
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://desk2quant.com/#organization",
+          "name": "Desk2Quant",
+          "url": "https://desk2quant.com/",
+          "email": "hello@desk2quant.com",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://desk2quant.com/assets/images/desk2quant-logo.png?v=3"
+          },
+          "sameAs": [
+            "https://www.linkedin.com/in/akjha002/",
+            "https://github.com/AIM-IT4",
+            "https://x.com/Akjha2023"
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://desk2quant.com/#website",
+          "url": "https://desk2quant.com/",
+          "name": "Desk2Quant",
+          "description": "Quant finance interview preparation, mentorship and desk-ready training resources.",
+          "publisher": { "@id": "https://desk2quant.com/#organization" },
+          "inLanguage": "en"
+        }
+      ]
     }
     </script>
 
@@ -80,12 +70,12 @@
     <meta property="og:image:height" content="630">
 
     <!-- Twitter Card Meta Tags -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://desk2quant.com/">
-    <meta property="twitter:title" content="Desk2Quant | Expert Quant Mentorship">
-    <meta property="twitter:description"
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://desk2quant.com/">
+    <meta name="twitter:title" content="Desk2Quant | Expert Quant Mentorship">
+    <meta name="twitter:description"
         content="1-on-1 mentorship, free desk simulation and AI interview practice, plus digital products for desk-ready quant learning.">
-    <meta property="twitter:image"
+    <meta name="twitter:image"
         content="https://desk2quant.com/assets/images/desk2quant-editorial-og.jpg">
 
     <!-- Google Fonts -->
@@ -138,6 +128,7 @@
             <ul class="nav-links">
                 <li><a href="#services">Sessions</a></li>
                 <li><a href="#products">Products</a></li>
+                <li><a href="/guides/">Guides</a></li>
                 <li><a href="#testimonials">Reviews</a></li>
                 <li class="nav-dropdown">
                     <button type="button" class="nav-dropdown-toggle" aria-haspopup="true" aria-expanded="false">Tools <i class="fas fa-chevron-down" aria-hidden="true"></i></button>
@@ -178,10 +169,11 @@
                         Practitioner-built quant training
                     </div>
                     <h1 class="hero-headline" id="heroHeadline"
-                        aria-label="Learn the models. Think like the desk.">
-                        Learn the models. <span class="gradient-text">Think like the desk.</span>
+                        aria-label="Quant Finance Interview Preparation and Desk-Ready Training">
+                        Quant Finance Interview Preparation <span class="gradient-text">&amp; Desk-Ready Training</span>
                     </h1>
                     <p class="subheadline hero-subcopy">
+                        <strong>Learn the models. Think like the desk.</strong><br>
                         Book direct 1-on-1 mentorship for a focused plan, or try free Desk Simulator practice
                         before your next quant interview.
                     </p>
@@ -415,6 +407,10 @@
                     </div>
                 </div>
 
+                <p class="seo-catalog-link">
+                    <a href="/products/">Browse the complete quant finance product catalog</a>
+                </p>
+
                 <!-- Machine-readable product data for bots, crawlers, and LLMs -->
                 <!-- PRODUCT DATA API: All products are available as JSON at https://desk2quant.com/api/products -->
                 <noscript>
@@ -456,7 +452,7 @@
                             <li>R for Risk Quants – Desk-Ready Notes + Runnable Templates - ₹599</li>
                         </ul>
                         <p>Free Resources: Quant Formula Sheet, Resources Map</p>
-                        <p>Visit <a href="https://desk2quant.com/#products">Desk2Quant.in</a> to browse and
+                        <p>Visit <a href="https://desk2quant.com/#products">Desk2Quant.com</a> to browse and
                             purchase.</p>
                     </div>
                 </noscript>
@@ -980,6 +976,7 @@
                         <h4>Resources</h4>
                         <ul>
                             <li><a href="desk-simulator.html">Desk Simulator (Free Beta)</a></li>
+                            <li><a href="/guides/">Quant Interview Guides</a></li>
                             <li><a href="resources.html">Free Resources</a></li>
                             <li><a href="salary-explorer.html">Salary Explorer (Beta)</a></li>
                             <li><a href="faq.html">FAQs</a></li>
@@ -1155,7 +1152,8 @@
     <script src="salary-seed.js" defer></script>
     <script src="salary-explorer.js" defer></script>
     <script src="site-config.js"></script>
-    <script src="script.js?v=15" defer></script>
+    <script src="product-seo.js?v=1"></script>
+    <script src="script.js?v=16" defer></script>
     <script>document.addEventListener('DOMContentLoaded', function(){ if(typeof renderSalaryWidget==='function') setTimeout(renderSalaryWidget, 800); });</script>
 
     <!-- Scroll to Top Button -->
