@@ -1171,13 +1171,34 @@ body.d2q-launchzone #landingView .section-heading-note {
 body.d2q-launchzone #landingView .mode-card,
 body.d2q-launchzone #landingView .case-card,
 body.d2q-launchzone #landingView .score-card,
-body.d2q-launchzone #landingView .audience-card,
-body.d2q-launchzone #landingView .product-hunt-review {
+body.d2q-launchzone #landingView .audience-card {
     background: var(--lz-white);
     border: 2px solid var(--lz-ink);
     border-radius: 0;
     box-shadow: var(--lz-shadow-sm);
     transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+/* Product Hunt badge: frame the dark badge itself, no white backing box */
+body.d2q-launchzone #landingView .product-hunt-review {
+    width: fit-content;
+    margin-top: 28px;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+}
+
+body.d2q-launchzone #landingView .product-hunt-review a {
+    display: inline-flex;
+    border: 2px solid var(--lz-ink);
+    border-radius: 0;
+    box-shadow: var(--lz-shadow-sm);
+    transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+body.d2q-launchzone #landingView .product-hunt-review a:hover {
+    transform: translate(-2px, -3px);
+    box-shadow: var(--lz-shadow);
 }
 
 body.d2q-launchzone #landingView .mode-card:hover,
