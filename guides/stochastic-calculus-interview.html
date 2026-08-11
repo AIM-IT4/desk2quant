@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>/* Canonical host guard; permanent redirects are configured at the edge. */!function(){try{var p=location.protocol,h=location.hostname.toLowerCase(),local=['localhost','127.0.0.1','0.0.0.0','::1','[::1]'].indexOf(h)>-1;if(/^https?:$/.test(p)&&!local&&h!=='desk2quant.com')location.replace('https://desk2quant.com'+location.pathname+location.search+location.hash)}catch(e){}}();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stochastic Calculus Interview Guide | Desk2Quant</title>
+<meta name="description" content="Prepare stochastic calculus for quant interviews: Brownian motion, Ito calculus, SDEs, martingales, risk-neutral pricing, PDE links, and practical questions.">
+<meta name="author" content="Desk2Quant Editorial Team">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<link rel="canonical" href="https://desk2quant.com/guides/stochastic-calculus-interview.html">
+<link rel="icon" type="image/png" href="/assets/images/desk2quant-logo.png?v=3">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Desk2Quant">
+<meta property="og:url" content="https://desk2quant.com/guides/stochastic-calculus-interview.html">
+<meta property="og:title" content="Stochastic Calculus Interview Guide | Desk2Quant">
+<meta property="og:description" content="Prepare stochastic calculus for quant interviews: Brownian motion, Ito calculus, SDEs, martingales, risk-neutral pricing, PDE links, and practical questions.">
+<meta property="og:image" content="https://desk2quant.com/assets/images/desk2quant-editorial-og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="article:published_time" content="2026-08-11">
+<meta property="article:modified_time" content="2026-08-11">
+<meta property="article:section" content="Quantitative Finance Education">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="https://desk2quant.com/guides/stochastic-calculus-interview.html">
+<meta name="twitter:title" content="Stochastic Calculus Interview Guide | Desk2Quant">
+<meta name="twitter:description" content="Prepare stochastic calculus for quant interviews: Brownian motion, Ito calculus, SDEs, martingales, risk-neutral pricing, PDE links, and practical questions.">
+<meta name="twitter:image" content="https://desk2quant.com/assets/images/desk2quant-editorial-og.jpg">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Stochastic Calculus for Quant Interviews: Concepts to Explain Clearly","name":"Stochastic Calculus for Quant Interviews: Concepts to Explain Clearly","description":"Prepare stochastic calculus for quant interviews: Brownian motion, Ito calculus, SDEs, martingales, risk-neutral pricing, PDE links, and practical questions.","image":{"@type":"ImageObject","url":"https://desk2quant.com/assets/images/desk2quant-editorial-og.jpg","width":1200,"height":630},"datePublished":"2026-08-11","dateModified":"2026-08-11","inLanguage":"en","isAccessibleForFree":true,"proficiencyLevel":"Intermediate","keywords":"stochastic calculus interview, stochastic calculus for quants, Ito lemma interview questions, quant finance mathematics","author":{"@type":"Organization","name":"Desk2Quant Editorial Team","url":"https://desk2quant.com/"},"publisher":{"@type":"Organization","name":"Desk2Quant","url":"https://desk2quant.com/","logo":{"@type":"ImageObject","url":"https://desk2quant.com/assets/images/desk2quant-logo.png?v=3"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://desk2quant.com/guides/stochastic-calculus-interview.html"},"isPartOf":{"@type":"WebSite","name":"Desk2Quant","url":"https://desk2quant.com/"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://desk2quant.com/"},{"@type":"ListItem","position":2,"name":"Quant Finance Guides","item":"https://desk2quant.com/guides/"},{"@type":"ListItem","position":3,"name":"Stochastic Calculus for Quant Interviews: Concepts to Explain Clearly","item":"https://desk2quant.com/guides/stochastic-calculus-interview.html"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What stochastic calculus topics appear in quant interviews?","acceptedAnswer":{"@type":"Answer","text":"Common topics include Brownian motion, quadratic variation, Ito's formula, standard SDEs, martingales, Girsanov or change of measure, risk-neutral pricing, Feynman-Kac, PDEs, and simulation."}},{"@type":"Question","name":"Do I need rigorous measure theory for a quant interview?","acceptedAnswer":{"@type":"Answer","text":"Some research and advanced pricing roles expect it, but many interviews prioritize correct intuition and application. Know the role requirements and be precise about filtrations, measures, and assumptions at the expected depth."}},{"@type":"Question","name":"How should I explain Ito's lemma?","acceptedAnswer":{"@type":"Answer","text":"State the process and smoothness conditions, write the formula, explain the quadratic-variation term, apply it to a familiar transformation, and check the drift and diffusion."}},{"@type":"Question","name":"What is the best way to practise stochastic calculus?","acceptedAnswer":{"@type":"Answer","text":"Derive a small set of results repeatedly, explain them aloud, solve variations, and implement simulations with analytical moment, price, and convergence checks."}}]}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/seo-guide.css?v=1">
+</head>
+<body class="guide-page">
+<a class="guide-skip-link" href="#guide-content">Skip to guide content</a>
+<header class="guide-site-header">
+  <div class="guide-site-header__inner">
+    <a class="guide-brand" href="/" aria-label="Desk2Quant home">
+      <img src="/assets/images/desk2quant-logo.png?v=3" width="36" height="36" alt="">
+      <span>Desk2Quant</span>
+    </a>
+    <nav class="guide-site-nav" aria-label="Primary navigation">
+      <a href="/guides/">Guides</a>
+      <a href="/products/">Resources</a>
+      <a href="/desk-simulator.html">Desk Simulator</a>
+      <a class="guide-site-nav__cta" href="/interview.html">AI Interview</a>
+    </nav>
+  </div>
+</header>
+<main id="guide-content" class="guide-main">
+  <nav class="guide-crumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a><span aria-hidden="true">/</span><a href="/guides/">Guides</a><span aria-hidden="true">/</span><span aria-current="page">Stochastic Calculus for Quant Interviews: Concepts to Explain Clearly</span>
+  </nav>
+  <article>
+    <header class="guide-hero">
+      <p class="guide-eyebrow">Pricing mathematics</p>
+      <h1>Stochastic Calculus for Quant Interviews: Concepts to Explain Clearly</h1>
+      <p class="guide-dek">Prepare stochastic calculus for quant interviews: Brownian motion, Ito calculus, SDEs, martingales, risk-neutral pricing, PDE links, and practical questions.</p>
+      <div class="guide-meta"><span>Desk2Quant Editorial Team</span><span>15 minute read</span><time datetime="2026-08-11">Updated August 11, 2026</time></div>
+    </header>
+
+    <div class="guide-layout">
+      <aside class="guide-toc" aria-label="On this page">
+        <p class="guide-toc__title">On this page</p>
+        <ol><li><a href="#brownian-motion">Brownian motion and quadratic variation</a></li>
+<li><a href="#ito-formula">Ito processes and Ito&#39;s formula</a></li>
+<li><a href="#sdes">Recognize and solve standard SDEs</a></li>
+<li><a href="#martingales-measures">Connect martingales, measure changes, and pricing</a></li>
+<li><a href="#pde-simulation">Link expectations, PDEs, and simulation</a></li>
+          <li><a href="#interview-drills">Interview drills</a></li>
+          <li><a href="#study-plan">Study plan</a></li>
+          <li><a href="#frequent-mistakes">Frequent mistakes</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ol>
+      </aside>
+
+      <div class="guide-article-body">
+        <div class="guide-intro">
+          <p>Stochastic calculus interview questions test whether you can connect definitions, intuition, derivation, and pricing use. Writing Ito&#39;s formula from memory is not enough if you cannot explain the quadratic-variation term, choose a state variable, or check a resulting drift.</p>
+          <p>Prepare a small set of foundational results deeply. For each one, know the assumptions, a derivation outline, a financial interpretation, and a failure mode. That gives you a base for follow-ups instead of a brittle collection of formulas.</p>
+        </div>
+
+        <aside class="guide-answer-box" aria-label="Quick answer">
+          <p class="guide-answer-box__label">Quick answer</p>
+          <p>Master Brownian motion and quadratic variation, Ito processes and Ito&#39;s formula, common SDE solutions, martingales, change of measure, risk-neutral valuation, the Feynman-Kac link, and simulation error. Explain every result through assumptions, intuition, use, and checks.</p>
+        </aside>
+
+        <section class="guide-outcomes" aria-labelledby="outcomes-title">
+          <h2 id="outcomes-title">What this guide helps you do</h2>
+          <ul class="guide-check-list">
+  <li>Explain why stochastic differentials obey different second-order rules.</li>
+  <li>Apply Ito&#39;s formula and solve standard SDEs cleanly.</li>
+  <li>Connect martingales and measure changes to no-arbitrage pricing.</li>
+  <li>Discuss analytical and numerical consequences of model assumptions.</li>
+</ul>
+        </section>
+
+        <section class="guide-section" id="brownian-motion">
+    <h2>1. Brownian motion and quadratic variation</h2>
+    <p>Standard Brownian motion starts at zero, has independent stationary Gaussian increments, and has continuous paths. Its increments scale like the square root of time. The paths are almost surely nowhere differentiable, which is why ordinary differential calculus is not the right tool.</p>
+    <p>Quadratic variation captures the accumulation of squared increments: over a refining partition, the quadratic variation of Brownian motion on [0,t] is t. This motivates the heuristic rules (dW)^2 = dt, dW dt = 0, and (dt)^2 = 0 inside Ito calculations.</p>
+    <ul class="guide-bullet-list">
+  <li>E[W_t] = 0 and Var(W_t) = t.</li>
+  <li>W_t - W_s is independent of prior information and distributed N(0,t-s).</li>
+  <li>A scaled increment dW is order sqrt(dt), so its square contributes at order dt.</li>
+  <li>Quadratic variation, not a literal algebraic square, justifies the differential mnemonic.</li>
+</ul>
+
+
+  </section>
+
+        <section class="guide-section" id="ito-formula">
+    <h2>2. Ito processes and Ito&#39;s formula</h2>
+    <p>If dX_t = mu(t,X_t)dt + sigma(t,X_t)dW_t and f is sufficiently smooth, Ito&#39;s formula adds a second-derivative term: df = (f_t + mu f_x + one-half sigma squared f_xx)dt + sigma f_x dW. The extra term comes from quadratic variation.</p>
+    <p>In an interview, write the state dynamics, list derivatives, substitute carefully, collect drift and diffusion, then check units and special cases. For a multivariate process, include covariance terms through the diffusion covariance matrix.</p>
+
+
+    <aside class="guide-callout"><h3>Classic check: log of geometric Brownian motion</h3><p>For dS/S = mu dt + sigma dW, applying Ito to log S gives d log S = (mu - one-half sigma squared)dt + sigma dW. The drift correction is the most common sign check.</p></aside>
+  </section>
+
+        <section class="guide-section" id="sdes">
+    <h2>3. Recognize and solve standard SDEs</h2>
+    <p>Know geometric Brownian motion, arithmetic Brownian motion, and an Ornstein-Uhlenbeck process at minimum. Solve linear SDEs with transformations or integrating factors, and verify by applying Ito back to the proposed solution.</p>
+    <p>For each process, discuss support, mean reversion, stationarity, parameter interpretation, and whether the state variable can become negative. Model choice should follow the quantity being represented, not familiarity.</p>
+
+    <div class="guide-table-wrap" tabindex="0" role="region" aria-label="Useful process comparisons">
+    <table class="guide-table">
+      <caption>Useful process comparisons</caption>
+      <thead><tr><th scope="col">Process</th><th scope="col">Key behavior</th><th scope="col">Modeling caution</th></tr></thead>
+      <tbody><tr><td>Arithmetic Brownian motion</td><td>Additive Gaussian changes</td><td>Can take any real value and has no mean reversion</td></tr>
+<tr><td>Geometric Brownian motion</td><td>Positive lognormal level under standard parameters</td><td>Constant volatility misses smiles and changing regimes</td></tr>
+<tr><td>Ornstein-Uhlenbeck</td><td>Gaussian mean reversion</td><td>State can be negative; parameter meaning depends on measure</td></tr>
+<tr><td>Square-root diffusion</td><td>Mean reversion with state-dependent volatility</td><td>Boundary behavior and discretization need care</td></tr></tbody>
+    </table>
+  </div>
+
+  </section>
+
+        <section class="guide-section" id="martingales-measures">
+    <h2>4. Connect martingales, measure changes, and pricing</h2>
+    <p>A martingale has conditional expectation equal to its current value under the relevant filtration and measure. In arbitrage-free pricing, suitably discounted tradable prices are martingales under an equivalent risk-neutral measure, subject to technical conditions.</p>
+    <p>A change of measure changes probability weights and therefore drift, while pathwise volatility structure is preserved in the standard diffusion setting. The market price of risk connects the physical and pricing drifts. Be precise: risk-neutral probabilities are pricing tools, not forecasts of real-world event frequencies.</p>
+
+
+
+  </section>
+
+        <section class="guide-section" id="pde-simulation">
+    <h2>5. Link expectations, PDEs, and simulation</h2>
+    <p>Feynman-Kac connects a conditional expectation for a diffusion to a backward parabolic PDE. In pricing, replication removes the risky drift and produces a PDE whose solution can also be written as a discounted risk-neutral expectation.</p>
+    <p>When simulating SDEs, distinguish time-discretization bias from Monte Carlo sampling error. Euler-Maruyama has different strong and weak convergence properties; payoff discontinuities, boundaries, correlation construction, and random-number quality all deserve checks.</p>
+    <ul class="guide-bullet-list">
+  <li>Validate simulation against an analytical price or moment when available.</li>
+  <li>Halve the time step to estimate discretization behavior.</li>
+  <li>Increase paths to check standard-error scaling near one over square root of N.</li>
+  <li>Use variance reduction only with evidence that estimator correctness is preserved.</li>
+</ul>
+
+
+  </section>
+
+        <section class="guide-section" id="interview-drills">
+          <p class="guide-section-kicker">Practise aloud</p>
+          <h2>Interview drills with answer direction</h2>
+          <div class="guide-drills">
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 1</p>
+              <h3>Why does Ito&#39;s formula have a second-derivative term?</h3>
+              <p><strong>Answer direction:</strong> Brownian increments are order square root of dt, so their squared contribution is order dt and survives the limit. Quadratic variation turns the second-order Taylor term into a drift term.</p>
+            </article>
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 2</p>
+              <h3>Solve geometric Brownian motion.</h3>
+              <p><strong>Answer direction:</strong> Apply Ito to log S, integrate the resulting arithmetic process, then exponentiate: S_t = S_0 exp((mu - one-half sigma squared)t + sigma W_t). Verify positivity and moments.</p>
+            </article>
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 3</p>
+              <h3>What is a martingale in pricing terms?</h3>
+              <p><strong>Answer direction:</strong> Under a pricing measure and chosen numeraire, the appropriately discounted tradable price has no predictable drift relative to current information. State the measure and filtration.</p>
+            </article>
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 4</p>
+              <h3>What changes under a risk-neutral measure?</h3>
+              <p><strong>Answer direction:</strong> Probability weights and drift change so discounted tradable prices become martingales. In the standard diffusion construction, the instantaneous volatility remains the same.</p>
+            </article>
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 5</p>
+              <h3>How would you validate an SDE simulation?</h3>
+              <p><strong>Answer direction:</strong> Compare moments and prices with analytical cases, test time-step convergence and path-count error, inspect boundaries and correlations, verify seeds and random streams, and check payoff-specific bias.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="guide-section" id="study-plan">
+          <p class="guide-section-kicker">Turn reading into practice</p>
+          <h2>A focused study plan</h2>
+          <ol class="guide-plan">
+            <li><span>Foundation</span><div><h3>Processes</h3><p>Review conditioning, Gaussian increments, filtrations, Brownian motion, and quadratic variation.</p></div></li>
+            <li><span>Calculus</span><div><h3>Ito toolkit</h3><p>Apply Ito&#39;s formula to log, powers, products, and multivariate functions until signs and covariance terms are automatic.</p></div></li>
+            <li><span>Pricing</span><div><h3>Measures and PDEs</h3><p>Derive the risk-neutral expectation and PDE connection for a simple option model.</p></div></li>
+            <li><span>Numerics</span><div><h3>Simulation</h3><p>Implement standard processes and document moment, convergence, and pricing checks.</p></div></li>
+          </ol>
+        </section>
+
+        <section class="guide-section" id="frequent-mistakes">
+          <p class="guide-section-kicker">Self-review</p>
+          <h2>Frequent mistakes to catch early</h2>
+          <ul class="guide-warning-list">
+  <li>Using differential mnemonics without explaining quadratic variation.</li>
+  <li>Forgetting the drift correction when taking a logarithm.</li>
+  <li>Calling risk-neutral probabilities real-world forecasts.</li>
+  <li>Reporting Monte Carlo convergence without separating time-step bias from sampling error.</li>
+</ul>
+        </section>
+
+        <section class="guide-resources" aria-labelledby="resources-title">
+          <p class="guide-section-kicker">Continue with structured practice</p>
+          <h2 id="resources-title">Relevant Desk2Quant resources</h2>
+          <div class="guide-resource-grid">
+            <article><h3><a href="/products/stochastic-calculus-for-quants.html">Stochastic Calculus for Quants: Interview Playbook</a></h3><p>Use interview-focused derivations and desk intuition to deepen each concept in this roadmap.</p><a class="guide-text-link" href="/products/stochastic-calculus-for-quants.html">Explore this resource <span aria-hidden="true">&rarr;</span></a></article>
+            <article><h3><a href="/products/the-stochastic-calculus-visual-lab-don-t-just-read-the-equations-simul.html">The Stochastic Calculus Visual Lab</a></h3><p>Simulate processes and visualize how the equations behave instead of learning only symbolically.</p><a class="guide-text-link" href="/products/the-stochastic-calculus-visual-lab-don-t-just-read-the-equations-simul.html">Explore this resource <span aria-hidden="true">&rarr;</span></a></article>
+            <article><h3><a href="/products/probability-theory-for-quants-desk-first.html">Probability Theory for Quants: Desk-First</a></h3><p>Strengthen the conditional expectation and probability foundation beneath stochastic processes.</p><a class="guide-text-link" href="/products/probability-theory-for-quants-desk-first.html">Explore this resource <span aria-hidden="true">&rarr;</span></a></article>
+            <article><h3><a href="/products/numerical-methods-for-quants.html">Numerical Methods for Quants: The Master Field Manual</a></h3><p>Carry SDE knowledge into Monte Carlo, PDE, and calibration implementations with error controls.</p><a class="guide-text-link" href="/products/numerical-methods-for-quants.html">Explore this resource <span aria-hidden="true">&rarr;</span></a></article>
+          </div>
+        </section>
+
+        <section class="guide-section" aria-labelledby="related-title">
+          <p class="guide-section-kicker">Keep building</p>
+          <h2 id="related-title">Related quant finance guides</h2>
+          <div class="guide-related-grid">
+            <a href="/guides/numerical-methods-quant-finance.html"><span>Computational quantitative finance</span><strong>Numerical Methods for Quant Finance: An Interview and Desk Guide</strong><small>A practical guide to numerical methods in quant finance: error analysis, root finding, interpolation, PDEs, Monte Carlo, calibration, and production checks.</small></a>
+            <a href="/guides/xva-interview-questions.html"><span>Counterparty credit and valuation adjustments</span><strong>XVA Interview Questions: Exposure, Credit, Funding, and Margin</strong><small>Prepare for XVA interview questions covering exposure simulation, CVA, DVA, FVA, MVA, netting, collateral, wrong-way risk, sensitivities, and controls.</small></a>
+            <a href="/guides/quant-interview-questions.html"><span>Question bank strategy</span><strong>Quant Interview Questions: What to Expect and How to Answer</strong><small>Practise quant interview questions by category, with answer frameworks for probability, statistics, coding, derivatives, estimation, and project discussions.</small></a>
+          </div>
+        </section>
+
+        <section class="guide-section guide-faq" id="faq">
+          <p class="guide-section-kicker">Common questions</p>
+          <h2>Frequently asked questions</h2>
+          <details><summary>What stochastic calculus topics appear in quant interviews?</summary><p>Common topics include Brownian motion, quadratic variation, Ito&#39;s formula, standard SDEs, martingales, Girsanov or change of measure, risk-neutral pricing, Feynman-Kac, PDEs, and simulation.</p></details>
+          <details><summary>Do I need rigorous measure theory for a quant interview?</summary><p>Some research and advanced pricing roles expect it, but many interviews prioritize correct intuition and application. Know the role requirements and be precise about filtrations, measures, and assumptions at the expected depth.</p></details>
+          <details><summary>How should I explain Ito&#39;s lemma?</summary><p>State the process and smoothness conditions, write the formula, explain the quadratic-variation term, apply it to a familiar transformation, and check the drift and diffusion.</p></details>
+          <details><summary>What is the best way to practise stochastic calculus?</summary><p>Derive a small set of results repeatedly, explain them aloud, solve variations, and implement simulations with analytical moment, price, and convergence checks.</p></details>
+        </section>
+
+        <aside class="guide-next-step">
+          <div><p class="guide-section-kicker">Practise under pressure</p><h2>Turn the framework into a live answer</h2><p>Use the free AI interview practice tool, then review your assumptions, structure, checks, and conclusion.</p></div>
+          <a href="/interview.html">Start an AI interview</a>
+        </aside>
+      </div>
+    </div>
+  </article>
+</main>
+<footer class="guide-footer">
+  <div class="guide-footer__inner">
+    <div>
+      <a class="guide-brand guide-brand--footer" href="/">Desk2Quant</a>
+      <p>Practitioner-built preparation for quantitative finance interviews and desk work.</p>
+    </div>
+    <nav aria-label="Footer navigation">
+      <a href="/guides/">All guides</a>
+      <a href="/products/">All resources</a>
+      <a href="/faq.html">FAQ</a>
+      <a href="/privacy.html">Privacy</a>
+      <a href="/terms.html">Terms</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

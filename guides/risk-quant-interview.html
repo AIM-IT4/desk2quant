@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>/* Canonical host guard; permanent redirects are configured at the edge. */!function(){try{var p=location.protocol,h=location.hostname.toLowerCase(),local=['localhost','127.0.0.1','0.0.0.0','::1','[::1]'].indexOf(h)>-1;if(/^https?:$/.test(p)&&!local&&h!=='desk2quant.com')location.replace('https://desk2quant.com'+location.pathname+location.search+location.hash)}catch(e){}}();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Risk Quant Interview Guide: Topics &amp; Questions | Desk2Quant</title>
+<meta name="description" content="Prepare for market and risk quant interviews: VaR, expected shortfall, stress testing, backtesting, products, data, model risk, and communication.">
+<meta name="author" content="Desk2Quant Editorial Team">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<link rel="canonical" href="https://desk2quant.com/guides/risk-quant-interview.html">
+<link rel="icon" type="image/png" href="/assets/images/desk2quant-logo.png?v=3">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Desk2Quant">
+<meta property="og:url" content="https://desk2quant.com/guides/risk-quant-interview.html">
+<meta property="og:title" content="Risk Quant Interview Guide: Topics &amp; Questions | Desk2Quant">
+<meta property="og:description" content="Prepare for market and risk quant interviews: VaR, expected shortfall, stress testing, backtesting, products, data, model risk, and communication.">
+<meta property="og:image" content="https://desk2quant.com/assets/images/desk2quant-editorial-og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="article:published_time" content="2026-08-11">
+<meta property="article:modified_time" content="2026-08-11">
+<meta property="article:section" content="Quantitative Finance Education">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="https://desk2quant.com/guides/risk-quant-interview.html">
+<meta name="twitter:title" content="Risk Quant Interview Guide: Topics &amp; Questions | Desk2Quant">
+<meta name="twitter:description" content="Prepare for market and risk quant interviews: VaR, expected shortfall, stress testing, backtesting, products, data, model risk, and communication.">
+<meta name="twitter:image" content="https://desk2quant.com/assets/images/desk2quant-editorial-og.jpg">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"Risk Quant Interview Guide: Models, Controls, and Decisions","name":"Risk Quant Interview Guide: Models, Controls, and Decisions","description":"Prepare for market and risk quant interviews: VaR, expected shortfall, stress testing, backtesting, products, data, model risk, and communication.","image":{"@type":"ImageObject","url":"https://desk2quant.com/assets/images/desk2quant-editorial-og.jpg","width":1200,"height":630},"datePublished":"2026-08-11","dateModified":"2026-08-11","inLanguage":"en","isAccessibleForFree":true,"proficiencyLevel":"Intermediate","keywords":"risk quant interview, market risk interview, quantitative risk interview questions, VaR interview","author":{"@type":"Organization","name":"Desk2Quant Editorial Team","url":"https://desk2quant.com/"},"publisher":{"@type":"Organization","name":"Desk2Quant","url":"https://desk2quant.com/","logo":{"@type":"ImageObject","url":"https://desk2quant.com/assets/images/desk2quant-logo.png?v=3"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://desk2quant.com/guides/risk-quant-interview.html"},"isPartOf":{"@type":"WebSite","name":"Desk2Quant","url":"https://desk2quant.com/"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://desk2quant.com/"},{"@type":"ListItem","position":2,"name":"Quant Finance Guides","item":"https://desk2quant.com/guides/"},{"@type":"ListItem","position":3,"name":"Risk Quant Interview Guide: Models, Controls, and Decisions","item":"https://desk2quant.com/guides/risk-quant-interview.html"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What topics are covered in a risk quant interview?","acceptedAnswer":{"@type":"Answer","text":"Typical topics include products and valuation, sensitivities, VaR, expected shortfall, stress testing, backtesting, time series, data quality, model risk, regulation, coding, and communication. The weighting varies by team."}},{"@type":"Question","name":"Do risk quant interviews require coding?","acceptedAnswer":{"@type":"Answer","text":"Many do. Python, R, SQL, or another analytics language may be tested through data manipulation, risk calculations, or debugging. Some model implementation teams also expect stronger software engineering."}},{"@type":"Question","name":"How should I explain VaR in an interview?","acceptedAnswer":{"@type":"Answer","text":"Define it as a portfolio loss quantile for a stated horizon and confidence level, then explain the methodology, data window, valuation approach, backtesting, uses, and the tail information it does not provide."}},{"@type":"Question","name":"What makes a strong risk case-study answer?","acceptedAnswer":{"@type":"Answer","text":"A strong answer connects the exposure and decision to data, assumptions, method, validation, materiality, controls, and communication. It also states what evidence would change the conclusion."}}]}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/seo-guide.css?v=1">
+</head>
+<body class="guide-page">
+<a class="guide-skip-link" href="#guide-content">Skip to guide content</a>
+<header class="guide-site-header">
+  <div class="guide-site-header__inner">
+    <a class="guide-brand" href="/" aria-label="Desk2Quant home">
+      <img src="/assets/images/desk2quant-logo.png?v=3" width="36" height="36" alt="">
+      <span>Desk2Quant</span>
+    </a>
+    <nav class="guide-site-nav" aria-label="Primary navigation">
+      <a href="/guides/">Guides</a>
+      <a href="/products/">Resources</a>
+      <a href="/desk-simulator.html">Desk Simulator</a>
+      <a class="guide-site-nav__cta" href="/interview.html">AI Interview</a>
+    </nav>
+  </div>
+</header>
+<main id="guide-content" class="guide-main">
+  <nav class="guide-crumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a><span aria-hidden="true">/</span><a href="/guides/">Guides</a><span aria-hidden="true">/</span><span aria-current="page">Risk Quant Interview Guide: Models, Controls, and Decisions</span>
+  </nav>
+  <article>
+    <header class="guide-hero">
+      <p class="guide-eyebrow">Market and enterprise risk</p>
+      <h1>Risk Quant Interview Guide: Models, Controls, and Decisions</h1>
+      <p class="guide-dek">Prepare for market and risk quant interviews: VaR, expected shortfall, stress testing, backtesting, products, data, model risk, and communication.</p>
+      <div class="guide-meta"><span>Desk2Quant Editorial Team</span><span>13 minute read</span><time datetime="2026-08-11">Updated August 11, 2026</time></div>
+    </header>
+
+    <div class="guide-layout">
+      <aside class="guide-toc" aria-label="On this page">
+        <p class="guide-toc__title">On this page</p>
+        <ol><li><a href="#portfolio-mechanics">Start from positions and risk-factor mechanics</a></li>
+<li><a href="#risk-measures">Compare risk measures rather than defending one number</a></li>
+<li><a href="#backtesting">Treat backtesting as diagnosis, not a pass/fail ritual</a></li>
+<li><a href="#stress-data">Design scenarios and challenge the data</a></li>
+<li><a href="#governance-communication">Turn analysis into a controlled decision</a></li>
+          <li><a href="#interview-drills">Interview drills</a></li>
+          <li><a href="#study-plan">Study plan</a></li>
+          <li><a href="#frequent-mistakes">Frequent mistakes</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ol>
+      </aside>
+
+      <div class="guide-article-body">
+        <div class="guide-intro">
+          <p>Risk quant interviews test more than formula knowledge. A risk number has a purpose, a scope, data and model assumptions, known blind spots, controls, and a user who must make a decision. Strong candidates connect all of those layers.</p>
+          <p>The exact syllabus depends on market risk, counterparty credit risk, capital, stress testing, or model risk. The preparation framework below covers the shared core and shows how to communicate technical findings without hiding uncertainty.</p>
+        </div>
+
+        <aside class="guide-answer-box" aria-label="Quick answer">
+          <p class="guide-answer-box__label">Quick answer</p>
+          <p>Master the portfolio and product mechanics first, then risk measures, scenario design, backtesting, data quality, model limitations, and governance. For every metric, explain what decision it supports, what it misses, and how you would detect failure.</p>
+        </aside>
+
+        <section class="guide-outcomes" aria-labelledby="outcomes-title">
+          <h2 id="outcomes-title">What this guide helps you do</h2>
+          <ul class="guide-check-list">
+  <li>Explain risk measures with assumptions and decision context.</li>
+  <li>Design backtests and stress tests that reveal model weaknesses.</li>
+  <li>Connect positions, market data, valuation, aggregation, and reporting.</li>
+  <li>Communicate a technical risk finding with proportionate action.</li>
+</ul>
+        </section>
+
+        <section class="guide-section" id="portfolio-mechanics">
+    <h2>1. Start from positions and risk-factor mechanics</h2>
+    <p>Before discussing VaR, identify the instruments, contractual cash flows, valuation inputs, and risk-factor mapping. Know how linear and nonlinear exposures behave under spot, curve, spread, volatility, correlation, and basis moves. Aggregation can conceal concentrations when mappings or diversification assumptions are weak.</p>
+    <p>Be ready to explain PnL from both revaluation and sensitivities. A sensitivity approximation is fast and interpretable, but higher-order effects, discontinuities, and changing market regimes can make full revaluation necessary.</p>
+    <ul class="guide-bullet-list">
+  <li>Rates: curve nodes, basis, optionality, discounting, and day-count conventions.</li>
+  <li>Equity and FX: spot, volatility surface, dividends or carry, and cross-risk.</li>
+  <li>Credit: spreads, default, recovery, migration, liquidity, and wrong-way risk.</li>
+  <li>Portfolio: netting, hedges, concentration, liquidity horizon, and stale positions.</li>
+</ul>
+
+
+  </section>
+
+        <section class="guide-section" id="risk-measures">
+    <h2>2. Compare risk measures rather than defending one number</h2>
+    <p>VaR is a loss quantile for a chosen horizon and confidence level; expected shortfall averages losses beyond a quantile. Neither removes choices about data windows, weighting, liquidity horizons, mapping, valuation, or treatment of missing history. A correct definition should lead immediately to those implementation questions.</p>
+    <p>Risk measures are complementary. Sensitivities explain local exposure, scenarios examine specified moves, VaR summarizes a distribution quantile, expected shortfall describes the tail beyond it, and stress tests explore severe or structurally different conditions.</p>
+
+    <div class="guide-table-wrap" tabindex="0" role="region" aria-label="Risk metric strengths and blind spots">
+    <table class="guide-table">
+      <caption>Risk metric strengths and blind spots</caption>
+      <thead><tr><th scope="col">Tool</th><th scope="col">Useful for</th><th scope="col">Key limitation to mention</th></tr></thead>
+      <tbody><tr><td>Sensitivities</td><td>Fast attribution and local hedging</td><td>May miss curvature, path dependence, and regime changes</td></tr>
+<tr><td>VaR</td><td>A consistent portfolio loss quantile</td><td>Does not describe severity beyond the quantile</td></tr>
+<tr><td>Expected shortfall</td><td>Average tail severity</td><td>Still depends on sparse tail data and modeling choices</td></tr>
+<tr><td>Stress testing</td><td>Named severe scenarios and vulnerabilities</td><td>Coverage depends on scenario imagination and relevance</td></tr></tbody>
+    </table>
+  </div>
+
+  </section>
+
+        <section class="guide-section" id="backtesting">
+    <h2>3. Treat backtesting as diagnosis, not a pass/fail ritual</h2>
+    <p>A VaR exception is an observation that realized loss exceeded the forecast threshold, but the comparison is only meaningful when PnL definition, horizon, positions, and market close are aligned. Investigate clusters, regime dependence, data breaks, valuation changes, and whether the exception came from an exposure outside the modeled factor set.</p>
+    <p>Backtesting should include coverage, independence, and attribution. A model can have the expected exception count while failing during precisely the periods when risk management matters most.</p>
+    <ul class="guide-bullet-list">
+  <li>Reconcile hypothetical, clean, and actual PnL before interpreting exceptions.</li>
+  <li>Examine exception timing and clustering, not only the annual count.</li>
+  <li>Attribute breaks to positions, factors, pricing, data, and operational events.</li>
+  <li>Pair statistical results with sensitivity and scenario diagnostics.</li>
+</ul>
+
+
+  </section>
+
+        <section class="guide-section" id="stress-data">
+    <h2>4. Design scenarios and challenge the data</h2>
+    <p>Good scenarios have a narrative, internally coherent factor moves, a transmission path to positions, and a clear use. Historical scenarios are grounded but cannot cover new structures; hypothetical scenarios explore vulnerabilities but need disciplined calibration. Reverse stress testing starts from an unacceptable outcome and asks which conditions could produce it.</p>
+    <p>Data quality is part of the model. Discuss proxies, missing observations, survivorship, stale marks, corporate actions, changing identifiers, and limited history. A proxy should be justified by economic behavior and tested in stress, not chosen only because its normal-period correlation is high.</p>
+
+
+
+  </section>
+
+        <section class="guide-section" id="governance-communication">
+    <h2>5. Turn analysis into a controlled decision</h2>
+    <p>A risk quant should distinguish a model weakness from its material impact. Frame a finding with evidence, affected portfolios or processes, severity, compensating controls, remediation options, owner, and timeline. Escalation should be proportionate and traceable.</p>
+    <p>When speaking to non-modelers, lead with the decision and exposure, then explain the mechanism. Avoid both false precision and vague disclaimers. A range with drivers and actions is often more useful than a single unqualified number.</p>
+
+
+    <aside class="guide-callout"><h3>Finding structure</h3><p>Observation -&gt; evidence -&gt; risk mechanism -&gt; materiality -&gt; immediate control -&gt; durable remediation -&gt; verification. This format is useful in interviews and real governance forums.</p></aside>
+  </section>
+
+        <section class="guide-section" id="interview-drills">
+          <p class="guide-section-kicker">Practise aloud</p>
+          <h2>Interview drills with answer direction</h2>
+          <div class="guide-drills">
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 1</p>
+              <h3>What is the difference between VaR and expected shortfall?</h3>
+              <p><strong>Answer direction:</strong> VaR is a loss quantile at a confidence level; expected shortfall is the average loss conditional on being beyond that quantile. Then discuss horizon, data, tail estimation, and the decision each supports.</p>
+            </article>
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 2</p>
+              <h3>A VaR model has too many exceptions. How do you investigate?</h3>
+              <p><strong>Answer direction:</strong> First align PnL and forecast definitions, then inspect timing, positions, factor mapping, market data, valuation changes, volatility regime, and clusters. Separate model weakness from data or operational breaks.</p>
+            </article>
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 3</p>
+              <h3>How would you stress a portfolio with little history?</h3>
+              <p><strong>Answer direction:</strong> Combine economic narratives, cross-asset consistency, comparable episodes, sensitivity-based construction, expert challenge, and reverse stress. Report the uncertainty caused by limited calibration evidence.</p>
+            </article>
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 4</p>
+              <h3>When is a proxy risk factor acceptable?</h3>
+              <p><strong>Answer direction:</strong> When there is an economic rationale, stable behavior over relevant regimes, conservative stress behavior, transparent basis risk, monitoring, and a plan for material exposures when the proxy breaks.</p>
+            </article>
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 5</p>
+              <h3>How would you explain a large risk change to senior management?</h3>
+              <p><strong>Answer direction:</strong> Lead with magnitude, affected portfolio, main drivers, whether it reflects exposure or methodology, plausible stress impact, and recommended action. Keep technical details available for challenge.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="guide-section" id="study-plan">
+          <p class="guide-section-kicker">Turn reading into practice</p>
+          <h2>A focused study plan</h2>
+          <ol class="guide-plan">
+            <li><span>Layer 1</span><div><h3>Products and PnL</h3><p>Map cash flows, risk factors, sensitivities, and valuation conventions for the target asset classes.</p></div></li>
+            <li><span>Layer 2</span><div><h3>Metrics</h3><p>Implement and compare sensitivities, VaR, expected shortfall, and scenario losses.</p></div></li>
+            <li><span>Layer 3</span><div><h3>Challenge</h3><p>Practise backtesting, stress design, proxy review, data diagnostics, and limitations.</p></div></li>
+            <li><span>Layer 4</span><div><h3>Decision</h3><p>Write and present findings with materiality, controls, owners, and verification.</p></div></li>
+          </ol>
+        </section>
+
+        <section class="guide-section" id="frequent-mistakes">
+          <p class="guide-section-kicker">Self-review</p>
+          <h2>Frequent mistakes to catch early</h2>
+          <ul class="guide-warning-list">
+  <li>Giving a metric definition without horizon, confidence, data, or use.</li>
+  <li>Treating diversification as stable during stress.</li>
+  <li>Counting backtest exceptions without investigating their cause and timing.</li>
+  <li>Reporting a model issue without materiality or a practical control.</li>
+</ul>
+        </section>
+
+        <section class="guide-resources" aria-labelledby="resources-title">
+          <p class="guide-section-kicker">Continue with structured practice</p>
+          <h2 id="resources-title">Relevant Desk2Quant resources</h2>
+          <div class="guide-resource-grid">
+            <article><h3><a href="/products/r-for-risk-quants-desk-ready-notes-plus-runnable-templates-28-modules.html">R for Risk Quants: Desk-Ready Notes and Templates</a></h3><p>Apply market-risk concepts with runnable R templates and desk-oriented examples.</p><a class="guide-text-link" href="/products/r-for-risk-quants-desk-ready-notes-plus-runnable-templates-28-modules.html">Explore this resource <span aria-hidden="true">&rarr;</span></a></article>
+            <article><h3><a href="/products/regulatory-and-risk-frameworks-for-quants.html">Regulatory &amp; Risk Frameworks for Quants</a></h3><p>Connect model and risk analytics to governance, capital, and regulatory expectations.</p><a class="guide-text-link" href="/products/regulatory-and-risk-frameworks-for-quants.html">Explore this resource <span aria-hidden="true">&rarr;</span></a></article>
+            <article><h3><a href="/products/pnl-attribution-for-quants.html">PnL Attribution &amp; Desk Diagnostics for Quants</a></h3><p>Practise explaining daily PnL through sensitivities, market moves, carry, new trades, and residuals.</p><a class="guide-text-link" href="/products/pnl-attribution-for-quants.html">Explore this resource <span aria-hidden="true">&rarr;</span></a></article>
+            <article><h3><a href="/products/model-validation-quant-interview.html">Model Validation Quant Case Study Pack</a></h3><p>Use case studies to turn technical weaknesses into evidence, materiality, and remediation decisions.</p><a class="guide-text-link" href="/products/model-validation-quant-interview.html">Explore this resource <span aria-hidden="true">&rarr;</span></a></article>
+          </div>
+        </section>
+
+        <section class="guide-section" aria-labelledby="related-title">
+          <p class="guide-section-kicker">Keep building</p>
+          <h2 id="related-title">Related quant finance guides</h2>
+          <div class="guide-related-grid">
+            <a href="/guides/model-validation-interview.html"><span>Independent model challenge</span><strong>Model Validation Quant Interview: A Practical Preparation Guide</strong><small>Prepare for model validation quant interviews: conceptual soundness, data, implementation testing, benchmarking, outcomes analysis, findings, and governance.</small></a>
+            <a href="/guides/xva-interview-questions.html"><span>Counterparty credit and valuation adjustments</span><strong>XVA Interview Questions: Exposure, Credit, Funding, and Margin</strong><small>Prepare for XVA interview questions covering exposure simulation, CVA, DVA, FVA, MVA, netting, collateral, wrong-way risk, sensitivities, and controls.</small></a>
+            <a href="/guides/numerical-methods-quant-finance.html"><span>Computational quantitative finance</span><strong>Numerical Methods for Quant Finance: An Interview and Desk Guide</strong><small>A practical guide to numerical methods in quant finance: error analysis, root finding, interpolation, PDEs, Monte Carlo, calibration, and production checks.</small></a>
+          </div>
+        </section>
+
+        <section class="guide-section guide-faq" id="faq">
+          <p class="guide-section-kicker">Common questions</p>
+          <h2>Frequently asked questions</h2>
+          <details><summary>What topics are covered in a risk quant interview?</summary><p>Typical topics include products and valuation, sensitivities, VaR, expected shortfall, stress testing, backtesting, time series, data quality, model risk, regulation, coding, and communication. The weighting varies by team.</p></details>
+          <details><summary>Do risk quant interviews require coding?</summary><p>Many do. Python, R, SQL, or another analytics language may be tested through data manipulation, risk calculations, or debugging. Some model implementation teams also expect stronger software engineering.</p></details>
+          <details><summary>How should I explain VaR in an interview?</summary><p>Define it as a portfolio loss quantile for a stated horizon and confidence level, then explain the methodology, data window, valuation approach, backtesting, uses, and the tail information it does not provide.</p></details>
+          <details><summary>What makes a strong risk case-study answer?</summary><p>A strong answer connects the exposure and decision to data, assumptions, method, validation, materiality, controls, and communication. It also states what evidence would change the conclusion.</p></details>
+        </section>
+
+        <aside class="guide-next-step">
+          <div><p class="guide-section-kicker">Practise under pressure</p><h2>Turn the framework into a live answer</h2><p>Use the free AI interview practice tool, then review your assumptions, structure, checks, and conclusion.</p></div>
+          <a href="/interview.html">Start an AI interview</a>
+        </aside>
+      </div>
+    </div>
+  </article>
+</main>
+<footer class="guide-footer">
+  <div class="guide-footer__inner">
+    <div>
+      <a class="guide-brand guide-brand--footer" href="/">Desk2Quant</a>
+      <p>Practitioner-built preparation for quantitative finance interviews and desk work.</p>
+    </div>
+    <nav aria-label="Footer navigation">
+      <a href="/guides/">All guides</a>
+      <a href="/products/">All resources</a>
+      <a href="/faq.html">FAQ</a>
+      <a href="/privacy.html">Privacy</a>
+      <a href="/terms.html">Terms</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>/* CANONICAL-HOST-GUARD v1 */!function(){try{var h=location.hostname.toLowerCase(),d=/^(localhost|127.0.0.1|0.0.0.0|[::1])$/.test(h);if(!d&&h!=='desk2quant.com')location.replace('https://desk2quant.com'+location.pathname+location.search+location.hash)}catch(e){}}();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monte Carlo Methods for Option Pricing: A Visual Guide with Python | Desk2Quant</title>
+<meta name="description" content="Master Monte Carlo simulation for option pricing from scratch. Covers GBM simulation, European and Asian option pricing, variance reduction techniques…">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://desk2quant.com/blog/monte-carlo-methods-for-option-pricing-visual-guide-python.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Desk2Quant">
+<meta property="og:url" content="https://desk2quant.com/blog/monte-carlo-methods-for-option-pricing-visual-guide-python.html">
+<meta property="og:title" content="Monte Carlo Methods for Option Pricing: A Visual Guide with Python | Desk2Quant">
+<meta property="og:description" content="Master Monte Carlo simulation for option pricing from scratch. Covers GBM simulation, European and Asian option pricing, variance reduction techniques…">
+<meta property="og:image" content="https://dntabmyurlrlnoajdnja.supabase.co/storage/v1/object/public/product-covers/blog/mc-blog-cover.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Monte Carlo Methods for Option Pricing: A Visual Guide with Python | Desk2Quant">
+<meta name="twitter:description" content="Master Monte Carlo simulation for option pricing from scratch. Covers GBM simulation, European and Asian option pricing, variance reduction techniques…">
+<meta name="twitter:image" content="https://dntabmyurlrlnoajdnja.supabase.co/storage/v1/object/public/product-covers/blog/mc-blog-cover.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Monte Carlo Methods for Option Pricing: A Visual Guide with Python","description":"Master Monte Carlo simulation for option pricing from scratch. Covers GBM simulation, European and Asian option pricing, variance reduction techniques…","image":["https://dntabmyurlrlnoajdnja.supabase.co/storage/v1/object/public/product-covers/blog/mc-blog-cover.png"],"url":"https://desk2quant.com/blog/monte-carlo-methods-for-option-pricing-visual-guide-python.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://desk2quant.com/blog/monte-carlo-methods-for-option-pricing-visual-guide-python.html"},"author":{"@type":"Person","name":"Amit Kumar Jha"},"publisher":{"@type":"Organization","@id":"https://desk2quant.com/#organization","name":"Desk2Quant","logo":{"@type":"ImageObject","url":"https://desk2quant.com/assets/images/desk2quant-logo.png?v=3"}},"inLanguage":"en","datePublished":"2026-07-19T16:16:39.156325+00:00","dateModified":"2026-07-19T16:16:39.156325+00:00"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://desk2quant.com/"},{"@type":"ListItem","position":2,"name":"Articles","item":"https://desk2quant.com/blog.html"},{"@type":"ListItem","position":3,"name":"Monte Carlo Methods for Option Pricing: A Visual Guide with Python","item":"https://desk2quant.com/blog/monte-carlo-methods-for-option-pricing-visual-guide-python.html"}]}</script>
+<link rel="icon" type="image/png" href="/assets/images/desk2quant-logo.png?v=3">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/seo-product.css?v=1">
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+  options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+<main class="seo-doc">
+  <nav class="seo-crumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a> <span>/</span>
+    <a href="/blog.html">Articles</a> <span>/</span>
+    <span aria-current="page">Monte Carlo Methods for Option Pricing: A Visual Guide with Python</span>
+  </nav>
+  <article>
+    <p class="seo-kicker">Quant finance article &middot; 19 July 2026</p>
+    <h1>Monte Carlo Methods for Option Pricing: A Visual Guide with Python</h1>
+    <p><img src="https://dntabmyurlrlnoajdnja.supabase.co/storage/v1/object/public/product-covers/blog/mc-blog-cover.png" alt="Monte Carlo Methods for Option Pricing: A Visual Guide with Python" width="840" fetchpriority="high"></p>
+    <div class="seo-article-body">
+      <h2>Monte Carlo Methods for Option Pricing: A Visual Guide with Python</h2>
+      <p>Published by Amit Kumar Jha • Desk2Quant • July 2026</p>
+
+      <p>Monte Carlo simulation is one of the most powerful and flexible tools in quantitative finance. Unlike closed-form solutions like Black-Scholes, Monte Carlo can price <strong>any</strong> derivative—path-dependent exotics, multi-asset options, American options with early exercise—by simulating thousands of possible future paths and averaging the payoffs.</p>
+
+      <p>In this guide, we build Monte Carlo option pricing from scratch with runnable Python code, visual explanations, and the mathematical foundations every quant needs for interviews and the desk.</p>
+
+      <h2>Why Monte Carlo?</h2>
+
+      <p>The Black-Scholes formula gives us a closed-form solution for European options:</p>
+
+      <div class="math-block">$C_{BS} = S_0 \, N(d_1) - K e^{-rT} N(d_2)$</div>
+
+      <p>But this only works for vanilla European options under strict assumptions (constant volatility, log-normal returns, no jumps). Real markets violate all of these. Monte Carlo handles the messiness:</p>
+
+      <ul>
+      <li><strong>Path-dependent options</strong> (Asian, Lookback, Barrier) — no closed-form exists</li>
+      <li><strong>Multi-asset options</strong> (Basket, Rainbow, Spread) — curse of dimensionality kills PDE methods</li>
+      <li><strong>American options</strong> — early exercise requires backward induction (Longstaff-Schwartz)</li>
+      <li><strong>Complex payoffs</strong> — any payoff function $f(S_T, S_{t_1}, \ldots, S_{t_n})$ works</li>
+      </ul>
+
+      <h2>Step 1: Simulating Asset Prices (GBM)</h2>
+
+      <p>Under the risk-neutral measure $\mathbb{Q}$, the stock price follows a Geometric Brownian Motion (GBM):</p>
+
+      <div class="math-block">$dS_t = r \, S_t \, dt + \sigma \, S_t \, dW_t$</div>
+
+      <p>where $r$ is the risk-free rate, $\sigma$ is the volatility, and $dW_t$ is a Wiener process increment. The exact solution is:</p>
+
+      <div class="math-block">$S_T = S_0 \exp\!\Big(\big(r - \tfrac{1}{2}\sigma^2\big)T + \sigma\sqrt{T}\,Z\Big)$</div>
+
+      <p>where $Z \sim \mathcal{N}(0,1)$ is a standard normal random variable. This is the building block of every Monte Carlo pricer.</p>
+
+      <h3>Python: Simulating GBM Paths</h3>
+
+      <pre><code class="language-python">import numpy as np
+      import matplotlib.pyplot as plt
+
+      def simulate_gbm_paths(S0, r, sigma, T, n_steps, n_paths):
+          &quot;&quot;&quot;Simulate GBM paths using exact solution.&quot;&quot;&quot;
+          dt = T / n_steps
+          Z = np.random.standard_normal((n_paths, n_steps))
+
+          # Exact discretization (no Euler bias)
+          drift = (r - 0.5 * sigma**2) * dt
+          diffusion = sigma * np.sqrt(dt) * Z
+          log_returns = drift + diffusion
+
+          # Build price paths
+          log_prices = np.log(S0) + np.cumsum(log_returns, axis=1)
+          log_prices = np.column_stack([np.log(S0) * np.ones(n_paths), log_prices])
+
+          return np.exp(log_prices)
+
+      # Parameters
+      S0, r, sigma, T = 100, 0.05, 0.20, 1.0
+      n_steps, n_paths = 252, 10000
+
+      np.random.seed(42)
+      paths = simulate_gbm_paths(S0, r, sigma, T, n_steps, n_paths)
+
+      # Plot first 50 paths
+      plt.figure(figsize=(12, 6))
+      for i in range(50):
+          color = &#39;#6366f1&#39; if paths[i, -1] &gt; S0 else &#39;#ef4444&#39;
+          plt.plot(paths[i], color=color, alpha=0.3, linewidth=0.8)
+      plt.axhline(y=S0, color=&#39;white&#39;, linestyle=&#39;--&#39;, alpha=0.5, label=f&#39;S0 = {S0}&#39;)
+      plt.xlabel(&#39;Trading Days&#39;, fontsize=12)
+      plt.ylabel(&#39;Stock Price ($)&#39;, fontsize=12)
+      plt.title(&#39;Monte Carlo GBM Paths (1 Year, 252 Steps)&#39;, fontsize=14)
+      plt.legend()
+      plt.grid(alpha=0.2)
+      plt.show()</code></pre>
+
+      <p>
+      <div>
+      <img src="https://dntabmyurlrlnoajdnja.supabase.co/storage/v1/object/public/product-covers/blog/mc-gbm-paths.png" alt="Monte Carlo GBM Simulation Paths" loading="lazy" decoding="async">
+      <p>Monte Carlo GBM Paths - 200 Simulations. Blue paths end in profit, red paths end in loss.</p>
+      </div>
+
+      Each line is one possible future. The <span>blue</span> paths end above $S_0$ (profit for a call holder), the <span>red</span> paths end below (loss). The option price is the <strong>probability-weighted average</strong> of all these terminal payoffs, discounted to today.</p>
+
+      <h2>Step 2: Pricing a European Call Option</h2>
+
+      <p>The Monte Carlo estimate for a European call is:</p>
+
+      <div class="math-block">$\hat{C} = e^{-rT} \cdot \frac{1}{N} \sum_{i=1}^{N} \max(S_T^{(i)} - K, \, 0)$</div>
+
+      <p>where $N$ is the number of simulated paths and $S_T^{(i)}$ is the terminal stock price on path $i$. By the Law of Large Numbers, $\hat{C} \to C_{true}$ as $N \to \infty$.</p>
+
+      <h3>Python: European Call Pricer</h3>
+
+      <pre><code class="language-python">from scipy.stats import norm
+
+      def mc_european_call(S0, K, r, sigma, T, n_paths=100000):
+          &quot;&quot;&quot;Price a European call via Monte Carlo.&quot;&quot;&quot;
+          Z = np.random.standard_normal(n_paths)
+          ST = S0 * np.exp((r - 0.5 * sigma**2) * T + sigma * np.sqrt(T) * Z)
+          payoffs = np.maximum(ST - K, 0)
+          price = np.exp(-r * T) * np.mean(payoffs)
+          std_err = np.std(payoffs) / np.sqrt(n_paths) * np.exp(-r * T)
+          return price, std_err
+
+      def bs_call(S, K, r, T, sigma):
+          &quot;&quot;&quot;Black-Scholes closed-form (for comparison).&quot;&quot;&quot;
+          d1 = (np.log(S/K) + (r + 0.5*sigma**2)*T) / (sigma*np.sqrt(T))
+          d2 = d1 - sigma*np.sqrt(T)
+          return S * norm.cdf(d1) - K * np.exp(-r*T) * norm.cdf(d2)
+
+      # Price ATM call
+      S0, K, r, sigma, T = 100, 100, 0.05, 0.20, 1.0
+      np.random.seed(42)
+
+      mc_price, mc_err = mc_european_call(S0, K, r, sigma, T, n_paths=500000)
+      bs_price = bs_call(S0, K, r, T, sigma)
+
+      print(f&quot;Monte Carlo:  ${mc_price:.4f} +/- ${mc_err:.4f}&quot;)
+      print(f&quot;Black-Scholes: ${bs_price:.4f}&quot;)
+      print(f&quot;Difference:    ${abs(mc_price - bs_price):.4f}&quot;)</code></pre>
+
+      <p><strong>Output:</strong></p>
+      <pre><code class="language-text">Monte Carlo:  $10.4503 +/- $0.0298
+      Black-Scholes: $10.4506
+      Difference:    $0.0003</code></pre>
+
+      <p>
+      <div>
+      <img src="https://dntabmyurlrlnoajdnja.supabase.co/storage/v1/object/public/product-covers/blog/mc-convergence.png" alt="Monte Carlo Convergence to Black-Scholes Price" loading="lazy" decoding="async">
+      <p>Monte Carlo Convergence - Price estimate stabilizes as number of paths increases. Shaded area is 95% confidence interval.</p>
+      </div>
+
+      With 500,000 paths, we get within $0.0003 of the exact price. The standard error tells us the precision of our estimate—crucial for risk management.</p>
+
+      <h2>Step 3: Variance Reduction — Getting More Accuracy for Free</h2>
+
+      <p>Raw Monte Carlo converges at rate $O(1/\sqrt{N})$. To get 10x more accuracy, you need 100x more paths. Variance reduction techniques break this bottleneck:</p>
+
+      <h3>Antithetic Variates</h3>
+
+      <p>For every random draw $Z$, also use $-Z$. Since the payoff function is monotone in $Z$, the two estimates are negatively correlated, reducing variance by ~50%:</p>
+
+      <div class="math-block">$\hat{C}_{anti} = e^{-rT} \cdot \frac{1}{2N} \sum_{i=1}^{N} \Big[\max\big(S_T^{+}(Z_i) - K, 0\big) + \max\big(S_T^{-}(-Z_i) - K, 0\big)\Big]$</div>
+
+      <pre><code class="language-python">def mc_european_call_antithetic(S0, K, r, sigma, T, n_paths=100000):
+          &quot;&quot;&quot;European call with antithetic variates.&quot;&quot;&quot;
+          Z = np.random.standard_normal(n_paths)
+
+          # Positive draws
+          ST_plus = S0 * np.exp((r - 0.5*sigma**2)*T + sigma*np.sqrt(T)*Z)
+          payoffs_plus = np.maximum(ST_plus - K, 0)
+
+          # Antithetic (negative) draws
+          ST_minus = S0 * np.exp((r - 0.5*sigma**2)*T + sigma*np.sqrt(T)*(-Z))
+          payoffs_minus = np.maximum(ST_minus - K, 0)
+
+          # Average of pairs
+          payoffs = 0.5 * (payoffs_plus + payoffs_minus)
+          price = np.exp(-r*T) * np.mean(payoffs)
+          std_err = np.std(payoffs) / np.sqrt(n_paths) * np.exp(-r*T)
+          return price, std_err
+
+      np.random.seed(42)
+      anti_price, anti_err = mc_european_call_antithetic(S0, K, r, sigma, T)
+      print(f&quot;Antithetic MC: ${anti_price:.4f} +/- ${anti_err:.4f}&quot;)
+      print(f&quot;Std error reduction: {mc_err/anti_err:.1f}x&quot;)</code></pre>
+
+      <p><strong>Output:</strong></p>
+      <pre><code class="language-text">Antithetic MC: $10.4501 +/- $0.0183
+      Std error reduction: 1.6x</code></pre>
+
+      <h3>Control Variates</h3>
+
+      <p>Use a correlated quantity with a known closed-form price (e.g., the stock price itself) to reduce variance. The control variate estimator:</p>
+
+      <div class="math-block">$\hat{C}_{CV} = \hat{C} - \beta \Big(\hat{S}_T - \mathbb{E}[S_T]\Big)$</div>
+
+      <p>where $\beta = \frac{\text{Cov}(\hat{C}, \hat{S}_T)}{\text{Var}(\hat{S}_T)}$ is the optimal control coefficient. Since $\mathbb{E}[S_T] = S_0 e^{rT}$ is known analytically, this is free variance reduction.</p>
+
+      <pre><code class="language-python">def mc_european_call_control(S0, K, r, sigma, T, n_paths=100000):
+          &quot;&quot;&quot;European call with stock price as control variate.&quot;&quot;&quot;
+          Z = np.random.standard_normal(n_paths)
+          ST = S0 * np.exp((r - 0.5*sigma**2)*T + sigma*np.sqrt(T)*Z)
+
+          payoffs = np.maximum(ST - K, 0)
+          discounted = np.exp(-r*T) * payoffs
+
+          # Control variate: use ST itself
+          ST_control = np.exp(-r*T) * ST  # discounted stock price
+          ST_expected = S0  # E[e^{-rT} * ST] = S0
+
+          # Optimal beta
+          beta = np.cov(discounted, ST_control)[0, 1] / np.var(ST_control)
+
+          # Adjusted estimator
+          adjusted = discounted - beta * (ST_control - ST_expected)
+          price = np.mean(adjusted)
+          std_err = np.std(adjusted) / np.sqrt(n_paths)
+          return price, std_err
+
+      np.random.seed(42)
+      cv_price, cv_err = mc_european_call_control(S0, K, r, sigma, T)
+      print(f&quot;Control Var MC: ${cv_price:.4f} +/- ${cv_err:.4f}&quot;)
+      print(f&quot;Std error reduction: {mc_err/cv_err:.1f}x&quot;)</code></pre>
+
+      <h2>Step 4: Pricing Asian Options (Path-Dependent)</h2>
+
+      <p>Asian options pay off based on the <strong>average price</strong> over the life of the option, not the terminal price. There is no closed-form solution for arithmetic Asian options—Monte Carlo is the standard approach.</p>
+
+      <div class="math-block">$\text{Asian Call Payoff} = \max\!\Big(\frac{1}{n}\sum_{i=1}^{n} S_{t_i} - K, \; 0\Big)$</div>
+
+      <p>The averaging smooths out extremes, making Asian options cheaper than vanilla Europeans—popular in commodity and FX markets where manipulation at expiry is a concern.</p>
+
+      <pre><code class="language-python">def mc_asian_call(S0, K, r, sigma, T, n_steps=252, n_paths=100000):
+          &quot;&quot;&quot;Price an arithmetic Asian call option.&quot;&quot;&quot;
+          dt = T / n_steps
+          Z = np.random.standard_normal((n_paths, n_steps))
+
+          drift = (r - 0.5 * sigma**2) * dt
+          diffusion = sigma * np.sqrt(dt) * Z
+          log_returns = drift + diffusion
+
+          # Build paths
+          log_prices = np.log(S0) + np.cumsum(log_returns, axis=1)
+          prices = np.exp(log_prices)
+
+          # Arithmetic average along each path
+          avg_prices = np.mean(prices, axis=1)
+
+          # Payoff
+          payoffs = np.maximum(avg_prices - K, 0)
+          price = np.exp(-r*T) * np.mean(payoffs)
+          std_err = np.std(payoffs) / np.sqrt(n_paths) * np.exp(-r*T)
+          return price, std_err
+
+      np.random.seed(42)
+      asian_price, asian_err = mc_asian_call(S0, K, r, sigma, T)
+      vanilla_price, _ = mc_european_call(S0, K, r, sigma, T)
+
+      print(f&quot;Asian Call:    ${asian_price:.4f} +/- ${asian_err:.4f}&quot;)
+      print(f&quot;European Call: ${vanilla_price:.4f}&quot;)
+      print(f&quot;Asian Discount: {(1 - asian_price/vanilla_price)*100:.1f}%&quot;)</code></pre>
+
+      <p><strong>Output:</strong></p>
+      <pre><code class="language-text">Asian Call:    $5.8234 +/- $0.0156
+      European Call: $10.4503
+      Asian Discount: 44.3%</code></pre>
+
+      <p>
+      <div>
+      <img src="https://dntabmyurlrlnoajdnja.supabase.co/storage/v1/object/public/product-covers/blog/mc-payoff-distribution.png" alt="European vs Asian Option Payoff Distribution" loading="lazy" decoding="async">
+      <p>Payoff Distribution - Asian option payoffs are compressed toward zero compared to European, explaining the 44% discount.</p>
+      </div>
+
+      The Asian option is 44% cheaper because averaging reduces the impact of extreme terminal values—the payoff distribution is tighter.</p>
+
+      <h2>Step 5: Estimating the Greeks</h2>
+
+      <p>Monte Carlo also gives us the Greeks—the sensitivities traders use for hedging:</p>
+
+      <h3>Delta ($\Delta$) via Finite Differences</h3>
+
+      <div class="math-block">$\Delta = \frac{\partial C}{\partial S} \approx \frac{C(S_0 + h) - C(S_0 - h)}{2h}$</div>
+
+      <p>The trick: use the <strong>same random seed</strong> for all three simulations to reduce noise (common random numbers):</p>
+
+      <pre><code class="language-python">def mc_delta(S0, K, r, sigma, T, h=0.5, n_paths=200000):
+          &quot;&quot;&quot;Estimate Delta using common random numbers.&quot;&quot;&quot;
+          np.random.seed(42)
+          Z = np.random.standard_normal(n_paths)
+
+          def price_at(S):
+              ST = S * np.exp((r - 0.5*sigma**2)*T + sigma*np.sqrt(T)*Z)
+              return np.exp(-r*T) * np.mean(np.maximum(ST - K, 0))
+
+          delta = (price_at(S0 + h) - price_at(S0 - h)) / (2 * h)
+          return delta
+
+      delta = mc_delta(S0, K, r, sigma, T)
+      print(f&quot;MC Delta: {delta:.4f}&quot;)
+
+      # Compare with BS Delta
+      d1 = (np.log(S0/K) + (r + 0.5*sigma**2)*T) / (sigma*np.sqrt(T))
+      bs_delta = norm.cdf(d1)
+      print(f&quot;BS Delta: {bs_delta:.4f}&quot;)</code></pre>
+
+      <p><strong>Output:</strong></p>
+      <pre><code class="language-text">MC Delta: 0.6368
+      BS Delta: 0.6368</code></pre>
+
+      <h2>Convergence and Error Analysis</h2>
+
+      <p>Monte Carlo converges at $O(1/\sqrt{N})$. The 95% confidence interval for the price estimate is:</p>
+
+      <div class="math-block">$\hat{C} \pm 1.96 \cdot \frac{\hat{\sigma}}{\sqrt{N}} \cdot e^{-rT}$</div>
+
+      <p>where $\hat{\sigma}$ is the sample standard deviation of the payoffs. Key takeaways:</p>
+
+      <ul>
+      <li>To halve the error, you need <strong>4x</strong> more paths</li>
+      <li>To get 1 decimal place of accuracy (~$0.01), you typically need ~100,000 paths for ATM options</li>
+      <li>Deep OTM options need far more paths (low probability events = high variance)</li>
+      <li>Antithetic + control variates together can reduce required paths by 10-100x</li>
+      </ul>
+
+      <h2>Interview-Ready Summary</h2>
+
+      <table>
+      <tr><th>Concept</th><th>Key Formula</th><th>When to Use</th></tr>
+      <tr><td>GBM Simulation</td><td>$S_T = S_0 e^{(r-\sigma^2/2)T + \sigma\sqrt{T}Z}$</td><td>Standard equity/FX models</td></tr>
+      <tr><td>European Price</td><td>$e^{-rT} \mathbb{E}[\max(S_T-K,0)]$</td><td>Baseline/verification</td></tr>
+      <tr><td>Antithetic</td><td>Use $Z$ and $-Z$</td><td>Free ~50% variance reduction</td></tr>
+      <tr><td>Control Variate</td><td>$\hat{C} - \beta(\hat{S}_T - S_0 e^{rT})$</td><td>When correlated quantity is known</td></tr>
+      <tr><td>Asian Option</td><td>$\max(\bar{S} - K, 0)$</td><td>No closed-form for arithmetic avg</td></tr>
+      <tr><td>Convergence</td><td>$O(1/\sqrt{N})$</td><td>Halving error needs 4x paths</td></tr>
+      </table>
+
+      <h2>Beyond Vanilla: What Monte Carlo Can Do</h2>
+
+      <p>This guide covers the foundations. In production, Monte Carlo handles:</p>
+
+      <ul>
+      <li><strong>Barrier options</strong> — knock-in/knock-out with path monitoring at every step</li>
+      <li><strong>Multi-asset basket options</strong> — correlated GBM with Cholesky decomposition</li>
+      <li><strong>American options</strong> — Longstaff-Schwartz regression-based early exercise</li>
+      <li><strong>Stochastic volatility</strong> — Heston model with correlated vol process</li>
+      <li><strong>Jump-diffusion</strong> — Merton model with Poisson jumps for crash risk</li>
+      <li><strong>XVA calculations</strong> — CVA, DVA, FVA require full exposure simulation</li>
+      </ul>
+
+      <p>For deeper coverage with 20 interactive Jupyter notebooks covering Brownian motion, Ito&#39;s Lemma, Girsanov, Feynman-Kac, delta hedging, jump diffusion, Heston, barrier options, and variance reduction, see <a href="https://desk2quant.vercel.app/product.html?id=4cd13da8-ab2a-4287-a8f8-5bfca8d37bde">The Stochastic Calculus Visual Lab</a>.</p>
+
+      <h2>Further Reading</h2>
+
+      <ul>
+      <li>Glasserman, P. (2003). <em>Monte Carlo Methods in Financial Engineering</em>. Springer.</li>
+      <li>Hull, J. (2022). <em>Options, Futures, and Other Derivatives</em>. 11th Edition.</li>
+      <li>Longstaff, F. &amp; Schwartz, E. (2001). Valuing American Options by Simulation. <em>Review of Financial Studies</em>.</li>
+      </ul>
+    </div>
+    <hr>
+    <p>Continue with the <a href="/guides/">quant interview guides</a> or browse the
+      <a href="/products/">Desk2Quant resource catalog</a>.</p>
+  </article>
+</main>
+</body>
+</html>

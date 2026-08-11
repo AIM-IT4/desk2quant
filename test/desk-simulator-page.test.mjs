@@ -41,7 +41,7 @@ test('tabs, labels and dialogs reference existing elements', () => {
 test('SEO metadata and structured data describe a free educational application', () => {
     assert.match(
         html,
-        /<link rel="canonical" href="https:\/\/desk2quant\.vercel\.app\/desk-simulator\.html">/
+        /<link rel="canonical" href="https:\/\/desk2quant\.com\/desk-simulator\.html">/
     );
     assert.match(html, /"@type": "SoftwareApplication"/);
     assert.match(html, /"applicationCategory": "EducationalApplication"/);
@@ -65,7 +65,7 @@ test('the product is discoverable from the homepage and sitemap', () => {
     assert.match(indexHtml, /href="desk-simulator\.html"/);
     assert.match(
         sitemap,
-        /<loc>https:\/\/desk2quant\.vercel\.app\/desk-simulator\.html<\/loc>/
+        /<loc>https:\/\/desk2quant\.com\/desk-simulator\.html<\/loc>/
     );
 });
 

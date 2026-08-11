@@ -1,4 +1,5 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "node generate-config.js && node scripts/build-seo.js",
   "outputDirectory": ".",
   "redirects": [
@@ -9,10 +10,147 @@
     },
     {
       "source": "/index.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.desk2quant.com"
+        }
+      ],
+      "destination": "https://desk2quant.com/",
+      "permanent": true
+    },
+    {
+      "source": "/index.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "desk2quant.vercel.app"
+        }
+      ],
+      "destination": "https://desk2quant.com/",
+      "permanent": true
+    },
+    {
+      "source": "/index.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "quant-mentor.vercel.app"
+        }
+      ],
+      "destination": "https://desk2quant.com/",
+      "permanent": true
+    },
+    {
+      "source": "/index.html",
       "destination": "/",
       "permanent": true
     },
     {
+      "source": "/products/quant-interview-problem-book-1000-plus-problems-with-solutions.html",
+      "has": [
+        {
+          "type": "host",
+          "value": {
+            "inc": ["www.desk2quant.com", "desk2quant.vercel.app", "quant-mentor.vercel.app"]
+          }
+        }
+      ],
+      "destination": "https://desk2quant.com/products/quant-interview-problem-book.html",
+      "permanent": true
+    },
+    {
+      "source": "/products/c-plus-plus-for-quants-desk-ready-notes.html",
+      "has": [
+        {
+          "type": "host",
+          "value": {
+            "inc": ["www.desk2quant.com", "desk2quant.vercel.app", "quant-mentor.vercel.app"]
+          }
+        }
+      ],
+      "destination": "https://desk2quant.com/products/cpp-for-quants.html",
+      "permanent": true
+    },
+    {
+      "source": "/products/python-for-quants-complete-interview-guide.html",
+      "has": [
+        {
+          "type": "host",
+          "value": {
+            "inc": ["www.desk2quant.com", "desk2quant.vercel.app", "quant-mentor.vercel.app"]
+          }
+        }
+      ],
+      "destination": "https://desk2quant.com/products/python-for-quants.html",
+      "permanent": true
+    },
+    {
+      "source": "/products/stochastic-calculus-for-quants-interview-playbook.html",
+      "has": [
+        {
+          "type": "host",
+          "value": {
+            "inc": ["www.desk2quant.com", "desk2quant.vercel.app", "quant-mentor.vercel.app"]
+          }
+        }
+      ],
+      "destination": "https://desk2quant.com/products/stochastic-calculus-for-quants.html",
+      "permanent": true
+    },
+    {
+      "source": "/products/numerical-methods-for-quants-the-master-field-manual.html",
+      "has": [
+        {
+          "type": "host",
+          "value": {
+            "inc": ["www.desk2quant.com", "desk2quant.vercel.app", "quant-mentor.vercel.app"]
+          }
+        }
+      ],
+      "destination": "https://desk2quant.com/products/numerical-methods-for-quants.html",
+      "permanent": true
+    },
+    {
+      "source": "/products/model-validation-quant-case-study-pack.html",
+      "has": [
+        {
+          "type": "host",
+          "value": {
+            "inc": ["www.desk2quant.com", "desk2quant.vercel.app", "quant-mentor.vercel.app"]
+          }
+        }
+      ],
+      "destination": "https://desk2quant.com/products/model-validation-quant-interview.html",
+      "permanent": true
+    },
+    {
+      "source": "/products/pnl-attribution-and-desk-diagnostics-for-quants.html",
+      "has": [
+        {
+          "type": "host",
+          "value": {
+            "inc": ["www.desk2quant.com", "desk2quant.vercel.app", "quant-mentor.vercel.app"]
+          }
+        }
+      ],
+      "destination": "https://desk2quant.com/products/pnl-attribution-for-quants.html",
+      "permanent": true
+    },
+    {
+      "source": "/products/xva-calculus-lab-master-counterparty-credit-risk.html",
+      "has": [
+        {
+          "type": "host",
+          "value": {
+            "inc": ["www.desk2quant.com", "desk2quant.vercel.app", "quant-mentor.vercel.app"]
+          }
+        }
+      ],
+      "destination": "https://desk2quant.com/products/xva-calculus-lab.html",
+      "permanent": true
+    },
+    {
       "source": "/",
       "has": [
         {
@@ -50,6 +188,39 @@
       "has": [
         {
           "type": "host",
+          "value": "quant-mentor.vercel.app"
+        }
+      ],
+      "destination": "https://desk2quant.com/",
+      "permanent": true
+    },
+    {
+      "source": "/:path+/",
+      "has": [
+        {
+          "type": "host",
+          "value": "quant-mentor.vercel.app"
+        }
+      ],
+      "destination": "https://desk2quant.com/:path+/",
+      "permanent": true
+    },
+    {
+      "source": "/:path+",
+      "has": [
+        {
+          "type": "host",
+          "value": "quant-mentor.vercel.app"
+        }
+      ],
+      "destination": "https://desk2quant.com/:path+",
+      "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
           "value": "desk2quant.vercel.app"
         }
       ],
@@ -76,6 +247,46 @@
         }
       ],
       "destination": "https://desk2quant.com/:path+",
+      "permanent": true
+    },
+    {
+      "source": "/products/quant-interview-problem-book-1000-plus-problems-with-solutions.html",
+      "destination": "/products/quant-interview-problem-book.html",
+      "permanent": true
+    },
+    {
+      "source": "/products/c-plus-plus-for-quants-desk-ready-notes.html",
+      "destination": "/products/cpp-for-quants.html",
+      "permanent": true
+    },
+    {
+      "source": "/products/python-for-quants-complete-interview-guide.html",
+      "destination": "/products/python-for-quants.html",
+      "permanent": true
+    },
+    {
+      "source": "/products/stochastic-calculus-for-quants-interview-playbook.html",
+      "destination": "/products/stochastic-calculus-for-quants.html",
+      "permanent": true
+    },
+    {
+      "source": "/products/numerical-methods-for-quants-the-master-field-manual.html",
+      "destination": "/products/numerical-methods-for-quants.html",
+      "permanent": true
+    },
+    {
+      "source": "/products/model-validation-quant-case-study-pack.html",
+      "destination": "/products/model-validation-quant-interview.html",
+      "permanent": true
+    },
+    {
+      "source": "/products/pnl-attribution-and-desk-diagnostics-for-quants.html",
+      "destination": "/products/pnl-attribution-for-quants.html",
+      "permanent": true
+    },
+    {
+      "source": "/products/xva-calculus-lab-master-counterparty-credit-risk.html",
+      "destination": "/products/xva-calculus-lab.html",
       "permanent": true
     },
     {

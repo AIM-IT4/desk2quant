@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>/* CANONICAL-HOST-GUARD v1 */!function(){try{var h=location.hostname.toLowerCase(),d=/^(localhost|127.0.0.1|0.0.0.0|[::1])$/.test(h);if(!d&&h!=='desk2quant.com')location.replace('https://desk2quant.com'+location.pathname+location.search+location.hash)}catch(e){}}();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Greeks You Were Never Taught: Vanna, Volga, Charm, and Speed | Desk2Quant</title>
+<meta name="description" content="Delta, Gamma, Vega, Theta, Rho -- every candidate knows these. But real trading desks live and die by the second-order Greeks: Vanna, Volga, Charm, and…">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://desk2quant.com/blog/greeks-you-were-never-taught-vanna-volga-charm-speed.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Desk2Quant">
+<meta property="og:url" content="https://desk2quant.com/blog/greeks-you-were-never-taught-vanna-volga-charm-speed.html">
+<meta property="og:title" content="The Greeks You Were Never Taught: Vanna, Volga, Charm, and Speed | Desk2Quant">
+<meta property="og:description" content="Delta, Gamma, Vega, Theta, Rho -- every candidate knows these. But real trading desks live and die by the second-order Greeks: Vanna, Volga, Charm, and…">
+<meta property="og:image" content="https://desk2quant.vercel.app/assets/images/blog-exotic-greeks-cover.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Greeks You Were Never Taught: Vanna, Volga, Charm, and Speed | Desk2Quant">
+<meta name="twitter:description" content="Delta, Gamma, Vega, Theta, Rho -- every candidate knows these. But real trading desks live and die by the second-order Greeks: Vanna, Volga, Charm, and…">
+<meta name="twitter:image" content="https://desk2quant.vercel.app/assets/images/blog-exotic-greeks-cover.svg">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Greeks You Were Never Taught: Vanna, Volga, Charm, and Speed","description":"Delta, Gamma, Vega, Theta, Rho -- every candidate knows these. But real trading desks live and die by the second-order Greeks: Vanna, Volga, Charm, and…","image":["https://desk2quant.vercel.app/assets/images/blog-exotic-greeks-cover.svg"],"url":"https://desk2quant.com/blog/greeks-you-were-never-taught-vanna-volga-charm-speed.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://desk2quant.com/blog/greeks-you-were-never-taught-vanna-volga-charm-speed.html"},"author":{"@type":"Person","name":"Amit Kumar Jha"},"publisher":{"@type":"Organization","@id":"https://desk2quant.com/#organization","name":"Desk2Quant","logo":{"@type":"ImageObject","url":"https://desk2quant.com/assets/images/desk2quant-logo.png?v=3"}},"inLanguage":"en","datePublished":"2026-07-27T14:37:50.085163+00:00","dateModified":"2026-07-27T14:37:50.085163+00:00"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://desk2quant.com/"},{"@type":"ListItem","position":2,"name":"Articles","item":"https://desk2quant.com/blog.html"},{"@type":"ListItem","position":3,"name":"The Greeks You Were Never Taught: Vanna, Volga, Charm, and Speed","item":"https://desk2quant.com/blog/greeks-you-were-never-taught-vanna-volga-charm-speed.html"}]}</script>
+<link rel="icon" type="image/png" href="/assets/images/desk2quant-logo.png?v=3">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/seo-product.css?v=1">
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+  options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+<main class="seo-doc">
+  <nav class="seo-crumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a> <span>/</span>
+    <a href="/blog.html">Articles</a> <span>/</span>
+    <span aria-current="page">The Greeks You Were Never Taught: Vanna, Volga, Charm, and Speed</span>
+  </nav>
+  <article>
+    <p class="seo-kicker">Quant finance article &middot; 27 July 2026</p>
+    <h1>The Greeks You Were Never Taught: Vanna, Volga, Charm, and Speed</h1>
+    <p><img src="https://desk2quant.vercel.app/assets/images/blog-exotic-greeks-cover.svg" alt="The Greeks You Were Never Taught: Vanna, Volga, Charm, and Speed" width="840" fetchpriority="high"></p>
+    <div class="seo-article-body">
+      <p>Ask a fresh graduate to define Delta, Gamma, Vega, Theta, and Rho, and they&#39;ll rattle them off perfectly. Ask them what happens to Delta when volatility moves, or how a desk hedges a barrier option two days before knock-out, and the room goes quiet. That gap is exactly where interview panels probe — and where real trading desks live day to day.</p>
+      <p>The five &quot;textbook&quot; Greeks are first-order sensitivities of price to a single input. But an option&#39;s price is a curved surface in several dimensions at once, and the interesting risk sits in how those sensitivities move relative to <em>each other</em>. That&#39;s the domain of the second-order, cross Greeks — the ones every derivatives desk manages but almost no course teaches.</p>
+      <h2>Vanna: When Vol Moves, Delta Moves Too</h2>
+      <p><strong>Vanna</strong> measures how Delta changes as implied volatility changes (equivalently, how Vega changes as spot changes):</p>
+      <div class="math-block">$ \text{Vanna} = \frac{\partial \Delta}{\partial \sigma} = \frac{\partial^2 V}{\partial S \, \partial \sigma} = \frac{\partial \text{Vega}}{\partial S} $</div>
+      <p>For a Black-Scholes call, Vanna has the closed form:</p>
+      <div class="math-block">$ \text{Vanna} = -e^{-qT}\phi(d_1)\frac{d_2}{\sigma} $</div>
+      <p><strong>Why the desk cares:</strong> a market maker who is short a large delta-hedged options book learns the hard way that a vol spike doesn&#39;t just move Vega P&amp;L — it silently changes the hedge ratio on every position. In a risk-off shock, volatility jumps <em>and</em> spot moves, and Vanna tells you how much extra delta hedging you&#39;ll need to do purely from the vol move, before spot has moved at all. FX options desks in particular watch Vanna closely because spot-vol correlation in currency pairs is structurally persistent (risk reversals are priced almost entirely on Vanna exposure).</p>
+      <p><strong>Interview framing:</strong> &quot;Your delta-hedged book is flat delta and flat vega. The market gaps down 3% and implied vol jumps 5 points overnight with no time passing. Are you still flat?&quot; The honest answer is no — Vanna (and Charm, below) means your Greeks decayed even though nothing you can trade directly moved.</p>
+      <h2>Volga: The Convexity of Volatility Itself</h2>
+      <p><strong>Volga</strong> (also called Vomma) is Vega&#39;s own Gamma — how Vega changes as implied vol changes:</p>
+      <div class="math-block">$ \text{Volga} = \frac{\partial \text{Vega}}{\partial \sigma} = \frac{\partial^2 V}{\partial \sigma^2} = \text{Vega} \cdot \frac{d_1 d_2}{\sigma} $</div>
+      <p><strong>Why the desk cares:</strong> Volga is the reason out-of-the-money options are structurally bid relative to Black-Scholes — it is the direct P&amp;L sensitivity to <em>volatility of volatility</em>. A long-Volga book profits when implied vol whipsaws in either direction, which is exactly the exposure a desk wants when pricing strangles or butterflies. Volga is also the primary risk factor behind the smile itself: a market with zero Volga would have a flat, Black-Scholes-consistent vol surface. The curvature you see in every real IV smile is the market pricing in Volga risk.</p>
+      <p><strong>Interview framing:</strong> &quot;Why does a long strangle have positive Vega <em>and</em> positive Volga, and why does that matter for how you&#39;d hedge it versus a long straddle?&quot; Candidates who only know first-order Vega will describe the position correctly but miss that the convexity of Vega itself is what a vol-of-vol trader is actually monetizing.</p>
+      <h2>Charm: Delta Decay While You Sleep</h2>
+      <p><strong>Charm</strong> (Delta decay) measures how Delta changes purely with the passage of time, holding spot and vol fixed:</p>
+      <div class="math-block">$ \text{Charm} = -\frac{\partial \Delta}{\partial t} = -\frac{\partial^2 V}{\partial S \, \partial T} $</div>
+      <p>For a Black-Scholes call:</p>
+      <div class="math-block">$ \text{Charm} = -e^{-qT}\phi(d_1)\frac{2(r-q)T - d_2\sigma\sqrt{T}}{2T\sigma\sqrt{T}} $</div>
+      <p><strong>Why the desk cares:</strong> Charm is the reason a delta-hedged book that was flat at 4pm close is no longer flat at 9am open, even if the underlying didn&#39;t move overnight. It&#39;s largest for near-the-money options close to expiry — exactly the options that dominate weekly and 0DTE flow. Any desk running a large short-dated options book needs to re-hedge for Charm every morning regardless of what price does, purely because one day of calendar time passed. Ignoring it is a slow, quiet way to accumulate unhedged directional risk.</p>
+      <p><strong>Interview framing:</strong> &quot;You delta-hedge at the close on a Friday. Nothing moves all weekend. Is your Monday morning position still delta-neutral?&quot; The correct answer walks through Charm across two days of decay, not just &quot;nothing changed so nothing changed.&quot;</p>
+      <h2>Speed: The Gamma of Gamma</h2>
+      <p><strong>Speed</strong> is the third derivative of price with respect to spot — how Gamma itself changes as spot moves:</p>
+      <div class="math-block">$ \text{Speed} = \frac{\partial \Gamma}{\partial S} = \frac{\partial^3 V}{\partial S^3} $</div>
+      <p><strong>Why the desk cares:</strong> Gamma hedging assumes Gamma is roughly constant over the size of your hedge interval. Near the money, close to expiry, or during large moves, that assumption breaks — Gamma itself is changing fast, and Speed tells you by how much. A trader running a large Gamma-scalping strategy who ignores Speed will find their realized hedging P&amp;L systematically diverges from the theoretical Gamma P&amp;L during big moves, because the Gamma they were hedging against didn&#39;t stay put while they traded. It&#39;s a second-order effect that only shows up when things get interesting — which is precisely when it costs the most to ignore.</p>
+      <p><strong>Interview framing:</strong> &quot;Your Gamma-hedging P&amp;L consistently underperforms the theoretical estimate during fast markets, even after accounting for slippage. What Greek are you missing?&quot; The answer is Speed — your Gamma estimate was stale by the time you executed the hedge.</p>
+      <h2>Quick Reference: The Exotic Greeks</h2>
+      <table>
+      <tr><th>Greek</th><th>Measures</th><th>Desk Use</th></tr>
+      <tr><td>Vanna</td><td>∂Delta / ∂vol</td><td>FX risk reversals, spot-vol co-moves</td></tr>
+      <tr><td>Volga</td><td>∂Vega / ∂vol</td><td>Strangles/butterflies, smile curvature</td></tr>
+      <tr><td>Charm</td><td>∂Delta / ∂time</td><td>Overnight re-hedging, short-dated books</td></tr>
+      <tr><td>Speed</td><td>∂Gamma / ∂spot</td><td>Gamma scalping during fast markets</td></tr>
+      </table>
+      <h2>Why This Matters More Than Your Course Ever Told You</h2>
+      <p>None of Vanna, Volga, Charm, or Speed appear on a standard university derivatives syllabus, and yet every options desk manages them, whether the traders name them explicitly or not. They show up the moment you ask a second question after the first-order Greek: <em>&quot;okay, and how does that sensitivity itself change?&quot;</em> That single follow-up question is what separates someone who has memorized the Greeks from someone who understands that an option&#39;s price is a curved, multi-dimensional surface — and that risk management means hedging the curvature, not just the slope.</p>
+      <p>If you&#39;re prepping for a derivatives or risk quant interview, don&#39;t just be able to define these four terms. Be ready to explain <em>which desk</em> cares about each one and <em>why</em> — that&#39;s the level of fluency that signals you&#39;ve actually thought about a trading book, not just a textbook.</p>
+    </div>
+    <hr>
+    <p>Continue with the <a href="/guides/">quant interview guides</a> or browse the
+      <a href="/products/">Desk2Quant resource catalog</a>.</p>
+  </article>
+</main>
+</body>
+</html>

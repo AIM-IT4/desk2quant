@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>/* CANONICAL-HOST-GUARD v1 */!function(){try{var h=location.hostname.toLowerCase(),d=/^(localhost|127.0.0.1|0.0.0.0|[::1])$/.test(h);if(!d&&h!=='desk2quant.com')location.replace('https://desk2quant.com'+location.pathname+location.search+location.hash)}catch(e){}}();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XVA in Plain English: Why Banks Price Counterparty Risk | Desk2Quant</title>
+<meta name="description" content="CVA, DVA, FVA, MVA, KVA — five acronyms that sound interchangeable until an interviewer asks what each one actually prices in. Here is XVA explained the way…">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://desk2quant.com/blog/xva-in-plain-english-why-banks-price-counterparty-risk.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Desk2Quant">
+<meta property="og:url" content="https://desk2quant.com/blog/xva-in-plain-english-why-banks-price-counterparty-risk.html">
+<meta property="og:title" content="XVA in Plain English: Why Banks Price Counterparty Risk | Desk2Quant">
+<meta property="og:description" content="CVA, DVA, FVA, MVA, KVA — five acronyms that sound interchangeable until an interviewer asks what each one actually prices in. Here is XVA explained the way…">
+<meta property="og:image" content="https://desk2quant.com/assets/images/blog-xva-plain-english-cover.svg?v=2">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="XVA in Plain English: Why Banks Price Counterparty Risk | Desk2Quant">
+<meta name="twitter:description" content="CVA, DVA, FVA, MVA, KVA — five acronyms that sound interchangeable until an interviewer asks what each one actually prices in. Here is XVA explained the way…">
+<meta name="twitter:image" content="https://desk2quant.com/assets/images/blog-xva-plain-english-cover.svg?v=2">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"XVA in Plain English: Why Banks Price Counterparty Risk","description":"CVA, DVA, FVA, MVA, KVA — five acronyms that sound interchangeable until an interviewer asks what each one actually prices in. Here is XVA explained the way…","image":["https://desk2quant.com/assets/images/blog-xva-plain-english-cover.svg?v=2"],"url":"https://desk2quant.com/blog/xva-in-plain-english-why-banks-price-counterparty-risk.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://desk2quant.com/blog/xva-in-plain-english-why-banks-price-counterparty-risk.html"},"author":{"@type":"Person","name":"Amit Kumar Jha"},"publisher":{"@type":"Organization","@id":"https://desk2quant.com/#organization","name":"Desk2Quant","logo":{"@type":"ImageObject","url":"https://desk2quant.com/assets/images/desk2quant-logo.png?v=3"}},"inLanguage":"en","datePublished":"2026-07-28T13:16:46.043415+00:00","dateModified":"2026-07-28T13:16:46.043415+00:00"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://desk2quant.com/"},{"@type":"ListItem","position":2,"name":"Articles","item":"https://desk2quant.com/blog.html"},{"@type":"ListItem","position":3,"name":"XVA in Plain English: Why Banks Price Counterparty Risk","item":"https://desk2quant.com/blog/xva-in-plain-english-why-banks-price-counterparty-risk.html"}]}</script>
+<link rel="icon" type="image/png" href="/assets/images/desk2quant-logo.png?v=3">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/seo-product.css?v=1">
+
+</head>
+<body>
+<main class="seo-doc">
+  <nav class="seo-crumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a> <span>/</span>
+    <a href="/blog.html">Articles</a> <span>/</span>
+    <span aria-current="page">XVA in Plain English: Why Banks Price Counterparty Risk</span>
+  </nav>
+  <article>
+    <p class="seo-kicker">Quant finance article &middot; 28 July 2026</p>
+    <h1>XVA in Plain English: Why Banks Price Counterparty Risk</h1>
+    <p><img src="https://desk2quant.com/assets/images/blog-xva-plain-english-cover.svg?v=2" alt="XVA in Plain English: Why Banks Price Counterparty Risk" width="840" fetchpriority="high"></p>
+    <div class="seo-article-body">
+      <p>Ask most finance students what a bank charges for a derivative and they&#39;ll give you the Black-Scholes price, maybe adjusted for a volatility smile. Ask a desk quant the same question and they&#39;ll ask you back: <em>&quot;whose credit risk are we pricing in — ours, or theirs?&quot;</em> That single question is the difference between academic derivatives pricing and how a bank actually prices a trade. The adjustment that closes that gap has a name: <strong>XVA</strong>.</p>
+      <p>XVA isn&#39;t one number. It&#39;s a family of valuation adjustments layered on top of the &quot;risk-free&quot; price, each one accounting for something the textbook price silently assumes away: that your counterparty might default, that funding isn&#39;t free, that posting collateral has a cost, and that capital itself is scarce. Here&#39;s what each one actually means, in the order a desk quant would explain them.</p>
+
+      <h2>CVA: What If They Don&#39;t Pay You Back?</h2>
+      <p><strong>Credit Valuation Adjustment</strong> is the oldest and most intuitive XVA term: it&#39;s the market price of your counterparty defaulting before the trade matures. If you&#39;ve done an interest rate swap with a corporate client and rates move in your favor, you&#39;re owed money on that trade — but only if they&#39;re still solvent enough to pay it. CVA is a downward adjustment to the trade&#39;s value that prices in exactly that risk.</p>
+      <p>The mechanics come down to three ingredients multiplied together and summed across time: your <strong>expected exposure</strong> (how much you&#39;d be owed if they defaulted at each future date), their <strong>probability of default</strong> in that window, and the <strong>loss given default</strong> (what fraction you wouldn&#39;t recover). Get any one of those wrong — misjudge the exposure profile of an exotic option, or use a stale default probability — and CVA on a large book can be off by millions.</p>
+
+      <h2>DVA: The Uncomfortable Mirror Image</h2>
+      <p><strong>Debit Valuation Adjustment</strong> is CVA pointed at yourself: the market value of the possibility that <em>you</em> default, and therefore don&#39;t fully pay what you owe. It sounds almost cynical — a bank&#39;s own credit deterioration can actually increase the value of its liabilities on paper — and that&#39;s exactly the controversial part. DVA became infamous after the 2008 crisis, when banks reported profits driven partly by their own widening credit spreads. It&#39;s real accounting, but it&#39;s a number every risk committee scrutinizes closely, because it rewards exactly the wrong incentive if taken at face value.</p>
+
+      <h2>FVA: Funding Isn&#39;t Free</h2>
+      <p><strong>Funding Valuation Adjustment</strong> exists because hedging a derivative requires cash, and cash has a cost. If a desk needs to borrow to fund a hedge on an uncollateralized trade, it pays its own funding spread over the &quot;risk-free&quot; rate — and that spread isn&#39;t zero, especially post-2008 when banks stopped being able to borrow near-risklessly. FVA prices in the gap between the textbook discount rate and what it actually costs the desk to fund the position over its life.</p>
+      <p>FVA is also the most argued-about XVA term in the entire family. Some desks split it into FCA (funding cost) and FBA (funding benefit); others fold it partly into CVA/DVA to avoid double-counting the bank&#39;s own credit spread. If you&#39;re asked about FVA in an interview, the sharpest answer isn&#39;t the formula — it&#39;s naming the double-counting problem and how your desk resolves it.</p>
+
+      <h2>MVA and KVA: The Two Adjustments Nobody Teaches</h2>
+      <p><strong>Margin Valuation Adjustment</strong> is the cost of posting <em>initial</em> margin over the life of a trade — a cost that exploded in relevance once regulatory Uncleared Margin Rules forced far more collateral to be posted upfront on non-cleared derivatives. Post that collateral and it&#39;s tied up, earning less than it costs to fund; MVA prices in that drag.</p>
+      <p><strong>Capital Valuation Adjustment</strong> goes one layer further: every trade consumes regulatory capital (think Basel III risk-weighted assets), and capital has a cost — shareholders expect a return on it. KVA is the desk&#39;s attempt to price that capital cost into the trade itself, so a trade that looks profitable pre-capital doesn&#39;t quietly destroy value once you account for what it costs the bank to hold the capital against it. Very few university courses go anywhere near KVA, which makes it one of the fastest ways to stand out in a senior XVA interview.</p>
+
+      <h2>Why This Whole Family Exists</h2>
+      <p>Every XVA term is answering the same underlying question from a different angle: <em>what does the &quot;risk-free&quot; derivatives price leave out?</em> Before 2008, banks mostly ignored these adjustments — counterparties were assumed money-good, funding was assumed free, and capital was cheap. The crisis broke all three assumptions at once, and XVA desks were built specifically to stop pricing trades as if the world still worked that way.</p>
+      <p>That&#39;s also why XVA sits at the intersection of pricing, credit, funding, and regulatory capital — few desks touch as many parts of a bank&#39;s balance sheet as XVA does, which is exactly why XVA quant roles are consistently among the most sought-after (and highest-paid) quant seats on the street.</p>
+
+      <table>
+      <tr><th>Adjustment</th><th>Prices In</th><th>Driven By</th></tr>
+      <tr><td>CVA</td><td>Their default risk</td><td>Counterparty PD, exposure, LGD</td></tr>
+      <tr><td>DVA</td><td>Your own default risk</td><td>Own credit spread</td></tr>
+      <tr><td>FVA</td><td>Cost of funding hedges</td><td>Desk funding spread</td></tr>
+      <tr><td>MVA</td><td>Cost of posting initial margin</td><td>UMR collateral rules</td></tr>
+      <tr><td>KVA</td><td>Cost of regulatory capital</td><td>Basel III RWA, return on capital</td></tr>
+      </table>
+
+      <h2>The Interview Angle</h2>
+      <p>If you&#39;re asked to explain XVA in an interview, don&#39;t lead with formulas. Lead with the story: risk-free pricing assumes a frictionless world, and every XVA term names one specific friction that world doesn&#39;t have — default risk, funding cost, collateral drag, capital cost. Then be ready to go one level deeper on whichever term the interviewer pokes at, because that&#39;s where candidates who&#39;ve only memorized definitions run out of road.</p>
+      <p>This is exactly the kind of &quot;sounds simple until you&#39;re asked the follow-up&quot; topic that separates textbook familiarity from desk-level fluency — which is why we built a full derivation-and-code masterclass around it: the <a href="/product.html?id=351aa09b-681b-4da9-9b61-844cf295640c">XVA Calculus Lab</a> covers CVA, DVA, FVA, MVA, KVA, ColVA and sensitivities with full derivations, QuantLib-Python pricing, and 100 DIY exercises.</p>
+    </div>
+    <hr>
+    <p>Continue with the <a href="/guides/">quant interview guides</a> or browse the
+      <a href="/products/">Desk2Quant resource catalog</a>.</p>
+  </article>
+</main>
+</body>
+</html>

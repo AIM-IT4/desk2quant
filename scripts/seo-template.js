@@ -1,8 +1,14 @@
 const { esc, clamp, stripHtml, SITE } = require('./generate-seo-pages.js');
 
+function safeJson(value) {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026');
+}
+
 function renderPage(p, slug, related, reviews) {
   const url = `${SITE}/products/${slug}.html`;
-  const canonicalApp = `${SITE}/product.html?id=${p.id}`;
   const title = `${p.name} | Desk2Quant`;
   const desc = clamp(p.description, 158) ||
     'Practitioner-built quantitative finance resource from Desk2Quant.';
@@ -52,6 +58,30 @@ function renderPage(p, slug, related, reviews) {
     ]
   };
 
+  const faqItems = [
+    {
+      question: `How is ${p.name} delivered?`,
+      answer: 'Access is delivered digitally by email after payment is verified. Keep the purchase email so you can find the delivery link later.'
+    },
+    {
+      question: `Who is ${p.name} designed for?`,
+      answer: 'It is designed for quantitative-finance candidates and practitioners who want desk-focused explanations, practical diagnostics and interview-ready reasoning.'
+    },
+    {
+      question: 'Where can I review the price and purchase details?',
+      answer: 'Use the product details link on this page to review the current price, any available offer and the secure checkout information before buying.'
+    }
+  ];
+  const faq = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqItems.map(item => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: { '@type': 'Answer', text: item.answer }
+    }))
+  };
+
   const body = stripHtml(p.description);
   const paras = body
     ? body.split(/(?<=[.!?])\s+(?=[A-Z0-9])/).reduce((acc, s) => {
@@ -87,8 +117,9 @@ function renderPage(p, slug, related, reviews) {
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(desc)}">
 <meta name="twitter:image" content="${esc(img)}">
-<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
-<script type="application/ld+json">${JSON.stringify(crumbs)}</script>
+<script type="application/ld+json">${safeJson(jsonLd)}</script>
+<script type="application/ld+json">${safeJson(crumbs)}</script>
+<script type="application/ld+json">${safeJson(faq)}</script>
 <link rel="stylesheet" href="/styles.css">
 <link rel="stylesheet" href="/launchzone.css?v=8">
 <link rel="stylesheet" href="/launchzone-pages.css?v=10">
@@ -127,6 +158,11 @@ ${paras.map(t => `    <p>${esc(t)}</p>`).join('\n') || '    <p>Practitioner-buil
     <h2>Delivery &amp; refunds</h2>
     <p>Access is delivered by email immediately after payment. See our
       <a href="/terms.html">terms</a> and <a href="/privacy.html">privacy policy</a>.</p>
+
+    <section aria-labelledby="product-faq-heading">
+      <h2 id="product-faq-heading">Frequently asked questions</h2>
+${faqItems.map(item => `      <h3>${esc(item.question)}</h3>\n      <p>${esc(item.answer)}</p>`).join('\n')}
+    </section>
 
     ${relHtml ? `<h2>Related resources</h2>\n    <ul>\n${relHtml}\n    </ul>` : ''}
 

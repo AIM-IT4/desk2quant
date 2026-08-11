@@ -4,6 +4,12 @@
 // server-rendered copy — instead of 37 identical JS-only shells.
 const fs = require('fs');
 const path = require('path');
+const {
+  getProductSlug,
+  getProductPath,
+  getProductUrl,
+  slugifyProductName
+} = require('../product-seo.js');
 
 const SITE = 'https://desk2quant.com';
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
@@ -36,14 +42,7 @@ function clamp(text, max) {
 }
 
 function slugify(name) {
-  return String(name || '')
-    .toLowerCase()
-    .replace(/&/g, ' and ')
-    .replace(/\+/g, ' plus ')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 70)
-    .replace(/-+$/g, '') || 'product';
+  return slugifyProductName(name);
 }
 
 async function fetchProducts() {
@@ -58,6 +57,15 @@ async function fetchProducts() {
     { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
   );
   if (!res.ok) throw new Error(`Supabase ${res.status}`);
+  return res.json();
+}
+
+async function fetchBlogs() {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/blogs?select=*&is_published=eq.true&order=created_at.desc`,
+    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+  );
+  if (!res.ok) throw new Error(`Supabase blogs ${res.status}`);
   return res.json();
 }
 
@@ -89,4 +97,17 @@ async function fetchProductReviews() {
   }
   return byProduct;
 }
-module.exports = { esc, stripHtml, clamp, slugify, fetchProducts, fetchProductReviews, SITE, OUT_DIR };
+module.exports = {
+  esc,
+  stripHtml,
+  clamp,
+  slugify,
+  getProductSlug,
+  getProductPath,
+  getProductUrl,
+  fetchProducts,
+  fetchBlogs,
+  fetchProductReviews,
+  SITE,
+  OUT_DIR
+};

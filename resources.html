@@ -76,6 +76,7 @@
             <p>&copy; 2026 Desk2Quant. All rights reserved.</p>
         </div>
     </footer>
+    <script src="product-seo.js?v=1"></script>
     <script>
         function escapeHtml(value) {
             return String(value || '').replace(/[&<>'"]/g, character => ({
@@ -100,9 +101,13 @@
                     const cover = product.coverImage
                         ? `<img src="${escapeHtml(product.coverImage)}" alt="${title}" style="width:100%;height:190px;object-fit:contain;background:var(--bg-tertiary);padding:12px;box-sizing:border-box;">`
                         : '<div style="height:190px;display:grid;place-items:center;background:var(--bg-tertiary);font-size:3em;color:var(--accent-primary);"><i class="fas fa-file-lines"></i></div>';
-                    const href = product.downloadUrl || `product.html?id=${encodeURIComponent(product.id)}`;
-                    const label = product.downloadUrl ? 'Download free' : 'View resource';
-                    return `<article style="background:var(--bg-card);border:1px solid var(--border-light);overflow:hidden;"><a href="${escapeHtml(href)}" target="${product.downloadUrl ? '_blank' : '_self'}" rel="${product.downloadUrl ? 'noopener' : ''}" style="display:block;color:inherit;text-decoration:none;">${cover}<div style="padding:22px;"><span style="color:#22c55e;font-size:.78rem;font-weight:700;">FREE RESOURCE</span><h2 style="font-size:1.2rem;margin:10px 0;">${title}</h2><p style="color:var(--text-muted);line-height:1.6;margin:0 0 18px;">${description}</p><span class="btn btn-primary">${label} <i class="fas fa-arrow-right"></i></span></div></a></article>`;
+                    const canonicalHref = window.Desk2QuantProductSeo
+                        ? window.Desk2QuantProductSeo.getProductPath(product)
+                        : `product.html?id=${encodeURIComponent(product.id)}`;
+                    const actionHref = product.downloadUrl || canonicalHref;
+                    const actionLabel = product.downloadUrl ? 'Download free' : 'View resource';
+                    const externalAttrs = product.downloadUrl ? ' target="_blank" rel="noopener"' : '';
+                    return `<article style="background:var(--bg-card);border:1px solid var(--border-light);overflow:hidden;"><a href="${escapeHtml(canonicalHref)}" style="display:block;color:inherit;text-decoration:none;">${cover}</a><div style="padding:22px;"><span style="color:#22c55e;font-size:.78rem;font-weight:700;">FREE RESOURCE</span><h2 style="font-size:1.2rem;margin:10px 0;"><a href="${escapeHtml(canonicalHref)}" style="color:inherit;text-decoration:none;">${title}</a></h2><p style="color:var(--text-muted);line-height:1.6;margin:0 0 18px;">${description}</p><a class="btn btn-primary" href="${escapeHtml(actionHref)}"${externalAttrs}>${actionLabel} <i class="fas fa-arrow-right"></i></a></div></article>`;
                 }).join('');
             } catch (error) {
                 grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--text-muted);"><i class="fas fa-triangle-exclamation" style="font-size:2em;margin-bottom:16px;color:#f59e0b;"></i><h2>Resources are temporarily unavailable.</h2><p>Please try again shortly.</p></div>';
