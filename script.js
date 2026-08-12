@@ -4717,7 +4717,10 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
         if (!modal) return;
 
         // Convert prices to local currency if available
-        const originalInr = 1299;
+        // 999 is the product's current original_price in the DB (the popup
+        // previously advertised a stale ₹1,299 that matched neither the price
+        // nor the charge).
+        const originalInr = 999;
         const discountedInr = 699;
         const origEl = document.getElementById('launchOriginalPrice');
         const discEl = document.getElementById('launchDiscountedPrice');
@@ -4748,7 +4751,7 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
             if (discEl) discEl.textContent = window.formatPrice(convertedDisc);
         } else {
             // Fallback: keep INR
-            if (origEl) origEl.textContent = '\u20b91,299';
+            if (origEl) origEl.textContent = '\u20b9999';
             if (discEl) discEl.textContent = '\u20b9699';
         }
 

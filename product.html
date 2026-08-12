@@ -651,7 +651,7 @@
         })();
     </script>
     <script src="product-seo.js?v=1"></script>
-    <script src="script.js?v=18"></script>
+    <script src="script.js?v=19"></script>
 
     <!-- Navigation -->
     <nav class="navbar">
@@ -1078,6 +1078,9 @@
                         if ((inputCodeUpper && product.coupon_code && inputCodeUpper === product.coupon_code.toUpperCase()) || (inputCodeUpper === 'LAUNCH15' && product.id === '6b78550d-e130-41d1-9409-92335ce82a6c')) {
                             isValid = true;
                             appliedDiscount = inputCodeUpper === 'LAUNCH15' ? 15 : (product.discount_percentage || 0);
+                        } else if (inputCodeUpper && inputCodeUpper === 'BUNDLE15') {
+                            isValid = true;
+                            appliedDiscount = 15;
                         } else if (inputCodeUpper && inputCodeUpper === 'VASUDHA30') {
                             isValid = true;
                             appliedDiscount = 30;

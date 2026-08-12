@@ -230,7 +230,7 @@ export default async function handler(req, res) {
                     payment.currency,
                     payment.notes?.coupon_code || null
                 );
-                if (expected.ok && !isWithinTolerance(capturedMajor, expected.amountMajor ?? expected.amountInr)) {
+                if (expected.ok && !(await isWithinTolerance(capturedMajor, expected.amountMajor ?? expected.amountInr, payment.currency))) {
                     console.error('grant-access (cart): underpayment detected, refusing to grant:', { paymentId, capturedMajor, expected });
                     return res.status(402).json({ error: 'Captured amount does not match the cart total. This purchase has been flagged for review.' });
                 }
@@ -366,7 +366,7 @@ export default async function handler(req, res) {
         const capturedMajor = isZeroDecimalCurrency(payment.currency)
             ? payment.amount
             : payment.amount / 100;
-        if (!isWithinTolerance(capturedMajor, expected.amountMajor)) {
+        if (!(await isWithinTolerance(capturedMajor, expected.amountMajor, payment.currency))) {
             console.error('🚨 grant-access: underpayment detected, refusing to grant:', { paymentId, productId, capturedMajor, expected });
             return res.status(402).json({ error: 'Captured amount does not match the product price. This purchase has been flagged for review.' });
         }

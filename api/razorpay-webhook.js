@@ -350,7 +350,7 @@ export async function handleProductPurchase(data) {
     if (!expected.ok) {
         throw new Error(`Cannot verify product price — product_id does not resolve (paymentId: ${paymentId}, productId: ${productId}, product: ${productName}): ${expected.error || 'unknown'}`);
     }
-    if (!isWithinTolerance(inrAmount, expected.amountInr)) {
+    if (!(await isWithinTolerance(inrAmount, expected.amountInr))) {
         underpaymentFlag = {
             expectedInr: expected.amountInr,
             capturedInr: inrAmount,
@@ -967,7 +967,7 @@ async function handleCartPurchase(data) {
     if (!expected.ok) {
         throw new Error(`Cannot verify cart price (paymentId: ${paymentId}): ${expected.error || 'unknown'}`);
     }
-    if (!isWithinTolerance(inrAmount, expected.amountInr)) {
+    if (!(await isWithinTolerance(inrAmount, expected.amountInr))) {
         underpaymentFlag = { expectedInr: expected.amountInr, capturedInr: inrAmount };
         console.error('🚨 UNDERPAYMENT DETECTED (cart) — refusing to grant access:', { paymentId, ...underpaymentFlag });
     }
@@ -1232,7 +1232,7 @@ async function handleSessionBooking(data) {
     // client-stamped value at checkout time and must never be trusted for
     // a security check.
     const capturedInr = (typeof inrAmount === 'number' && !Number.isNaN(inrAmount)) ? inrAmount : amount;
-    if (!isWithinTolerance(capturedInr, expected.amountInr)) {
+    if (!(await isWithinTolerance(capturedInr, expected.amountInr))) {
         underpaymentFlag = {
             expectedInr: expected.amountInr,
             capturedInr,

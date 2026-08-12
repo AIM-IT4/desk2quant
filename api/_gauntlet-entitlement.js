@@ -32,7 +32,7 @@ async function verifyAmount(payment, productId, couponCode) {
         const capturedMajor = isZeroDecimalCurrency(payment.currency)
             ? payment.amount
             : payment.amount / 100;
-        if (!isWithinTolerance(capturedMajor, expected.amountMajor)) {
+        if (!(await isWithinTolerance(capturedMajor, expected.amountMajor, payment.currency))) {
             console.error('🚨 gauntlet entitlement: underpayment, refusing:', { paymentId: payment.id, productId, capturedMajor, expected: expected.amountMajor });
             return { ok: false, status: 402, error: 'Captured amount does not match the project price. This purchase has been flagged for review.' };
         }
@@ -129,7 +129,7 @@ export async function verifyProjectEntitlement(slug, paymentId, email) {
                     const capturedMajor = isZeroDecimalCurrency(payment.currency)
                         ? payment.amount
                         : payment.amount / 100;
-                    if (!isWithinTolerance(capturedMajor, expected.amountMajor)) {
+                    if (!(await isWithinTolerance(capturedMajor, expected.amountMajor, payment.currency))) {
                         console.error('🚨 gauntlet entitlement: cart underpayment, refusing:', { paymentId: payment.id, capturedMajor, expected: expected.amountMajor });
                         return { ok: false, status: 402, error: 'Captured amount does not match the cart total. This purchase has been flagged for review.' };
                     }

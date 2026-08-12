@@ -499,7 +499,7 @@ export default async function handler(req, res) {
             const capturedMajor = isZeroDecimalCurrency(payment.currency)
                 ? payment.amount
                 : payment.amount / 100;
-            if (!expected.ok || !isWithinTolerance(capturedMajor, expected.amountMajor)) {
+            if (!expected.ok || !(await isWithinTolerance(capturedMajor, expected.amountMajor, payment.currency))) {
                 console.error('🚨 Interview payment amount mismatch:', { paymentId, durationMinutes, capturedMajor, expected });
                 return res.status(402).json({ error: 'Payment amount does not match the selected interview duration' });
             }
