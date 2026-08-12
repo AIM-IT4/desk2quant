@@ -9,6 +9,7 @@
 
 import { authorizeCronRequest } from '../lib/cronAuth.js';
 import { getServiceKey, blockIfUnconfigured } from '../lib/supabaseAdmin.js';
+import { hasRecentRecommendation } from '../lib/recommendationQueue.js';
 
 export default async function handler(req, res) {
     if (req.method !== 'GET' && req.method !== 'POST') {
@@ -178,6 +179,15 @@ export default async function handler(req, res) {
 
                 // ── Test mode: skip if email doesn't match ──────────────────
                 if (testEmail && email !== testEmail.toLowerCase().trim()) {
+                    continue;
+                }
+
+                // ── Anti-spam: shared suppression with the post-purchase queue ──
+                // Skip anyone who already received a recommendation email within
+                // the cooldown window, so campaign runs can't re-blast buyers.
+                if (await hasRecentRecommendation({ customerEmail: email, SUPABASE_URL, SUPABASE_KEY })) {
+                    results.skipped++;
+                    results.details.push({ email, purchasedProduct: purchasedDisplayName, status: 'skipped', reason: 'recent recommendation email already sent' });
                     continue;
                 }
 

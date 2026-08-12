@@ -80,13 +80,20 @@ function check(name, cond) {
     if (!cond) failures++;
 }
 
-const p1 = patches.find(p => p.id === 1);
-const p2 = patches.find(p => p.id === 2);
-const p3 = patches.find(p => p.id === 3);
+// Each row is claimed (pending -> sending) before the email send, so
+// overlapping cron ticks can't both send the same row. The final status patch
+// is the one after the claim.
+function finalPatch(id) {
+    return patches.filter(p => p.id === id && p.body.status !== 'sending').pop();
+}
+const p1 = finalPatch(1);
+const p2 = finalPatch(2);
+const p3 = finalPatch(3);
 
 check('row 1 (success) marked sent', p1 && p1.body.status === 'sent' && p1.body.attempts === 1 && p1.body.brevo_message_id === 'mock-msg-ok');
 check('row 2 (transient failure, attempts 1->2) stays pending for retry', p2 && p2.body.status === 'pending' && p2.body.attempts === 2 && !!p2.body.last_error);
 check('row 3 (attempts 2->3, hits MAX_ATTEMPTS) marked failed, not retried further', p3 && p3.body.status === 'failed' && p3.body.attempts === 3 && !!p3.body.last_error);
+check('every row claimed (sending) before the final patch', [1, 2, 3].every(id => patches.some(p => p.id === id && p.body.status === 'sending')));
 check('outcome counts correct (checked=3, sent=1, failed=2)', res.body.recommendationQueue.checked === 3 && res.body.recommendationQueue.sent === 1 && res.body.recommendationQueue.failed === 2);
 
 console.log(failures === 0 ? '\n✨ ALL TESTS PASSED' : `\n💥 ${failures} TEST(S) FAILED`);

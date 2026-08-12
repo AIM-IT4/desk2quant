@@ -9,6 +9,7 @@
 
 import { authorizeCronRequest } from '../lib/cronAuth.js';
 import { getServiceKey, blockIfUnconfigured } from '../lib/supabaseAdmin.js';
+import { hasRecentRecommendation } from '../lib/recommendationQueue.js';
 
 export default async function handler(req, res) {
     if (req.method !== 'GET' && req.method !== 'POST') {
@@ -171,6 +172,13 @@ export default async function handler(req, res) {
         // ── 6. BULK SEND ────────────────────────────────────────────────────
         for (const email of uniqueEmails) {
             try {
+                // ── Anti-spam: shared suppression with the post-purchase queue ──
+                if (await hasRecentRecommendation({ customerEmail: email, SUPABASE_URL, SUPABASE_KEY })) {
+                    results.skipped++;
+                    results.details.push({ email, status: 'skipped', reason: 'recent recommendation email already sent' });
+                    continue;
+                }
+
                 const hasBundle = customerMap[email].hasBundle;
                 const discountCode = hasBundle ? 'BUNDLE15' : 'NM10';
                 const discountPercent = hasBundle ? 15 : 10;

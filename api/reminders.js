@@ -243,6 +243,37 @@ async function processRecommendationQueue({ SUPABASE_URL, SUPABASE_KEY, BREVO_AP
     outcome.checked = due.length;
 
     for (const row of due) {
+        // Atomically claim the row (pending -> sending) so two overlapping cron
+        // ticks can't both fetch it and both send. A tick that loses the claim
+        // sees zero rows updated and skips. This is what stopped the duplicate
+        // sends observed at 08-10 13:31 IST: two ticks sent the same pending
+        // row, producing 2 emails for a row that ended with attempts: 1.
+        let claimed;
+        try {
+            const claimResp = await fetch(
+                `${SUPABASE_URL}/rest/v1/recommendation_emails?id=eq.${row.id}&status=eq.pending`,
+                {
+                    method: 'PATCH',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=representation'
+                    },
+                    body: JSON.stringify({ status: 'sending' })
+                }
+            );
+            const body = claimResp.ok ? await claimResp.json() : [];
+            claimed = Array.isArray(body) ? body : (body && typeof body === 'object' ? [body] : []);
+        } catch (err) {
+            outcome.errors.push(`Claim failed for row ${row.id}: ${err.message}`);
+            continue;
+        }
+        if (claimed.length === 0) {
+            // Another tick claimed or completed this row first — skip.
+            continue;
+        }
+
         const result = await sendRecommendationEmail({
             customerEmail: row.customer_email,
             customerName: row.customer_name,
