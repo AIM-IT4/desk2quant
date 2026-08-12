@@ -567,42 +567,81 @@ export async function handleProductPurchase(data) {
         // Fail closed: the purchases row is the durable record of this sale. If
         // it cannot be written, throw so the webhook 500s and Razorpay retries —
         // a customer must not be charged with no record and no download email.
+        //
+        // Idempotency: the insert is an atomic claim on payment_id. Razorpay
+        // retries a webhook that doesn't answer fast enough, and overlapping
+        // retries used to both pass the SELECT dedup above and each log the
+        // sale + send the confirmation email (observed: 3 confirmations for one
+        // payment). With the unique index (migration 0010, source='webhook'
+        // only — cart rows share a payment_id and must not be covered) the
+        // losing insert is ignored via resolution=ignore-duplicates and this
+        // invocation bails: exactly one row, one email, one Drive share per
+        // payment. If the index hasn't been applied yet, fall back to a plain
+        // insert so behaviour is unchanged.
+        const purchaseRow = {
+            customer_email: customerEmail,
+            product_name: productName,
+            amount: Math.round(amount),
+            currency: currency || 'INR',
+            payment_id: paymentId,
+            // Flag underpaid purchases distinctly so they surface for manual
+            // review instead of looking like a normal fulfilled sale.
+            source: underpaymentFlag ? 'webhook_price_mismatch' : 'webhook',
+            customer_country: customerCountry,
+            inr_amount: inrAmount,
+            download_link: underpaymentFlag ? null : downloadLink,
+            ...(isoCreatedAt ? { created_at: isoCreatedAt } : {})
+        };
         let insertResp;
+        let lostRace = false;
         try {
-            insertResp = await fetch(`${SUPABASE_URL}/rest/v1/purchases`, {
+            insertResp = await fetch(`${SUPABASE_URL}/rest/v1/purchases?on_conflict=payment_id`, {
                 method: 'POST',
                 headers: {
                     'apikey': SUPABASE_KEY,
                     'Authorization': `Bearer ${SUPABASE_KEY}`,
                     'Content-Type': 'application/json',
-                    'Prefer': 'return=minimal'
+                    'Prefer': 'return=representation,resolution=ignore-duplicates'
                 },
-                body: JSON.stringify({
-                    customer_email: customerEmail,
-                    product_name: productName,
-                    amount: Math.round(amount),
-                    currency: currency || 'INR',
-                    payment_id: paymentId,
-                    // Flag underpaid purchases distinctly so they surface for manual
-                    // review instead of looking like a normal fulfilled sale.
-                    source: underpaymentFlag ? 'webhook_price_mismatch' : 'webhook',
-                    customer_country: customerCountry,
-                    inr_amount: inrAmount,
-                    download_link: underpaymentFlag ? null : downloadLink,
-                    ...(isoCreatedAt ? { created_at: isoCreatedAt } : {})
-                })
+                body: JSON.stringify(purchaseRow)
             });
+            if (insertResp.ok) {
+                const body = await insertResp.json();
+                // ignore-duplicates + return=representation: an empty array means
+                // another webhook invocation already logged this payment.
+                lostRace = Array.isArray(body) && body.length === 0;
+            } else {
+                const errBody = await insertResp.text();
+                if (/PGRST116|not a primary or unique key|doesn't have a unique constraint/i.test(errBody)) {
+                    // Unique index (migration 0010) not applied yet — legacy plain insert.
+                    console.warn('purchases.payment_id unique index not found — falling back to plain insert (paymentId:', paymentId + ')');
+                    insertResp = await fetch(`${SUPABASE_URL}/rest/v1/purchases`, {
+                        method: 'POST',
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`,
+                            'Content-Type': 'application/json',
+                            'Prefer': 'return=minimal'
+                        },
+                        body: JSON.stringify(purchaseRow)
+                    });
+                }
+                // A still-failed insert is thrown by the !insertResp.ok check below.
+            }
         } catch (err) {
             console.error('❌ Error logging to Supabase (network):', err.message, '| PaymentId:', paymentId);
             throw new Error(`Failed to record purchase in Supabase (paymentId: ${paymentId}): ${err.message}`);
         }
-        if (insertResp.ok) {
-            console.log('✅ Purchase logged to Supabase by webhook. PaymentId:', paymentId);
-        } else {
+        if (!insertResp.ok) {
             const errBody = await insertResp.text();
             console.error('❌ SUPABASE INSERT FAILED. Status:', insertResp.status, '| Body:', errBody, '| PaymentId:', paymentId);
             throw new Error(`Failed to record purchase in Supabase (${insertResp.status}) (paymentId: ${paymentId}): ${errBody}`);
         }
+        if (lostRace) {
+            console.log('Duplicate webhook invocation for payment (already logged):', paymentId);
+            return;
+        }
+        console.log('✅ Purchase logged to Supabase by webhook. PaymentId:', paymentId);
     }
 
     if (BREVO_API_KEY && customerEmail && !underpaymentFlag) {
@@ -1288,51 +1327,78 @@ async function handleSessionBooking(data) {
     }
 
     // 2. Log to Supabase bookings table
+    // Idempotency: same claim-on-payment_id pattern as purchases — Razorpay
+    // retries must not create duplicate booking rows or duplicate confirmation
+    // emails. Requires the bookings.payment_id unique index (migration 0010);
+    // falls back to a plain insert if it hasn't been applied yet.
+    const bookingRow = {
+        email: customerEmail,
+        name: customerName,
+        phone: customerPhone,
+        service_name: sessionName,
+        service_price: Math.round(sessionPrice),
+        service_duration: parseInt(sessionDuration),
+        booking_date: sessionDate,
+        booking_time: sessionTime,
+        message: customerMessage,
+        // Underpaid bookings land as 'pending' (not auto-confirmed 'upcoming')
+        // so they surface for manual review instead of silently granting a
+        // session at a tampered price; the meet link is withheld too.
+        status: (underpaymentFlag || slotConflict) ? 'pending' : 'upcoming',
+        payment_id: paymentId,
+        meet_link: underpaymentFlag ? null : meetLink,
+        customer_country: notes.customer_country || notes.country || 'Unknown'
+    };
+    let bookingInsertResp;
+    let bookingLostRace = false;
     try {
-        const insertResponse = await fetch(`${SUPABASE_URL}/rest/v1/bookings`, {
+        bookingInsertResp = await fetch(`${SUPABASE_URL}/rest/v1/bookings?on_conflict=payment_id`, {
             method: 'POST',
             headers: {
                 'apikey': SUPABASE_KEY,
                 'Authorization': `Bearer ${SUPABASE_KEY}`,
                 'Content-Type': 'application/json',
-                'Prefer': 'return=minimal'
+                'Prefer': 'return=representation,resolution=ignore-duplicates'
             },
-            body: JSON.stringify({
-                email: customerEmail,
-                name: customerName,
-                phone: customerPhone,
-                service_name: sessionName,
-                service_price: Math.round(sessionPrice),
-                service_duration: parseInt(sessionDuration),
-                booking_date: sessionDate,
-                booking_time: sessionTime,
-                message: customerMessage,
-                // Underpaid bookings land as 'pending' (not auto-confirmed 'upcoming')
-                // so they surface for manual review instead of silently granting a
-                // session at a tampered price; the meet link is withheld too.
-                status: (underpaymentFlag || slotConflict) ? 'pending' : 'upcoming',
-                payment_id: paymentId,
-                meet_link: underpaymentFlag ? null : meetLink,
-                customer_country: notes.customer_country || notes.country || 'Unknown'
-            })
+            body: JSON.stringify(bookingRow)
         });
-
-        if (!insertResponse.ok) {
-            const errorText = await insertResponse.text();
-            console.error('Supabase booking insert failed:', errorText);
-            // A4/A5: Throw so the webhook 500s → Razorpay retries. Without this,
-            // the confirmation email below sends for a booking that doesn't exist.
-            throw new Error(`Booking insert failed (${insertResponse.status}): ${errorText}`);
+        if (bookingInsertResp.ok) {
+            const body = await bookingInsertResp.json();
+            bookingLostRace = Array.isArray(body) && body.length === 0;
+        } else {
+            const errorText = await bookingInsertResp.text();
+            if (/PGRST116|not a primary or unique key|doesn't have a unique constraint/i.test(errorText)) {
+                console.warn('bookings.payment_id unique index not found — falling back to plain insert (paymentId:', paymentId + ')');
+                bookingInsertResp = await fetch(`${SUPABASE_URL}/rest/v1/bookings`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify(bookingRow)
+                });
+            }
         }
-        console.log('✅ Booking logged to Supabase');
     } catch (err) {
-        // A4/A5: the throw above is only useful if it escapes. This catch used to
-        // swallow it, so a failed insert still fell through to the confirmation
-        // email -- the customer was told a booking existed that did not. Rethrow
-        // so the handler returns 500 and Razorpay retries the webhook.
-        console.error('Error logging booking to Supabase:', err);
-        throw err;
+        console.error('Error logging booking to Supabase (network):', err.message, '| PaymentId:', paymentId);
+        throw new Error(`Booking insert failed (paymentId: ${paymentId}): ${err.message}`);
     }
+
+    if (!bookingInsertResp.ok) {
+        const errorText = await bookingInsertResp.text();
+        console.error('Supabase booking insert failed:', errorText);
+        // A4/A5: Throw so the webhook 500s → Razorpay retries. Without this,
+        // the confirmation email below sends for a booking that doesn't exist.
+        throw new Error(`Booking insert failed (${bookingInsertResp.status}): ${errorText}`);
+    }
+    if (bookingLostRace) {
+        // Another webhook invocation already logged + confirmed this booking.
+        console.log('Duplicate webhook invocation for booking (already logged):', paymentId);
+        return;
+    }
+    console.log('✅ Booking logged to Supabase');
 
     // 3. Send confirmation email to customer via Brevo (withheld if the
     // captured amount didn't meet the verified price -- see price-tamper

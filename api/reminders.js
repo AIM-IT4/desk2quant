@@ -133,10 +133,12 @@ export default async function handler(req, res) {
             const recResultsEarly = await processRecommendationQueue({
                 SUPABASE_URL, SUPABASE_KEY, BREVO_API_KEY, SENDER_EMAIL, SENDER_NAME
             });
+            const bounceCheckEarly = await checkHardBounces({ BREVO_API_KEY, ADMIN_EMAIL, SENDER_EMAIL, SENDER_NAME });
             return res.status(200).json({
                 ...results,
                 message: 'No confirmed bookings found',
-                recommendationQueue: recResultsEarly
+                recommendationQueue: recResultsEarly,
+                bounceAlerts: bounceCheckEarly
             });
         }
 
@@ -192,12 +194,18 @@ export default async function handler(req, res) {
             SUPABASE_URL, SUPABASE_KEY, BREVO_API_KEY, SENDER_EMAIL, SENDER_NAME
         });
 
+        // Alert the owner when a transactional confirmation email hard-bounces
+        // (a paid customer whose confirmation bounced has no download link by
+        // email; the success modal only covers buyers who stay on the page).
+        const bounceCheck = await checkHardBounces({ BREVO_API_KEY, ADMIN_EMAIL, SENDER_EMAIL, SENDER_NAME });
+
         return res.status(200).json({
             ...results,
             message: `Processed ${bookings.length} bookings`,
             sent24h: results.reminders24h.length,
             sent10m: results.reminders10m.length,
-            recommendationQueue: recResults
+            recommendationQueue: recResults,
+            bounceAlerts: bounceCheck
         });
 
     } catch (error) {
@@ -214,6 +222,62 @@ export default async function handler(req, res) {
 // Rows that fail MAX_ATTEMPTS times are left as 'failed' (not retried further)
 // so a permanently-broken row doesn't loop forever burning Brevo credits.
 const MAX_ATTEMPTS = 3;
+
+// Poll Brevo for transactional emails that hard-bounced in the last 6 minutes
+// and alert the owner. Runs on the same 5-minute cron, so a given bounce is
+// seen by at most two ticks (rarely more than one alert per bounce). Never
+// throws — a monitoring failure must not fail the cron itself.
+async function checkHardBounces({ BREVO_API_KEY, ADMIN_EMAIL, SENDER_EMAIL, SENDER_NAME }) {
+    const outcome = { checked: 0, alerts: 0, bounces: [] };
+    if (!BREVO_API_KEY) return outcome;
+    const since = new Date(Date.now() - 6 * 60 * 1000).toISOString();
+    try {
+        const resp = await fetch('https://api.brevo.com/v3/smtp/statistics/events?days=1&limit=100', {
+            headers: { 'api-key': BREVO_API_KEY }
+        });
+        if (!resp.ok) {
+            outcome.bounces.push(`Brevo events fetch failed: ${resp.status}`);
+            return outcome;
+        }
+        const data = await resp.json();
+        const rows = Array.isArray(data?.events) ? data.events : [];
+        const recent = rows.filter(r => r.event === 'hardBounces' && r.date && new Date(r.date) >= new Date(since));
+        // One alert per bounced address (not per event).
+        const byEmail = new Map();
+        for (const r of recent) byEmail.set(r.email, r);
+        outcome.checked = recent.length;
+        if (byEmail.size === 0) return outcome;
+
+        const lines = [...byEmail.values()].map(r =>
+            `• ${r.email || '?'} — ${(r.subject || 'no subject').slice(0, 90)} (${(r.date || '').slice(0, 16)})`
+        ).join('\n');
+        const html = `<p style="font-size:15px;margin:0 0 14px 0;">Hard-bounced transactional email(s) in the last 6 minutes — these customers paid but their confirmation/download email did not deliver. Check their Drive/storage access manually:</p><pre style="background:#f5f5f0;border:1px solid #090909;padding:14px;font-size:13px;line-height:1.7;white-space:pre-wrap;">${escapeHtml(lines)}</pre>`;
+        const alertResp = await fetch('https://api.brevo.com/v3/smtp/email', {
+            method: 'POST',
+            headers: {
+                'accept': 'application/json',
+                'api-key': BREVO_API_KEY,
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify({
+                sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+                to: ADMIN_EMAIL.split(',').map(email => ({ email: email.trim() })).filter(item => item.email),
+                subject: `🚨 Hard bounce: ${byEmail.size} customer confirmation(s) not delivered`,
+                htmlContent: emailShell({ body: html })
+            })
+        });
+        if (alertResp.ok) {
+            outcome.alerts = byEmail.size;
+            outcome.bounces = [...byEmail.keys()];
+            console.log(`📨 Hard-bounce alert sent (${byEmail.size} bounced)`);
+        } else {
+            outcome.bounces.push(`Alert email failed: ${await alertResp.text()}`);
+        }
+    } catch (err) {
+        outcome.bounces.push(`Hard-bounce check threw: ${err.message}`);
+    }
+    return outcome;
+}
 
 async function processRecommendationQueue({ SUPABASE_URL, SUPABASE_KEY, BREVO_API_KEY, SENDER_EMAIL, SENDER_NAME }) {
     const outcome = { checked: 0, sent: 0, failed: 0, errors: [] };
