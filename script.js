@@ -1931,8 +1931,14 @@ async function loadProductsFromSupabase(prefetchPromise) {
             return;
         }
 
-        // Instant paint from last known cache while the fresh query runs in the background.
+        // Instant paint from last known cache while the fresh query runs in the
+        // background. Record whether country detection had resolved yet: if it
+        // hadn't, this paint is necessarily in INR, and an international repeat
+        // visitor would otherwise keep INR prices for the whole visit (their
+        // products DO convert on any sort/filter/search interaction, but the
+        // sessions section never re-renders on its own).
         const cached = readListCache(PRODUCTS_CACHE_KEY);
+        const countryKnownAtCachePaint = !!userCountryCode;
         if (cached && cached.length > 0) {
             qmLog('⚡ Rendering ' + cached.length + ' cached products instantly');
             window.allProducts = cached;
@@ -1976,14 +1982,20 @@ async function loadProductsFromSupabase(prefetchPromise) {
             writeListCache(PRODUCTS_CACHE_KEY, data);
             // Skip the re-render if the fresh data is identical to what's already
             // painted from cache — avoids a visible flicker on repeat visits.
+            // BUT re-render anyway when the cached paint happened before country
+            // detection resolved and the visitor is non-Indian: that paint was
+            // unavoidably INR, and leaving it means a repeat visitor from abroad
+            // sees stale rupee prices with no way to refresh them. (Indian
+            // visitors keep the flicker-free skip — their currency never changes.)
             const unchanged = cached && cached.length > 0 && JSON.stringify(cached) === JSON.stringify(data);
-            if (!unchanged) {
+            const cachedPaintNeedsCurrencyFix = !countryKnownAtCachePaint && userCountryCode && userCountryCode !== 'IN';
+            if (!unchanged || cachedPaintNeedsCurrencyFix) {
                 qmLog('📦 Loading ' + data.length + ' products from Supabase');
                 window.allProducts = data;
                 await displaySupabaseProducts(data);
                 buildProductCatalogJsonLd(data);
             } else {
-                qmLog('✅ Products already up to date (cache matched)');
+                qmLog('✅ Products already up to date (cache matched)' + (countryKnownAtCachePaint ? '' : ' (INR paint is correct for this visitor)'));
                 window.allProducts = data;
             }
         }
@@ -2298,8 +2310,14 @@ async function loadSessionsFromSupabase(prefetchPromise) {
             return;
         }
 
-        // Instant paint from last known cache while the fresh query runs in the background.
+        // Instant paint from last known cache while the fresh query runs in the
+        // background. Record whether country detection had resolved yet: if it
+        // hadn't, this paint is necessarily in INR — and a returning visitor
+        // from abroad would otherwise stare at rupee session prices (the ₹199
+        // 15-min call being the most prominent) with no interaction to ever
+        // re-render them, because the skip-if-unchanged check below would pass.
         const cachedSessions = readListCache(SESSIONS_CACHE_KEY);
+        const countryKnownAtCachePaint = !!userCountryCode;
         if (cachedSessions && cachedSessions.length > 0) {
             qmLog('⚡ Rendering ' + cachedSessions.length + ' cached sessions instantly');
             window.dynamicSessions = cachedSessions;
@@ -2342,13 +2360,19 @@ async function loadSessionsFromSupabase(prefetchPromise) {
         if (data && data.length > 0) {
             writeListCache(SESSIONS_CACHE_KEY, data);
             const unchanged = cachedSessions && cachedSessions.length > 0 && JSON.stringify(cachedSessions) === JSON.stringify(data);
-            if (!unchanged) {
+            // Same currency fix as loadProductsFromSupabase: when the cached
+            // paint predates country detection and the visitor is non-Indian,
+            // force the re-render even though the data is unchanged — the
+            // sessions section has no sort/filter/search interaction that would
+            // ever re-render it on its own. Indian visitors keep the skip.
+            const cachedPaintNeedsCurrencyFix = !countryKnownAtCachePaint && userCountryCode && userCountryCode !== 'IN';
+            if (!unchanged || cachedPaintNeedsCurrencyFix) {
                 qmLog('🎯 Loading ' + data.length + ' sessions from Supabase');
                 window.dynamicSessions = data;
                 await updateServicesSection(data);
                 await updateBookingForm(data);
             } else {
-                qmLog('✅ Sessions already up to date (cache matched)');
+                qmLog('✅ Sessions already up to date (cache matched)' + (countryKnownAtCachePaint ? '' : ' (INR paint is correct for this visitor)'));
                 window.dynamicSessions = data;
             }
         }
@@ -3279,8 +3303,12 @@ if (bookingForm) {
                 const [type, price, duration] = value.split('|');
                 const priceValue = parseInt(price.trim());
 
-                // Convert price to local currency
-                const localPrice = await convertPrice(priceValue, userCountryCode);
+                // Convert price to local currency. Sessions are always PPP-adjusted
+                // (see updateServicesSection / updateBookingForm, which pass `true`)
+                // — omitting the flag here showed a lower raw-FX price in the
+                // booking summary than the session cards above it (e.g. £6 vs £9
+                // for the ₹799 bootcamp).
+                const localPrice = await convertPrice(priceValue, userCountryCode, true);
                 const isLocalCurrency = localPrice.currency.code !== 'INR';
 
                 // Store for submit handler to avoid re-fetching
@@ -4676,7 +4704,7 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
         localStorage.setItem('launch_promo_banner_dismissed', 'true');
     };
 
-    window.triggerPromoModal = function () {
+    window.triggerPromoModal = async function () {
         const modal = document.getElementById('launchPromoModal');
         if (!modal) return;
 
@@ -4686,11 +4714,28 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
         const origEl = document.getElementById('launchOriginalPrice');
         const discEl = document.getElementById('launchDiscountedPrice');
 
+        // The launch product (Numerical Methods) has enable_ppp=true, so the
+        // popup must apply the same PPP multiplier the product modal uses —
+        // otherwise a UK visitor sees e.g. £6.44 here and is charged £9.66 at
+        // checkout. userLocalPrice is a raw-rate reference, so convert fresh
+        // with PPP enabled and fall back to the raw rate if it fails.
         const localPrice = window.userLocalPrice;
-        if (localPrice && localPrice.rate && localPrice.currency && localPrice.currency.code !== 'INR' && typeof window.formatPrice === 'function') {
+        let convertedOrig = null;
+        let convertedDisc = null;
+        try {
+            const pppOrig = await convertPrice(originalInr, userCountryCode, true);
+            const pppDisc = await convertPrice(discountedInr, userCountryCode, true);
+            if (pppOrig && pppOrig.currency.code !== 'INR') {
+                convertedOrig = { amount: pppOrig.amount, currency: pppOrig.currency };
+                convertedDisc = { amount: pppDisc.amount, currency: pppDisc.currency };
+            }
+        } catch (_) { /* fall through to raw-rate fallback */ }
+        if (!convertedOrig && localPrice && localPrice.rate && localPrice.currency && localPrice.currency.code !== 'INR' && typeof window.formatPrice === 'function') {
             const rate = localPrice.rate;
-            const convertedOrig = { amount: Math.round(originalInr * rate), currency: localPrice.currency };
-            const convertedDisc = { amount: Math.round(discountedInr * rate), currency: localPrice.currency };
+            convertedOrig = { amount: Math.round(originalInr * rate), currency: localPrice.currency };
+            convertedDisc = { amount: Math.round(discountedInr * rate), currency: localPrice.currency };
+        }
+        if (convertedOrig && convertedDisc && typeof window.formatPrice === 'function') {
             if (origEl) origEl.textContent = window.formatPrice(convertedOrig);
             if (discEl) discEl.textContent = window.formatPrice(convertedDisc);
         } else {
@@ -5006,8 +5051,10 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
                     const prodPrice = matchingProduct ? matchingProduct.price : 799;
                     const prodId = matchingProduct ? matchingProduct.id : '';
 
-                    // Convert price to local currency
-                    const localPrice = await convertPrice(prodPrice, window.userCountryCode || 'IN');
+                    // Convert price to local currency. Honor the product's own
+                    // enable_ppp flag (mirrors the product cards/modal) so the
+                    // cross-sell price matches the checkout price the buyer sees.
+                    const localPrice = await convertPrice(prodPrice, window.userCountryCode || 'IN', matchingProduct ? !!matchingProduct.enable_ppp : true);
                     const priceFormatted = formatPrice(localPrice);
 
                     const card = document.createElement('div');
