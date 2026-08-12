@@ -622,7 +622,14 @@ export async function handleProductPurchase(data) {
                 lostRace = Array.isArray(body) && body.length === 0;
             } else {
                 const errBody = await insertResp.text();
-                if (/PGRST116|not a primary or unique key|doesn't have a unique constraint/i.test(errBody)) {
+                // Postgres 42P10 ("there is no unique or exclusion constraint
+                // matching the ON CONFLICT specification") is what PostgREST
+                // actually returns when migration 0010 hasn't been applied. The
+                // historical PGRST116/"not a primary or unique key" messages
+                // never matched it, so the fallback never ran and EVERY insert
+                // 500'd (observed in production: 2026-08-12, first payment after
+                // the idempotent-webhook deploy failed silently for 24h+).
+                if (/PGRST116|not a primary or unique key|doesn't have a unique constraint|no unique or exclusion constraint/i.test(errBody)) {
                     // Unique index (migration 0010) not applied yet — legacy plain insert.
                     console.warn('purchases.payment_id unique index not found — falling back to plain insert (paymentId:', paymentId + ')');
                     insertResp = await fetch(`${SUPABASE_URL}/rest/v1/purchases`, {
@@ -1398,7 +1405,10 @@ async function handleSessionBooking(data) {
             bookingLostRace = Array.isArray(body) && body.length === 0;
         } else {
             const errorText = await bookingInsertResp.text();
-            if (/PGRST116|not a primary or unique key|doesn't have a unique constraint/i.test(errorText)) {
+            // Same 42P10 fallback as the purchases insert — see the comment
+            // there. Without matching this Postgres message the bookings insert
+            // 500s whenever migration 0010 isn't applied yet.
+            if (/PGRST116|not a primary or unique key|doesn't have a unique constraint|no unique or exclusion constraint/i.test(errorText)) {
                 console.warn('bookings.payment_id unique index not found — falling back to plain insert (paymentId:', paymentId + ')');
                 bookingInsertResp = await fetch(`${SUPABASE_URL}/rest/v1/bookings`, {
                     method: 'POST',
