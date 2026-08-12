@@ -592,6 +592,14 @@ document.addEventListener('DOMContentLoaded', function () {
             if (inputCodeUpper && couponInfo.code && inputCodeUpper === couponInfo.code.toUpperCase()) {
                 isValid = true;
                 appliedDiscount = parseInt(couponInfo.percent) || 0;
+            } else if (inputCodeUpper && inputCodeUpper === 'LAUNCH15' && window.currentProductId === '6b78550d-e130-41d1-9409-92335ce82a6c') {
+                // Launch-product coupon (Numerical Methods). The DB coupon_code
+                // column is NM10, so without this branch the popup's LAUNCH15
+                // was rejected as invalid on the homepage modal even though
+                // product.html and lib/pricing.js both accept it (15%).
+                isValid = true;
+                appliedDiscount = 15;
+                window.activeModalCoupon.percent = 15; // Ensure checkout button uses 15%
             } else if (inputCodeUpper && inputCodeUpper === 'BUNDLE15') {
                 isValid = true;
                 appliedDiscount = 15;
@@ -5153,6 +5161,12 @@ async function resolveCartCouponDiscount(item, inputCode) {
 
     if (item.productCouponCode && inputCodeUpper === String(item.productCouponCode).toUpperCase()) {
         return { valid: true, percent: item.productDiscountPercent || 0 };
+    }
+    // Launch-product coupon (Numerical Methods) — the DB coupon_code is NM10,
+    // so LAUNCH15 needs the same special case product.html and lib/pricing.js
+    // have, otherwise the cart drawer shows "Invalid coupon for this item".
+    if (item.id === '6b78550d-e130-41d1-9409-92335ce82a6c' && inputCodeUpper === 'LAUNCH15') {
+        return { valid: true, percent: 15 };
     }
     if (inputCodeUpper === 'VASUDHA30') return { valid: true, percent: 30 };
     if (inputCodeUpper === 'BUNDLE15') return { valid: true, percent: 15 };
