@@ -1193,7 +1193,6 @@ body.d2q-reference .footer .logo-img {
 .lead-capture-form {
     flex: 1 1 340px;
     display: flex;
-    flex-wrap: wrap;
     gap: 10px;
     max-width: 420px;
 }
@@ -1215,7 +1214,6 @@ body.d2q-reference .footer .logo-img {
 }
 
 .lead-capture-form .btn {
-    flex-shrink: 0;
     white-space: nowrap;
     background: #fff;
     color: var(--d2q-navy);

@@ -1,4 +1,4 @@
-// ================================
+﻿// ================================
 // CANONICAL DOMAIN GUARD
 // ================================
 // Razorpay is registered to desk2quant.com, so opening a checkout from any
@@ -1070,13 +1070,6 @@ function initSupabaseAndLoad() {
     }
 }
 
-// List caches — MUST be declared before initSupabaseAndLoad (TDZ guard): the
-// init call at the top level can reach loadProductsFromSupabase synchronously
-// when the SDK is already loaded (e.g. warm CDN cache), and the async prologue
-// reads these keys before the file finishes evaluating.
-const PRODUCTS_CACHE_KEY = 'qm_products_cache';
-const SESSIONS_CACHE_KEY = 'qm_sessions_cache';
-
 // Fetched country cache — MUST be declared before initSupabaseAndLoad (TDZ guard)
 let userCountryCode = null;
 
@@ -1112,6 +1105,7 @@ setTimeout(function () {
         }, 50);
     }
 }, 0);
+
 // ================================
 // RAZORPAY LAZY LOADER
 // The checkout SDK used to be a blocking <script> on every page. It boots an
@@ -1834,7 +1828,7 @@ function buildProductCatalogJsonLd(products) {
                 name: product.name,
                 description: description,
                 url: url,
-                image: product.cover_image_url || 'https://desk2quant.com/assets/images/desk2quant-mark.svg?v=1',
+                image: product.cover_image_url || 'https://desk2quant.com/assets/images/desk2quant-logo.png?v=3',
                 offers: {
                     '@type': 'Offer',
                     price: String(product.price),
@@ -1868,6 +1862,8 @@ function buildProductCatalogJsonLd(products) {
 // Stale-while-revalidate cache for products/sessions: render the last known
 // list instantly from localStorage, then silently refresh from Supabase in the
 // background and re-render only if the data actually changed.
+const PRODUCTS_CACHE_KEY = 'qm_products_cache';
+const SESSIONS_CACHE_KEY = 'qm_sessions_cache';
 
 function readListCache(key) {
     try {
@@ -4156,7 +4152,7 @@ const BLOG_INDEX_SEO = Object.freeze({
     title: 'Blog & Articles | Desk2Quant',
     description: 'Read expert articles on quant finance, algorithms, market microstructure, career advice, and technical interview preparation from Desk2Quant.',
     url: 'https://desk2quant.com/blog.html',
-    image: 'https://desk2quant.com/assets/images/desk2quant-mark.svg?v=1'
+    image: 'https://desk2quant.com/assets/images/desk2quant-logo.png'
 });
 
 function setBlogMetaContent(id, content) {

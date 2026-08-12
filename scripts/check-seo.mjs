@@ -106,10 +106,7 @@ await check('canonical homepage is indexable and self-canonical', async () => {
     invariant(new URL(response.url).href === `${CANONICAL_ORIGIN}/`, `unexpected response URL ${response.url}`);
     const html = await response.text();
     invariant(/<title\b[^>]*>[\s\S]*Desk2Quant[\s\S]*<\/title>/i.test(html), 'homepage title is missing Desk2Quant');
-    invariant(
-        /(?:<h1\b[^>]*>[\s\S]*Quant Finance Interview Preparation[\s\S]*<\/h1>)|(?:<h1\b[^>]*>[\s\S]*Learn the models[\s\S]*<\/h1>)/i.test(html),
-        'homepage H1 is missing a recognized quant-focused headline'
-    );
+    invariant(/<h1\b[^>]*>[\s\S]*Quant Finance Interview Preparation[\s\S]*<\/h1>/i.test(html), 'homepage H1 is missing the primary quant interview topic');
     invariant(!/Desk2Quant\.in\b/i.test(html), 'homepage still contains the Desk2Quant.in label');
     const canonical = canonicalFrom(html);
     invariant(canonical === `${CANONICAL_ORIGIN}/`, `expected homepage canonical ${CANONICAL_ORIGIN}/, received ${canonical ?? 'none'}`);

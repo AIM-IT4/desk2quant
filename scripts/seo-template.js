@@ -12,7 +12,7 @@ function renderPage(p, slug, related, reviews) {
   const title = `${p.name} | Desk2Quant`;
   const desc = clamp(p.description, 158) ||
     'Practitioner-built quantitative finance resource from Desk2Quant.';
-  const img = p.cover_image_url || `${SITE}/assets/images/desk2quant-mark.svg?v=1`;
+  const img = p.cover_image_url || `${SITE}/assets/images/desk2quant-logo.png`;
   const price = Number(p.price) || 0;
 
   const jsonLd = {
@@ -106,7 +106,7 @@ function renderPage(p, slug, related, reviews) {
 <meta name="description" content="${esc(desc)}">
 <link rel="canonical" href="${esc(url)}">
 <meta name="robots" content="index,follow,max-image-preview:large">
-<link rel="icon" type="image/svg+xml" href="/assets/images/desk2quant-favicon.svg">
+<link rel="icon" type="image/png" href="/assets/images/desk2quant-logo.png?v=3">
 <meta property="og:type" content="product">
 <meta property="og:site_name" content="Desk2Quant">
 <meta property="og:url" content="${esc(url)}">
@@ -121,23 +121,9 @@ function renderPage(p, slug, related, reviews) {
 <script type="application/ld+json">${safeJson(crumbs)}</script>
 <script type="application/ld+json">${safeJson(faq)}</script>
 <link rel="stylesheet" href="/styles.css">
-<link rel="stylesheet" href="/launchzone.css?v=17">
-<link rel="stylesheet" href="/launchzone-pages.css?v=11">
-<link rel="stylesheet" href="/seo-product.css?v=3">
+<link rel="stylesheet" href="/seo-product.css?v=1">
 </head>
-<body class="d2q-launchzone">
-<header class="seo-topbar">
-  <div class="seo-topbar-inner">
-    <a class="seo-brand" href="/"><img src="/assets/images/desk2quant-mark.svg" width="30" height="30" alt="Desk2Quant mark"><span>Desk2Quant</span></a>
-    <nav class="seo-topnav" aria-label="Site">
-      <a href="/products/">Resources</a>
-      <a href="/guides/">Guides</a>
-      <a href="/interview.html">AI Interview</a>
-      <a href="/gauntlet.html">Gauntlet</a>
-      <a href="/faq.html">FAQs</a>
-    </nav>
-  </div>
-</header>
+<body>
 <main class="seo-doc">
   <nav class="seo-crumbs" aria-label="Breadcrumb">
     <a href="/">Home</a> <span>/</span>
@@ -183,17 +169,6 @@ ${faqItems.map(item => `      <h3>${esc(item.question)}</h3>\n      <p>${esc(ite
     </p>
   </article>
 </main>
-<footer class="seo-footer">
-  <div class="seo-footer-inner">
-    <span>&copy; Desk2Quant</span>
-    <span>
-      <a href="/terms.html">Terms</a> &middot;
-      <a href="/refund.html">Refunds</a> &middot;
-      <a href="/privacy.html">Privacy</a> &middot;
-      <a href="mailto:hello@desk2quant.com">hello@desk2quant.com</a>
-    </span>
-  </div>
-</footer>
 </body>
 </html>
 `;

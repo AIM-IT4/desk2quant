@@ -33,7 +33,7 @@ function enrichStructuredData(htmlContent, filePath) {
                         };
 
                         // 2. Add product image (using brand logo as fallback since dynamic CSS styles are used on site)
-                        product.image = 'https://desk2quant.com/assets/images/desk2quant-mark.svg?v=1';
+                        product.image = 'https://desk2quant.com/assets/images/desk2quant-logo.png?v=3';
 
                         // 3. Enrich Offers
                         if (product.offers) {

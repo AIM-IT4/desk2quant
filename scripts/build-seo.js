@@ -170,7 +170,7 @@ async function main() {
 <meta name="description" content="Browse all ${products.length} Desk2Quant resources: derivatives pricing, XVA, model validation, numerical methods, interview preparation and more.">
 <link rel="canonical" href="${SITE}/products/">
 <meta name="robots" content="index,follow">
-<link rel="icon" type="image/svg+xml" href="/assets/images/desk2quant-favicon.svg">
+<link rel="icon" type="image/png" href="/assets/images/desk2quant-logo.png?v=3">
 <meta property="og:type" content="website">
 <meta property="og:url" content="${SITE}/products/">
 <meta property="og:title" content="All Quant Finance Resources | Desk2Quant">
@@ -182,23 +182,9 @@ async function main() {
 <meta name="twitter:image" content="${SITE}/assets/images/desk2quant-editorial-og.jpg">
 <script type="application/ld+json">${safeJson(hubJsonLd)}</script>
 <link rel="stylesheet" href="/styles.css">
-<link rel="stylesheet" href="/launchzone.css?v=17">
-<link rel="stylesheet" href="/launchzone-pages.css?v=11">
-<link rel="stylesheet" href="/seo-product.css?v=3">
+<link rel="stylesheet" href="/seo-product.css?v=1">
 </head>
-<body class="d2q-launchzone">
-<header class="seo-topbar">
-  <div class="seo-topbar-inner">
-    <a class="seo-brand" href="/"><img src="/assets/images/desk2quant-mark.svg" width="30" height="30" alt="Desk2Quant mark"><span>Desk2Quant</span></a>
-    <nav class="seo-topnav" aria-label="Site">
-      <a href="/products/">Resources</a>
-      <a href="/guides/">Guides</a>
-      <a href="/interview.html">AI Interview</a>
-      <a href="/gauntlet.html">Gauntlet</a>
-      <a href="/faq.html">FAQs</a>
-    </nav>
-  </div>
-</header>
+<body>
 <main class="seo-doc">
   <nav class="seo-crumbs" aria-label="Breadcrumb">
     <a href="/">Home</a> <span>/</span> <span aria-current="page">Resources</span>
@@ -209,17 +195,6 @@ async function main() {
 ${items}
   </ul>
 </main>
-<footer class="seo-footer">
-  <div class="seo-footer-inner">
-    <span>&copy; Desk2Quant</span>
-    <span>
-      <a href="/terms.html">Terms</a> &middot;
-      <a href="/refund.html">Refunds</a> &middot;
-      <a href="/privacy.html">Privacy</a> &middot;
-      <a href="mailto:hello@desk2quant.com">hello@desk2quant.com</a>
-    </span>
-  </div>
-</footer>
 </body>
 </html>
 `;

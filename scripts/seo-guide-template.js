@@ -64,7 +64,7 @@ function renderHeader() {
 <header class="guide-site-header">
   <div class="guide-site-header__inner">
     <a class="guide-brand" href="/" aria-label="Desk2Quant home">
-      <img src="/assets/images/desk2quant-favicon.svg" width="36" height="36" alt="">
+      <img src="/assets/images/desk2quant-logo.png?v=3" width="36" height="36" alt="">
       <span>Desk2Quant</span>
     </a>
     <nav class="guide-site-nav" aria-label="Primary navigation">
@@ -109,7 +109,7 @@ function renderHead({ title, description, canonical, type = 'article', jsonLd = 
 <meta name="author" content="Desk2Quant Editorial Team">
 <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
 <link rel="canonical" href="${esc(canonical)}">
-<link rel="icon" type="image/svg+xml" href="/assets/images/desk2quant-favicon.svg">
+<link rel="icon" type="image/png" href="/assets/images/desk2quant-logo.png?v=3">
 <meta property="og:type" content="${esc(type)}">
 <meta property="og:site_name" content="Desk2Quant">
 <meta property="og:url" content="${esc(canonical)}">
@@ -128,9 +128,7 @@ ${jsonLd.map(data => `<script type="application/ld+json">${safeJson(data)}</scri
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/styles.css">
-<link rel="stylesheet" href="/launchzone.css?v=17">
-<link rel="stylesheet" href="/launchzone-pages.css?v=11">
-<link rel="stylesheet" href="/seo-guide.css?v=2">
+<link rel="stylesheet" href="/seo-guide.css?v=1">
 </head>`;
 }
 
@@ -154,7 +152,7 @@ function renderGuide(guide) {
       '@type': 'Organization',
       name: 'Desk2Quant',
       url: `${SITE}/`,
-      logo: { '@type': 'ImageObject', url: `${SITE}/assets/images/desk2quant-mark.svg?v=1` }
+      logo: { '@type': 'ImageObject', url: `${SITE}/assets/images/desk2quant-logo.png?v=3` }
     },
     mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
     isPartOf: { '@type': 'WebSite', name: 'Desk2Quant', url: `${SITE}/` }
@@ -183,7 +181,7 @@ function renderGuide(guide) {
   return `<!DOCTYPE html>
 <html lang="en">
 ${renderHead({ title: guide.metaTitle, description: guide.description, canonical, jsonLd: [articleLd, breadcrumbLd, faqLd], articleType: guide.schemaType })}
-<body class="guide-page d2q-launchzone">
+<body class="guide-page">
 ${renderHeader()}
 <main id="guide-content" class="guide-main">
   <nav class="guide-crumbs" aria-label="Breadcrumb">
@@ -321,7 +319,7 @@ function renderGuidesIndex() {
   return `<!DOCTYPE html>
 <html lang="en">
 ${renderHead({ title: 'Quant Finance Interview & Technical Guides | Desk2Quant', description, canonical, type: 'website', jsonLd: [collectionLd, breadcrumbLd] })}
-<body class="guide-page guide-index-page d2q-launchzone">
+<body class="guide-page guide-index-page">
 ${renderHeader()}
 <main id="guide-content" class="guide-main">
   <nav class="guide-crumbs" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span aria-current="page">Guides</span></nav>

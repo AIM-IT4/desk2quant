@@ -379,7 +379,7 @@ window.MathJax = {
       '@type': 'Organization',
       '@id': `${SITE}/#organization`,
       name: 'Desk2Quant',
-      logo: { '@type': 'ImageObject', url: `${SITE}/assets/images/desk2quant-mark.svg?v=1` }
+      logo: { '@type': 'ImageObject', url: `${SITE}/assets/images/desk2quant-logo.png?v=3` }
     },
     inLanguage: 'en'
   };
@@ -422,7 +422,7 @@ window.MathJax = {
 <meta name="twitter:image" content="${esc(image)}">
 <script type="application/ld+json">${safeJson(article)}</script>
 <script type="application/ld+json">${safeJson(crumbs)}</script>
-<link rel="icon" type="image/svg+xml" href="/assets/images/desk2quant-favicon.svg">
+<link rel="icon" type="image/png" href="/assets/images/desk2quant-logo.png?v=3">
 <link rel="stylesheet" href="/styles.css">
 <link rel="stylesheet" href="/seo-product.css?v=1">
 ${mathJax}

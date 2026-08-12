@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -10,19 +10,19 @@
         content="View detailed product information, pricing, and features for Desk2Quant premium quant finance resources and study materials.">
     <meta name="robots" content="noindex,follow">
     <link id="p-meta-canonical" rel="canonical" href="https://desk2quant.com/product.html">
-    <link rel="icon" type="image/svg+xml" href="assets/images/desk2quant-favicon.svg">
-    <link rel="apple-touch-icon" href="assets/images/desk2quant-mark.svg?v=1">
-    <link rel="shortcut icon" href="assets/images/desk2quant-mark.svg?v=1">
+    <link rel="icon" type="image/png" href="assets/images/desk2quant-logo.png?v=3">
+    <link rel="apple-touch-icon" href="assets/images/desk2quant-logo.png?v=3">
+    <link rel="shortcut icon" href="assets/images/desk2quant-logo.png?v=3">
     <meta id="p-meta-og-type" property="og:type" content="website">
     <meta id="p-meta-og-url" property="og:url" content="https://desk2quant.com/product.html">
     <meta id="p-meta-og-title" property="og:title" content="Desk2Quant Premium Resource">
     <meta id="p-meta-og-description" property="og:description" content="Premium digital resource for quantitative finance professionals.">
-    <meta id="p-meta-og-image" property="og:image" content="https://desk2quant.com/assets/images/desk2quant-mark.svg?v=1">
+    <meta id="p-meta-og-image" property="og:image" content="https://desk2quant.com/assets/images/desk2quant-logo.png">
     <meta id="p-meta-twitter-card" name="twitter:card" content="summary_large_image">
     <meta id="p-meta-twitter-title" name="twitter:title" content="Product Details | Desk2Quant">
     <meta id="p-meta-twitter-description" name="twitter:description"
         content="View detailed product information, pricing, and features for Desk2Quant premium quant finance resources.">
-    <meta id="p-meta-twitter-image" name="twitter:image" content="https://desk2quant.com/assets/images/desk2quant-mark.svg?v=1">
+    <meta id="p-meta-twitter-image" name="twitter:image" content="https://desk2quant.com/assets/images/desk2quant-logo.png">
     <script id="p-product-jsonld" type="application/ld+json"></script>
 
     <!-- Google Fonts -->
@@ -121,7 +121,6 @@
 
         .action-buttons {
             display: flex;
-            flex-wrap: wrap;
             gap: 20px;
         }
 
@@ -634,8 +633,9 @@
     </style>
 
 
-    <link rel="stylesheet" href="launchzone.css?v=17">
-    <link rel="stylesheet" href="launchzone-pages.css?v=11"></head>
+    <link rel="stylesheet" href="launchzone.css?v=5">
+    <link rel="stylesheet" href="launchzone-pages.css?v=2">
+</head>
 
 <body class="d2q-reference d2q-launchzone">
     <!-- Setup config for script.js to pick up -->
@@ -658,12 +658,13 @@
         <div class="nav-container">
             <a href="/" class="logo"
                 style="text-decoration: none; display: flex; align-items: center; gap: 10px;">
-                <img src="assets/images/desk2quant-mark.svg?v=1" alt="Desk2Quant" class="logo-img">
+                <img src="assets/images/desk2quant-logo.png?v=3" alt="Desk2Quant" class="logo-img">
                 <span class="logo-icon" style="display:none;">📊</span>
                 <span class="logo-text">Desk2Quant</span>
             </a>
             <ul class="nav-links">
-                <li><a href="/#products">All Products</a></li>                <li><a href="/?scrollTo=bookingForm" class="nav-cta">Book Session</a></li>
+                <li><a href="/#products">All Products</a></li>
+                <li><a href="/?scrollTo=bookingForm" class="nav-cta">Book Session</a></li>
             </ul>
             <div class="nav-actions">
                 <button class="cart-trigger-btn" id="cartTriggerBtn" type="button" aria-label="Open cart" aria-haspopup="dialog">
@@ -721,7 +722,8 @@
                     <button id="p-cart-add-btn" class="cart-add-btn" type="button" title="Add to cart" aria-label="Add to cart" style="display:none;">
                         <i class="fas fa-plus"></i>
                     </button>
-                    <a href="/#products" class="btn btn-secondary">                        Browse More
+                    <a href="/#products" class="btn btn-secondary">
+                        Browse More
                     </a>
                 </div>
             </div>
@@ -731,7 +733,8 @@
             <h2 style="color: #ef4444; margin-bottom: 20px;">Product Not Found</h2>
             <p style="color: var(--text-secondary); margin-bottom: 30px;">The product you are looking for does not exist
                 or has been removed.</p>
-            <a href="/" class="btn btn-primary">Return Home</a>        </div>
+            <a href="/" class="btn btn-primary">Return Home</a>
+        </div>
     </div>
 
     <!-- Product Preview Section -->
@@ -881,7 +884,7 @@
             const title = `${product.name} | Desk2Quant`;
             const description = plainTextFromHtml(product.description, 160) ||
                 'Premium digital resource for quantitative finance professionals from Desk2Quant.';
-            const image = product.cover_image_url || 'https://desk2quant.com/assets/images/desk2quant-mark.svg?v=1';
+            const image = product.cover_image_url || 'https://desk2quant.com/assets/images/desk2quant-logo.png';
 
             document.title = title;
             document.getElementById('p-meta-description').setAttribute('content', description);
