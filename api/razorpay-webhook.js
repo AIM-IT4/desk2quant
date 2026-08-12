@@ -399,8 +399,16 @@ export async function handleProductPurchase(data) {
             if (existing && existing.length > 0) {
                 const sources = existing.map((entry) => entry.source);
                 if (sources.includes('webhook')) {
-                    console.log('Payment already fully processed by webhook:', paymentId);
-                    return;
+                    // Do NOT return: a Razorpay retry can arrive after a previous
+                    // invocation that logged the sale but died before the emails
+                    // went out (e.g. a Vercel function timeout mid-webhook).
+                    // Returning here is how a paid order ends up with zero
+                    // confirmations — the customer's receipt AND the admin's sale
+                    // alert both silently vanish. Fall through to email delivery
+                    // instead; the insert is skipped via frontendAlreadyProcessed,
+                    // so no duplicate row is written.
+                    console.log('Payment already fully processed by webhook; skipping insert but re-ensuring email delivery:', paymentId);
+                    frontendAlreadyProcessed = true;
                 }
                 if (sources.includes('frontend_legacy') || sources.includes('frontend')) {
                     console.log('Payment logged by frontend, but ensuring webhook email delivery:', paymentId);
@@ -574,10 +582,12 @@ export async function handleProductPurchase(data) {
         // sale + send the confirmation email (observed: 3 confirmations for one
         // payment). With the unique index (migration 0010, source='webhook'
         // only — cart rows share a payment_id and must not be covered) the
-        // losing insert is ignored via resolution=ignore-duplicates and this
-        // invocation bails: exactly one row, one email, one Drive share per
-        // payment. If the index hasn't been applied yet, fall back to a plain
-        // insert so behaviour is unchanged.
+        // losing insert is ignored via resolution=ignore-duplicates: exactly
+        // one row per payment. The loser then falls through to the email sends
+        // below — a retry after a crashed first invocation must still deliver
+        // the customer receipt and admin sale alert (see lostRace handling).
+        // If the index hasn't been applied yet, fall back to a plain insert so
+        // behaviour is unchanged.
         const purchaseRow = {
             customer_email: customerEmail,
             product_name: productName,
@@ -638,10 +648,16 @@ export async function handleProductPurchase(data) {
             throw new Error(`Failed to record purchase in Supabase (${insertResp.status}) (paymentId: ${paymentId}): ${errBody}`);
         }
         if (lostRace) {
-            console.log('Duplicate webhook invocation for payment (already logged):', paymentId);
-            return;
+            // Deliberately NOT returning: the insert was a no-op because another
+            // invocation already claimed this payment_id, but that invocation may
+            // have died after the insert and before the emails (Vercel timeout).
+            // Falling through is the only chance this paid order gets its
+            // confirmations. Cost: an overlapping retry can produce a duplicate
+            // email — strictly better than zero emails on a paid order.
+            console.log('Duplicate webhook invocation for payment (already logged); still ensuring email delivery:', paymentId);
+        } else {
+            console.log('✅ Purchase logged to Supabase by webhook. PaymentId:', paymentId);
         }
-        console.log('✅ Purchase logged to Supabase by webhook. PaymentId:', paymentId);
     }
 
     if (BREVO_API_KEY && customerEmail && !underpaymentFlag) {
@@ -973,6 +989,7 @@ async function handleCartPurchase(data) {
     }
 
     // Idempotency: skip if this payment was already fully processed.
+    let cartAlreadyProcessed = false;
     try {
         const existingResp = await fetch(
             `${SUPABASE_URL}/rest/v1/purchases?payment_id=eq.${paymentId}&source=eq.webhook_cart&select=id`,
@@ -981,8 +998,14 @@ async function handleCartPurchase(data) {
         if (existingResp.ok) {
             const existing = await existingResp.json();
             if (existing && existing.length > 0) {
-                console.log('Cart payment already processed by webhook:', paymentId);
-                return;
+                // Do NOT return: a retry can arrive after a previous invocation
+                // that logged the cart sale but died before the emails went out.
+                // Falling through re-sends the confirmations; the insert below is
+                // skipped via cartAlreadyProcessed because webhook_cart rows are
+                // plain inserts (excluded from the unique index) and would
+                // otherwise duplicate every line item.
+                console.log('Cart payment already processed by webhook; skipping insert but re-ensuring email delivery:', paymentId);
+                cartAlreadyProcessed = true;
             }
         }
     } catch (err) {
@@ -1063,40 +1086,44 @@ async function handleCartPurchase(data) {
     // Fail closed: the purchases rows are the durable record of this cart sale.
     // If they cannot be written, throw so the webhook 500s and Razorpay retries —
     // a customer must not be charged with no record and no order email.
-    let insertResp;
-    try {
-        const rows = lineResults.map((line) => ({
-            customer_email: customerEmail,
-            product_name: line.name,
-            amount: Math.round(amount / lineResults.length), // even split for reporting; total is exact
-            currency: currency || 'INR',
-            payment_id: paymentId,
-            source: underpaymentFlag ? 'webhook_price_mismatch' : 'webhook_cart',
-            customer_country: customerCountry,
-            inr_amount: Math.round(inrAmount / lineResults.length),
-            download_link: underpaymentFlag ? null : line.downloadLink,
-            ...(isoCreatedAt ? { created_at: isoCreatedAt } : {})
-        }));
-        insertResp = await fetch(`${SUPABASE_URL}/rest/v1/purchases`, {
-            method: 'POST',
-            headers: {
-                apikey: SUPABASE_KEY,
-                Authorization: `Bearer ${SUPABASE_KEY}`,
-                'Content-Type': 'application/json',
-                Prefer: 'return=minimal'
-            },
-            body: JSON.stringify(rows)
-        });
-    } catch (err) {
-        console.error('❌ Error logging cart purchase to Supabase (network):', err.message, '| PaymentId:', paymentId);
-        throw new Error(`Failed to record cart purchase in Supabase (paymentId: ${paymentId}): ${err.message}`);
-    }
-    if (insertResp.ok) {
-        console.log(`✅ Cart purchase logged to Supabase (${lineResults.length} line items). PaymentId:`, paymentId);
+    if (cartAlreadyProcessed) {
+        console.log('Skipping cart purchase insert (already logged):', paymentId);
     } else {
-        const errBody = await insertResp.text();
-        console.error('❌ SUPABASE CART INSERT FAILED. Status:', insertResp.status, '| Body:', errBody, '| PaymentId:', paymentId);
-        throw new Error(`Failed to record cart purchase in Supabase (${insertResp.status}) (paymentId: ${paymentId}): ${errBody}`);
+        let insertResp;
+        try {
+            const rows = lineResults.map((line) => ({
+                customer_email: customerEmail,
+                product_name: line.name,
+                amount: Math.round(amount / lineResults.length), // even split for reporting; total is exact
+                currency: currency || 'INR',
+                payment_id: paymentId,
+                source: underpaymentFlag ? 'webhook_price_mismatch' : 'webhook_cart',
+                customer_country: customerCountry,
+                inr_amount: Math.round(inrAmount / lineResults.length),
+                download_link: underpaymentFlag ? null : line.downloadLink,
+                ...(isoCreatedAt ? { created_at: isoCreatedAt } : {})
+            }));
+            insertResp = await fetch(`${SUPABASE_URL}/rest/v1/purchases`, {
+                method: 'POST',
+                headers: {
+                    apikey: SUPABASE_KEY,
+                    Authorization: `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json',
+                    Prefer: 'return=minimal'
+                },
+                body: JSON.stringify(rows)
+            });
+        } catch (err) {
+            console.error('❌ Error logging cart purchase to Supabase (network):', err.message, '| PaymentId:', paymentId);
+            throw new Error(`Failed to record cart purchase in Supabase (paymentId: ${paymentId}): ${err.message}`);
+        }
+        if (insertResp.ok) {
+            console.log(`✅ Cart purchase logged to Supabase (${lineResults.length} line items). PaymentId:`, paymentId);
+        } else {
+            const errBody = await insertResp.text();
+            console.error('❌ SUPABASE CART INSERT FAILED. Status:', insertResp.status, '| Body:', errBody, '| PaymentId:', paymentId);
+            throw new Error(`Failed to record cart purchase in Supabase (${insertResp.status}) (paymentId: ${paymentId}): ${errBody}`);
+        }
     }
 
     // Single combined confirmation email listing every item + its link.
@@ -1271,8 +1298,12 @@ async function handleSessionBooking(data) {
         if (existingResponse.ok) {
             const existing = await existingResponse.json();
             if (existing && existing.length > 0) {
-                console.log('Booking already processed:', paymentId);
-                return; // Already processed
+                // Do NOT return: a retry can arrive after a previous invocation
+                // that logged the booking but died before the confirmation
+                // emails went out. Falling through is safe — the on_conflict
+                // insert below becomes a no-op (bookingLostRace) and the
+                // customer + admin emails still go out.
+                console.log('Booking already processed; skipping insert but re-ensuring email delivery:', paymentId);
             }
         }
     } catch (err) {
@@ -1394,11 +1425,15 @@ async function handleSessionBooking(data) {
         throw new Error(`Booking insert failed (${bookingInsertResp.status}): ${errorText}`);
     }
     if (bookingLostRace) {
-        // Another webhook invocation already logged + confirmed this booking.
-        console.log('Duplicate webhook invocation for booking (already logged):', paymentId);
-        return;
+        // Another invocation already claimed this payment_id, but it may have
+        // died after the insert and before the emails (Vercel timeout).
+        // Deliberately NOT returning so this paid booking still gets its
+        // confirmations. Duplicate emails on a racing retry are preferable
+        // to zero emails on a paid booking.
+        console.log('Duplicate webhook invocation for booking (already logged); still ensuring email delivery:', paymentId);
+    } else {
+        console.log('✅ Booking logged to Supabase');
     }
-    console.log('✅ Booking logged to Supabase');
 
     // 3. Send confirmation email to customer via Brevo (withheld if the
     // captured amount didn't meet the verified price -- see price-tamper
