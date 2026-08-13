@@ -67,6 +67,33 @@ export default async function handler(req, res) {
         }
     }
 
+    // --- Buyer access check (verify one buyer's Drive access) -----------
+    // Confirms a specific buyer holds a 'reader' grant on a product file and
+    // that no file (or folder child) blocks reader download via
+    // copyRequiresWriterPermission. apply=true grants reader + clears flags
+    // where the service account is allowed to. Guarded by CRON_SECRET above.
+    if (req.query.action === 'buyer-access') {
+        try {
+            const { auditBuyerAccess } = await import('../lib/driveAudit.js');
+            const fileIds = (req.query.fileIds
+                ? String(req.query.fileIds).split(',')
+                : []).map((x) => x.trim()).filter(Boolean);
+            if (!fileIds.length) {
+                return res.status(400).json({ error: 'fileIds required (comma-separated)' });
+            }
+            const result = await auditBuyerAccess({
+                clientEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+                privateKey: process.env.GOOGLE_PRIVATE_KEY,
+                buyerEmail: req.query.email,
+                fileIds,
+                apply: req.query.apply === 'true'
+            });
+            return res.status(200).json(result);
+        } catch (err) {
+            return res.status(500).json({ error: String(err.message || err) });
+        }
+    }
+
     // --- Ownership probe (diagnostic) -----------------------------------
     // Five product files have copyRequiresWriterPermission = true, which hides
     // Download/Print/Copy from readers, and the service account cannot clear it
