@@ -14,6 +14,7 @@ import { getExpectedProductOrder, getExpectedSessionOrder, getExpectedCartOrder,
 import { getServiceKey } from '../lib/supabaseAdmin.js';
 import { emailShell, escapeHtml } from '../lib/emailBranding.js';
 import { signBookingToken } from '../lib/bookingTokens.js';
+import { sendWebhookEmailOnce } from '../lib/webhookEmailDelivery.js';
 
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || 'https://desk2quant.com';
 
@@ -901,7 +902,7 @@ function gauntletPlaygroundBlock(productId, productName, paymentId) {
 `;
 }
 
-async function handleCartPurchase(data) {
+export async function handleCartPurchase(data) {
     const {
         paymentId, amount, inrAmount, currency, customerEmail, customerName, customerPhone, customerCountry,
         cartItemsRaw, couponCode, paymentCreatedAt,
@@ -952,30 +953,6 @@ async function handleCartPurchase(data) {
     if (!(await isWithinTolerance(inrAmount, expected.amountInr))) {
         underpaymentFlag = { expectedInr: expected.amountInr, capturedInr: inrAmount };
         console.error('🚨 UNDERPAYMENT DETECTED (cart) — refusing to grant access:', { paymentId, ...underpaymentFlag });
-    }
-
-    // Idempotency: skip if this payment was already fully processed.
-    let cartAlreadyProcessed = false;
-    try {
-        const existingResp = await fetch(
-            `${SUPABASE_URL}/rest/v1/purchases?payment_id=eq.${paymentId}&source=eq.webhook_cart&select=id`,
-            { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
-        );
-        if (existingResp.ok) {
-            const existing = await existingResp.json();
-            if (existing && existing.length > 0) {
-                // Do NOT return: a retry can arrive after a previous invocation
-                // that logged the cart sale but died before the emails went out.
-                // Falling through re-sends the confirmations; the insert below is
-                // skipped via cartAlreadyProcessed because webhook_cart rows are
-                // plain inserts (excluded from the unique index) and would
-                // otherwise duplicate every line item.
-                console.log('Cart payment already processed by webhook; skipping insert but re-ensuring email delivery:', paymentId);
-                cartAlreadyProcessed = true;
-            }
-        }
-    } catch (err) {
-        console.error('Error checking existing cart purchase:', err);
     }
 
     // Fetch each product's name + file_url, then share Drive access.
@@ -1047,49 +1024,47 @@ async function handleCartPurchase(data) {
         lineResults.push({ productId: item.productId, name, quantity: item.quantity, downloadLink, hasSharedSecurely });
     }
 
-    // Log one purchases row per line item, sharing the same payment_id so
-    // admin views can group them, but each keeping its own product_name.
-    // Fail closed: the purchases rows are the durable record of this cart sale.
-    // If they cannot be written, throw so the webhook 500s and Razorpay retries —
-    // a customer must not be charged with no record and no order email.
-    if (cartAlreadyProcessed) {
-        console.log('Skipping cart purchase insert (already logged):', paymentId);
+    // Log the complete cart batch atomically. The RPC takes a transaction-level
+    // advisory lock scoped to paymentId, checks for an existing cart batch, and
+    // inserts every line in the same transaction. Two overlapping Razorpay
+    // deliveries can no longer both pass a SELECT-before-INSERT race.
+    const rows = lineResults.map((line) => ({
+        customer_email: customerEmail,
+        product_name: line.name,
+        amount: Math.round(amount / lineResults.length), // even split for reporting; total is exact
+        currency: currency || 'INR',
+        payment_id: paymentId,
+        source: underpaymentFlag ? 'webhook_price_mismatch' : 'webhook_cart',
+        customer_country: customerCountry,
+        inr_amount: Math.round(inrAmount / lineResults.length),
+        download_link: underpaymentFlag ? null : line.downloadLink,
+        ...(isoCreatedAt ? { created_at: isoCreatedAt } : {})
+    }));
+    let recordResp;
+    try {
+        recordResp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/record_cart_purchase_once`, {
+            method: 'POST',
+            headers: {
+                apikey: SUPABASE_KEY,
+                Authorization: `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ p_payment_id: paymentId, p_rows: rows })
+        });
+    } catch (err) {
+        console.error('❌ Error recording cart purchase atomically (network):', err.message, '| PaymentId:', paymentId);
+        throw new Error(`Failed to record cart purchase in Supabase (paymentId: ${paymentId}): ${err.message}`);
+    }
+    if (!recordResp.ok) {
+        const errBody = await recordResp.text();
+        console.error('❌ ATOMIC CART RECORD FAILED. Status:', recordResp.status, '| Body:', errBody, '| PaymentId:', paymentId);
+        throw new Error(`Failed to record cart purchase in Supabase (${recordResp.status}) (paymentId: ${paymentId}): ${errBody}`);
+    }
+    const cartInserted = await recordResp.json();
+    if (cartInserted === true) {
+        console.log(`✅ Cart purchase logged to Supabase (${lineResults.length} line items). PaymentId:`, paymentId);
     } else {
-        let insertResp;
-        try {
-            const rows = lineResults.map((line) => ({
-                customer_email: customerEmail,
-                product_name: line.name,
-                amount: Math.round(amount / lineResults.length), // even split for reporting; total is exact
-                currency: currency || 'INR',
-                payment_id: paymentId,
-                source: underpaymentFlag ? 'webhook_price_mismatch' : 'webhook_cart',
-                customer_country: customerCountry,
-                inr_amount: Math.round(inrAmount / lineResults.length),
-                download_link: underpaymentFlag ? null : line.downloadLink,
-                ...(isoCreatedAt ? { created_at: isoCreatedAt } : {})
-            }));
-            insertResp = await fetch(`${SUPABASE_URL}/rest/v1/purchases`, {
-                method: 'POST',
-                headers: {
-                    apikey: SUPABASE_KEY,
-                    Authorization: `Bearer ${SUPABASE_KEY}`,
-                    'Content-Type': 'application/json',
-                    Prefer: 'return=minimal'
-                },
-                body: JSON.stringify(rows)
-            });
-        } catch (err) {
-            console.error('❌ Error logging cart purchase to Supabase (network):', err.message, '| PaymentId:', paymentId);
-            throw new Error(`Failed to record cart purchase in Supabase (paymentId: ${paymentId}): ${err.message}`);
-        }
-        if (insertResp.ok) {
-            console.log(`✅ Cart purchase logged to Supabase (${lineResults.length} line items). PaymentId:`, paymentId);
-        } else {
-            const errBody = await insertResp.text();
-            console.error('❌ SUPABASE CART INSERT FAILED. Status:', insertResp.status, '| Body:', errBody, '| PaymentId:', paymentId);
-            throw new Error(`Failed to record cart purchase in Supabase (${insertResp.status}) (paymentId: ${paymentId}): ${errBody}`);
-        }
+        console.log('Cart purchase already logged; preserving existing rows:', paymentId);
     }
 
     // Single combined confirmation email listing every item + its link.
@@ -1116,51 +1091,64 @@ async function handleCartPurchase(data) {
                             </table>
                         </div>
         ` });
-        try {
-            const emailResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
-                method: 'POST',
-                headers: { accept: 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
-                body: JSON.stringify({
-                    sender: { name: SENDER_NAME, email: SENDER_EMAIL },
-                    replyTo: { email: REPLY_TO_EMAIL, name: SENDER_NAME },
-                    to: [{ email: customerEmail, name: customerName }],
-                    subject: `Your Order (${lineResults.length} item${lineResults.length > 1 ? 's' : ''}): Desk2Quant`,
-                    htmlContent: customerHtml,
-                    textContent: `Hi ${customerName},\n\nThank you for your order!\n\n${lineResults.map((l) => `${l.name}: ${l.downloadLink}`).join('\n')}\n\nTotal: ${currency} ${amount}\nPayment ID: ${paymentId}\n\nSent by Desk2Quant`
-                })
-            });
-            if (emailResponse.ok) {
-                console.log(`Cart confirmation email sent to ${customerEmail}`);
-            } else {
-                console.error('Brevo Error (Cart Email):', emailResponse.status, await emailResponse.text());
+        const emailResult = await sendWebhookEmailOnce({
+            paymentId,
+            deliveryType: 'cart_customer_receipt',
+            BREVO_API_KEY,
+            SUPABASE_URL,
+            SUPABASE_KEY,
+            emailPayload: {
+                sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+                replyTo: { email: REPLY_TO_EMAIL, name: SENDER_NAME },
+                to: [{ email: customerEmail, name: customerName }],
+                subject: `Your Order (${lineResults.length} item${lineResults.length > 1 ? 's' : ''}): Desk2Quant`,
+                htmlContent: customerHtml,
+                textContent: `Hi ${customerName},\n\nThank you for your order!\n\n${lineResults.map((l) => `${l.name}: ${l.downloadLink}`).join('\n')}\n\nTotal: ${currency} ${amount}\nPayment ID: ${paymentId}\n\nSent by Desk2Quant`
             }
-        } catch (err) {
-            console.error('Error sending cart confirmation email:', err);
+        });
+        if (emailResult.sent && !emailResult.skipped) {
+            console.log(`Cart confirmation email sent to ${customerEmail}`);
+        } else if (emailResult.skipped) {
+            console.log(`Cart confirmation email already claimed (${emailResult.reason}):`, paymentId);
+        } else if (emailResult.permanentFailure) {
+            console.error('Permanent Brevo error (Cart Email):', emailResult.error);
         }
     }
 
     if (BREVO_API_KEY && !underpaymentFlag) {
-        try {
-            const adminHtml = emailShell({ admin: true, body: `
+        // A repeated address in ADMIN_EMAIL should still receive only one copy.
+        const adminRecipients = Array.from(new Map(
+            String(ADMIN_EMAIL || '')
+                .split(',')
+                .map((email) => email.trim())
+                .filter(Boolean)
+                .map((email) => [email.toLowerCase(), email])
+        ).values()).map((email) => ({ email }));
+        const adminHtml = emailShell({ admin: true, body: `
                     <h2>New Cart Sale (${lineResults.length} items)</h2>
                     <p><strong>${escapeHtml(customerName)}</strong> (${escapeHtml(customerEmail)}) just purchased:</p>
                     <ul>${lineResults.map((l) => `<li>${escapeHtml(l.name)}${l.quantity > 1 ? ` × ${l.quantity}` : ''}</li>`).join('')}</ul>
                     <p>Total: ${currency} ${amount} | Payment ID: ${paymentId}</p>
-            ` });
-            await fetch('https://api.brevo.com/v3/smtp/email', {
-                method: 'POST',
-                headers: { accept: 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
-                body: JSON.stringify({
-                    sender: { name: SENDER_NAME, email: SENDER_EMAIL },
-                    replyTo: { email: REPLY_TO_EMAIL, name: SENDER_NAME },
-                    to: ADMIN_EMAIL.split(',').map((email) => ({ email: email.trim() })).filter((item) => item.email),
-                    subject: `New Cart Sale: ${lineResults.length} item(s)`,
-                    htmlContent: adminHtml,
-                    textContent: `New cart sale.\n${escapeHtml(customerName)} (${escapeHtml(customerEmail)})\nItems: ${lineResults.map((l) => l.name).join(', ')}\nTotal: ${currency} ${amount}\nPaymentId: ${paymentId}`
-                })
-            });
-        } catch (err) {
-            console.error('Error sending cart admin notification:', err);
+        ` });
+        const adminResult = await sendWebhookEmailOnce({
+            paymentId,
+            deliveryType: 'cart_admin_sale',
+            BREVO_API_KEY,
+            SUPABASE_URL,
+            SUPABASE_KEY,
+            emailPayload: {
+                sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+                replyTo: { email: REPLY_TO_EMAIL, name: SENDER_NAME },
+                to: adminRecipients,
+                subject: `New Cart Sale: ${lineResults.length} item(s)`,
+                htmlContent: adminHtml,
+                textContent: `New cart sale.\n${escapeHtml(customerName)} (${escapeHtml(customerEmail)})\nItems: ${lineResults.map((l) => l.name).join(', ')}\nTotal: ${currency} ${amount}\nPaymentId: ${paymentId}`
+            }
+        });
+        if (adminResult.skipped) {
+            console.log(`Cart admin notification already claimed (${adminResult.reason}):`, paymentId);
+        } else if (adminResult.permanentFailure) {
+            console.error('Permanent Brevo error (Cart Admin Email):', adminResult.error);
         }
     }
 
