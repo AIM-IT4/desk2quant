@@ -1,6 +1,7 @@
 import https from 'https';
 import crypto from 'crypto';
 import { isZeroDecimalCurrency } from '../lib/pricing.js';
+import { GROQ_CHAT_MODEL } from '../lib/groqModels.js';
 import { getServiceKey } from '../lib/supabaseAdmin.js';
 import { emailShell, escapeHtml } from '../lib/emailBranding.js';
 import { signBookingToken, verifyBookingToken } from '../lib/bookingTokens.js';
@@ -617,7 +618,7 @@ IMPORTANT:
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    model: 'llama-3.3-70b-versatile',
+                    model: GROQ_CHAT_MODEL,
                     messages: conversation,
                     temperature: 0.7
                 })
@@ -684,7 +685,7 @@ IMPORTANT:
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    model: 'llama-3.3-70b-versatile',
+                    model: GROQ_CHAT_MODEL,
                     messages: fullHistory,
                     temperature: 0.7
                 })
@@ -718,10 +719,12 @@ async function callGroqAPI(messages, temperature, apiKey) {
         }
     };
     const body = {
-        model: 'llama-3.3-70b-versatile',
+        model: GROQ_CHAT_MODEL,
         messages: messages,
         temperature: temperature,
-        max_tokens: 1024
+        // The scorecard is the paid deliverable and reasoning models bill their
+        // internal reasoning against this same budget, so leave headroom.
+        max_tokens: 2048
     };
     return await httpRequest('https://api.groq.com/openai/v1/chat/completions', options, body);
 }

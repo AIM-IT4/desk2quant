@@ -1,3 +1,5 @@
+import { GROQ_TTS_MODEL } from '../lib/groqModels.js';
+
 export default async function handler(req, res) {
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -30,7 +32,7 @@ export default async function handler(req, res) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: 'canopylabs/orpheus-v1-english',
+                model: GROQ_TTS_MODEL,
                 input: inputText,
                 voice: voice || 'troy',
                 response_format: 'wav'
