@@ -1702,6 +1702,14 @@ body.d2q-reference .footer .logo-img {
     font-weight: 800;
 }
 
+/* Blog card cover: replaces per-card inline styles in loadBlogs(). */
+.product-image.blog-card-cover {
+    padding: 0;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: var(--lz-ink, #151515);
+}
+
 .product-content {
     padding: 20px;
     display: flex;

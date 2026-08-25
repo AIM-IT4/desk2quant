@@ -1774,15 +1774,15 @@ async function loadBlogsFromSupabase() {
             card.dataset.detailHref = blogHref;
 
             const imageHtml = blog.cover_image_url
-                ? `<div class="product-image" style="height:200px; padding:0; overflow:hidden;"><img loading="lazy" decoding="async" src="${blog.cover_image_url}" alt="${blog.title || 'Blog post cover image'}" style="width:100%; height:100%; object-fit:cover; transition:transform 0.5s ease;"></div>`
+                ? `<div class="product-image" style="height:200px; padding:0; overflow:hidden;"><img loading="lazy" decoding="async" src="${escapeAttr(blog.cover_image_url)}" alt="${escapeAttr(blog.title || 'Blog post cover image')}" style="width:100%; height:100%; object-fit:cover; transition:transform 0.5s ease;"></div>`
                 : `<div class="product-image" style="height:200px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05);"><i class="fas fa-newspaper" style="font-size:3em; opacity:0.5;"></i></div>`;
 
             card.innerHTML = `
                 ${imageHtml}
                 <div class="product-content">
                     <div style="font-size:0.85em; color:var(--primary); margin-bottom:5px;">${date}</div>
-                    <h3 class="product-title" style="margin-bottom:10px;"><a class="card-detail-link" href="${blogHref}">${blog.title}</a></h3>
-                    <p class="product-description" style="margin-bottom:15px;">${blog.excerpt || ''}</p>
+                    <h3 class="product-title" style="margin-bottom:10px;"><a class="card-detail-link" href="${escapeAttr(blogHref)}">${escapeHtml(blog.title)}</a></h3>
+                    <p class="product-description" style="margin-bottom:15px;">${escapeHtml(blog.excerpt || '')}</p>
                     <div style="margin-top:auto; display:flex; align-items:center; justify-content:space-between;">
                         <span style="color:var(--text-color); font-weight:600; font-size:0.9em; display:flex; align-items:center; gap:5px;">
                             Read Article <i class="fas fa-arrow-right" style="font-size:0.8em;"></i>
@@ -4069,13 +4069,13 @@ function displayBlogs(blogs) {
         card.dataset.detailHref = blogHref;
 
         card.innerHTML = `
-            <div class="product-image" style="padding:0; aspect-ratio:16/9; overflow:hidden; background:#1e293b;">
-                ${blog.cover_image_url ? `<img loading="lazy" decoding="async" src="${blog.cover_image_url}" alt="${blog.title || 'Blog post cover image'}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:gray;"><i class="fas fa-newspaper fa-3x"></i></div>`}
-                <div class="product-badge" style="background:#8b5cf6;">ARTICLE</div>
+            <div class="product-image blog-card-cover">
+                ${blog.cover_image_url ? `<img loading="lazy" decoding="async" src="${escapeAttr(blog.cover_image_url)}" alt="${escapeAttr(blog.title || 'Blog post cover image')}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:gray;"><i class="fas fa-newspaper fa-3x"></i></div>`}
+                <div class="product-badge">ARTICLE</div>
             </div>
             <div class="product-content" style="display:flex; flex-direction:column;">
-                <h3 class="product-title"><a class="card-detail-link" href="${blogHref}">${blog.title}</a></h3>
-                <p class="product-description" style="flex:1; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">${blog.excerpt || ''}</p>
+                <h3 class="product-title"><a class="card-detail-link" href="${escapeAttr(blogHref)}">${escapeHtml(blog.title)}</a></h3>
+                <p class="product-description" style="flex:1; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">${escapeHtml(blog.excerpt || '')}</p>
                 <div class="product-footer" style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">
                      <span style="font-size:0.85em; color:var(--text-muted);">${new Date(blog.created_at).toLocaleDateString()}</span>
                      <span style="color:var(--accent); font-size:0.9em; font-weight:600;">Read &rarr;</span>
@@ -4182,6 +4182,22 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// escapeHtml() serializes a text node, which escapes & < > but NOT quotes --
+// correct for text content, unsafe inside an attribute. Titles containing a
+// double quote (e.g. 7 Interview Red Flags ... "Not Ready for the Desk") would
+// otherwise terminate the attribute early and inject stray attributes.
+// Use this for any interpolation inside quoted attribute values.
+function escapeAttr(text) {
+    if (text === 0) return '0';
+    if (!text) return '';
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 const BLOG_INDEX_SEO = Object.freeze({

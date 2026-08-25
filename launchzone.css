@@ -1189,7 +1189,8 @@ body.d2q-launchzone .resource-card:hover {
 
 body.d2q-launchzone .product-card {
     overflow: hidden;
-    cursor: default;
+    /* Cards are click targets: JS navigates via data-detail-href. */
+    cursor: pointer;
 }
 
 body.d2q-launchzone .product-card:focus-within {
