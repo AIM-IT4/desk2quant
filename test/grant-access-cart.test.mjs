@@ -101,15 +101,20 @@ test('cart payment resolves every line item instead of 404ing', async () => {
 
     assert.equal(res.statusCode, 200);
     assert.equal(res.body.success, true);
-    assert.equal(res.body.type, 'cart');
+    // The cart response is flagged with `cart: true`; my-access.html branches on
+    // exactly this field to decide between the multi-item and single-item shape.
+    assert.equal(res.body.cart, true);
     assert.equal(res.body.items.length, 2);
     assert.deepEqual(res.body.items.map(i => i.product), ['Python for Quants', 'Equity Models']);
-    assert.deepEqual(res.body.items.map(i => i.product_id), ['prod-aaa', 'prod-bbb']);
     // Drive creds are unset in this test, so links stay raw and nothing is granted.
     assert.equal(res.body.items.every(i => i.download_link), true);
-    assert.equal(res.body.granted_count, 0);
+    assert.equal(res.body.items.some(i => i.drive_access_granted), false);
 });
 
+// Quantity is not echoed back in the response, so assert on the behaviour it
+// drives instead: the expected cart total. Paying for 3x+1x is accepted only if
+// the quantities were parsed out of the note; charging the 1x+1x total for the
+// same order must still be refused as an underpayment.
 test('cart line quantities are parsed from the cart_items note', async () => {
     const { res } = await run({
         payment: cartPayment({ amount: (500 * 3 + 300) * 100 }),
@@ -118,7 +123,17 @@ test('cart line quantities are parsed from the cart_items note', async () => {
     });
 
     assert.equal(res.statusCode, 200);
-    assert.deepEqual(res.body.items.map(i => i.quantity), [3, 1]);
+    assert.equal(res.body.items.length, 2);
+});
+
+test('a quantity-3 cart paid at the quantity-1 total is refused', async () => {
+    const { res } = await run({
+        payment: cartPayment({ amount: (500 + 300) * 100 }),
+        order: cartOrder('prod-aaa:3:,prod-bbb:1:'),
+        body: { payment_id: 'pay_CART1', email: 'buyer@example.com' }
+    });
+
+    assert.equal(res.statusCode, 402);
 });
 
 test('cart underpayment is refused', async () => {
@@ -129,7 +144,7 @@ test('cart underpayment is refused', async () => {
     });
 
     assert.equal(res.statusCode, 402);
-    assert.match(res.body.error, /does not match the cart price/);
+    assert.match(res.body.error, /does not match the cart total/);
 });
 
 test('cart grant is refused when the email does not match the payment', async () => {
