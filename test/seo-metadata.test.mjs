@@ -18,7 +18,12 @@ const HTML_ARTIFACT_EXCLUSIONS = [
     { matches: (file) => file === 'emailjs_template.html', reason: 'EmailJS source template' },
     { matches: (file) => file.startsWith('temp_template/'), reason: 'archived upstream template' },
     { matches: (file) => file.startsWith('archive/'), reason: 'archived site artifact' },
-    { matches: (file) => /^google[a-z0-9]+\.html$/i.test(file), reason: 'Google ownership token' }
+    { matches: (file) => /^google[a-z0-9]+\.html$/i.test(file), reason: 'Google ownership token' },
+    // Local-only output of scripts/preview-emails.mjs. It is gitignored, so CI
+    // never sees it -- but these tests walk the filesystem, so without this a
+    // developer who previews the email templates and then runs the suite gets a
+    // spurious failure on an artifact that is never deployed.
+    { matches: (file) => file === 'email-preview-generated.html', reason: 'generated email preview' }
 ];
 
 const DIRECTORY_EXCLUSIONS = new Set(['.git', '.github', '.vercel', 'node_modules', 'coverage']);

@@ -29,18 +29,34 @@ function myAccessUrl(email) {
     return `${PUBLIC_BASE_URL}/my-access.html?email=${encodeURIComponent(email)}&tk=${encodeURIComponent(token)}`;
 }
 
-function myAccessBlock(email) {
+// The default copy leads on the 2-day download-link expiry, which is the reason
+// a product buyer needs My Access. A session booking has no download links at
+// all, so that wording would be nonsense there -- the eyebrow and body are
+// overridable rather than the block being duplicated per flow.
+const MY_ACCESS_PURCHASE_COPY = {
+    eyebrow: 'Keep This Forever',
+    body: 'The links above expire in <strong>2 days</strong>. <strong>My Access</strong> is your permanent library — fresh download links any time, plus your mentorship sessions. You are already signed in on this link.',
+    text: 'The download links above expire in 2 days. Get fresh ones any time here (already signed in):'
+};
+
+const MY_ACCESS_BOOKING_COPY = {
+    eyebrow: 'Everything In One Place',
+    body: '<strong>My Access</strong> is your permanent library — every session you book and every resource you buy, together in one place. You are already signed in on this link.',
+    text: 'Every session you book and every resource you buy lives here (already signed in):'
+};
+
+function myAccessBlock(email, copy = MY_ACCESS_PURCHASE_COPY) {
     const url = myAccessUrl(email);
     return `
                         <div style="background:#dff2ef; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px; margin-bottom:20px;">
-                            <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Keep This Forever</p>
-                            <p style="font-size: 14px; margin: 0 0 14px 0; color: #090909;">The links above expire in <strong>2 days</strong>. <strong>My Access</strong> is your permanent library — fresh download links any time, plus your mentorship sessions. You are already signed in on this link.</p>
+                            <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">${copy.eyebrow}</p>
+                            <p style="font-size: 14px; margin: 0 0 14px 0; color: #090909;">${copy.body}</p>
                             <a href="${escapeHtml(url)}" style="display:inline-block; background:#0b7f79; color:#ffffff; font-weight:800; text-decoration:none; padding:12px 24px; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; font-size:14px;">Open My Access</a>
                         </div>`;
 }
 
-function myAccessText(email) {
-    return `\n\nMY ACCESS -- your permanent library\nThe download links above expire in 2 days. Get fresh ones any time here (already signed in):\n${myAccessUrl(email)}`;
+function myAccessText(email, copy = MY_ACCESS_PURCHASE_COPY) {
+    return `\n\nMY ACCESS -- your permanent library\n${copy.text}\n${myAccessUrl(email)}`;
 }
 
 // Disable Vercel body parsing so we can read the raw stream for signature verification
@@ -1441,8 +1457,9 @@ async function handleSessionBooking(data) {
                             <center>
                                 <a href="${manageUrl}" style="display: inline-block; background:#0b7f79; color:#ffffff; font-weight:800; text-decoration:none; padding:12px 26px; border:1px solid #090909; border-radius:0; box-shadow:3px 3px 0 #090909; font-size:14px;">Manage Booking</a>
                             </center>
-                            <p style="font-size: 13px; margin: 16px 0 0 0; color: #666761; line-height: 1.5;">Your sessions and any material you have bought also live together in <a href="${escapeHtml(myAccessUrl(customerEmail))}" style="color:#0b7f79; text-decoration:underline; font-weight:700;">My Access</a>.</p>
                         </div>
+
+                        ${myAccessBlock(customerEmail, MY_ACCESS_BOOKING_COPY)}
                         <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px;">
                             <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Order Details</p>
                             <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
@@ -1465,7 +1482,7 @@ async function handleSessionBooking(data) {
                     to: [{ email: customerEmail, name: customerName }],
                     subject: `Booking Confirmed: ${sessionName}`,
                     htmlContent: customerHtml,
-                    textContent: `Hi ${customerName},\n\nYour session is confirmed!\n\nSession: ${sessionName}\nDate: ${sessionDate}\nTime: ${displayTime} (${sessionDuration} mins)\nAmount Paid: ₹${sessionPrice}\n\nJoin Meeting Link:\n${meetLink}\n\nPayment ID: ${paymentId}\n\nNeed to reschedule or cancel? Open your manage link:\n${manageUrl}\n\nYour sessions and material also live together in My Access:\n${myAccessUrl(customerEmail)}\n\nHave an issue? Reply to this email.\n\nSent by Desk2Quant`
+                    textContent: `Hi ${customerName},\n\nYour session is confirmed!\n\nSession: ${sessionName}\nDate: ${sessionDate}\nTime: ${displayTime} (${sessionDuration} mins)\nAmount Paid: ₹${sessionPrice}\n\nJoin Meeting Link:\n${meetLink}\n\nPayment ID: ${paymentId}\n\nNeed to reschedule or cancel? Open your manage link:\n${manageUrl}${myAccessText(customerEmail, MY_ACCESS_BOOKING_COPY)}\n\nHave an issue? Reply to this email.\n\nSent by Desk2Quant`
                 })
             });
 

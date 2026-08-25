@@ -180,10 +180,49 @@ function extractTemplates(src, file) {
     return found;
 }
 
+// The purchase, cart and booking templates render their My Access panel from
+// module-local helpers in api/razorpay-webhook.js. Hand-copying that markup
+// here would drift the moment the real block changes -- precisely the failure
+// this file exists to prevent -- so lift the real function sources instead and
+// evaluate them against a stub signer. A real token is neither available nor
+// wanted in a preview artifact.
+function liftMyAccessHelpers() {
+    const src = readFileSync('api/razorpay-webhook.js', 'utf8');
+    const lift = (name) => {
+        const match = src.match(new RegExp(`function ${name}\\([\\s\\S]*?\\n\\}`));
+        if (!match) {
+            throw new Error(
+                `preview-emails: could not lift ${name}() out of api/razorpay-webhook.js. `
+                + 'If it was renamed or reshaped, update this lifter -- do not inline a copy of the markup.'
+            );
+        }
+        return match[0];
+    };
+
+    // The block reads its wording from module-level copy objects; lift those too
+    // or the functions evaluate against an undefined identifier.
+    const liftConst = (name) => {
+        const match = src.match(new RegExp(`const ${name} = \\{[\\s\\S]*?\\n\\};`));
+        if (!match) throw new Error(`preview-emails: could not lift ${name} out of api/razorpay-webhook.js`);
+        return match[0];
+    };
+
+    const build = new Function(
+        'escapeHtml', 'PUBLIC_BASE_URL', 'signAccessToken', 'SESSION_TTL_MS',
+        `${liftConst('MY_ACCESS_PURCHASE_COPY')}\n${liftConst('MY_ACCESS_BOOKING_COPY')}\n`
+        + `${lift('myAccessUrl')}\n${lift('myAccessBlock')}\n${lift('myAccessText')}\n`
+        + 'return { myAccessUrl, myAccessBlock, myAccessText, '
+        + 'MY_ACCESS_PURCHASE_COPY, MY_ACCESS_BOOKING_COPY };'
+    );
+
+    return build(realEscapeHtml, 'https://desk2quant.com', () => 'SAMPLE.PREVIEW.TOKEN', 0);
+}
+
 // Helpers the templates call. The literal is evaluated outside its module, so
 // the module's own functions aren't in scope -- without these the Proxy returns
 // a string for `escapeHtml` and the render dies on "not a function".
 const HELPERS = {
+    ...liftMyAccessHelpers(),
     // Use the REAL escapeHtml from lib/emailBranding.js so the preview matches
     // what ships (and fails loudly if that module ever breaks).
     escapeHtml: realEscapeHtml,
