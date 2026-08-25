@@ -402,7 +402,9 @@
         <div class="search-box">
             <h3 style="margin-bottom: 20px;">Find Your Bookings</h3>
             <p style="color: var(--text-muted); margin-bottom: 20px;">
-                Use the <strong>Manage Booking</strong> link from your confirmation email to view, reschedule, or cancel. (For security, bookings can no longer be managed by email alone.)
+                Use the <strong>Manage Booking</strong> link from your confirmation email to view, reschedule, or cancel.
+                Lost the email? Enter your address below and we'll send a fresh sign-in link, which also opens
+                <a href="my-access.html" style="color: var(--accent-primary); font-weight: 600;">My Access</a> &mdash; your downloads and sessions in one place.
             </p>
             <div class="search-controls">
                 <input type="email" id="searchEmail" placeholder="your@email.com">
@@ -473,6 +475,15 @@
 
             container.innerHTML = '<p style="text-align: center; padding: 60px;"><i class="fas fa-spinner fa-spin" style="font-size: 2.5em; color: var(--accent-primary); filter: drop-shadow(0 0 10px rgba(244, 63, 94, 0.4));"></i><br><br><span style="color: var(--text-secondary); font-weight: 500;">Loading your bookings...</span></p>';
 
+            // No manage token means this visitor did not arrive from a confirmation
+            // email, so every bookings action would 403. Email them a sign-in link
+            // instead of showing that error -- this is the page's only recovery path
+            // for a lost confirmation email.
+            if (!bookingManageToken) {
+                await requestAccessLink(email, container);
+                return;
+            }
+
             try {
                 const resp = await fetch('/api/interview', {
                     method: 'POST',
@@ -490,6 +501,34 @@
                 container.innerHTML = `
                     <div class="alert alert-error">
                         <i class="fas fa-exclamation-circle"></i> Error loading bookings: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Sends the My Access magic link. The endpoint answers identically whether
+        // or not the address is a customer, so this never reveals who has bookings.
+        async function requestAccessLink(email, container) {
+            try {
+                const resp = await fetch('/api/interview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'access-login', email })
+                });
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.error || 'Could not send the sign-in link');
+
+                container.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-paper-plane"></i>
+                        ${data.message || 'If that email has purchases or sessions with us, a sign-in link is on its way.'}
+                        The link opens <strong>My Access</strong>, where your sessions and downloads live together.
+                    </div>
+                `;
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="alert alert-error">
+                        <i class="fas fa-exclamation-circle"></i> ${error.message}
                     </div>
                 `;
             }

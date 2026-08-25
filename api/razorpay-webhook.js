@@ -14,9 +14,34 @@ import { getExpectedProductOrder, getExpectedSessionOrder, getExpectedCartOrder,
 import { getServiceKey } from '../lib/supabaseAdmin.js';
 import { emailShell, escapeHtml } from '../lib/emailBranding.js';
 import { signBookingToken } from '../lib/bookingTokens.js';
+import { signAccessToken, SESSION_TTL_MS } from '../lib/accessTokens.js';
 import { sendWebhookEmailOnce } from '../lib/webhookEmailDelivery.js';
 
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || 'https://desk2quant.com';
+
+// Every download link in this email is signed and expires in two days
+// (DOWNLOAD_LINK_TTL_MS), so the confirmation email alone stops working after
+// 48 hours. My Access re-mints links on demand, and the buyer arrives already
+// signed in for 30 days — no password, no support ticket.
+function myAccessUrl(email) {
+    const token = signAccessToken(email, 'session', SESSION_TTL_MS);
+    if (!token) return `${PUBLIC_BASE_URL}/my-access.html`;
+    return `${PUBLIC_BASE_URL}/my-access.html?email=${encodeURIComponent(email)}&tk=${encodeURIComponent(token)}`;
+}
+
+function myAccessBlock(email) {
+    const url = myAccessUrl(email);
+    return `
+                        <div style="background:#dff2ef; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px; margin-bottom:20px;">
+                            <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Keep This Forever</p>
+                            <p style="font-size: 14px; margin: 0 0 14px 0; color: #090909;">The links above expire in <strong>2 days</strong>. <strong>My Access</strong> is your permanent library — fresh download links any time, plus your mentorship sessions. You are already signed in on this link.</p>
+                            <a href="${escapeHtml(url)}" style="display:inline-block; background:#0b7f79; color:#ffffff; font-weight:800; text-decoration:none; padding:12px 24px; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; font-size:14px;">Open My Access</a>
+                        </div>`;
+}
+
+function myAccessText(email) {
+    return `\n\nMY ACCESS -- your permanent library\nThe download links above expire in 2 days. Get fresh ones any time here (already signed in):\n${myAccessUrl(email)}`;
+}
 
 // Disable Vercel body parsing so we can read the raw stream for signature verification
 export const config = {
@@ -671,6 +696,8 @@ export async function handleProductPurchase(data) {
                             </p>
                         </div>
 
+                        ${myAccessBlock(customerEmail)}
+
                         <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px; margin-bottom:20px;">
                             <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Purchase Details</p>
                             <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
@@ -702,7 +729,7 @@ export async function handleProductPurchase(data) {
                     to: [{ email: customerEmail, name: customerName }],
                     subject: `Your Purchase: ${productName}`,
                     htmlContent: customerHtml,
-                    textContent: `Hi ${customerName},\n\nThank you for your purchase!\n\nProduct: ${productName}\nAmount: ${currency} ${amount}\n\nPlease download your resource using this link:\n${downloadLink}\n\nIf the button does not work, copy and paste the same link into your browser.\n\nPayment ID: ${paymentId}${gauntletPlaygroundText(productId, productName, paymentId)}\n\nHave an issue? Reply to this email.\n\nSent by Desk2Quant`
+                    textContent: `Hi ${customerName},\n\nThank you for your purchase!\n\nProduct: ${productName}\nAmount: ${currency} ${amount}\n\nPlease download your resource using this link:\n${downloadLink}\n\nIf the button does not work, copy and paste the same link into your browser.\n\nPayment ID: ${paymentId}${gauntletPlaygroundText(productId, productName, paymentId)}${myAccessText(customerEmail)}\n\nHave an issue? Reply to this email.\n\nSent by Desk2Quant`
                 })
             });
 
@@ -1083,6 +1110,7 @@ export async function handleCartPurchase(data) {
                             <table style="width:100%;border-collapse:collapse;">${itemsHtml}</table>
                             <p style="margin-top:16px;font-size:14px;"><strong>Total paid:</strong> ${currency} ${amount}</p>
                         </div>
+                        ${myAccessBlock(customerEmail)}
                         <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px;">
                             <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0;">Order Details</p>
                             <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
@@ -1103,7 +1131,7 @@ export async function handleCartPurchase(data) {
                 to: [{ email: customerEmail, name: customerName }],
                 subject: `Your Order (${lineResults.length} item${lineResults.length > 1 ? 's' : ''}): Desk2Quant`,
                 htmlContent: customerHtml,
-                textContent: `Hi ${customerName},\n\nThank you for your order!\n\n${lineResults.map((l) => `${l.name}: ${l.downloadLink}`).join('\n')}\n\nTotal: ${currency} ${amount}\nPayment ID: ${paymentId}\n\nSent by Desk2Quant`
+                textContent: `Hi ${customerName},\n\nThank you for your order!\n\n${lineResults.map((l) => `${l.name}: ${l.downloadLink}`).join('\n')}\n\nTotal: ${currency} ${amount}\nPayment ID: ${paymentId}${myAccessText(customerEmail)}\n\nSent by Desk2Quant`
             }
         });
         if (emailResult.sent && !emailResult.skipped) {
@@ -1413,6 +1441,7 @@ async function handleSessionBooking(data) {
                             <center>
                                 <a href="${manageUrl}" style="display: inline-block; background:#0b7f79; color:#ffffff; font-weight:800; text-decoration:none; padding:12px 26px; border:1px solid #090909; border-radius:0; box-shadow:3px 3px 0 #090909; font-size:14px;">Manage Booking</a>
                             </center>
+                            <p style="font-size: 13px; margin: 16px 0 0 0; color: #666761; line-height: 1.5;">Your sessions and any material you have bought also live together in <a href="${escapeHtml(myAccessUrl(customerEmail))}" style="color:#0b7f79; text-decoration:underline; font-weight:700;">My Access</a>.</p>
                         </div>
                         <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px;">
                             <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Order Details</p>
@@ -1436,7 +1465,7 @@ async function handleSessionBooking(data) {
                     to: [{ email: customerEmail, name: customerName }],
                     subject: `Booking Confirmed: ${sessionName}`,
                     htmlContent: customerHtml,
-                    textContent: `Hi ${customerName},\n\nYour session is confirmed!\n\nSession: ${sessionName}\nDate: ${sessionDate}\nTime: ${displayTime} (${sessionDuration} mins)\nAmount Paid: ₹${sessionPrice}\n\nJoin Meeting Link:\n${meetLink}\n\nPayment ID: ${paymentId}\n\nNeed to reschedule or cancel? Open your manage link:\n${manageUrl}\n\nHave an issue? Reply to this email.\n\nSent by Desk2Quant`
+                    textContent: `Hi ${customerName},\n\nYour session is confirmed!\n\nSession: ${sessionName}\nDate: ${sessionDate}\nTime: ${displayTime} (${sessionDuration} mins)\nAmount Paid: ₹${sessionPrice}\n\nJoin Meeting Link:\n${meetLink}\n\nPayment ID: ${paymentId}\n\nNeed to reschedule or cancel? Open your manage link:\n${manageUrl}\n\nYour sessions and material also live together in My Access:\n${myAccessUrl(customerEmail)}\n\nHave an issue? Reply to this email.\n\nSent by Desk2Quant`
                 })
             });
 

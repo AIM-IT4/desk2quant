@@ -5,6 +5,7 @@ import { GROQ_CHAT_MODEL } from '../lib/groqModels.js';
 import { getServiceKey } from '../lib/supabaseAdmin.js';
 import { emailShell, escapeHtml } from '../lib/emailBranding.js';
 import { signBookingToken, verifyBookingToken } from '../lib/bookingTokens.js';
+import { signAccessToken, verifyAccessToken, normalizeAccessEmail, SESSION_TTL_MS } from '../lib/accessTokens.js';
 
 // --- Interview session tokens ------------------------------------------------
 //
@@ -98,6 +99,27 @@ const BOOKINGS_ACTIONS = new Set([
     'counter-propose'          // { bookingId, email, date, time }
 ]);
 
+// --- My Access library -----------------------------------------------------
+//
+// my-access.html: one place a buyer signs in with their email and gets fresh
+// download links for everything they bought, plus their sessions. Also lives
+// here for the 12-function cap.
+const ACCESS_ACTIONS = new Set([
+    'access-login',   // { email }         -> always 200; emails a magic link if the address is a customer
+    'access-library'  // { email, token }  -> that customer's purchases + bookings + a fresh session token
+]);
+
+/**
+ * A booking mutation is authorised by EITHER credential:
+ *   - the legacy permanent manage token, already in customers' inboxes, or
+ *   - a My Access session token.
+ * So old confirmation-email links keep working while My Access gets
+ * reschedule/cancel without asking the buyer for a second credential.
+ */
+function verifyCustomerToken(email, token) {
+    return verifyBookingToken(email, token) || !!verifyAccessToken(email, token, 'session');
+}
+
 // Columns the my-bookings page renders (plus id/email for mutations). Exposing
 // phone / payment_id / message here would leak more customer data than the UI
 // needs, so the list is explicit.
@@ -148,8 +170,8 @@ async function handleBookingsAction(req, res, action) {
         // bare email alone is not enough to read booking details / meeting links.
         if (action === 'my-bookings') {
             if (!email) return res.status(400).json({ error: 'email is required' });
-            if (!verifyBookingToken(email, body.token)) {
-                return res.status(403).json({ error: 'This manage link is invalid or expired. Use the \u201cManage booking\u201d link from your confirmation email, or contact support.' });
+            if (!verifyCustomerToken(email, body.token)) {
+                return res.status(403).json({ error: 'This manage link is invalid or expired. Use the \u201cManage booking\u201d link from your confirmation email, or sign in at /my-access.html.' });
             }
             const resp = await fetch(
                 `${SUPABASE_URL}/rest/v1/bookings?email=eq.${encodeURIComponent(email)}&select=${BOOKINGS_PUBLIC_COLUMNS}&order=created_at.desc`,
@@ -249,7 +271,7 @@ async function handleBookingsAction(req, res, action) {
             const reason = String(body.reason || '').trim();
             if (!date || !time) return res.status(400).json({ error: 'date and time are required' });
             const booking = await fetchBooking('email');
-            if (!booking || String(booking.email || '').trim().toLowerCase() !== email || !verifyBookingToken(email, body.token)) {
+            if (!booking || String(booking.email || '').trim().toLowerCase() !== email || !verifyCustomerToken(email, body.token)) {
                 return res.status(403).json({ error: 'Booking not found for this email, or the manage link is invalid. Use the link from your confirmation email.' });
             }
             const ok = await patchBooking({
@@ -270,7 +292,7 @@ async function handleBookingsAction(req, res, action) {
             const refundAmount = Number(body.refundAmount) || 0;
             const refundPercentage = Number(body.refundPercentage) || 0;
             const booking = await fetchBooking('email,name,service_name,service_price,booking_date,booking_time');
-            if (!booking || String(booking.email || '').trim().toLowerCase() !== email || !verifyBookingToken(email, body.token)) {
+            if (!booking || String(booking.email || '').trim().toLowerCase() !== email || !verifyCustomerToken(email, body.token)) {
                 return res.status(403).json({ error: 'Booking not found for this email, or the manage link is invalid. Use the link from your confirmation email.' });
             }
             const ok = await patchBooking({
@@ -348,7 +370,7 @@ async function handleBookingsAction(req, res, action) {
         // 6. ACCEPT the admin's proposed reschedule.
         if (action === 'accept-admin-reschedule') {
             const booking = await fetchBooking('email,admin_proposed_date,admin_proposed_time,meet_link,name,service_name');
-            if (!booking || String(booking.email || '').trim().toLowerCase() !== email || !verifyBookingToken(email, body.token)) {
+            if (!booking || String(booking.email || '').trim().toLowerCase() !== email || !verifyCustomerToken(email, body.token)) {
                 return res.status(403).json({ error: 'Booking not found for this email, or the manage link is invalid. Use the link from your confirmation email.' });
             }
             if (!booking.admin_proposed_date || !booking.admin_proposed_time) {
@@ -374,7 +396,7 @@ async function handleBookingsAction(req, res, action) {
             const time = String(body.time || '').trim();
             if (!date || !time) return res.status(400).json({ error: 'date and time are required' });
             const booking = await fetchBooking('email');
-            if (!booking || String(booking.email || '').trim().toLowerCase() !== email || !verifyBookingToken(email, body.token)) {
+            if (!booking || String(booking.email || '').trim().toLowerCase() !== email || !verifyCustomerToken(email, body.token)) {
                 return res.status(403).json({ error: 'Booking not found for this email, or the manage link is invalid. Use the link from your confirmation email.' });
             }
             const ok = await patchBooking({
@@ -397,6 +419,174 @@ async function handleBookingsAction(req, res, action) {
     }
 }
 
+// Per-email limiter for the magic-link send, on top of the per-IP one. Without
+// it, anyone could use this endpoint to flood a stranger's inbox from a fresh IP
+// each time. Per-instance and in-memory like every other limiter here.
+const ACCESS_LINK_MAX = 3;
+const ACCESS_LINK_WINDOW_MS = 60 * 60 * 1000;
+const accessLinkBuckets = new Map();
+
+function isAccessLinkRateLimited(email) {
+    const now = Date.now();
+    const hits = (accessLinkBuckets.get(email) || []).filter((t) => now - t < ACCESS_LINK_WINDOW_MS);
+    hits.push(now);
+    accessLinkBuckets.set(email, hits);
+    if (accessLinkBuckets.size > 5000) {
+        for (const [k, times] of accessLinkBuckets) {
+            if (!times.some((t) => now - t < ACCESS_LINK_WINDOW_MS)) accessLinkBuckets.delete(k);
+        }
+    }
+    return hits.length > ACCESS_LINK_MAX;
+}
+
+/**
+ * Keeps only the rows whose `column` is exactly this email, ignoring case.
+ *
+ * The queries above use PostgREST `ilike.` so that historical rows stored with
+ * different casing still surface. `ilike` treats `_` as a single-character
+ * wildcard and `_` is legal in an email local part, so the database filter on
+ * its own could return a different customer's rows. This is the narrowing step.
+ */
+function exactMatches(rows, column, email) {
+    if (!Array.isArray(rows)) return [];
+    return rows.filter((row) => normalizeAccessEmail(row && row[column]) === email);
+}
+
+async function handleAccessAction(req, res, action) {
+    const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
+    const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || 'https://desk2quant.com';
+    const key = getServiceKey();
+    if (!key) {
+        return res.status(503).json({ error: 'Service is not fully configured. Please contact support.' });
+    }
+    const headers = { apikey: key, Authorization: `Bearer ${key}` };
+    const body = req.body || {};
+    const email = normalizeAccessEmail(body.email);
+    if (!email || !email.includes('@')) return res.status(400).json({ error: 'A valid email is required' });
+
+    try {
+        // 1. Email a sign-in link.
+        //
+        // Deliberately returns the SAME response whether or not the address
+        // belongs to a customer. Reporting "no purchases found" would turn this
+        // into an oracle for testing whether any given email bought from us.
+        if (action === 'access-login') {
+            const genericOk = {
+                success: true,
+                message: 'If that email has purchases or sessions with us, a sign-in link is on its way. Check your inbox (and spam).'
+            };
+            if (isBookingsRateLimited(req) || isAccessLinkRateLimited(email)) {
+                return res.status(429).json({ error: 'Too many sign-in requests. Please wait a few minutes and try again.' });
+            }
+
+            // Case-insensitive match: legacy rows were written with whatever
+            // casing the payment gateway or the booking form supplied, so an
+            // `eq.` on the lowercased address would hide a real buyer's history.
+            // `ilike.` widens the query, then exactMatches() narrows it back --
+            // `_` is a LIKE wildcard and appears in legitimate addresses, so the
+            // database filter alone could match a different account.
+            const [purchaseResp, bookingResp] = await Promise.all([
+                fetch(`${SUPABASE_URL}/rest/v1/purchases?customer_email=ilike.${encodeURIComponent(email)}&select=customer_email&limit=20`, { headers }),
+                fetch(`${SUPABASE_URL}/rest/v1/bookings?email=ilike.${encodeURIComponent(email)}&select=email&limit=20`, { headers })
+            ]);
+            const hasPurchase = purchaseResp.ok && exactMatches(await purchaseResp.json(), 'customer_email', email).length > 0;
+            const hasBooking = bookingResp.ok && exactMatches(await bookingResp.json(), 'email', email).length > 0;
+            if (!hasPurchase && !hasBooking) return res.status(200).json(genericOk);
+
+            const loginToken = signAccessToken(email, 'login');
+            const BREVO_API_KEY = process.env.BREVO_API_KEY;
+            if (!loginToken || !BREVO_API_KEY) {
+                console.error('access-login: cannot send link', { hasToken: !!loginToken, hasBrevo: !!BREVO_API_KEY });
+                return res.status(200).json(genericOk);
+            }
+
+            const SENDER_EMAIL = process.env.SENDER_EMAIL || 'hello@desk2quant.com';
+            const SENDER_NAME = process.env.SENDER_NAME || 'Desk2Quant';
+            const linkUrl = `${PUBLIC_BASE_URL}/my-access.html?email=${encodeURIComponent(email)}&tk=${encodeURIComponent(loginToken)}`;
+            const html = emailShell({ body: `
+                <div style="margin-bottom:20px;">
+                    <span style="display:inline-block; background:#ffca3a; color:#090909; padding:4px 8px; border:1px solid #090909; font-size:11px; font-weight:800; text-transform:uppercase; box-shadow:2px 2px 0 #090909;">Sign In</span>
+                </div>
+                <p style="font-size:16px; margin:0 0 20px 0; color:#090909;">Here is your sign-in link for <strong>My Access</strong> — your downloads and mentorship sessions, all in one place.</p>
+                <p style="margin:0 0 24px 0;">
+                    <a href="${escapeHtml(linkUrl)}" style="display:inline-block; background:#ffca3a; color:#090909; padding:14px 26px; border:1px solid #090909; box-shadow:4px 4px 0 #090909; font-size:15px; font-weight:800; text-decoration:none;">Open My Access</a>
+                </p>
+                <div style="background:#fff3c4; padding:14px; border:1px solid #090909; box-shadow:3px 3px 0 #090909; font-size:13px; color:#7c4a03; line-height:1.5;">
+                    ⏱ This link works for <strong>60 minutes</strong> and signs in this one browser for 30 days. Don't forward it — anyone with the link can see your purchases.
+                </div>
+                <p style="margin:20px 0 0 0; font-size:12px; color:#666761; line-height:1.5;">Didn't ask for this? Someone typed your address into the sign-in form. Nothing has been shared — you can ignore this email.</p>
+            ` });
+            // Send failures must not change the response: a 500 here only ever
+            // happens for an address that IS a customer, which would restore the
+            // enumeration oracle the generic 200 exists to prevent.
+            try {
+                await httpRequest('https://api.brevo.com/v3/smtp/email', {
+                    method: 'POST',
+                    headers: { 'accept': 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' }
+                }, {
+                    sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+                    replyTo: { email: SENDER_EMAIL, name: SENDER_NAME },
+                    to: [{ email }],
+                    subject: 'Your Desk2Quant sign-in link',
+                    htmlContent: html,
+                    textContent: `Here is your sign-in link for My Access -- your downloads and mentorship sessions:\n\n${linkUrl}\n\nThe link works for 60 minutes and signs in this one browser for 30 days. Don't forward it.\n\nDidn't ask for this? You can ignore this email.\n\nSent by Desk2Quant`
+                });
+            } catch (mailErr) {
+                console.error('access-login: Brevo send failed', mailErr.message);
+            }
+            return res.status(200).json(genericOk);
+        }
+
+        // 2. The library itself: what this customer bought, and their sessions.
+        //
+        // The purchases rows are a DISCOVERY HINT ONLY. `purchases` is
+        // anon-INSERTable (script.js still writes it with the anon key), so its
+        // contents -- including `source` -- are forgeable. Nothing here is
+        // downloadable: the browser has to call POST /api/grant-access per
+        // payment id, which verifies against Razorpay and mints a fresh signed
+        // link. `download_link` is deliberately not selected -- stored links
+        // expired after DOWNLOAD_LINK_TTL_MS (2 days) anyway.
+        if (action === 'access-library') {
+            if (!verifyAccessToken(email, body.token, ['login', 'session'])) {
+                return res.status(403).json({ error: 'This sign-in link is invalid or has expired. Request a new one.' });
+            }
+
+            const [purchaseResp, bookingResp] = await Promise.all([
+                fetch(`${SUPABASE_URL}/rest/v1/purchases?customer_email=ilike.${encodeURIComponent(email)}`
+                    + '&payment_id=like.pay_*'
+                    + '&select=customer_email,product_name,amount,currency,payment_id,created_at&order=created_at.desc', { headers }),
+                fetch(`${SUPABASE_URL}/rest/v1/bookings?email=ilike.${encodeURIComponent(email)}`
+                    + `&select=${BOOKINGS_PUBLIC_COLUMNS}&order=created_at.desc`, { headers })
+            ]);
+            if (!purchaseResp.ok) return res.status(502).json({ error: 'Failed to load your purchases' });
+            // See exactMatches(): ilike widened the query for casing, this narrows
+            // it back to exactly this address so a `_` wildcard cannot leak someone
+            // else's order history.
+            const purchases = exactMatches(await purchaseResp.json(), 'customer_email', email)
+                .map(({ customer_email, ...rest }) => rest);
+            const bookings = bookingResp.ok
+                ? exactMatches(await bookingResp.json(), 'email', email)
+                : [];
+
+            return res.status(200).json({
+                success: true,
+                email,
+                purchases,
+                bookings,
+                // Fresh 30-day credential, so the one-time login token is never
+                // the thing the page holds on to.
+                sessionToken: signAccessToken(email, 'session', SESSION_TTL_MS),
+                sessionExpiresAt: Date.now() + SESSION_TTL_MS
+            });
+        }
+
+        return res.status(400).json({ error: 'Unknown access action' });
+    } catch (err) {
+        console.error('Access action error:', err.message);
+        return res.status(500).json({ error: 'Something went wrong. Please try again.' });
+    }
+}
+
 export default async function handler(req, res) {
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -406,11 +596,14 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-    // Bookings self-service runs before the Groq gate: it needs the service-role
-    // key, not Groq.
+    // Bookings self-service and the My Access library run before the Groq gate:
+    // they need the service-role key, not Groq.
     const reqAction = req.body && req.body.action;
     if (typeof reqAction === 'string' && BOOKINGS_ACTIONS.has(reqAction)) {
         return handleBookingsAction(req, res, reqAction);
+    }
+    if (typeof reqAction === 'string' && ACCESS_ACTIONS.has(reqAction)) {
+        return handleAccessAction(req, res, reqAction);
     }
 
     console.log('--- API Request Received ---');

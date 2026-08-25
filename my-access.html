@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<script>/* CANONICAL-HOST-GUARD v1: Razorpay is registered to desk2quant.com - force canonical host + root path before any checkout code runs. */!function(){try{var h=location.hostname.toLowerCase(),dev=/^(localhost|127.0.0.1|0.0.0.0|[::1])$/.test(h);if(!dev&&h!=='desk2quant.com'){location.replace('https://desk2quant.com'+location.pathname+location.search+location.hash)}else if(location.pathname==='/index.html'){location.replace('https://desk2quant.com/'+location.search+location.hash)}}catch(e){}}();</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Access | Desk2Quant</title>
+    <meta name="description" content="Sign in to download the Desk2Quant material you bought and manage your mentorship sessions.">
+    <meta name="robots" content="noindex,nofollow,noarchive">
+    <link rel="canonical" href="https://desk2quant.com/my-access.html">
+    <link rel="icon" type="image/png" href="assets/images/desk2quant-logo.png?v=3">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-card: rgba(255, 255, 255, 0.9);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --accent-primary: #f43f5e;
+            --accent-secondary: #3b82f6;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --border-subtle: rgba(0, 0, 0, 0.08);
+            --border-rim: rgba(0, 0, 0, 0.15);
+            --radius-md: 12px;
+            --radius-lg: 20px;
+            --primary: var(--accent-primary);
+            --background: var(--bg-primary);
+            --text: var(--text-primary);
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 40px 20px 80px;
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-rim);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            margin-bottom: 28px;
+        }
+
+        .signin-controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .signin-controls input {
+            flex: 1 1 240px;
+            padding: 14px 16px;
+            border: 1px solid var(--border-rim);
+            border-radius: var(--radius-md);
+            font-family: inherit;
+            font-size: 1em;
+            background: var(--bg-secondary);
+            color: var(--text);
+        }
+
+        .btn {
+            padding: 14px 24px;
+            border: none;
+            border-radius: var(--radius-md);
+            background: var(--accent-primary);
+            color: #fff;
+            font-family: inherit;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn:hover { filter: brightness(1.08); }
+        .btn:disabled { opacity: .55; cursor: not-allowed; }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-rim);
+        }
+
+        .btn-sm { padding: 9px 16px; font-size: .9em; }
+
+        h1 { text-align: center; margin-bottom: 8px; }
+
+        .sub {
+            text-align: center;
+            color: var(--text-muted);
+            margin: 0 0 36px;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 36px 0 16px;
+            font-size: 1.25em;
+            font-weight: 600;
+        }
+
+        .section-title i { color: var(--accent-primary); }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-rim);
+            border-radius: var(--radius-lg);
+            padding: 22px;
+            margin-bottom: 18px;
+        }
+
+        .card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .card-head h3 { margin: 0 0 6px; font-size: 1.08em; }
+
+        .meta {
+            color: var(--text-muted);
+            font-size: .86em;
+            margin: 0;
+        }
+
+        .item-list { margin: 14px 0 0; padding: 0; list-style: none; }
+
+        .item-list li {
+            padding: 6px 0;
+            border-top: 1px solid var(--border-subtle);
+            font-size: .95em;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: .8em;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .pill-upcoming, .pill-confirmed { background: rgba(34,197,94,.12); color: var(--success); }
+        .pill-completed { background: rgba(148,163,184,.15); color: var(--text-muted); }
+        .pill-cancelled { background: rgba(148,163,184,.15); color: var(--text-muted); text-decoration: line-through; }
+        .pill-pending { background: rgba(245,158,11,.14); color: var(--warning); }
+        .pill-info { background: rgba(59,130,246,.12); color: var(--accent-secondary); }
+
+        .links a {
+            display: inline-block;
+            margin: 10px 10px 0 0;
+            padding: 11px 18px;
+            border-radius: var(--radius-md);
+            background: var(--accent-secondary);
+            color: #fff;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: .92em;
+        }
+
+        .note {
+            margin-top: 12px;
+            padding: 12px 14px;
+            border-radius: var(--radius-md);
+            font-size: .88em;
+            line-height: 1.5;
+        }
+
+        .note-warn { background: rgba(245,158,11,.1); color: #8a5a00; border: 1px dashed var(--warning); }
+        .note-err { background: rgba(239,68,68,.08); color: #a11; border: 1px dashed var(--error); }
+        .note-ok { background: rgba(34,197,94,.1); color: #157347; border: 1px dashed var(--success); }
+
+        .empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty i { font-size: 2.2em; margin-bottom: 14px; display: block; color: var(--border-rim); }
+
+        .hidden { display: none !important; }
+
+        .who {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            font-size: .92em;
+            color: var(--text-secondary);
+        }
+    </style>
+    <link rel="stylesheet" href="launchzone.css?v=16">
+    <link rel="stylesheet" href="launchzone-pages.css?v=2">
+</head>
+
+<body class="d2q-launchzone">
+    <nav class="navbar"
+        style="position: fixed; top: 0; left: 0; right: 0; z-index: 1000; padding: 20px 0; background: var(--bg-nav, rgba(0, 0, 0, 0.7)); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-rim);">
+        <div class="nav-container"
+            style="max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between;">
+            <a href="/" class="logo" style="text-decoration: none; display: flex; align-items: center; gap: 10px;">
+                <img src="assets/images/desk2quant-logo.png?v=3" alt="Desk2Quant" class="logo-img">
+                <span class="logo-text">Desk2Quant</span>
+            </a>
+            <a href="/" style="color: var(--text-secondary); font-weight: 500;">← Back to Home</a>
+        </div>
+    </nav>
+
+    <div class="container" style="margin-top: 100px;">
+        <h1>My Access</h1>
+        <p class="sub">Everything you bought, downloadable any time — plus your mentorship sessions.</p>
+
+        <!-- Signed out -->
+        <div id="signinPanel" class="panel">
+            <h3 style="margin-top: 0;">Sign in with your email</h3>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">
+                Use the same email you bought with. We'll send a one-tap sign-in link — no password to remember.
+            </p>
+            <div class="signin-controls">
+                <input type="email" id="signinEmail" placeholder="your@email.com" autocomplete="email">
+                <button id="signinBtn" class="btn" onclick="requestLink()">
+                    <i class="fas fa-paper-plane"></i> Email me a sign-in link
+                </button>
+            </div>
+            <div id="signinMsg" class="note hidden"></div>
+        </div>
+
+        <!-- Signed in -->
+        <div id="libraryPanel" class="hidden">
+            <div class="panel who">
+                <span>Signed in as <strong id="whoEmail"></strong></span>
+                <button class="btn btn-secondary btn-sm" onclick="signOut()">Sign out</button>
+            </div>
+
+            <div class="section-title"><i class="fas fa-box-open"></i> Your material</div>
+            <div id="purchasesContainer"></div>
+
+            <div class="section-title"><i class="fas fa-calendar-check"></i> Your sessions</div>
+            <div id="bookingsContainer"></div>
+        </div>
+
+        <div id="loading" class="empty hidden">
+            <i class="fas fa-spinner fa-spin"></i>
+            Loading your library…
+        </div>
+    </div>
+
+    <script>
+        // My Access: the customer's own library.
+        //
+        // Nothing on this page is a download in itself. The purchase list is a
+        // discovery hint read from the `purchases` table; every actual download
+        // goes through POST /api/grant-access, which re-verifies the payment
+        // against Razorpay and mints a freshly signed, expiring link. That is
+        // why old purchases still work here even though the links originally
+        // emailed to the buyer expired after 48 hours.
+        const STORE_KEY = 'd2q_access_session';
+
+        let session = null;               // { email, token, exp }
+        const linkCache = new Map();      // payment_id -> grant-access response
+
+        function esc(v) {
+            return String(v == null ? '' : v).replace(/[&<>"']/g, c => (
+                { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+            ));
+        }
+
+        function show(id, on) {
+            document.getElementById(id).classList.toggle('hidden', !on);
+        }
+
+        function loadStored() {
+            try {
+                const raw = localStorage.getItem(STORE_KEY);
+                if (!raw) return null;
+                const s = JSON.parse(raw);
+                if (!s || !s.email || !s.token) return null;
+                if (s.exp && Date.now() > s.exp) { localStorage.removeItem(STORE_KEY); return null; }
+                return s;
+            } catch (_) { return null; }
+        }
+
+        function store(s) {
+            session = s;
+            try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch (_) { /* private mode */ }
+        }
+
+        function signOut() {
+            session = null;
+            linkCache.clear();
+            try { localStorage.removeItem(STORE_KEY); } catch (_) { }
+            show('libraryPanel', false);
+            show('signinPanel', true);
+            document.getElementById('signinMsg').classList.add('hidden');
+        }
+
+        async function post(body) {
+            const resp = await fetch('/api/interview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            let data = {};
+            try { data = await resp.json(); } catch (_) { }
+            return { ok: resp.ok, status: resp.status, data };
+        }
+
+        // --- Sign in ---------------------------------------------------------
+
+        async function requestLink() {
+            const email = document.getElementById('signinEmail').value.trim();
+            const msg = document.getElementById('signinMsg');
+            const btn = document.getElementById('signinBtn');
+            if (!email || !email.includes('@')) {
+                msg.className = 'note note-err';
+                msg.textContent = 'Please enter the email address you bought with.';
+                msg.classList.remove('hidden');
+                return;
+            }
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
+            const { ok, data } = await post({ action: 'access-login', email });
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Email me a sign-in link';
+            msg.className = ok ? 'note note-ok' : 'note note-err';
+            msg.textContent = ok
+                ? (data.message || 'Check your inbox for the sign-in link.')
+                : (data.error || 'Could not send the link right now. Please try again in a moment.');
+            msg.classList.remove('hidden');
+        }
+
+        // --- Library ---------------------------------------------------------
+
+        async function openLibrary(email, token) {
+            show('signinPanel', false);
+            show('libraryPanel', false);
+            show('loading', true);
+
+            const { ok, data } = await post({ action: 'access-library', email, token });
+            show('loading', false);
+
+            if (!ok || !data.success) {
+                signOut();
+                const msg = document.getElementById('signinMsg');
+                msg.className = 'note note-err';
+                msg.textContent = data.error || 'That sign-in link is no longer valid. Request a new one below.';
+                msg.classList.remove('hidden');
+                return;
+            }
+
+            // Swap the one-time login token for the long-lived session token.
+            store({
+                email: data.email || email,
+                token: data.sessionToken || token,
+                exp: data.sessionExpiresAt || null
+            });
+
+            document.getElementById('whoEmail').textContent = session.email;
+            renderPurchases(data.purchases || []);
+            renderBookings(data.bookings || []);
+            show('libraryPanel', true);
+        }
+
+        function fmtMoney(amount, currency) {
+            const n = Number(amount);
+            if (!isFinite(n) || n <= 0) return '';
+            const cur = String(currency || 'INR').toUpperCase();
+            return cur === 'INR' ? `₹${n}` : `${cur} ${n}`;
+        }
+
+        function fmtDate(value) {
+            if (!value) return '';
+            const d = new Date(value);
+            if (isNaN(d.getTime())) return String(value);
+            return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+
+        // One card per payment, because grant-access resolves a whole cart from a
+        // single payment id and returns every line item at once.
+        function renderPurchases(rows) {
+            const container = document.getElementById('purchasesContainer');
+            if (!rows.length) {
+                container.innerHTML = `
+                    <div class="card empty">
+                        <i class="fas fa-box-open"></i>
+                        <h3 style="margin:0 0 8px; color: var(--text-secondary);">Nothing here yet</h3>
+                        <p style="margin:0;">Paid material shows up here automatically. Free downloads and the lead-magnet
+                        sheet aren't tracked to an account, so they won't be listed.</p>
+                        <p style="margin:14px 0 0;"><a href="/#products" class="btn btn-sm" style="text-decoration:none;">Browse material</a></p>
+                    </div>`;
+                return;
+            }
+
+            const orders = new Map();
+            for (const r of rows) {
+                const pid = r.payment_id;
+                if (!orders.has(pid)) orders.set(pid, { payment_id: pid, created_at: r.created_at, items: [], total: 0, currency: r.currency });
+                const o = orders.get(pid);
+                o.items.push(r.product_name);
+                o.total += Number(r.amount) || 0;
+            }
+
+            container.innerHTML = Array.from(orders.values()).map(o => `
+                <div class="card" id="order-${esc(o.payment_id)}">
+                    <div class="card-head">
+                        <div>
+                            <h3>${o.items.map(esc).join(', ')}</h3>
+                            <p class="meta">
+                                ${esc(fmtDate(o.created_at))}
+                                ${fmtMoney(o.total, o.currency) ? ' &middot; ' + esc(fmtMoney(o.total, o.currency)) : ''}
+                                &middot; ${esc(o.payment_id)}
+                            </p>
+                        </div>
+                        <button class="btn btn-sm" onclick="getLinks('${esc(o.payment_id)}', this)">
+                            <i class="fas fa-download"></i> Get download links
+                        </button>
+                    </div>
+                    <div class="links" id="links-${esc(o.payment_id)}"></div>
+                </div>`).join('');
+        }
+
+        // Fresh links are minted on demand: signed download URLs expire after two
+        // days, so there is nothing worth caching beyond this page view.
+        async function getLinks(paymentId, btn) {
+            const target = document.getElementById('links-' + paymentId);
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparing…';
+
+            let data = linkCache.get(paymentId);
+            let ok = !!data;
+            if (!data) {
+                const resp = await fetch('/api/grant-access', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ payment_id: paymentId, email: session.email })
+                });
+                ok = resp.ok;
+                try { data = await resp.json(); } catch (_) { data = {}; }
+                if (ok) linkCache.set(paymentId, data);
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-rotate"></i> Refresh links';
+
+            if (!ok || !data.success) {
+                target.innerHTML = `<div class="note note-err">
+                    ${esc(data.error || 'Could not prepare your download.')}
+                    Email <a href="mailto:hello@desk2quant.com?subject=Download%20help%20${encodeURIComponent(paymentId)}">hello@desk2quant.com</a>
+                    quoting payment id <strong>${esc(paymentId)}</strong> and we'll send the file directly.
+                </div>`;
+                return;
+            }
+
+            const items = data.cart
+                ? (data.items || [])
+                : [{ product: data.product, download_link: data.download_link, drive_error: data.drive_error }];
+
+            target.innerHTML = items.map(it => {
+                if (!it.download_link) {
+                    return `<div class="note note-warn">No file is attached to <strong>${esc(it.product)}</strong> yet. Email hello@desk2quant.com quoting ${esc(paymentId)}.</div>`;
+                }
+                const warn = it.drive_error
+                    ? `<div class="note note-warn">Access sharing hit a snag for ${esc(it.product)} (${esc(it.drive_error)}). The link below should still work — tell us if it doesn't.</div>`
+                    : '';
+                return `<a href="${esc(it.download_link)}" target="_blank" rel="noopener">
+                            <i class="fas fa-download"></i> ${esc(it.product)}
+                        </a>${warn}`;
+            }).join('');
+
+            target.insertAdjacentHTML('beforeend',
+                '<div class="note note-warn">These links expire in 2 days. Come back here any time for new ones.</div>');
+        }
+
+        function pillClass(status) {
+            const s = String(status || '').toLowerCase();
+            if (s === 'upcoming' || s === 'confirmed') return 'pill-upcoming';
+            if (s === 'completed') return 'pill-completed';
+            if (s === 'cancelled') return 'pill-cancelled';
+            if (s.includes('requested') || s.includes('pending')) return 'pill-pending';
+            return 'pill-info';
+        }
+
+        // Sessions are listed here; reschedule / cancel / counter-propose stay on
+        // my-bookings.html, which already implements all three. The session token
+        // is accepted by those actions, so the Manage link arrives signed in.
+        function renderBookings(rows) {
+            const container = document.getElementById('bookingsContainer');
+            if (!rows.length) {
+                container.innerHTML = `
+                    <div class="card empty">
+                        <i class="fas fa-calendar-check"></i>
+                        <h3 style="margin:0 0 8px; color: var(--text-secondary);">No sessions booked</h3>
+                        <p style="margin:0;">Mentorship sessions you book will appear here.</p>
+                        <p style="margin:14px 0 0;"><a href="/?scrollTo=bookingForm" class="btn btn-sm" style="text-decoration:none;">Book a session</a></p>
+                    </div>`;
+                return;
+            }
+
+            const manageBase = `my-bookings.html?email=${encodeURIComponent(session.email)}&tk=${encodeURIComponent(session.token)}`;
+
+            container.innerHTML = rows.map(b => `
+                <div class="card">
+                    <div class="card-head">
+                        <div>
+                            <h3>${esc(b.service_name)}</h3>
+                            <p class="meta">
+                                <i class="fas fa-calendar"></i> ${esc(b.booking_date)}
+                                &nbsp;<i class="fas fa-clock"></i> ${esc(b.booking_time)}
+                                ${b.service_duration ? ' &middot; ' + esc(b.service_duration) + ' min' : ''}
+                            </p>
+                        </div>
+                        <span class="pill ${pillClass(b.status)}">${esc(String(b.status || '').replace(/_/g, ' '))}</span>
+                    </div>
+                    ${b.meet_link ? `<div class="note note-ok"><i class="fas fa-video"></i>
+                        <a href="${esc(b.meet_link)}" target="_blank" rel="noopener">Join the meeting</a></div>` : ''}
+                    ${b.admin_proposed_date ? `<div class="note note-warn">
+                        We proposed a new time: <strong>${esc(b.admin_proposed_date)} at ${esc(b.admin_proposed_time)}</strong>.
+                        Open Manage to accept it or suggest another.</div>` : ''}
+                    <div style="margin-top:14px;">
+                        <a class="btn btn-secondary btn-sm" style="text-decoration:none;"
+                           href="${manageBase}#booking-${esc(b.id)}">
+                            <i class="fas fa-pen"></i> Manage / reschedule
+                        </a>
+                    </div>
+                </div>`).join('');
+        }
+
+        // --- Bootstrap -------------------------------------------------------
+        //
+        // Magic link: my-access.html?email=..&tk=.. -- same shape as the
+        // my-bookings.html manage link. The token is stripped from the address
+        // bar once exchanged so it doesn't linger in history or get shared.
+        (function () {
+            const params = new URLSearchParams(window.location.search);
+            const linkEmail = params.get('email');
+            const linkToken = params.get('tk');
+
+            if (linkEmail && linkToken) {
+                history.replaceState(null, '', window.location.pathname);
+                openLibrary(linkEmail.trim().toLowerCase(), linkToken);
+                return;
+            }
+
+            const stored = loadStored();
+            if (stored) {
+                session = stored;
+                openLibrary(stored.email, stored.token);
+                return;
+            }
+
+            show('signinPanel', true);
+        })();
+    </script>
+</body>
+
+</html>
