@@ -109,6 +109,31 @@ const ACCESS_ACTIONS = new Set([
     'access-library'  // { email, token }  -> that customer's purchases + bookings + a fresh session token
 ]);
 
+// --- Lead capture ----------------------------------------------------------
+//
+// The free-formula-sheet forms (homepage in script.js, and the Desk Simulator
+// in desk-simulator.mjs) used to INSERT the lead straight into `purchases` from
+// the browser with the anon key. The anon role no longer holds that grant --
+// production answers `401 permission denied for table purchases` -- and both
+// call sites ended in `.catch(console.error)`, so every signup since the grant
+// was revoked was dropped with no visible symptom. The sheet still got emailed,
+// so the only casualty was the record of the lead, and nothing else captures
+// it.
+//
+// Lives here for the same reason as the bookings/access actions: Vercel Hobby
+// caps this project at 12 serverless functions and all 12 are in use.
+const LEAD_ACTIONS = new Set([
+    'log-lead'  // { email, origin, download_link? } -> records a free-resource lead
+]);
+
+// product_name is chosen HERE from this whitelist, never taken from the request:
+// the row lands in the same table as real sales, so a caller must not be able to
+// write arbitrary product names into revenue reporting.
+const LEAD_ORIGINS = {
+    'homepage': 'Quant Formula Sheet (Lead Capture)',
+    'desk-simulator': 'Quant Formula Sheet (Lead Capture - Desk Simulator)'
+};
+
 /**
  * A booking mutation is authorised by EITHER credential:
  *   - the legacy permanent manage token, already in customers' inboxes, or
@@ -587,6 +612,108 @@ async function handleAccessAction(req, res, action) {
     }
 }
 
+/**
+ * Records a free-resource lead. Server-side because `purchases` is sealed from
+ * the anon role.
+ *
+ * Deliberately NOT authenticated: it is the same open form it always was, so the
+ * only protections are the per-IP limiter, the origin whitelist, and the fact
+ * that every field written here is either validated or chosen server-side.
+ * amount is hard-coded to 0 so a lead can never inflate revenue.
+ */
+async function handleLeadAction(req, res) {
+    const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
+    const key = getServiceKey();
+    if (!key) {
+        console.error('log-lead: SUPABASE_SERVICE_ROLE_KEY is not set — lead not recorded');
+        return res.status(503).json({ error: 'Service is not fully configured.' });
+    }
+
+    if (isBookingsRateLimited(req)) {
+        return res.status(429).json({ error: 'Too many requests. Please wait a moment.' });
+    }
+
+    const body = req.body || {};
+    const email = normalizeAccessEmail(body.email);
+    if (!email || !email.includes('@')) {
+        return res.status(400).json({ error: 'A valid email is required' });
+    }
+
+    const productName = LEAD_ORIGINS[String(body.origin || '')];
+    if (!productName) {
+        return res.status(400).json({ error: 'Unknown lead origin' });
+    }
+
+    // Only store a link that points at our own storage/Drive, so this can never
+    // be used to park an attacker-controlled URL on a row the admin panel and
+    // the recommendation mailer both read back.
+    const rawLink = typeof body.download_link === 'string' ? body.download_link.trim() : '';
+    const downloadLink = /^https:\/\/(dntabmyurlrlnoajdnja\.supabase\.co|drive\.google\.com|docs\.google\.com|desk2quant\.com)\//.test(rawLink)
+        ? rawLink
+        : null;
+
+    const headers = {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        'Content-Type': 'application/json'
+    };
+
+    try {
+        // Re-submitting the form (or a double click) must not add a second row.
+        // Best-effort: if this check fails we still record the lead, because a
+        // duplicate row is far cheaper than a lost lead.
+        try {
+            const existing = await fetch(
+                `${SUPABASE_URL}/rest/v1/purchases?customer_email=eq.${encodeURIComponent(email)}`
+                + `&product_name=eq.${encodeURIComponent(productName)}&select=id&limit=1`,
+                { headers }
+            );
+            if (existing.ok) {
+                const rows = await existing.json();
+                if (Array.isArray(rows) && rows.length > 0) {
+                    return res.status(200).json({ success: true, deduped: true });
+                }
+            }
+        } catch (dedupeErr) {
+            console.warn('log-lead: dedupe check failed, inserting anyway:', dedupeErr.message);
+        }
+
+        // payment_id carries a random suffix as well as the timestamp: migration
+        // 0010 puts a unique index on (payment_id) for non-cart rows, and two
+        // leads inside the same millisecond would otherwise collide.
+        const paymentId = `LEAD_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+
+        const resp = await fetch(`${SUPABASE_URL}/rest/v1/purchases`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+                customer_email: email,
+                product_name: productName,
+                amount: 0,
+                currency: 'INR',
+                payment_id: paymentId,
+                source: 'lead_capture',
+                download_link: downloadLink,
+                // Explicit UTC: the created_at DEFAULT on this table has been
+                // observed storing timestamps ~5.5h in the past.
+                created_at: new Date().toISOString()
+            })
+        });
+
+        if (!resp.ok) {
+            const detail = await resp.text();
+            console.error('log-lead: Supabase insert failed', resp.status, detail.slice(0, 300));
+            return res.status(502).json({ error: 'Could not record the lead' });
+        }
+
+        console.log('log-lead: recorded', { email, origin: body.origin });
+        return res.status(200).json({ success: true });
+    } catch (err) {
+        console.error('log-lead error:', err.message);
+        return res.status(500).json({ error: 'Something went wrong.' });
+    }
+}
+
 export default async function handler(req, res) {
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -604,6 +731,9 @@ export default async function handler(req, res) {
     }
     if (typeof reqAction === 'string' && ACCESS_ACTIONS.has(reqAction)) {
         return handleAccessAction(req, res, reqAction);
+    }
+    if (typeof reqAction === 'string' && LEAD_ACTIONS.has(reqAction)) {
+        return handleLeadAction(req, res);
     }
 
     console.log('--- API Request Received ---');

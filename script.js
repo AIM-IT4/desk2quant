@@ -4510,17 +4510,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Track the lead the same way free downloads are tracked, so it shows
             // up alongside other conversions rather than being invisible.
-            if (window.supabaseClient) {
-                window.supabaseClient.from('purchases').insert({
-                    customer_email: email,
-                    product_name: 'Quant Formula Sheet (Lead Capture)',
-                    amount: 0,
-                    currency: 'INR',
-                    payment_id: 'LEAD_' + Date.now(),
-                    source: 'lead_capture',
-                    download_link: downloadLink,
-                    created_at: new Date().toISOString()
-                }).then(() => qmLog('✅ Lead logged to Supabase')).catch(err => console.error('❌ Failed to log lead:', err));
+            //
+            // Server-side: `purchases` is sealed from the anon role, so the old
+            // browser insert here silently 401'd and every signup was lost.
+            try {
+                const leadLogResp = await fetch('/api/interview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'log-lead',
+                        email,
+                        origin: 'homepage',
+                        download_link: downloadLink
+                    })
+                });
+                if (!leadLogResp.ok) {
+                    console.error('❌ Failed to log lead:', leadLogResp.status);
+                } else {
+                    qmLog('✅ Lead logged');
+                }
+            } catch (leadLogErr) {
+                console.error('❌ Failed to log lead:', leadLogErr);
             }
 
             leadForm.style.display = 'none';

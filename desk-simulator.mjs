@@ -1015,23 +1015,20 @@ async function submitSimLead(event) {
 
         // Log the lead the same way the homepage lead-capture form does, so it
         // shows up alongside other conversions rather than being invisible.
-        fetch(`${SIM_SUPABASE_URL}/rest/v1/purchases`, {
+        //
+        // Server-side: `purchases` is sealed from the anon role, so the old
+        // direct REST insert here silently 401'd and every signup was lost.
+        fetch('/api/interview', {
             method: 'POST',
-            headers: {
-                apikey: SIM_SUPABASE_KEY,
-                Authorization: `Bearer ${SIM_SUPABASE_KEY}`,
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                customer_email: email,
-                product_name: 'Quant Formula Sheet (Lead Capture - Desk Simulator)',
-                amount: 0,
-                currency: 'INR',
-                payment_id: 'LEAD_SIM_' + Date.now(),
-                source: 'lead_capture',
-                download_link: downloadLink,
-                created_at: new Date().toISOString()
+                action: 'log-lead',
+                email,
+                origin: 'desk-simulator',
+                download_link: downloadLink
             })
+        }).then((r) => {
+            if (!r.ok) console.warn('Failed to log simulator lead:', r.status);
         }).catch((err) => console.warn('Failed to log simulator lead:', err));
 
         if (elements.simLeadForm) elements.simLeadForm.style.display = 'none';
