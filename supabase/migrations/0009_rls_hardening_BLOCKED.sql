@@ -4,6 +4,16 @@
 -- they are written today. It is committed as the documented target state plus
 -- the prerequisite work, not as a ready-to-apply migration.
 --
+-- STATUS NOTE (verified 26 Aug 2026): the TABLE-LEVEL half of this hardening
+-- is already live in production, applied BY HAND and never recorded here:
+--   * anon has no access to `purchases` or `bookings` (table-level
+--     `401 permission denied`), and
+--   * `products` / `sessions` are granted COLUMN-level access (`file_url`
+--     sealed, `select *` denied) instead of table-level grants.
+-- That manual change is the root cause of the lead-capture breakage (fixed in
+-- 52e8f5c): browser-side inserts with the anon key began failing silently.
+-- The POLICY statements in this file (the RLS half) are still NOT applied.
+--
 -- WHY IT IS BLOCKED
 -- -----------------
 -- Everything that writes to Supabase from a browser uses the same anon /
@@ -18,24 +28,30 @@
 --                     without ever seeing the login screen.
 --   * script.js     - inserts into `purchases` at checkout (lines ~2718, ~4315).
 --
--- Consequences of today's policies:
+-- NOTE: since the table-level grants were revoked by hand, admin.html no
+-- longer runs as anon: it fetches the service-role key in memory via
+-- /api/admin-auth `get-key` after password auth. `script.js`'s two `purchases`
+-- inserts DO still run with the anon key; the lead-capture one now goes
+-- through the server-side `log-lead` action, the post-checkout one (source:
+-- 'frontend') is still a dead write awaiting the same treatment.
+--
+-- Consequences of today's policies (the RLS half, still live):
 --   products          FOR ALL USING (true)   -> anon can edit/delete any product
---   purchases         FOR SELECT USING (true)-> anon can read every customer's
---                                               name, email and amount paid
 --   storage.objects   INSERT/UPDATE/DELETE   -> anon can overwrite or delete any
 --                                               paid deliverable
 --
 -- PREREQUISITE (must land before the statements below are run)
 -- -----------------------------------------------------------
 --   1. Provision SUPABASE_SERVICE_ROLE_KEY in Vercel (server-side only; it must
---      never appear in a page, in generate-config.js output, or in git).
+--      never appear in a page, in generate-config.js output, or in git). ✅ done
 --   2. Move every admin.html mutation and every `purchases` read behind a
 --      server route that authenticates with the existing admin password and
 --      then talks to Supabase with the service-role key. Same for the storage
---      uploads/removals.
+--      uploads/removals. ✅ done (get-key flow) — the anon fallbacks remain and
+--      should be removed.
 --   3. Move script.js's purchases INSERT server-side. api/razorpay-webhook.js
 --      is already the authoritative writer for paid orders, so this is mostly a
---      deletion.
+--      deletion. 🔶 lead-capture done (52e8f5c); post-checkout insert pending.
 --   4. Rotate the anon key afterwards - the current one has been public.
 --
 -- Only once (1)-(3) are done do the statements below become safe, because the

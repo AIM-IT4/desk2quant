@@ -1,172 +1,82 @@
-# Security Guide: API Key Protection
+# Security Guide: Keys, Permissions and Current State
 
-## ⚠️ URGENT: Exposed API Keys Detected
+This document reflects the **current** state of the repository and the live
+production database (verified 26 Aug 2026). It supersedes older versions of
+this file that described an "exposed service-role key" — that key is not, and
+has not been, in this repository.
 
-Your repository currently contains exposed API keys that pose a **critical security risk**. This guide will help you secure them immediately.
+## What is actually in the repository
 
-## Currently Exposed Keys
+Every hardcoded Supabase JWT in the repo (33 occurrences across `script.js`,
+`product.html`, `salary-explorer.html`, `desk-simulator.mjs`, `admin.html` and
+several `scripts/*`) decodes to `role: anon`. The anon key is **public by
+design** — it is the publishable client key for Supabase, the same way a Stripe
+publishable key is. It is not a secret, but it must only ever work against
+tables RLS deliberately exposes to anonymous visitors.
 
-The following sensitive credentials are hardcoded in your source files and visible on GitHub:
+There is **no service-role key anywhere in the repository or in git history of
+the current tree**. The service key:
 
-### 1. Supabase Service Role Key (CRITICAL - HIGH RISK)
-- **Location**: `admin.html:615`
-- **Risk**: Full database access, can read/modify/delete ALL data
-- **Impact**: Attackers can access all user data, bookings, products
+- is read server-side only, from Vercel environment variables
+  (`SUPABASE_SERVICE_ROLE_KEY`, fallback `SUPABASE_KEY`), see `lib/supabaseAdmin.js`
+- is handed to the admin panel **in memory only**, after password auth, via
+  `POST /api/admin-auth` with `action: 'get-key'` — it is never persisted to
+  localStorage and never appears in a static file
 
-### 2. Supabase Anon Key (MEDIUM RISK)
-- **Location**: `script.js:17`
-- **Risk**: Public access to database (limited by RLS policies)
+## Live production permission state (verified with the public anon key)
 
-### 3. EmailJS Credentials (MEDIUM RISK)
-- **Location**: `script.js:362-364` and `admin.html:25-28`
-- **Risk**: Email spoofing, potential email abuse
+Production has been hardened **by hand** beyond what the repo documents
+(see DATABASE_GUIDE.md). Current reality:
 
-### 4. Formspree ID (LOW RISK)
-- **Location**: `script.js:1012`
-- **Risk**: Form spam
+| Table | anon access | Notes |
+|---|---|---|
+| `purchases` | **none** (401) | reads and writes fully denied |
+| `bookings` | **none** (401) | reads and writes fully denied |
+| `products` | column-level | readable except `file_url` (sealed) and `select *` |
+| `sessions` | column-level | readable via explicit public column list only |
+| `testimonials`, `blogs`, `salary_submissions`, `product_reviews`, `availability_patterns`, `blocked_date_ranges` | readable | per existing RLS policies |
 
-### 5. Admin Password (FIXED)
-- **Status**: Secure. The previously hardcoded password was removed and replaced with a secure backend Vercel API check.
-- **Action Required**: You must set `ADMIN_PASSWORD` in your Vercel Environment Variables.
+Consequences that matter:
 
-## Immediate Actions Required (Do These NOW!)
+1. **Browser writes to `purchases` are denied.** Every client-side insert with
+   the anon key fails with `401 permission denied for table purchases`. The
+   lead-capture forms (homepage + desk simulator) were broken by this and are
+   now fixed via the server-side `log-lead` action in `api/interview.js`.
+   The frontend post-checkout insert (`script.js`) is still a dead write — the
+   webhook is authoritative, so this is a safety-net gap, not a functional one.
+2. **`file_url` is sealed from the browser** — buyers cannot read the raw
+   deliverable pointer; all downloads go through signed URLs or Drive grants.
+3. **Some tables are still wide open to anon** (`testimonials` INSERT/UPDATE/
+   DELETE per RLS). That is acceptable for public content, but `purchases` and
+   `bookings` must stay sealed.
 
-### Step 1: Rotate ALL API Keys (Within 24 hours)
+## Known open items (not yet fixed)
 
-1. **Supabase Service Role Key**:
-   - Go to Supabase Dashboard → Project Settings → API
-   - Click "Reveal" next to service_role key
-   - Copy the new key
-   - **Immediately** change the key in `admin.html` line 615
-   - ⚠️ The old key should be considered compromised
+- `api/grant-access.js` email-ownership check fails open when a payment record
+  carries no email at all. Fix: fail closed / verify against the purchase row.
+- `script.js` post-checkout `purchases` insert (source: `frontend`) still runs
+  with the anon key and 401s silently — restore as a server-side action to
+  bring back the webhook-failure safety net.
+- The admin panel falls back to the anon key if the `get-key` fetch fails,
+  which produces a silently empty panel. Should fail loudly instead.
+- Magic-link rate limiting is per-instance in-memory; a persistent limiter
+  would be stronger.
 
-2. **Supabase Anon Key**:
-   - Same location as above
-   - This key has less risk but should still be rotated
+## Rotation notes
 
-3. **EmailJS**:
-   - Go to EmailJS Dashboard → Account → Security
-   - Generate new User ID and update templates
+The anon key has been public (it is in GitHub history and every page source),
+which is fine **for anon** — but rotation is still advisable because some
+tables it could reach historically (pre-hardening) are now sealed, and a
+compromised-but-weakened key is a confusing key. The service-role key has never
+been committed; if it ever is, rotate it immediately — it bypasses RLS by design.
 
-4. **Change Admin Password**:
-   - The password is no longer hardcoded in `admin.html`.
-   - Set the `ADMIN_PASSWORD` variable in your Vercel project Settings.
+## Good practices (still current)
 
-### Step 2: Clean Git History (Critical!)
-
-Even after changing keys, they remain in Git history. You must scrub them:
-
-```bash
-# Install git-filter-repo (if not already installed)
-pip install git-filter-repo
-
-# Remove sensitive files from history
-git filter-repo --path script.js --path admin.html --invert-paths
-
-# Or use BFG Repo-Cleaner (easier for beginners)
-# Download from: https://rtyley.github.io/bfg-repo-cleaner/
-java -jar bfg.jar --replace-text passwords.txt
-
-# Force push (DESTRUCTIVE - backup first!)
-git push origin --force --all
-```
-
-**Alternative**: If scrubbing is too complex, delete the repository and recreate it after fixing the keys.
-
-## Long-term Solution: Proper Key Management
-
-Since this is a static HTML site, you have limited options for hiding API keys. Here are your best approaches:
-
-### Option 1: Backend Proxy (Recommended)
-
-Create a simple backend (Node.js/Express, Python/Flask, or serverless functions) that:
-- Stores API keys server-side
-- Proxies requests from frontend to Supabase/EmailJS
-- Validates requests before forwarding
-
-**Pros**: Keys are completely hidden from frontend  
-**Cons**: Requires hosting a backend
-
-### Option 2: Netlify/Vercel Environment Variables
-
-If deploying to Netlify or Vercel:
-
-1. Set environment variables in dashboard
-2. Use build scripts to inject them at build time
-3. Or use Netlify Functions/Vercel Serverless Functions
-
-**Example with Netlify Functions**:
-```javascript
-// netlify/functions/supabase-proxy.js
-exports.handler = async (event) => {
-  const { SUPABASE_URL, SUPABASE_KEY } = process.env;
-  // Proxy request to Supabase
-};
-```
-
-### Option 3: Restrict Supabase RLS Policies
-
-Since keys will always be visible in frontend JavaScript, strengthen Row Level Security:
-
-```sql
--- Example: Only allow users to see their own bookings
-CREATE POLICY "Users can only view their own bookings"
-  ON bookings FOR SELECT
-  USING (email = current_setting('request.jwt.claims')::json->>'email');
-```
-
-## Best Practices Going Forward
-
-1. **Never commit `.env` files** (already added to `.gitignore`)
-2. **Use `.env.example`** for documentation (already created)
-3. **Regular key rotation** (every 90 days)
-4. **Monitor Supabase logs** for suspicious activity
-5. **Enable Supabase MFA** for dashboard access
-6. **Use IP restrictions** in Supabase if possible
-
-## Quick Reference: What to Change
-
-### In `script.js`:
-```javascript
-// Lines 16-18 - Supabase config
-const SUPABASE_URL = 'YOUR_URL_HERE';
-const SUPABASE_KEY = 'YOUR_ANON_KEY_HERE';
-
-// Lines 362-364 - EmailJS config
-const EMAILJS_USER_ID = 'YOUR_USER_ID';
-const EMAILJS_SERVICE_ID = 'YOUR_SERVICE_ID';
-const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';
-
-// Line 1012 - Formspree
-const FORMSPREE_ID = 'YOUR_FORMSPREE_ID';
-```
-
-### In `admin.html`:
-```javascript
-// Line 615 - Service Role Key (CRITICAL!)
-const SUPABASE_KEY = 'YOUR_SERVICE_ROLE_KEY_HERE';
-
-// Admin authentication is now handled securely via /api/admin-auth
-// Password must be set in Vercel Environment Variables.
-
-## Need Help?
-
-If you're unsure how to:
-- Rotate Supabase keys: https://supabase.com/docs/guides/api#api-keys
-- Clean Git history: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/removing-sensitive-data-from-a-repository
-- Set up a backend proxy: Consider hiring a developer or using a managed service
-
-## Security Checklist
-
-- [ ] Rotated Supabase Service Role Key
-- [ ] Rotated Supabase Anon Key
-- [ ] Rotated EmailJS credentials
-- [ ] Changed admin password to strong unique password
-- [ ] Scrubbed keys from Git history OR recreated repository
-- [ ] Added `.env` to `.gitignore`
-- [ ] Tested site still works with new keys
-- [ ] Enabled MFA on Supabase dashboard
-- [ ] Reviewed Supabase RLS policies
-- [ ] Set up monitoring/alerts for suspicious activity
-
-**Remember**: Security is an ongoing process, not a one-time fix!
+1. Never commit `.env` or any file under `.secrets/` (gitignored/outside repo).
+2. Server-side secrets live in Vercel env vars and are read only in `api/*` and
+   `lib/*`. `lib/supabaseAdmin.js` fails closed (503) if the key is missing.
+3. All privileged Supabase writes go through server routes that authenticate
+   (admin password, webhook HMAC, cron secret, access token).
+4. `vercel.json` redirects seal `lib/`, `scripts/`, `supabase/`, `test/`,
+   `archive/`, `gauntlet/hidden/` and `generate-config.js` from web access;
+   `.vercelignore` is the second layer.

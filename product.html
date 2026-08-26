@@ -1173,32 +1173,14 @@
                 // Set Page Title
                 document.title = `${product.name} | Desk2Quant`;
 
-                buyBtn.onclick = function () {
-                    if (typeof window.initRazorpayCheckout === 'function') {
-                        // Calculate checkout parameters
-                        let checkoutPrice = product.price;
-                        let checkoutCurrency = 'INR';
-                        const loggingPrice = product.price;
-
-                        // Pass to Razorpay with simplest defaults for now (relying on script.js globals/logic if needed, but explicit args here)
-                        // If we had local price, we could pass it. But for stability, let's stick to base price or re-fetch locally if needed.
-                        // Actually, let's try to pass the computed local price if available.
-
-                        if (buyBtn.dataset.price) {
-                            checkoutPrice = parseFloat(buyBtn.dataset.price);
-                        }
-                        if (buyBtn.dataset.currency) {
-                            checkoutCurrency = buyBtn.dataset.currency;
-                        }
-
-                        window.initRazorpayCheckout(product.name, checkoutPrice, checkoutCurrency, loggingPrice, null, {
-                            productId: product.id,
-                            couponCode: buyBtn.dataset.couponCode || null
-                        });
-                    } else {
-                        alert('Payment system loading... please try again.');
-                    }
-                };
+                // NOTE: the real buy handler is assigned further down, after the
+                // user-details modal elements are resolved -- it opens that modal
+                // so the buyer's name/email reach Razorpay `notes.customer_email`.
+                // An earlier direct-to-checkout handler used to be assigned here
+                // and was silently overwritten by that one, so it was dead code.
+                // It also passed userDetails = null, which is exactly the case
+                // that leaves a payment with no email attached, so reviving it
+                // would weaken grant-access's email-ownership check.
 
                 // Show Content IMMEDIATELY (Do not block on currency conversion)
                 document.getElementById('loading').style.display = 'none';
@@ -1253,6 +1235,13 @@
                     e.preventDefault();
                     if (productUserModal) {
                         productUserModal.style.display = 'flex';
+                    } else {
+                        // The modal is how we collect the buyer's email, and that
+                        // email is what grant-access matches against the payment.
+                        // If it is ever missing, say so instead of leaving a button
+                        // that looks clickable and does nothing.
+                        console.error('user-details-modal not found; cannot start checkout');
+                        alert('Checkout is temporarily unavailable. Please refresh, or email hello@desk2quant.com and we will send your purchase link.');
                     }
                 };
 

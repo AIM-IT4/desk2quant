@@ -13,12 +13,12 @@
 <meta property="og:url" content="https://desk2quant.com/blog/calibrating-the-heston-stochastic-volatility-model-a-practitioner-s-notebook.html">
 <meta property="og:title" content="Calibrating the Heston Stochastic Volatility Model: A Practitioner&#39;s Notebook | Desk2Quant">
 <meta property="og:description" content="Every derivatives trader knows that Black-Scholes is wrong. Not approximately wrong—structurally wrong. The model assumes constant volatility, yet every…">
-<meta property="og:image" content="https://quant-mentor.vercel.app/assets/images/blog-heston-cover.png">
+<meta property="og:image" content="https://desk2quant.com/assets/images/blog-heston-cover.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Calibrating the Heston Stochastic Volatility Model: A Practitioner&#39;s Notebook | Desk2Quant">
 <meta name="twitter:description" content="Every derivatives trader knows that Black-Scholes is wrong. Not approximately wrong—structurally wrong. The model assumes constant volatility, yet every…">
-<meta name="twitter:image" content="https://quant-mentor.vercel.app/assets/images/blog-heston-cover.png">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Calibrating the Heston Stochastic Volatility Model: A Practitioner's Notebook","description":"Every derivatives trader knows that Black-Scholes is wrong. Not approximately wrong—structurally wrong. The model assumes constant volatility, yet every…","image":["https://quant-mentor.vercel.app/assets/images/blog-heston-cover.png"],"url":"https://desk2quant.com/blog/calibrating-the-heston-stochastic-volatility-model-a-practitioner-s-notebook.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://desk2quant.com/blog/calibrating-the-heston-stochastic-volatility-model-a-practitioner-s-notebook.html"},"author":{"@type":"Person","name":"Amit Kumar Jha"},"publisher":{"@type":"Organization","@id":"https://desk2quant.com/#organization","name":"Desk2Quant","logo":{"@type":"ImageObject","url":"https://desk2quant.com/assets/images/desk2quant-logo.png?v=3"}},"inLanguage":"en","datePublished":"2026-03-05T12:55:19.775+00:00","dateModified":"2026-03-05T12:55:19.775+00:00"}</script>
+<meta name="twitter:image" content="https://desk2quant.com/assets/images/blog-heston-cover.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Calibrating the Heston Stochastic Volatility Model: A Practitioner's Notebook","description":"Every derivatives trader knows that Black-Scholes is wrong. Not approximately wrong—structurally wrong. The model assumes constant volatility, yet every…","image":["https://desk2quant.com/assets/images/blog-heston-cover.png"],"url":"https://desk2quant.com/blog/calibrating-the-heston-stochastic-volatility-model-a-practitioner-s-notebook.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://desk2quant.com/blog/calibrating-the-heston-stochastic-volatility-model-a-practitioner-s-notebook.html"},"author":{"@type":"Person","name":"Amit Kumar Jha"},"publisher":{"@type":"Organization","@id":"https://desk2quant.com/#organization","name":"Desk2Quant","logo":{"@type":"ImageObject","url":"https://desk2quant.com/assets/images/desk2quant-logo.png?v=3"}},"inLanguage":"en","datePublished":"2026-03-05T12:55:19.775+00:00","dateModified":"2026-03-05T12:55:19.775+00:00"}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://desk2quant.com/"},{"@type":"ListItem","position":2,"name":"Articles","item":"https://desk2quant.com/blog.html"},{"@type":"ListItem","position":3,"name":"Calibrating the Heston Stochastic Volatility Model: A Practitioner's Notebook","item":"https://desk2quant.com/blog/calibrating-the-heston-stochastic-volatility-model-a-practitioner-s-notebook.html"}]}</script>
 <link rel="icon" type="image/png" href="/assets/images/desk2quant-logo.png?v=3">
 <link rel="stylesheet" href="/styles.css">
@@ -41,7 +41,7 @@ window.MathJax = {
   <article>
     <p class="seo-kicker">Quant finance article &middot; 5 March 2026</p>
     <h1>Calibrating the Heston Stochastic Volatility Model: A Practitioner&#39;s Notebook</h1>
-    <p><img src="https://quant-mentor.vercel.app/assets/images/blog-heston-cover.png" alt="Calibrating the Heston Stochastic Volatility Model: A Practitioner&#39;s Notebook" width="840" fetchpriority="high"></p>
+    <p><img src="https://desk2quant.com/assets/images/blog-heston-cover.png" alt="Calibrating the Heston Stochastic Volatility Model: A Practitioner&#39;s Notebook" width="840" fetchpriority="high"></p>
     <div class="seo-article-body">
       <p>Every derivatives trader knows that Black-Scholes is <strong>wrong</strong>. Not approximately wrong—structurally wrong. The model assumes constant volatility, yet every options market on earth shows a volatility <strong>smile</strong> or <strong>skew</strong>. The question isn&#39;t <em>whether</em> to go beyond Black-Scholes, but <em>how</em>.</p>
       <p>In this post, we walk through <strong>calibrating the Heston stochastic volatility model</strong> to a real implied volatility surface—step by step, with runnable Python code and full mathematical derivations. This is the same workflow used on production desks, distilled into a Jupyter notebook.</p>
@@ -51,7 +51,7 @@ window.MathJax = {
       <p>where $d_1 = \frac{\ln(S_0/K) + (r + \sigma^2/2)T}{\sigma\sqrt{T}}$ and $d_2 = d_1 - \sigma\sqrt{T}$.</p>
       <p>The critical assumption: $\sigma$ is a <strong>single constant</strong> for all strikes $K$ and maturities $T$. If this were true, inverting market prices into implied volatilities would yield a <strong>flat</strong> surface.</p>
       <p>Reality disagrees violently. Here&#39;s what a typical equity index IV surface looks like:</p>
-      <div><img src="https://quant-mentor.vercel.app/assets/images/blog-heston-vol-surface.png" alt="Market Implied Volatility Surface" loading="lazy" decoding="async"><p>Market Implied Volatility Surface</p></div>
+      <div><img src="https://desk2quant.com/assets/images/blog-heston-vol-surface.png" alt="Market Implied Volatility Surface" loading="lazy" decoding="async"><p>Market Implied Volatility Surface</p></div>
       <p>The steep skew at low strikes reflects <strong>crash risk</strong> (investors pay a premium for downside protection). The uptick at high strikes captures <strong>lottery demand</strong>. No single $\sigma$ can explain this.</p>
       <h2>The Heston Model: Stochastic Volatility</h2>
       <p>Heston (1993) proposed letting volatility itself be a random process. The dynamics under the risk-neutral measure $\mathbb{Q}$:</p>
@@ -268,7 +268,7 @@ window.MathJax = {
       RMSE: 0.5 bps
       </code></pre></p>
       <p>An RMSE of <strong>0.5 basis points</strong> is excellent—well within bid-ask spreads. The calibrated model closely tracks market quotes across the entire smile:</p>
-      <div><img src="https://quant-mentor.vercel.app/assets/images/blog-heston-calibration-fit.png" alt="Calibration Fit: Heston vs Market" loading="lazy" decoding="async"><p>Calibration Fit: Heston vs Market</p></div>
+      <div><img src="https://desk2quant.com/assets/images/blog-heston-calibration-fit.png" alt="Calibration Fit: Heston vs Market" loading="lazy" decoding="async"><p>Calibration Fit: Heston vs Market</p></div>
       <h2>Interpreting the Calibrated Parameters</h2>
       <p>The numbers tell a story:</p>
       <p>- <strong>$\rho = -0.72$</strong>: Strong negative correlation. When the stock drops, volatility spikes—the classic <strong>leverage effect</strong>. This single parameter drives most of the skew.</p>

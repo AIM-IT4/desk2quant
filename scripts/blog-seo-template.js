@@ -87,6 +87,30 @@ function cleanAttributeText(value) {
   return decodeHtmlEntities(value).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]/g, '');
 }
 
+// Legacy hostnames that still appear in `blogs.cover_image_url` rows from
+// before the custom domain landed. They resolve (vercel.json redirects them),
+// but emitting them in og:image / twitter:image / JSON-LD hands crawlers a
+// non-canonical host for the same asset, which splits image signals and makes
+// the markup disagree with the canonical URL on the very same page.
+// Rewrite them to SITE rather than "fixing" the data on every build.
+const LEGACY_ASSET_HOSTS = new Set([
+  'desk2quant.vercel.app',
+  'quant-mentor.vercel.app',
+  'www.desk2quant.com'
+]);
+
+function canonicalizeAssetHost(href) {
+  try {
+    const parsed = new URL(href);
+    if (LEGACY_ASSET_HOSTS.has(parsed.hostname.toLowerCase())) {
+      return `${SITE}${parsed.pathname}${parsed.search}${parsed.hash}`;
+    }
+  } catch {
+    return href;
+  }
+  return href;
+}
+
 function safeUrl(value, { image = false, absolute = false } = {}) {
   const decoded = cleanAttributeText(value).trim();
   if (!decoded) return '';
@@ -105,7 +129,7 @@ function safeUrl(value, { image = false, absolute = false } = {}) {
       if (!image && ['mailto:', 'tel:'].includes(parsed.protocol)) return probe;
       return '';
     }
-    if (absolute || scheme || probe.startsWith('//')) return parsed.href;
+    if (absolute || scheme || probe.startsWith('//')) return canonicalizeAssetHost(parsed.href);
   } catch {
     return '';
   }
