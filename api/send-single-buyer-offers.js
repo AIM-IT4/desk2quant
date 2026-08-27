@@ -81,7 +81,7 @@ export default async function handler(req, res) {
             const email = (p.customer_email || '').toLowerCase().trim();
             if (!email || !email.includes('@')) continue;
             if (!customerMap[email]) customerMap[email] = new Set();
-            customerMap[email].add((p.product_name || '').toLowerCase().trim());
+            customerMap[email].add(normalizeProductName(p.product_name));
         }
 
         const allCustomers = Object.entries(customerMap);
@@ -115,7 +115,7 @@ export default async function handler(req, res) {
 
         // Exclude the Complete Bundle from recommendations
         const recommendableProducts = allProducts.filter(p => {
-            return !isCompleteBundleProduct(p.name);
+            return !isCompleteBundleProduct(p.name) && !isGauntletProduct(p.name);
         });
 
         console.log(`📦 ${recommendableProducts.length} recommendable products (bundle excluded)`);
@@ -127,7 +127,7 @@ export default async function handler(req, res) {
 
                 // Find the full product object that matches
                 const purchasedProduct = allProducts.find(p =>
-                    (p.name || '').toLowerCase().trim() === purchasedProductName
+                    normalizeProductName(p.name) === purchasedProductName
                 );
 
                 const purchasedDisplayName = purchasedProduct?.name || purchasedProductName;
@@ -151,14 +151,27 @@ export default async function handler(req, res) {
                 }
 
                 // Build recommendation details with 20% codes
-                const recDetails = recommendations.map(p => ({
-                    name: p.name,
-                    price: p.price,
-                    discountedPrice: Math.round(p.price * 0.8),
-                    couponCode: getCouponCode20(p.name),
-                    id: p.id,
-                    coverImage: p.cover_image_url
-                }));
+                const recDetails = recommendations
+                    .map(p => ({
+                        name: p.name,
+                        price: p.price,
+                        discountedPrice: Math.round(p.price * 0.8),
+                        couponCode: getCouponCode20(p.name),
+                        id: p.id,
+                        coverImage: p.cover_image_url
+                    }))
+                    .filter(r => r.couponCode);
+
+                if (recDetails.length === 0) {
+                    results.skipped++;
+                    results.details.push({
+                        email,
+                        purchasedProduct: purchasedDisplayName,
+                        status: 'skipped',
+                        reason: 'no recommendation had a checkout-valid coupon code'
+                    });
+                    continue;
+                }
 
                 if (isDryRun) {
                     results.details.push({
@@ -245,7 +258,7 @@ export default async function handler(req, res) {
                 const [, purchasedSet] = sampleBuyer;
                 const purchasedProductName = [...purchasedSet][0];
                 const purchasedProduct = allProducts.find(p =>
-                    (p.name || '').toLowerCase().trim() === purchasedProductName
+                    normalizeProductName(p.name) === purchasedProductName
                 );
                 const purchasedDisplayName = purchasedProduct?.name || purchasedProductName;
                 const purchasedCategory = getProductCategory(purchasedProductName);
@@ -255,14 +268,16 @@ export default async function handler(req, res) {
                     recommendableProducts,
                     purchasedSet
                 );
-                const recDetails = recommendations.map(p => ({
-                    name: p.name,
-                    price: p.price,
-                    discountedPrice: Math.round(p.price * 0.8),
-                    couponCode: getCouponCode20(p.name),
-                    id: p.id,
-                    coverImage: p.cover_image_url
-                }));
+                const recDetails = recommendations
+                    .map(p => ({
+                        name: p.name,
+                        price: p.price,
+                        discountedPrice: Math.round(p.price * 0.8),
+                        couponCode: getCouponCode20(p.name),
+                        id: p.id,
+                        coverImage: p.cover_image_url
+                    }))
+                    .filter(r => r.couponCode);
 
                 const emailHtml = buildCampaignEmail(purchasedDisplayName, recDetails, expiryStr);
                 const emailText = buildCampaignText(purchasedDisplayName, recDetails, expiryStr);
@@ -387,6 +402,32 @@ function isCompleteBundleProduct(productName) {
     return name.includes('complete') && (name.includes('bundle') || name.includes('professional'));
 }
 
+/**
+ * Canonical form for comparing a `purchases.product_name` against a
+ * `products.name`. Plain `.toLowerCase().trim()` is not enough: 11 of the 35
+ * live product names carry en/em dashes or doubled/trailing spaces (e.g.
+ * "Greek Explainer Lab – The Production Quant Edition", "Model Validation
+ * Quant Case Study Pack "). A purchase row written with a hyphen where the
+ * catalogue has an en dash failed the equality test, so the product looked
+ * un-owned and the buyer was recommended the thing they had already paid for.
+ * Mirrors normalizeProductName() in api/razorpay-webhook.js.
+ */
+function normalizeProductName(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[–—]/g, '-')
+        .replace(/\s+/g, ' ');
+}
+
+/**
+ * The Gauntlet is graded, submit-and-be-marked project work, not notes.
+ * Recommending it beside PDF playbooks misrepresents what the buyer gets.
+ */
+function isGauntletProduct(productName) {
+    return normalizeProductName(productName).includes('gauntlet');
+}
+
 function getProductCategory(productNameLower) {
     for (const [key, category] of Object.entries(PRODUCT_CATEGORIES)) {
         if (productNameLower.includes(key) || key.includes(productNameLower)) {
@@ -413,7 +454,7 @@ function getRecommendations(purchasedNameLower, purchasedCategory, recommendable
         if (recommendations.length >= 3) break;
 
         const categoryProducts = recommendableProducts.filter(p => {
-            const pName = (p.name || '').toLowerCase().trim();
+            const pName = normalizeProductName(p.name);
             const pCategory = getProductCategory(pName);
             return pCategory === targetCategory &&
                    !purchasedSet.has(pName) &&
@@ -433,7 +474,7 @@ function getRecommendations(purchasedNameLower, purchasedCategory, recommendable
     // If we still have fewer than 3, fill from remaining products
     if (recommendations.length < 3) {
         const remaining = recommendableProducts.filter(p => {
-            const pName = (p.name || '').toLowerCase().trim();
+            const pName = normalizeProductName(p.name);
             return !purchasedSet.has(pName) && !usedIds.has(p.id);
         });
         remaining.sort((a, b) => (b.price || 0) - (a.price || 0));
@@ -482,21 +523,31 @@ const COUPON_CODE_MAP = {
     'exotic options pricing guide': 'EXOTICS20',
 };
 
+/**
+ * The 20% code a product legitimately accepts, or null if it has none.
+ *
+ * MUST mirror resolveProductDiscountPercent() in lib/pricing.js, which is what
+ * actually validates the code at checkout: only a COUPON_MAP_20 entry whose key
+ * is a substring of THIS product's name is accepted. The previous version here
+ * matched far more loosely -- substring in either direction, then a fuzzy word
+ * match, then a 'QUANT20' catch-all -- so 7 of 35 products were emailed a code
+ * belonging to a different product (XVA Calculus Lab got STOCHLAB20, Trade
+ * Lifecycle got MODELS20). Those are rejected at checkout, and QUANT20 does not
+ * exist at all: the buyer types the code from the email and watches it fail.
+ *
+ * Returning null lets the caller drop the product rather than promise a
+ * discount that will not apply.
+ */
 function getCouponCode20(productName) {
-    const nameLower = (productName || '').toLowerCase().trim();
-    for (const [key, code] of Object.entries(COUPON_CODE_MAP)) {
-        if (nameLower.includes(key) || key.includes(nameLower)) {
-            return code;
-        }
+    const name = normalizeProductName(productName);
+    if (!name) return null;
+    // Longest key first, so a specific key wins over a shorter one that also
+    // happens to appear in the same product name.
+    const keys = Object.keys(COUPON_CODE_MAP).sort((a, b) => b.length - a.length);
+    for (const key of keys) {
+        if (name.includes(normalizeProductName(key))) return COUPON_CODE_MAP[key];
     }
-    // Fuzzy fallback
-    const words = nameLower.split(/\s+/).filter(w => w.length > 4);
-    for (const [key, code] of Object.entries(COUPON_CODE_MAP)) {
-        for (const word of words) {
-            if (key.includes(word)) return code;
-        }
-    }
-    return 'QUANT20'; // Generic fallback
+    return null;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
