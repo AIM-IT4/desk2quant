@@ -53,18 +53,25 @@
     }
 
     // product.html already loads this tiny bootstrap before the product data.
-    // Use it to load the conversion layer only for the Complete Bundle, leaving
+    // Use it to load conversion modules only for the Complete Bundle, leaving
     // all other product pages and checkout code untouched.
     if (typeof document !== 'undefined' && typeof window !== 'undefined') {
         try {
             const productId = String(new URLSearchParams(window.location.search).get('id') || '')
                 .replace(/^['"]|['"]$/g, '');
-            if (productId === COMPLETE_BUNDLE_ID && !document.getElementById('bundle-product-v2-script')) {
-                const script = document.createElement('script');
-                script.id = 'bundle-product-v2-script';
-                script.src = '/bundle-product-v2.js?v=20260828a';
-                script.defer = true;
-                document.head.appendChild(script);
+            if (productId === COMPLETE_BUNDLE_ID) {
+                const modules = [
+                    ['bundle-product-v2-script', '/bundle-product-v2.js?v=20260828a'],
+                    ['bundle-proof-v3-script', '/bundle-proof-v3.js?v=20260828a']
+                ];
+                modules.forEach(([id, src]) => {
+                    if (document.getElementById(id)) return;
+                    const script = document.createElement('script');
+                    script.id = id;
+                    script.src = src;
+                    script.defer = true;
+                    document.head.appendChild(script);
+                });
             }
         } catch (_) {
             // SEO helpers must remain usable even if enhancement loading fails.
