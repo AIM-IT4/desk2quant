@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quant Career Diagnostic | Desk2Quant</title>
+  <meta name="description" content="A transparent self-assessment for pricing quant, XVA, model validation, quant development and quant interview preparation. Get a role-specific gap analysis and study sequence.">
+  <link rel="canonical" href="https://desk2quant.com/diagnostic.html">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Desk2Quant">
+  <meta property="og:url" content="https://desk2quant.com/diagnostic.html">
+  <meta property="og:title" content="Quant Career Diagnostic | Desk2Quant">
+  <meta property="og:description" content="Assess your preparation gaps against a target quant role and get a focused study sequence.">
+  <meta property="og:image" content="https://desk2quant.com/assets/images/desk2quant-editorial-og.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Quant Career Diagnostic | Desk2Quant">
+  <meta name="twitter:description" content="Assess your preparation gaps against a target quant role and get a focused study sequence.">
+  <meta name="twitter:image" content="https://desk2quant.com/assets/images/desk2quant-editorial-og.jpg">
+  <link rel="icon" type="image/svg+xml" href="/assets/images/desk2quant-favicon.svg?v=2">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/diagnostic.css?v=20260828a">
+</head>
+<body>
+  <nav class="qd-nav">
+    <div class="qd-nav-inner">
+      <a class="qd-brand" href="/" aria-label="Desk2Quant home">
+        <img src="/assets/images/desk2quant-mark.svg?v=1" alt="" aria-hidden="true">
+        <span>Desk2Quant</span>
+      </a>
+      <div class="qd-nav-links">
+        <a href="/#role-paths">Role paths</a>
+        <a href="/my-access.html">My Access</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="qd-page">
+    <header class="qd-hero">
+      <span class="qd-eyebrow">Quant Career Diagnostic</span>
+      <h1>Find the gaps that matter for the quant role you want.</h1>
+      <p>Choose a target role, preparation horizon and five self-assessed skill levels. The diagnostic compares those inputs with explicit role benchmarks, ranks the largest weighted gaps, and builds a focused study sequence.</p>
+      <div class="qd-meta">
+        <span><i class="fas fa-clock"></i> About 3 minutes</span>
+        <span><i class="fas fa-lock"></i> Answers stay in this browser</span>
+        <span><i class="fas fa-scale-balanced"></i> Transparent scoring</span>
+      </div>
+    </header>
+
+    <div class="qd-note">
+      <i class="fas fa-circle-info"></i>
+      <p><strong>This is a preparation diagnostic, not an aptitude or hiring test.</strong> It uses your own skill ratings to identify where your preparation is below role-specific benchmarks. It does not predict whether an employer will hire you.</p>
+    </div>
+
+    <div id="qd-form-wrap">
+      <form class="qd-form" id="qd-form">
+        <section class="qd-card">
+          <div class="qd-card-head">
+            <span class="qd-step">Step 1 · Target</span>
+            <h2>Which role are you preparing for?</h2>
+            <p>This controls the benchmark and importance weight assigned to each preparation domain.</p>
+          </div>
+          <div class="qd-choice-grid">
+            <div class="qd-choice"><input required type="radio" name="role" id="role-pricing" value="pricing"><label for="role-pricing"><strong>Front Office / Pricing Quant</strong><span>Products, models, calibration, Greeks, hedging and implementation.</span></label></div>
+            <div class="qd-choice"><input type="radio" name="role" id="role-xva" value="xva"><label for="role-xva"><strong>XVA / Counterparty Risk Quant</strong><span>Exposure, CVA/FVA, counterparty risk, lifecycle and implementation.</span></label></div>
+            <div class="qd-choice"><input type="radio" name="role" id="role-validation" value="validation"><label for="role-validation"><strong>Model Validation / Quant Risk</strong><span>Model challenge, assumptions, diagnostics, backtesting and findings.</span></label></div>
+            <div class="qd-choice"><input type="radio" name="role" id="role-quantdev" value="quantdev"><label for="role-quantdev"><strong>Quant Developer</strong><span>Python/C++, numerical methods, data work and production implementation.</span></label></div>
+            <div class="qd-choice"><input type="radio" name="role" id="role-general" value="general"><label for="role-general"><strong>General Quant Interview / Transition</strong><span>Balanced preparation when the exact desk is not fixed yet.</span></label></div>
+          </div>
+        </section>
+
+        <section class="qd-card">
+          <div class="qd-card-head">
+            <span class="qd-step">Step 2 · Context</span>
+            <h2>Set the preparation bar and timeline.</h2>
+            <p>Experience adjusts the expected preparation benchmark. Timeline changes the study sequence length, not the readiness score.</p>
+          </div>
+          <h3 style="font-size:.92rem;margin:0 0 10px;">Current stage</h3>
+          <div class="qd-choice-grid qd-choice-grid-3" style="margin-bottom:20px;">
+            <div class="qd-choice"><input required type="radio" name="experience" id="exp-transition" value="transition"><label for="exp-transition"><strong>Student / career transition</strong><span>Building role-ready capability from an academic or adjacent background.</span></label></div>
+            <div class="qd-choice"><input type="radio" name="experience" id="exp-early" value="early"><label for="exp-early"><strong>Early career · 0–2 years</strong><span>Some professional context; benchmark is raised modestly.</span></label></div>
+            <div class="qd-choice"><input type="radio" name="experience" id="exp-experienced" value="experienced"><label for="exp-experienced"><strong>Experienced · 3+ years</strong><span>Higher expectation for independent reasoning and explanation.</span></label></div>
+          </div>
+          <h3 style="font-size:.92rem;margin:0 0 10px;">Interview / transition horizon</h3>
+          <div class="qd-choice-grid qd-choice-grid-3">
+            <div class="qd-choice"><input required type="radio" name="timeline" id="time-urgent" value="urgent"><label for="time-urgent"><strong>Within 4 weeks</strong><span>Prioritise the largest gaps and timed interview execution.</span></label></div>
+            <div class="qd-choice"><input type="radio" name="timeline" id="time-near" value="near"><label for="time-near"><strong>1–3 months</strong><span>Enough time for targeted depth plus project/interview integration.</span></label></div>
+            <div class="qd-choice"><input type="radio" name="timeline" id="time-runway" value="runway"><label for="time-runway"><strong>3+ months / no deadline</strong><span>Use a full 12-week Learn → Implement → Validate sequence.</span></label></div>
+          </div>
+        </section>
+
+        <section class="qd-card">
+          <div class="qd-card-head">
+            <span class="qd-step">Step 3 · Self-assessment</span>
+            <h2>Rate what you can do today—not what you have read.</h2>
+            <p>Use the same five-level scale for each domain. “Strong” should mean you can work independently, not just recognise the topic.</p>
+          </div>
+
+          <div class="qd-domain-block"><div class="qd-domain-title"><h3>Quant foundations</h3><p>Probability, statistics, linear algebra, stochastic calculus</p></div><div class="qd-scale">
+            <div class="qd-scale-option"><input required type="radio" name="level-foundations" id="f0" value="0"><label for="f0"><b>Not started</b><small>Major topics are new.</small></label></div>
+            <div class="qd-scale-option"><input type="radio" name="level-foundations" id="f1" value="1"><label for="f1"><b>Familiar</b><small>I recognise concepts and notation.</small></label></div>
+            <div class="qd-scale-option"><input type="radio" name="level-foundations" id="f2" value="2"><label for="f2"><b>Working</b><small>I solve standard textbook/interview problems.</small></label></div>
+            <div class="qd-scale-option"><input type="radio" name="level-foundations" id="f3" value="3"><label for="f3"><b>Strong</b><small>I derive and explain independently.</small></label></div>
+            <div class="qd-scale-option"><input type="radio" name="level-foundations" id="f4" value="4"><label for="f4"><b>Advanced</b><small>I challenge assumptions and edge cases.</small></label></div>
+          </div></div>
+
+          <div class="qd-domain-block"><div class="qd-domain-title"><h3>Products & pricing</h3><p>Cashflows, conventions, models, calibration, Greeks, hedging</p></div><div class="qd-scale">
+            <div class="qd-scale-option"><input required type="radio" name="level-pricing" id="p0" value="0"><label for="p0"><b>Not started</b><small>Products and desk conventions are new.</small></label></div>
+            <div class="qd-scale-option"><input type="radio" name="level-pricing" id="p1" value="1"><label for="p1"><b>Familiar</b><small>I know basic products and model names.</small></label></div>
+            <div class="qd-scale-option"><input type="radio" name="level-pricing" id="p2" value="2"><label for="p2"><b>Working</b><small>I can price standard products with guidance.</small></label></div>
+            <div class="qd-scale-option"><input type="radio" name="level-pricing" id="p3" value="3"><label for="p3"><b>Strong</b><small>I connect product, model, Greeks and hedging.</small></label></div>
+            <div class="qd-scale-option"><input type="radio" name="level-pricing" id="p4" value="4"><label for="p4"><b>Advanced</b><small>I compare model choices and failure modes.</small></label></div>
+          </div></div>
+
+          <div class="qd-domain-block"><div class="qd-domain-title"><h3>Risk, XVA & validation</h3><p>Exposure, P&L, model risk, diagnostics, limitations</p></div><div class="qd-scale">
+            <div class="qd-scale-option"><input required type="radio" name="level-risk" id="r0" value="0"><label for="r0"><b>Not started</b><small>Risk/validation concepts are new.</small></label></div>
+            <div class="qd-scale-option"><input type="radio" name="level-risk" id="r1" value="1"><label for="r1"><b>Familiar</b><small>I know the main terms and purpose.</small></label></div>
+            <div class="qd-scale-option"><input type="radio" name="level-risk" id="r2" value="2"><label for="r2"><b>Working</b><small>I can follow standard calculations and tests.</small></label></div>
+            <div class="qd-scale-option"><input type="radio" name="level-risk" id="r3" value="3"><label for="r3"><b>Strong</b><small>I can diagnose and challenge model behaviour.</small></label></div>
+            <div class="qd-scale-option"><input type="radio" name="level-risk" id="r4" value="4"><label for="r4"><b>Advanced</b><small>I can defend findings and trade-offs.</small></label></div>
+          </div></div>
+
+          <div class="qd-domain-block"><div class="qd-domain-title"><h3>Implementation & coding</h3><p>Python/C++, numerics, data workflows, debugging</p></div><div class="qd-scale">
+            <div class="qd-scale-option"><input required type="radio" name="level-implementation" id="i0" value="0"><label for="i0"><b>Not started</b><small>I cannot yet implement quant workflows.</small></label></div>
+            <div class="qd-scale-option"><input type="radio" name="level-implementation" id="i1" value="1"><label for="i1"><b>Familiar</b><small>I can read and modify simple code.</small></label></div>
+            <div class="qd-scale-option"><input type="radio" name="level-implementation" id="i2" value="2"><label for="i2"><b>Working</b><small>I implement standard calculations independently.</small></label></div>
+            <div class="qd-scale-option"><input type="radio" name="level-implementation" id="i3" value="3"><label for="i3"><b>Strong</b><small>I debug, test and reason about numerical choices.</small></label></div>
+            <div class="qd-scale-option"><input type="radio" name="level-implementation" id="i4" value="4"><label for="i4"><b>Advanced</b><small>I optimise and defend production trade-offs.</small></label></div>
+          </div></div>
+
+          <div class="qd-domain-block"><div class="qd-domain-title"><h3>Interview readiness</h3><p>Timed problem solving, explanation, model judgement, coding</p></div><div class="qd-scale">
+            <div class="qd-scale-option"><input required type="radio" name="level-interview" id="v0" value="0"><label for="v0"><b>Not started</b><small>I have not practised quant interviews.</small></label></div>
+            <div class="qd-scale-option"><input type="radio" name="level-interview" id="v1" value="1"><label for="v1"><b>Familiar</b><small>I know common question types.</small></label></div>
+            <div class="qd-scale-option"><input type="radio" name="level-interview" id="v2" value="2"><label for="v2"><b>Working</b><small>I solve standard questions without heavy prompting.</small></label></div>
+            <div class="qd-scale-option"><input type="radio" name="level-interview" id="v3" value="3"><label for="v3"><b>Strong</b><small>I perform under time and explain clearly.</small></label></div>
+            <div class="qd-scale-option"><input type="radio" name="level-interview" id="v4" value="4"><label for="v4"><b>Advanced</b><small>I handle follow-ups, trade-offs and unfamiliar variants.</small></label></div>
+          </div></div>
+        </section>
+
+        <p id="qd-form-error" hidden></p>
+        <div class="qd-form-footer">
+          <p>Your answers are processed locally in the browser. The diagnostic does not submit your responses, email address or readiness score to Desk2Quant.</p>
+          <button class="qd-btn qd-btn-primary" type="submit">Generate my diagnostic <i class="fas fa-arrow-right"></i></button>
+        </div>
+      </form>
+    </div>
+
+    <div id="qd-result" hidden aria-live="polite"></div>
+  </main>
+
+  <footer class="qd-footer"><div class="qd-footer-inner"><span>© 2026 Desk2Quant</span><span><a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a> · <a href="/">Home</a></span></div></footer>
+  <script src="/diagnostic.js?v=20260828a" defer></script>
+</body>
+</html>
