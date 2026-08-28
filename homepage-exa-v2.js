@@ -7,6 +7,14 @@
         const style = document.createElement('style');
         style.id = 'exa-home-v2-style';
         style.textContent = `
+            .d2q-free-resource{padding:54px 0;background:#0f172a;border-bottom:1px solid #1e293b;color:#fff}
+            .d2q-free-resource-shell{max-width:1180px;margin:0 auto;padding:0 20px}
+            .d2q-free-resource-card{display:grid;grid-template-columns:minmax(0,1.35fr) auto;gap:28px;align-items:center;padding:30px;border:1px solid #334155;border-radius:18px;background:linear-gradient(135deg,#111827,#172554);box-shadow:0 18px 45px rgba(15,23,42,.22)}
+            .d2q-free-resource-kicker{display:inline-flex;align-items:center;gap:8px;color:#86efac;font-size:.73rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase}
+            .d2q-free-resource-card h2{margin:8px 0 10px;color:#fff;font-size:clamp(1.6rem,3vw,2.35rem);line-height:1.12;letter-spacing:-.025em}
+            .d2q-free-resource-card p{max-width:780px;margin:0;color:#cbd5e1;line-height:1.65;font-size:.95rem}
+            .d2q-free-resource-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:17px}.d2q-free-resource-meta span{padding:7px 10px;border:1px solid #334155;border-radius:999px;background:rgba(255,255,255,.04);color:#e2e8f0;font-size:.76rem;font-weight:700}
+            .d2q-free-resource-action{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:220px}.d2q-free-resource-action a{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 17px;border-radius:9px;background:#22c55e;color:#052e16;text-decoration:none;font-weight:900;white-space:nowrap}.d2q-free-resource-action small{text-align:center;color:#94a3b8;font-size:.72rem}
             .d2q-method,.d2q-diagnostic{padding:64px 0;background:#fff;border-bottom:1px solid #e5e7eb}
             .d2q-method-shell,.d2q-diag-shell{max-width:1180px;margin:0 auto;padding:0 20px}
             .d2q-method-head,.d2q-diag-head{max-width:760px;margin-bottom:28px}
@@ -24,8 +32,8 @@
             .d2q-diag-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.d2q-diag-card{padding:22px;border:1px solid #dfe7e5;border-radius:16px;background:#fff}
             .d2q-diag-card h3{margin:0 0 8px;color:#111827;font-size:1rem}.d2q-diag-card p{margin:0 0 14px;color:#6b7280;font-size:.86rem;line-height:1.55}.d2q-diag-card a{color:#0f766e;font-weight:800;text-decoration:none;font-size:.84rem}
             .d2q-diag-footer{margin-top:18px;color:#6b7280;font-size:.82rem;line-height:1.55}.d2q-diag-footer a{color:#0f766e;font-weight:800;text-decoration:none}
-            @media(max-width:900px){.d2q-method-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.d2q-diag-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.d2q-diagnostic-launch{grid-template-columns:1fr}}
-            @media(max-width:620px){.d2q-method,.d2q-diagnostic{padding:46px 0}.d2q-method-grid,.d2q-diag-grid{grid-template-columns:1fr}.d2q-method-step{min-height:0}.d2q-diagnostic-launch{padding:20px}.d2q-diagnostic-launch a{width:100%;justify-content:center}}
+            @media(max-width:900px){.d2q-free-resource-card{grid-template-columns:1fr}.d2q-free-resource-action{min-width:0;max-width:330px}.d2q-method-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.d2q-diag-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.d2q-diagnostic-launch{grid-template-columns:1fr}}
+            @media(max-width:620px){.d2q-free-resource{padding:38px 0}.d2q-free-resource-card{padding:22px}.d2q-free-resource-action{max-width:none}.d2q-method,.d2q-diagnostic{padding:46px 0}.d2q-method-grid,.d2q-diag-grid{grid-template-columns:1fr}.d2q-method-step{min-height:0}.d2q-diagnostic-launch{padding:20px}.d2q-diagnostic-launch a{width:100%;justify-content:center}}
         `;
         document.head.appendChild(style);
     }
@@ -34,6 +42,32 @@
         if (document.getElementById('d2q-method')) return;
         const roles = document.getElementById('role-paths');
         if (!roles) return;
+
+        const freeResource = document.createElement('section');
+        freeResource.id = 'd2q-free-resource';
+        freeResource.className = 'd2q-free-resource';
+        freeResource.setAttribute('aria-labelledby', 'd2q-free-resource-title');
+        freeResource.innerHTML = `
+            <div class="d2q-free-resource-shell">
+                <div class="d2q-free-resource-card">
+                    <div>
+                        <span class="d2q-free-resource-kicker"><i class="fas fa-gift"></i> New free quant interview resource</span>
+                        <h2 id="d2q-free-resource-title">50 FX Derivatives Problems for Quant Interviews</h2>
+                        <p>Practice forwards, NDFs, Garman–Kohlhagen, FX delta conventions, smile, barriers, quanto, collateral and basis, Monte Carlo, PDEs and model validation. Problems come first, with complete worked solutions in the appendix.</p>
+                        <div class="d2q-free-resource-meta">
+                            <span>50 interview problems</span>
+                            <span>Worked solutions</span>
+                            <span>Formula sheet</span>
+                            <span>LaTeX PDF</span>
+                        </div>
+                    </div>
+                    <div class="d2q-free-resource-action">
+                        <a href="/resources.html#fx-derivatives-workbook">Get the free workbook <i class="fas fa-arrow-right"></i></a>
+                        <small>Email required · instant access</small>
+                    </div>
+                </div>
+            </div>`;
+        roles.insertAdjacentElement('afterend', freeResource);
 
         const method = document.createElement('section');
         method.id = 'd2q-method';
@@ -53,7 +87,7 @@
                     <article class="d2q-method-step"><b>5</b><h3>Explain</h3><p>Defend trade-offs clearly in interviews and desk discussions.</p></article>
                 </div>
             </div>`;
-        roles.insertAdjacentElement('afterend', method);
+        freeResource.insertAdjacentElement('afterend', method);
 
         const diagnostic = document.createElement('section');
         diagnostic.id = 'd2q-diagnostic';
