@@ -227,6 +227,15 @@
         });
     }
 
+    function ensureStylesheet(id, href) {
+        if (document.getElementById(id)) return;
+        const link = document.createElement('link');
+        link.id = id;
+        link.rel = 'stylesheet';
+        link.href = href;
+        document.head.appendChild(link);
+    }
+
     // Presentation/observability enhancements only. These modules never own
     // checkout, payment verification, delivery, booking or access authorization.
     function loadPageEnhancements() {
@@ -235,6 +244,7 @@
             ['d2q-funnel-analytics', '/funnel-analytics.js?v=20260828a']
         ];
         if (path === '/' || path === '/index.html') {
+            ensureStylesheet('d2q-blog-reader-style', '/blog-modal-fix.css?v=20260828b');
             modules.push(['d2q-homepage-exa-v2', '/homepage-exa-v2.js?v=20260828a']);
         }
         if (path === '/my-access.html') {
