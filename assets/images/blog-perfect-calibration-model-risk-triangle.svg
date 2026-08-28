@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">A Perfect Calibration Can Still Lose Money</title>
+  <desc id="desc">Desk2Quant article cover showing the model-risk triangle: Fit, Stability and Hedge.</desc>
+  <rect width="1200" height="630" fill="#f7f8f6"/>
+  <rect x="42" y="42" width="1116" height="546" rx="28" fill="#ffffff" stroke="#dfe7e5" stroke-width="2"/>
+  <rect x="42" y="42" width="8" height="546" rx="4" fill="#0f766e"/>
+
+  <text x="92" y="105" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" letter-spacing="3" fill="#0f766e">DESK2QUANT • MODEL VALIDATION</text>
+  <text x="92" y="176" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="800" fill="#111827">A PERFECT CALIBRATION</text>
+  <text x="92" y="239" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="800" fill="#111827">CAN STILL LOSE MONEY</text>
+  <text x="92" y="283" font-family="Arial, Helvetica, sans-serif" font-size="23" fill="#667085">Why model fit, parameter stability and hedging performance are different tests.</text>
+
+  <g transform="translate(744 322)">
+    <path d="M0 210 L170 -80 L340 210 Z" fill="#eefaf8" stroke="#0f766e" stroke-width="5"/>
+    <circle cx="170" cy="-80" r="46" fill="#ffffff" stroke="#0f766e" stroke-width="4"/>
+    <circle cx="0" cy="210" r="46" fill="#ffffff" stroke="#0f766e" stroke-width="4"/>
+    <circle cx="340" cy="210" r="46" fill="#ffffff" stroke="#0f766e" stroke-width="4"/>
+    <text x="170" y="-72" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="800" fill="#0f5f59">FIT</text>
+    <text x="0" y="218" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="800" fill="#0f5f59">STABILITY</text>
+    <text x="340" y="218" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="800" fill="#0f5f59">HEDGE</text>
+    <text x="170" y="112" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="800" fill="#111827">MODEL</text>
+    <text x="170" y="138" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="800" fill="#111827">RISK</text>
+  </g>
+
+  <g transform="translate(92 346)">
+    <rect width="500" height="154" rx="16" fill="#fbfdfc" stroke="#dfe7e5"/>
+    <text x="24" y="39" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="800" fill="#111827">The desk question is not:</text>
+    <text x="24" y="76" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="800" fill="#0f766e">“Does it calibrate?”</text>
+    <text x="24" y="112" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#475467">It is: “What happens after calibration?”</text>
+    <text x="24" y="137" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#667085">Pricing • Greeks • P&amp;L • Validation • Interview judgement</text>
+  </g>
+
+  <text x="92" y="555" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="700" fill="#111827">desk2quant.com</text>
+  <text x="1108" y="555" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#667085">Practitioner field note</text>
+</svg>
