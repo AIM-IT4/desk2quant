@@ -1,79 +1,81 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="900" viewBox="0 0 720 900" role="img" aria-labelledby="title desc">
   <title id="title">Desk2Quant Complete Front Office and Risk Quant Bundle</title>
-  <desc id="desc">A premium dark navy and gold cover showing the Desk2Quant complete quant system, with PDFs, scripts, interview problems, coding and desk-risk topics. No price is embedded in the artwork.</desc>
+  <desc id="desc">Professional Desk2Quant bundle cover with a clearly separated brand header and product title. No price is embedded in the artwork.</desc>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#06111f"/>
-      <stop offset="0.55" stop-color="#0b1f33"/>
-      <stop offset="1" stop-color="#06111f"/>
+      <stop offset="0" stop-color="#071522"/>
+      <stop offset="0.58" stop-color="#0b2033"/>
+      <stop offset="1" stop-color="#071522"/>
     </linearGradient>
     <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#f8df8a"/>
-      <stop offset="0.5" stop-color="#d8a82d"/>
-      <stop offset="1" stop-color="#f4cb62"/>
+      <stop offset="0" stop-color="#f6df91"/>
+      <stop offset="0.52" stop-color="#d7aa36"/>
+      <stop offset="1" stop-color="#f2cc69"/>
     </linearGradient>
     <linearGradient id="teal" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#56e6db"/>
-      <stop offset="1" stop-color="#17b8b0"/>
+      <stop offset="0" stop-color="#72e7df"/>
+      <stop offset="1" stop-color="#22bdb4"/>
     </linearGradient>
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="12" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
   </defs>
 
-  <rect width="720" height="900" rx="32" fill="url(#bg)"/>
-  <circle cx="590" cy="170" r="170" fill="#0b3552" opacity="0.6"/>
-  <circle cx="590" cy="170" r="120" fill="none" stroke="#1e8aa6" stroke-width="1" opacity="0.45"/>
-  <circle cx="590" cy="170" r="82" fill="none" stroke="#d8a82d" stroke-width="1" opacity="0.45"/>
-  <path d="M465 240 C520 170 560 235 610 150 C640 100 680 125 710 72" fill="none" stroke="#d8a82d" stroke-width="3" opacity="0.8"/>
-  <g opacity="0.7" fill="#2ccfc5">
-    <rect x="475" y="245" width="10" height="35" rx="2"/><rect x="495" y="225" width="10" height="55" rx="2"/><rect x="515" y="250" width="10" height="30" rx="2"/><rect x="535" y="205" width="10" height="75" rx="2"/><rect x="555" y="185" width="10" height="95" rx="2"/><rect x="575" y="230" width="10" height="50" rx="2"/><rect x="595" y="170" width="10" height="110" rx="2"/><rect x="615" y="140" width="10" height="140" rx="2"/><rect x="635" y="190" width="10" height="90" rx="2"/><rect x="655" y="120" width="10" height="160" rx="2"/>
+  <rect width="720" height="900" rx="30" fill="url(#bg)"/>
+
+  <!-- restrained decorative market motif -->
+  <g opacity="0.22">
+    <circle cx="590" cy="205" r="155" fill="#0c3550"/>
+    <circle cx="590" cy="205" r="110" fill="none" stroke="#2fa4b4" stroke-width="1"/>
+    <path d="M470 260 C520 214 558 246 598 185 C635 130 670 150 705 102" fill="none" stroke="#d7aa36" stroke-width="2.5"/>
   </g>
 
-  <g transform="translate(46 44)">
-    <rect width="46" height="46" rx="12" fill="#fff"/>
-    <path d="M10 31 L18 23 L25 27 L36 14" fill="none" stroke="#07111f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M31 14 H36 V19" fill="none" stroke="#07111f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-    <text x="62" y="33" fill="#fff" font-family="Inter,Arial,sans-serif" font-size="28" font-weight="800">Desk2Quant</text>
+  <!-- brand header: deliberately isolated -->
+  <g transform="translate(46 40)">
+    <rect x="0" y="0" width="48" height="48" rx="12" fill="#ffffff"/>
+    <path d="M11 32 L19 24 L26 28 L38 14" fill="none" stroke="#071522" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M32 14 H38 V20" fill="none" stroke="#071522" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="64" y="33" fill="#ffffff" font-family="Inter,Arial,sans-serif" font-size="29" font-weight="800">Desk2Quant</text>
+    <text x="64" y="53" fill="#8fa7b8" font-family="Inter,Arial,sans-serif" font-size="12" font-weight="600" letter-spacing="1.5">PRACTITIONER-BUILT QUANT FINANCE</text>
+  </g>
+  <line x1="46" y1="118" x2="674" y2="118" stroke="#2a4659" stroke-width="1"/>
+
+  <!-- product title: starts well below brand header -->
+  <g transform="translate(46 176)">
+    <text y="0" fill="#72e7df" font-family="Inter,Arial,sans-serif" font-size="16" font-weight="800" letter-spacing="2.4">COMPLETE PROFESSIONAL BUNDLE</text>
+    <text y="62" fill="#ffffff" font-family="Georgia,serif" font-size="54" font-weight="700">Front Office &amp;</text>
+    <text y="124" fill="url(#gold)" font-family="Georgia,serif" font-size="58" font-weight="700">Risk Quant</text>
+    <text y="174" fill="#b8c7d2" font-family="Inter,Arial,sans-serif" font-size="22" font-weight="600">From foundations to desk-ready reasoning.</text>
   </g>
 
-  <g transform="translate(46 128)">
-    <text y="0" fill="#fff" font-family="Georgia,serif" font-size="62" font-weight="700">Complete</text>
-    <text y="68" fill="url(#gold)" font-family="Georgia,serif" font-size="58" font-weight="700">Front Office &amp;</text>
-    <text y="134" fill="url(#gold)" font-family="Georgia,serif" font-size="58" font-weight="700">Risk Quant</text>
-    <text y="200" fill="#fff" font-family="Georgia,serif" font-size="62" font-weight="700">Bundle</text>
-    <text y="245" fill="url(#teal)" font-family="Inter,Arial,sans-serif" font-size="24" font-weight="700">From foundations to desk-ready reasoning.</text>
-  </g>
-
-  <g transform="translate(46 430)">
-    <rect width="628" height="148" rx="22" fill="#081827" stroke="#d8a82d" stroke-width="1.5"/>
+  <!-- quantified contents -->
+  <g transform="translate(46 410)">
+    <rect width="628" height="146" rx="20" fill="#091a29" stroke="#31495c" stroke-width="1.2"/>
     <g font-family="Inter,Arial,sans-serif" text-anchor="middle">
-      <g transform="translate(79 26)"><text y="34" fill="url(#gold)" font-size="34" font-weight="800">41+</text><text y="63" fill="#fff" font-size="16">PDFs</text></g>
-      <g transform="translate(236 26)"><text y="34" fill="url(#gold)" font-size="34" font-weight="800">60+</text><text y="63" fill="#fff" font-size="16">Scripts</text></g>
-      <g transform="translate(393 26)"><text y="34" fill="url(#gold)" font-size="34" font-weight="800">1000+</text><text y="63" fill="#fff" font-size="16">Interview Problems</text></g>
-      <g transform="translate(550 26)"><text y="31" fill="url(#teal)" font-size="24" font-weight="800">Python</text><text y="57" fill="#fff" font-size="16">C++ + SQL</text></g>
+      <g transform="translate(79 24)"><text y="36" fill="url(#gold)" font-size="34" font-weight="800">41+</text><text y="66" fill="#dce6ec" font-size="15">PDFs</text></g>
+      <g transform="translate(236 24)"><text y="36" fill="url(#gold)" font-size="34" font-weight="800">60+</text><text y="66" fill="#dce6ec" font-size="15">Scripts</text></g>
+      <g transform="translate(393 24)"><text y="36" fill="url(#gold)" font-size="32" font-weight="800">1000+</text><text y="66" fill="#dce6ec" font-size="15">Interview Problems</text></g>
+      <g transform="translate(550 24)"><text y="32" fill="url(#teal)" font-size="22" font-weight="800">Python</text><text y="62" fill="#dce6ec" font-size="15">C++ + SQL</text></g>
     </g>
-    <line x1="157" y1="24" x2="157" y2="124" stroke="#335066"/>
-    <line x1="314" y1="24" x2="314" y2="124" stroke="#335066"/>
-    <line x1="471" y1="24" x2="471" y2="124" stroke="#335066"/>
+    <line x1="157" y1="22" x2="157" y2="124" stroke="#2a4659"/>
+    <line x1="314" y1="22" x2="314" y2="124" stroke="#2a4659"/>
+    <line x1="471" y1="22" x2="471" y2="124" stroke="#2a4659"/>
   </g>
 
-  <g transform="translate(46 606)">
-    <text fill="#7fe7df" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="800" letter-spacing="2">THE COMPLETE DESK2QUANT SYSTEM</text>
-    <g font-family="Inter,Arial,sans-serif" font-size="17" fill="#fff">
-      <g transform="translate(0 42)"><circle cx="10" cy="-5" r="6" fill="#1fc9bf"/><text x="27">Products &amp; Pricing</text></g>
-      <g transform="translate(320 42)"><circle cx="10" cy="-5" r="6" fill="#1fc9bf"/><text x="27">Risk &amp; Model Validation</text></g>
-      <g transform="translate(0 82)"><circle cx="10" cy="-5" r="6" fill="#1fc9bf"/><text x="27">XVA &amp; Trade Lifecycle</text></g>
-      <g transform="translate(320 82)"><circle cx="10" cy="-5" r="6" fill="#1fc9bf"/><text x="27">Quant Projects</text></g>
-      <g transform="translate(0 122)"><circle cx="10" cy="-5" r="6" fill="#1fc9bf"/><text x="27">Python, C++ &amp; SQL</text></g>
-      <g transform="translate(320 122)"><circle cx="10" cy="-5" r="6" fill="#1fc9bf"/><text x="27">Interview Preparation</text></g>
+  <!-- curriculum -->
+  <g transform="translate(46 598)">
+    <text fill="#72e7df" font-family="Inter,Arial,sans-serif" font-size="14" font-weight="800" letter-spacing="2">WHAT THE SYSTEM COVERS</text>
+    <g font-family="Inter,Arial,sans-serif" font-size="17" fill="#ffffff">
+      <g transform="translate(0 46)"><circle cx="8" cy="-5" r="5" fill="#27c7bd"/><text x="25">Products &amp; Pricing</text></g>
+      <g transform="translate(318 46)"><circle cx="8" cy="-5" r="5" fill="#27c7bd"/><text x="25">Risk &amp; Model Validation</text></g>
+      <g transform="translate(0 88)"><circle cx="8" cy="-5" r="5" fill="#27c7bd"/><text x="25">XVA &amp; Trade Lifecycle</text></g>
+      <g transform="translate(318 88)"><circle cx="8" cy="-5" r="5" fill="#27c7bd"/><text x="25">Quant Projects</text></g>
+      <g transform="translate(0 130)"><circle cx="8" cy="-5" r="5" fill="#27c7bd"/><text x="25">Python, C++ &amp; SQL</text></g>
+      <g transform="translate(318 130)"><circle cx="8" cy="-5" r="5" fill="#27c7bd"/><text x="25">Interview Preparation</text></g>
     </g>
   </g>
 
-  <g transform="translate(46 802)">
-    <line x1="0" y1="0" x2="628" y2="0" stroke="#d8a82d" opacity="0.65"/>
-    <text x="314" y="42" text-anchor="middle" fill="#fff" font-family="Georgia,serif" font-size="24" font-weight="700">Learn it. Implement it. Validate it. Defend it.</text>
-    <text x="314" y="78" text-anchor="middle" fill="#56e6db" font-family="Inter,Arial,sans-serif" font-size="17" font-weight="700">desk2quant.com</text>
+  <!-- footer -->
+  <g transform="translate(46 810)">
+    <line x1="0" y1="0" x2="628" y2="0" stroke="#355064"/>
+    <text x="314" y="38" text-anchor="middle" fill="#ffffff" font-family="Georgia,serif" font-size="22" font-weight="700">Learn it. Implement it. Validate it. Defend it.</text>
+    <text x="314" y="72" text-anchor="middle" fill="#72e7df" font-family="Inter,Arial,sans-serif" font-size="16" font-weight="700">desk2quant.com</text>
   </g>
 </svg>
