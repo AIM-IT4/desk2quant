@@ -227,11 +227,13 @@
         });
     }
 
-    // Presentation-only page enhancements. These modules never own checkout,
-    // payment verification, delivery, booking or access authorization.
+    // Presentation/observability enhancements only. These modules never own
+    // checkout, payment verification, delivery, booking or access authorization.
     function loadPageEnhancements() {
         const path = window.location.pathname;
-        const modules = [];
+        const modules = [
+            ['d2q-funnel-analytics', '/funnel-analytics.js?v=20260828a']
+        ];
         if (path === '/' || path === '/index.html') {
             modules.push(['d2q-homepage-exa-v2', '/homepage-exa-v2.js?v=20260828a']);
         }
