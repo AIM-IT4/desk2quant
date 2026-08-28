@@ -12,6 +12,7 @@
     'use strict';
 
     const SITE_URL = 'https://desk2quant.com';
+    const COMPLETE_BUNDLE_ID = '164308cd-e3cd-4026-8fdc-337a5955ffff';
 
     // Product IDs are stable even when marketing names change. Keep the most
     // valuable search landing pages on short, durable URLs and fall back to a
@@ -49,6 +50,25 @@
 
     function getProductUrl(product) {
         return `${SITE_URL}${getProductPath(product)}`;
+    }
+
+    // product.html already loads this tiny bootstrap before the product data.
+    // Use it to load the conversion layer only for the Complete Bundle, leaving
+    // all other product pages and checkout code untouched.
+    if (typeof document !== 'undefined' && typeof window !== 'undefined') {
+        try {
+            const productId = String(new URLSearchParams(window.location.search).get('id') || '')
+                .replace(/^['"]|['"]$/g, '');
+            if (productId === COMPLETE_BUNDLE_ID && !document.getElementById('bundle-product-v2-script')) {
+                const script = document.createElement('script');
+                script.id = 'bundle-product-v2-script';
+                script.src = '/bundle-product-v2.js?v=20260828a';
+                script.defer = true;
+                document.head.appendChild(script);
+            }
+        } catch (_) {
+            // SEO helpers must remain usable even if enhancement loading fails.
+        }
     }
 
     return Object.freeze({
