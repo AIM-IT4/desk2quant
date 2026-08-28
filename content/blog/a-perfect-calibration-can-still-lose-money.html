@@ -1,0 +1,261 @@
+<p>A derivative model can fit every liquid market quote on your calibration screen and still be a bad model for the desk.</p>
+
+<p>That sentence sounds contradictory only if we treat calibration as the same thing as validation. It is not. Calibration asks a narrow question: <strong>can I choose parameters so that the model reproduces today’s observed prices?</strong> A trading or risk function has to answer harder questions: <strong>are those parameters stable, are the Greeks economically sensible, and does the hedge behave when the market moves?</strong></p>
+
+<p>This article develops a practical way to separate those questions. I call it the <strong>Model-Risk Triangle</strong>: <strong>Fit, Stability, Hedge</strong>. It is not a new mathematical theorem. It is a practitioner diagnostic framework for avoiding one of the most common mistakes in quantitative finance: declaring victory because the calibration RMSE is small.</p>
+
+<h2>1. The calibration trap</h2>
+
+<p>Suppose a model price is written as <code>V(theta; x)</code>, where <code>theta</code> is the parameter vector and <code>x</code> represents market state and contract features. Given market instruments indexed by <code>i</code>, a standard calibration solves something like</p>
+
+<pre>theta* = argmin_theta  Sum_i  w_i [ V_i(theta) - P_i^mkt ]^2</pre>
+
+<p>or, more realistically for options, a vega-weighted objective in implied-volatility space.</p>
+
+<p>If the optimizer returns a tiny objective value, we learn something useful: the model family has enough flexibility, under the chosen weights and constraints, to reproduce that cross-section of market observations.</p>
+
+<p>But notice what the objective does <em>not</em> contain. It does not directly ask whether tomorrow’s parameters will jump. It does not ask whether delta is stable. It does not ask whether a hedged book will generate unexplained P&amp;L. It does not ask whether two nearly identical parameter vectors produce wildly different vegas or gammas.</p>
+
+<p>A calibration objective is therefore a <strong>projection of model quality onto one dimension</strong>. Treating it as the whole model-validation problem is category error.</p>
+
+<h2>2. The Model-Risk Triangle</h2>
+
+<p>A model intended for pricing and risk should be challenged along three different axes.</p>
+
+<table>
+<thead><tr><th>Axis</th><th>Question</th><th>Typical diagnostic</th><th>Failure symptom</th></tr></thead>
+<tbody>
+<tr><td><strong>Fit</strong></td><td>Does the model reproduce observable prices?</td><td>Weighted price/vol residuals, arbitrage checks</td><td>Systematic strike/tenor residuals</td></tr>
+<tr><td><strong>Stability</strong></td><td>Does calibration behave sensibly through time?</td><td>Parameter drift, boundary hits, multi-start dispersion</td><td>Parameter jumps with little market change</td></tr>
+<tr><td><strong>Hedge</strong></td><td>Do the model sensitivities control realized P&amp;L?</td><td>Hedging error, P&amp;L attribution, Greek benchmark comparison</td><td>Persistent unexplained or directional residual P&amp;L</td></tr>
+</tbody>
+</table>
+
+<p>The important point is that these axes are related but not equivalent. Improving one can even worsen another.</p>
+
+<h2>3. Axis one: Fit — useful, necessary, insufficient</h2>
+
+<p>A good fit matters. A pricing model that cannot reproduce the liquid instruments used to mark and hedge the book creates an obvious problem. But even the phrase “good fit” requires care.</p>
+
+<h3>What are you fitting?</h3>
+
+<p>Raw prices, implied volatilities, normalized prices, or vegas give different optimizers different incentives. If you minimize equally weighted price errors, expensive options can dominate. If you minimize equally weighted implied-vol errors, illiquid wings can dominate. If you vega-weight, you are explicitly saying that some observations matter more for local risk than others.</p>
+
+<p>So the objective function is itself a modelling decision:</p>
+
+<pre>J(theta) = Sum_i w_i * e_i(theta)^2</pre>
+
+<p>with <code>e_i</code> and <code>w_i</code> carrying economic meaning. A low <code>J(theta*)</code> cannot be interpreted without knowing those choices.</p>
+
+<h3>Residual geometry matters more than one RMSE</h3>
+
+<p>Imagine two calibrations with the same aggregate RMSE. Model A has small random residuals across strikes. Model B fits at-the-money perfectly but misses one wing systematically. A trader hedging a large barrier or cliquet exposure may strongly prefer A even though the headline number is identical.</p>
+
+<p>This is why a validator should inspect the <strong>shape</strong> of residuals:</p>
+
+<ul>
+<li>Are errors concentrated by strike, tenor, or moneyness?</li>
+<li>Do residuals change sign smoothly or show structural bias?</li>
+<li>Are the most liquid instruments fitted better than stale or sparse quotes?</li>
+<li>Does the model preserve basic no-arbitrage relationships such as monotonicity and convexity?</li>
+</ul>
+
+<p>A scalar calibration score is a compression. Validation starts by asking what information the compression removed.</p>
+
+<h2>4. Axis two: Stability — the parameter path is part of the model</h2>
+
+<p>Now suppose today’s calibration is excellent. Tomorrow you recalibrate and obtain a very different parameter vector even though the market surface barely moved.</p>
+
+<p>The cross-sectional fit can still be perfect on both days:</p>
+
+<pre>J_t(theta_t*)   approximately 0
+J_t+1(theta_t+1*) approximately 0</pre>
+
+<p>while</p>
+
+<pre>|| theta_t+1* - theta_t* ||  is large.</pre>
+
+<p>This is not a cosmetic issue. It can indicate weak parameter identification: multiple parameter combinations produce nearly the same prices. The optimizer is moving along a flat valley in the objective surface.</p>
+
+<h3>Why unstable parameters matter</h3>
+
+<p>First, desk interpretation becomes unreliable. If mean reversion, vol-of-vol, or correlation jumps dramatically from one day to the next without an economic reason, the parameters stop behaving like interpretable state variables and start behaving like fitting coefficients.</p>
+
+<p>Second, risk can move even when prices do not. Two parameter vectors can produce similar vanilla prices but different sensitivities for exotics. Calibration equivalence does not imply hedge equivalence.</p>
+
+<p>Third, recalibration itself creates P&amp;L. If the book is re-marked under a new parameter set, a desk can experience model-recalibration P&amp;L that is not explained by ordinary market-factor moves.</p>
+
+<h3>A simple stability score</h3>
+
+<p>For each parameter <code>theta_j</code>, define a scaled daily move:</p>
+
+<pre>S_j,t = | theta_j,t - theta_j,t-1 | / scale_j</pre>
+
+<p>where <code>scale_j</code> could be a long-run standard deviation, an approved operating range, or a robust rolling scale such as median absolute deviation.</p>
+
+<p>Then monitor:</p>
+
+<ul>
+<li>large one-day jumps;</li>
+<li>persistent boundary hits;</li>
+<li>sign changes that are economically surprising;</li>
+<li>dispersion across multiple calibration starting points;</li>
+<li>instability conditional on small market moves.</li>
+</ul>
+
+<p>The useful question is not “did the optimizer converge?” but <strong>“did it converge to a parameter region that behaves like the same model as yesterday?”</strong></p>
+
+<h2>5. Axis three: Hedge — where model risk becomes money</h2>
+
+<p>This is the axis most often underweighted in interview preparation and over-weighted on a real desk.</p>
+
+<p>Consider a delta-hedged option portfolio. In a simplified one-factor setting, the local P&amp;L over a small interval can be approximated by</p>
+
+<pre>dPnL approximately Theta*dt + 1/2 * Gamma * (dS)^2 + Vega*dSigma + cross/higher-order terms - hedge financing</pre>
+
+<p>If the model generates the wrong delta, gamma, vega, correlation exposure, or volatility dynamics, the hedge residual will expose the misspecification even when yesterday’s price fit looked excellent.</p>
+
+<p>A useful validation quantity is therefore not merely pricing error but a distribution of realized hedging residuals:</p>
+
+<pre>epsilon_t = realized PnL_t - model-explained PnL_t</pre>
+
+<p>Then ask:</p>
+
+<ul>
+<li>Is <code>epsilon_t</code> centered around zero?</li>
+<li>Does it increase systematically with spot moves or volatility moves?</li>
+<li>Does residual variance explode in particular moneyness or tenor buckets?</li>
+<li>Does the sign of residual P&amp;L reveal a missing convexity or volatility factor?</li>
+<li>Does one benchmark model hedge materially better despite a worse in-sample fit?</li>
+</ul>
+
+<p>This is the practical meaning of the statement: <strong>a model can be right on price and wrong on hedge.</strong></p>
+
+<h2>6. A thought experiment: two models, same prices, different risk</h2>
+
+<p>Suppose two stochastic-volatility calibrations both reproduce the liquid vanilla surface to within the desk’s tolerance.</p>
+
+<p><strong>Calibration A</strong> produces smooth parameters through time and moderate vegas. <strong>Calibration B</strong> uses more extreme vol-of-vol and correlation values, also fitting the surface, but those parameters jump around as quotes move slightly.</p>
+
+<p>For vanilla marks, the models may look interchangeable. Now price an exotic whose value depends strongly on forward skew dynamics. The two models can produce materially different forward smile evolution, barrier probabilities, vegas and cross-gammas.</p>
+
+<p>The calibration screen did not fail. It answered exactly the question it was asked. The failure was believing that the question was sufficient.</p>
+
+<h2>7. The validation objective should be multi-dimensional</h2>
+
+<p>Instead of mentally optimizing only calibration error, think of model selection as a multi-objective problem:</p>
+
+<pre>Choose model M to control:
+  C_fit(M)       = cross-sectional pricing error
+  C_stability(M) = parameter / calibration instability
+  C_hedge(M)     = realized hedging or PnL residual risk</pre>
+
+<p>One can combine them into a governance score if needed, but the weights should not hide the decomposition:</p>
+
+<pre>C_total = alpha*C_fit + beta*C_stability + gamma*C_hedge</pre>
+
+<p>The coefficients <code>alpha</code>, <code>beta</code>, and <code>gamma</code> depend on intended use. A model used only for indicative valuation may tolerate more hedge error than a model producing desk Greeks. A model used for exotic hedging should put much more weight on sensitivity stability and dynamic performance.</p>
+
+<p>This is why “best model” is meaningless without <strong>intended use</strong>. Validation is conditional on what decisions the model is allowed to support.</p>
+
+<h2>8. A practical desk test: Freeze, Recalibrate, Hedge</h2>
+
+<p>A simple experiment can reveal far more than another optimizer run.</p>
+
+<ol>
+<li><strong>Freeze.</strong> Calibrate parameters at time <code>t</code> and keep them fixed for the next observation period.</li>
+<li><strong>Recalibrate.</strong> Independently recalibrate at <code>t+1</code> and measure the parameter move and re-marking impact.</li>
+<li><strong>Hedge.</strong> Compare the P&amp;L of a hedge generated by the frozen model with the hedge generated by the recalibrated model.</li>
+</ol>
+
+<p>You now have three pieces of information:</p>
+
+<ul>
+<li>how quickly the original calibration goes stale;</li>
+<li>how much model state must move to restore fit;</li>
+<li>whether that movement improves actual hedge performance.</li>
+</ul>
+
+<p>If frequent recalibration dramatically improves fit but adds unstable parameters and does not improve hedging residuals, you have learned something important: the optimizer may be absorbing noise rather than information.</p>
+
+<h2>9. What a model validator should ask in a review</h2>
+
+<p>Here is a compact challenge sequence I would use before approving a calibrated pricing model for material risk use.</p>
+
+<h3>Fit</h3>
+<ul>
+<li>What is the calibration objective and why are those weights appropriate?</li>
+<li>Where are the residuals concentrated?</li>
+<li>What happens if the calibration universe changes slightly?</li>
+<li>Are arbitrage and shape constraints satisfied outside the calibration nodes?</li>
+</ul>
+
+<h3>Stability</h3>
+<ul>
+<li>Are parameters identified or is the objective surface flat?</li>
+<li>How sensitive is the solution to the initial guess?</li>
+<li>How often do parameters hit constraints?</li>
+<li>What is the distribution of day-over-day parameter changes?</li>
+<li>What P&amp;L is generated purely by recalibration?</li>
+</ul>
+
+<h3>Hedge</h3>
+<ul>
+<li>How do Greeks compare with an independent benchmark?</li>
+<li>What is the realized hedging-error distribution?</li>
+<li>Which market regimes generate the largest unexplained P&amp;L?</li>
+<li>Does a simpler model hedge better?</li>
+<li>Are residuals directional, indicating a missing factor rather than noise?</li>
+</ul>
+
+<h2>10. The interview question hidden inside this framework</h2>
+
+<p>An interviewer asks:</p>
+
+<blockquote>“Your Heston calibration fits the implied-vol surface almost perfectly. Are you comfortable putting it into production?”</blockquote>
+
+<p>A weak answer is: “Yes, because the calibration error is low.”</p>
+
+<p>A stronger answer is:</p>
+
+<blockquote>“Low calibration error is necessary but not enough. I would test parameter stability and identifiability, benchmark the Greeks, check no-arbitrage behaviour, and backtest hedging/P&amp;L residuals. If parameters are unstable or the hedge is poor, the model may be overfitting the cross-section even with an excellent in-sample fit.”</blockquote>
+
+<p>That answer signals model judgement rather than formula recall.</p>
+
+<h2>11. Why this matters beyond Heston</h2>
+
+<p>The same triangle applies to almost every quantitative model family:</p>
+
+<ul>
+<li><strong>Local volatility:</strong> near-perfect vanilla fit, but potentially unrealistic forward-smile dynamics.</li>
+<li><strong>Short-rate models:</strong> excellent curve/instrument calibration, but unstable mean-reversion or volatility parameters and weak hedge behaviour for callable structures.</li>
+<li><strong>Credit models:</strong> tranche or spread fit can coexist with unstable correlation or recovery assumptions.</li>
+<li><strong>XVA models:</strong> calibration of market factors does not guarantee stable exposure profiles or hedge ratios.</li>
+<li><strong>Machine-learning/PINN pricing:</strong> low training or PDE residual loss does not guarantee economically stable Greeks or local no-arbitrage behaviour.</li>
+</ul>
+
+<p>The common principle is simple: <strong>an error metric close to zero only certifies what that metric actually measures.</strong></p>
+
+<h2>12. The Model-Risk Triangle in one sentence</h2>
+
+<p>A production model should not be accepted because it fits. It should be accepted because its <strong>fit is adequate, its state is stable enough for its intended use, and its risk outputs survive contact with realized P&amp;L.</strong></p>
+
+<p>That is the distinction between calibration and validation.</p>
+
+<hr>
+
+<h2>Try the framework on your own preparation</h2>
+
+<p>If you are preparing for pricing, XVA, model-validation, quant-development or interview roles, the <a href="/diagnostic.html">Desk2Quant Quant Career Diagnostic</a> identifies which preparation domains are currently below your target-role benchmark.</p>
+
+<p>If model validation is specifically your weak area, the <a href="/product.html?id=a778e6ae-43d1-4cbd-a6a7-6dce693e5f69">Model Validation Quant Case Study Pack</a> focuses on model challenge, diagnostics, assumptions and findings rather than only derivations.</p>
+
+<h2>Further reading</h2>
+
+<ul>
+<li>Research on calibration and recalibration model risk has shown that reducing cross-sectional calibration error can shift risk into parameter/recalibration instability rather than eliminate aggregate model risk.</li>
+<li>Empirical hedging literature has repeatedly found that better in-sample fit does not automatically imply better hedge performance.</li>
+<li>Recent work on neural/PINN option-pricing models similarly argues that low residual loss should be supplemented with structural, no-arbitrage and Greek-stability diagnostics.</li>
+</ul>
+
+<p><em>This article is educational and reflects a practitioner-oriented model-risk framework. It does not represent any employer, institution, or regulatory body.</em></p>
