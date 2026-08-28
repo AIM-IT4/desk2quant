@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Desk2Quant Sales Conversion Review</title>
+<style>body{font-family:system-ui,sans-serif;background:#0b0f13;color:#fff;padding:24px}</style>
+</head>
+<body>
+<p>Loading sales-conversion review…</p>
+<script>
+(async function () {
+  try {
+    const res = await fetch('/index.html?review-sales-conversion-v1=1', { cache: 'no-store' });
+    if (!res.ok) throw new Error('Failed to load homepage');
+    const html = await res.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+
+    // Static visual review only: disable all production/customer actions.
+    doc.querySelectorAll('script').forEach((node) => node.remove());
+    doc.querySelector('link[rel="canonical"]')?.remove();
+
+    const base = doc.createElement('base');
+    base.href = location.origin + '/';
+    doc.head.prepend(base);
+
+    const robots = doc.createElement('meta');
+    robots.name = 'robots';
+    robots.content = 'noindex,nofollow,noarchive';
+    doc.head.appendChild(robots);
+
+    const style = doc.createElement('style');
+    style.textContent = '.reveal-up,.reveal-left,.reveal-right{opacity:1!important;transform:none!important;visibility:visible!important}';
+    doc.head.appendChild(style);
+
+    const banner = doc.createElement('div');
+    banner.style.cssText = 'position:relative;z-index:999999;background:#f59e0b;color:#111827;text-align:center;padding:8px 12px;font:800 12px/1.4 Inter,system-ui,sans-serif;letter-spacing:.04em';
+    banner.textContent = 'INTERNAL REVIEW — LIVE HOMEPAGE AND CUSTOMER FLOWS ARE UNCHANGED';
+    doc.body.prepend(banner);
+
+    // Fresh sales-conversion-v1 hero experiment only.
+    const hero = doc.getElementById('hero');
+    if (hero) {
+      const headline = doc.getElementById('heroHeadline');
+      if (headline) {
+        headline.setAttribute('aria-label', 'Learn Quant Finance the Way It Is Used on the Desk');
+        headline.innerHTML = 'Learn Quant Finance the Way It’s <span class="gradient-text">Used on the Desk</span>';
+      }
+
+      const subcopy = hero.querySelector('.hero-subcopy');
+      if (subcopy) {
+        subcopy.innerHTML = '<strong>Build the intuition, implementation skill, and interview reasoning real quant roles demand.</strong><br>Practitioner-built resources for pricing, XVA, risk, model validation, numerical methods, Python, C++, and quant interviews.';
+      }
+
+      const proof = hero.querySelector('.hero-proof-row');
+      if (proof) {
+        proof.innerHTML = '<span><i class="fas fa-chart-line"></i> Pricing &amp; XVA</span><span><i class="fas fa-shield-alt"></i> Risk &amp; validation</span><span><i class="fas fa-user-check"></i> Interview-ready</span>';
+      }
+
+      const cta = hero.querySelector('.hero-cta');
+      if (cta) {
+        cta.innerHTML = '<a href="#products" class="btn btn-primary">Explore Quant Resources <i class="fas fa-arrow-right"></i></a><a href="desk-simulator.html" class="btn btn-secondary">Try the Free Desk Simulator</a>';
+      }
+    }
+
+    document.open();
+    document.write('<!doctype html>' + doc.documentElement.outerHTML);
+    document.close();
+  } catch (err) {
+    document.body.innerHTML = '<h1>Review failed</h1><p>' + String(err.message || err) + '</p>';
+  }
+})();
+</script>
+</body>
+</html>
