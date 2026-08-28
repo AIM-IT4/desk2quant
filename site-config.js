@@ -1,4 +1,4 @@
-﻿/* Shared public copy and trust signals. Keep numbers here; do not duplicate them in pages. */
+/* Shared public copy and trust signals. Keep numbers here; do not duplicate them in pages. */
 window.QUANT_MENTOR = Object.freeze({
     canonicalOrigin: 'https://desk2quant.com',
     brandName: 'Desk2Quant',
@@ -207,6 +207,104 @@ window.QUANT_MENTOR = Object.freeze({
                 .flagship-trust span { display: inline-flex; align-items: center; gap: 6px; }
                 .flagship-trust i { color: #0f766e; }
 
+                /* Role-based entry points: reduce catalogue choice overload. */
+                .role-paths-section {
+                    padding: 68px 0;
+                    background: #ffffff;
+                    border-bottom: 1px solid #e5e7eb;
+                }
+                .role-paths-header {
+                    max-width: 780px;
+                    margin: 0 auto 30px;
+                    text-align: center;
+                }
+                .role-paths-eyebrow {
+                    display: inline-block;
+                    margin-bottom: 10px;
+                    color: #0f766e;
+                    font-size: .76rem;
+                    font-weight: 800;
+                    letter-spacing: .09em;
+                    text-transform: uppercase;
+                }
+                .role-paths-header h2 {
+                    margin: 0 0 12px;
+                    color: #111827;
+                    font-size: clamp(1.9rem, 3.5vw, 2.8rem);
+                    line-height: 1.1;
+                    letter-spacing: -.03em;
+                }
+                .role-paths-header p {
+                    margin: 0;
+                    color: #6b7280;
+                    line-height: 1.65;
+                }
+                .role-paths-grid {
+                    display: grid;
+                    grid-template-columns: repeat(4, minmax(0, 1fr));
+                    gap: 16px;
+                }
+                .role-path-card {
+                    display: flex;
+                    flex-direction: column;
+                    min-height: 255px;
+                    padding: 24px;
+                    border: 1px solid #dfe7e5;
+                    border-radius: 18px;
+                    background: #fbfdfc;
+                    color: #111827;
+                    text-decoration: none;
+                    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+                }
+                .role-path-card:hover {
+                    transform: translateY(-3px);
+                    border-color: #8ccfc7;
+                    box-shadow: 0 14px 32px rgba(15, 23, 42, .08);
+                }
+                .role-path-icon {
+                    width: 42px;
+                    height: 42px;
+                    display: grid;
+                    place-items: center;
+                    margin-bottom: 18px;
+                    border-radius: 12px;
+                    background: #eaf8f6;
+                    color: #0f766e;
+                    font-size: 1rem;
+                }
+                .role-path-card h3 {
+                    margin: 0 0 9px;
+                    color: #111827;
+                    font-size: 1.08rem;
+                    line-height: 1.3;
+                }
+                .role-path-card p {
+                    margin: 0 0 18px;
+                    color: #6b7280;
+                    font-size: .9rem;
+                    line-height: 1.55;
+                }
+                .role-path-start {
+                    margin-top: auto;
+                    padding-top: 14px;
+                    border-top: 1px solid #e5e7eb;
+                    color: #0f766e;
+                    font-size: .82rem;
+                    font-weight: 800;
+                    line-height: 1.45;
+                }
+                .role-paths-footer {
+                    margin-top: 22px;
+                    text-align: center;
+                    color: #6b7280;
+                    font-size: .9rem;
+                }
+                .role-paths-footer a {
+                    color: #0f766e;
+                    font-weight: 800;
+                    text-decoration: none;
+                }
+
                 @media (max-width: 900px) {
                     .flagship-shell {
                         grid-template-columns: 1fr;
@@ -222,6 +320,7 @@ window.QUANT_MENTOR = Object.freeze({
                         width: min(68vw, 260px);
                         max-height: 300px;
                     }
+                    .role-paths-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
                 }
                 @media (max-width: 620px) {
                     .flagship-offer { padding: 42px 0; }
@@ -270,6 +369,11 @@ window.QUANT_MENTOR = Object.freeze({
                         margin-top: 19px;
                         padding-top: 16px;
                     }
+                    .role-paths-section { padding: 46px 0; }
+                    .role-paths-header { text-align: left; margin-bottom: 22px; }
+                    .role-paths-grid { grid-template-columns: 1fr; }
+                    .role-path-card { min-height: 0; padding: 21px; }
+                    .role-paths-footer { text-align: left; }
                 }
             `;
             document.head.appendChild(style);
@@ -354,6 +458,53 @@ window.QUANT_MENTOR = Object.freeze({
                     </div>
                 `;
                 about.insertAdjacentElement('afterend', section);
+            }
+        }
+
+        if (!document.getElementById('role-paths')) {
+            const flagship = document.getElementById('flagship-bundle');
+            if (flagship) {
+                const roleSection = document.createElement('section');
+                roleSection.className = 'role-paths-section';
+                roleSection.id = 'role-paths';
+                roleSection.setAttribute('aria-labelledby', 'role-paths-heading');
+                roleSection.innerHTML = `
+                    <div class="section-container">
+                        <div class="role-paths-header">
+                            <span class="role-paths-eyebrow">Start with your target role</span>
+                            <h2 id="role-paths-heading">What kind of quant are you preparing to become?</h2>
+                            <p>Skip the catalogue guesswork. Pick the desk or interview outcome you care about and start with the most relevant Desk2Quant resource.</p>
+                        </div>
+                        <div class="role-paths-grid">
+                            <a class="role-path-card" href="/product.html?id=bdb3c59e-c8c0-430f-8705-b7467514458e">
+                                <span class="role-path-icon"><i class="fas fa-chart-line"></i></span>
+                                <h3>Front Office Quant &amp; Pricing</h3>
+                                <p>Build product intuition across rates, FX, equity, credit, inflation and commodities before moving deeper into models and hedging.</p>
+                                <span class="role-path-start">Start: Derivatives Products &amp; Pricing Master Pack — ₹1,999 <i class="fas fa-arrow-right"></i></span>
+                            </a>
+                            <a class="role-path-card" href="/product.html?id=351aa09b-681b-4da9-9b61-844cf295640c">
+                                <span class="role-path-icon"><i class="fas fa-calculator"></i></span>
+                                <h3>XVA &amp; Counterparty Risk</h3>
+                                <p>Focus on counterparty credit risk, valuation adjustments and the desk calculations that connect exposure, funding and capital.</p>
+                                <span class="role-path-start">Start: XVA Calculus Lab — ₹699 <i class="fas fa-arrow-right"></i></span>
+                            </a>
+                            <a class="role-path-card" href="/product.html?id=a778e6ae-43d1-4cbd-a6a7-6dce693e5f69">
+                                <span class="role-path-icon"><i class="fas fa-shield-alt"></i></span>
+                                <h3>Model Validation &amp; Risk</h3>
+                                <p>Practice challenging assumptions, testing models and explaining limitations the way validation and risk teams expect.</p>
+                                <span class="role-path-start">Start: Model Validation Case Study Pack — ₹799 <i class="fas fa-arrow-right"></i></span>
+                            </a>
+                            <a class="role-path-card" href="/product.html?id=73806d69-768b-497e-87b7-d94fa4cfd772">
+                                <span class="role-path-icon"><i class="fas fa-user-tie"></i></span>
+                                <h3>Quant Interview Preparation</h3>
+                                <p>Drill probability, maths, coding, finance and model questions with enough volume to expose weak spots before the interview does.</p>
+                                <span class="role-path-start">Start: 1000+ Quant Interview Problems — ₹899 <i class="fas fa-arrow-right"></i></span>
+                            </a>
+                        </div>
+                        <p class="role-paths-footer">Not sure which path fits? <a href="${BUNDLE_URL}">Use the Complete Bundle for full-spectrum preparation <i class="fas fa-arrow-right"></i></a></p>
+                    </div>
+                `;
+                flagship.insertAdjacentElement('afterend', roleSection);
             }
         }
 
