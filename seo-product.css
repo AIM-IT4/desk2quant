@@ -1,4 +1,4 @@
-/* Styling for build-time generated SEO product pages. */
+/* Styling for build-time generated SEO product and article pages. */
 .seo-doc {
     max-width: 820px;
     margin: 0 auto;
@@ -24,50 +24,127 @@
 }
 .seo-price { font-size: 1.05rem; opacity: 0.85; margin: 0 0 24px; }
 .seo-doc img { max-width: 100%; height: auto; border-radius: 10px; }
-.seo-article-body { overflow-wrap: anywhere; }
-.seo-article-body h3 { font-size: 1.1rem; margin: 30px 0 10px; }
+
+/*
+ * Shared Desk2Quant editorial article system.
+ * `.seo-article-body` is emitted only by the blog SEO template, so these
+ * rules do not change product pages or checkout-facing UI.
+ */
+.seo-article-body {
+    overflow-wrap: anywhere;
+    color: #334155;
+    font-size: 1.01rem;
+    line-height: 1.78;
+}
+.seo-article-body > p:first-child {
+    margin: 26px 0 28px;
+    padding: 20px 22px;
+    border: 1px solid #dfe7e5;
+    border-left: 4px solid #0f766e;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.035);
+    color: #1f2937;
+    font-size: 1.055rem;
+}
+.seo-article-body h2 {
+    margin: 36px 0 18px;
+    padding: 17px 20px 17px 22px;
+    border: 1px solid #dfe7e5;
+    border-left: 4px solid #0f766e;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.035);
+    color: #0f172a;
+    font-size: 1.28rem;
+    line-height: 1.35;
+}
+.seo-article-body h3 {
+    margin: 30px 0 10px;
+    color: #115e59;
+    font-size: 1.1rem;
+}
 .seo-article-body h4,
 .seo-article-body h5,
-.seo-article-body h6 { margin: 24px 0 8px; }
+.seo-article-body h6 {
+    margin: 24px 0 8px;
+    color: #0f172a;
+}
+.seo-article-body p { margin: 0 0 18px; }
+.seo-article-body strong { color: #0f172a; }
+.seo-article-body a {
+    color: #0f766e;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+}
+.seo-article-body a:hover { color: #115e59; }
+.seo-article-body ul,
+.seo-article-body ol {
+    margin: 18px 0 24px;
+    padding-left: 1.35rem;
+}
+.seo-article-body li { margin-bottom: 9px; }
 .seo-article-body table {
     display: block;
     width: 100%;
-    margin: 24px 0;
+    margin: 24px 0 28px;
     overflow-x: auto;
-    border-collapse: collapse;
+    border: 1px solid #dfe7e5;
+    border-radius: 14px;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.035);
+    -webkit-overflow-scrolling: touch;
 }
 .seo-article-body th,
 .seo-article-body td {
-    padding: 10px 12px;
-    border: 1px solid rgba(148, 163, 184, 0.3);
+    padding: 12px 14px;
+    border-right: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
     text-align: left;
     vertical-align: top;
 }
+.seo-article-body th {
+    background: #f0fdfa;
+    color: #134e4a;
+    font-weight: 700;
+}
+.seo-article-body tr:last-child td { border-bottom: 0; }
+.seo-article-body th:last-child,
+.seo-article-body td:last-child { border-right: 0; }
 .seo-article-body pre {
-    margin: 24px 0;
-    padding: 16px;
+    margin: 24px 0 28px;
+    padding: 18px 20px;
     overflow-x: auto;
-    border-radius: 10px;
+    border: 1px solid #1e293b;
+    border-radius: 14px;
     background: #0f172a;
     color: #e2e8f0;
-    line-height: 1.55;
+    line-height: 1.58;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    -webkit-overflow-scrolling: touch;
 }
 .seo-article-body :not(pre) > code,
 .seo-article-body kbd,
 .seo-article-body samp {
-    padding: 0.12em 0.32em;
-    border-radius: 4px;
-    background: rgba(148, 163, 184, 0.16);
+    padding: 0.12em 0.34em;
+    border: 1px solid rgba(15, 118, 110, 0.12);
+    border-radius: 5px;
+    background: rgba(15, 118, 110, 0.07);
+    color: #115e59;
 }
 .seo-article-body .math-block {
-    margin: 26px 0;
-    padding: 18px 16px;
+    margin: 26px 0 30px;
+    padding: 20px 18px;
     overflow-x: auto;
     overflow-y: hidden;
-    border: 1px solid rgba(15, 118, 110, 0.2);
-    border-radius: 12px;
-    background: rgba(15, 118, 110, 0.045);
+    border: 1px solid rgba(15, 118, 110, 0.22);
+    border-radius: 14px;
+    background: #f0fdfa;
+    color: #134e4a;
     text-align: center;
+    box-shadow: 0 8px 24px rgba(15, 118, 110, 0.04);
     -webkit-overflow-scrolling: touch;
 }
 .seo-article-body .math-block mjx-container[display="true"] {
@@ -78,13 +155,35 @@
     overflow-wrap: normal;
 }
 .seo-article-body blockquote {
-    margin: 24px 0;
-    padding-left: 18px;
-    border-left: 3px solid #2563eb;
-    opacity: 0.9;
+    margin: 24px 0 28px;
+    padding: 18px 20px;
+    border: 1px solid #dfe7e5;
+    border-left: 4px solid #0f766e;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #475569;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.03);
 }
-.seo-article-body figure { margin: 24px 0; }
-.seo-article-body figcaption { margin-top: 8px; font-size: 0.9rem; opacity: 0.75; }
+.seo-article-body blockquote > :last-child { margin-bottom: 0; }
+.seo-article-body figure {
+    margin: 26px 0 30px;
+    padding: 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #ffffff;
+}
+.seo-article-body figcaption {
+    margin-top: 8px;
+    padding: 0 4px 4px;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+.seo-article-body hr {
+    margin: 38px 0;
+    border: 0;
+    border-top: 1px solid #dfe7e5;
+}
+
 .seo-cta-row { margin: 28px 0; }
 .seo-cta {
     display: inline-block;
@@ -100,14 +199,35 @@
 .seo-doc ul { padding-left: 1.25rem; }
 .seo-doc li { margin-bottom: 10px; }
 .seo-list li span { opacity: 0.75; }
+
 @media (max-width: 640px) {
+    .seo-doc { padding: 32px 16px 64px; }
+    .seo-article-body { font-size: 0.985rem; }
+    .seo-article-body > p:first-child,
+    .seo-article-body h2 {
+        margin-left: -2px;
+        margin-right: -2px;
+        padding: 15px 16px;
+        border-radius: 12px;
+    }
+    .seo-article-body h2 { font-size: 1.18rem; }
+    .seo-article-body table {
+        margin-left: -2px;
+        margin-right: -2px;
+        width: calc(100% + 4px);
+    }
     .seo-article-body .math-block {
-        margin: 22px -4px;
-        padding: 15px 12px;
+        margin: 22px -2px 26px;
+        padding: 16px 13px;
         text-align: left;
     }
     .seo-article-body .math-block mjx-container[display="true"] {
         font-size: 92% !important;
+    }
+    .seo-article-body pre {
+        margin-left: -2px;
+        margin-right: -2px;
+        padding: 15px 16px;
     }
 }
 @media (prefers-reduced-motion: reduce) {
