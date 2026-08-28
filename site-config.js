@@ -20,7 +20,7 @@ window.QUANT_MENTOR = Object.freeze({
  */
 (function () {
     const BUNDLE_URL = '/product.html?id=164308cd-e3cd-4026-8fdc-337a5955ffff';
-    const BUNDLE_COVER = '/assets/images/desk2quant-bundle-cover-2026.webp';
+    const BUNDLE_COVER = '/assets/images/desk2quant-bundle-cover-2026.svg';
 
     function applyHomepageSalesLayer() {
         if (!document.body || !document.getElementById('hero')) return;
