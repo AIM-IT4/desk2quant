@@ -24,6 +24,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Validate site build
+        run: |
+          npm ci
+          npm run build
+
       - name: Install LaTeX
         run: |
           sudo apt-get update -y
