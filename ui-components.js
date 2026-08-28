@@ -227,10 +227,32 @@
         });
     }
 
+    // Presentation-only page enhancements. These modules never own checkout,
+    // payment verification, delivery, booking or access authorization.
+    function loadPageEnhancements() {
+        const path = window.location.pathname;
+        const modules = [];
+        if (path === '/' || path === '/index.html') {
+            modules.push(['d2q-homepage-exa-v2', '/homepage-exa-v2.js?v=20260828a']);
+        }
+        if (path === '/my-access.html') {
+            modules.push(['d2q-my-access-learning', '/my-access-learning.js?v=20260828a']);
+        }
+        modules.forEach(function ([id, src]) {
+            if (document.getElementById(id)) return;
+            const script = document.createElement('script');
+            script.id = id;
+            script.src = src;
+            script.defer = true;
+            document.head.appendChild(script);
+        });
+    }
+
     function initialiseComponents() {
         initialiseFavicon();
         initialiseBrandMarks();
         markCurrentNavigation();
+        loadPageEnhancements();
 
         document.querySelectorAll(MODAL_SELECTOR).forEach(function (modal) {
             enhanceModal(modal);
@@ -284,4 +306,3 @@
         initialiseComponents();
     }
 }());
-
