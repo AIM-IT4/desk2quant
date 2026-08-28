@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Desk2Quant Internal Positioning Review</title>
+<style>body{font-family:system-ui,sans-serif;padding:32px;background:#0b0f13;color:#fff}p{opacity:.75}</style>
+</head>
+<body>
+<p>Loading Desk2Quant homepage review…</p>
+<script>
+(async function () {
+  try {
+    const response = await fetch('/index.html?review-source=1', { cache: 'no-store' });
+    if (!response.ok) throw new Error('Could not load homepage');
+    const html = await response.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+
+    // Static review only: remove all scripts so checkout, payments, API calls,
+    // canonical redirects and other customer actions cannot execute here.
+    doc.querySelectorAll('script').forEach((node) => node.remove());
+    doc.querySelector('link[rel="canonical"]')?.remove();
+
+    const base = doc.createElement('base');
+    base.href = location.origin + '/';
+    doc.head.prepend(base);
+
+    const robots = doc.createElement('meta');
+    robots.name = 'robots';
+    robots.content = 'noindex,nofollow,noarchive';
+    doc.head.appendChild(robots);
+
+    const previewStyle = doc.createElement('style');
+    previewStyle.textContent = `
+      .d2q-preview-bar{position:relative;z-index:99999;background:#f59e0b;color:#111827;text-align:center;padding:9px 14px;font:800 12px/1.4 Inter,system-ui,sans-serif;letter-spacing:.05em}
+      .d2q-preview-note{position:relative;z-index:99998;background:#111827;color:#e5e7eb;text-align:center;padding:8px 14px;font:500 12px/1.45 Inter,system-ui,sans-serif}
+      .reveal-up,.reveal-left,.reveal-right{opacity:1!important;transform:none!important;visibility:visible!important}
+      .role-preview-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:20px!important}
+      .role-preview-card{display:block;text-decoration:none;color:inherit;padding:24px;border:1px solid var(--border-light,#d1d5db);background:var(--bg-card,#fff);border-radius:14px}
+      .role-preview-card .flow-icon{margin-bottom:14px}
+      .role-preview-card h3{margin:0 0 10px}
+      .role-preview-card p{margin:0 0 14px}
+      .role-preview-card .flow-action{font-weight:700}
+      @media(max-width:1000px){.role-preview-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+      @media(max-width:620px){.role-preview-grid{grid-template-columns:1fr!important}}
+    `;
+    doc.head.appendChild(previewStyle);
+
+    const bar = doc.createElement('div');
+    bar.className = 'd2q-preview-bar';
+    bar.textContent = 'INTERNAL REVIEW — LIVE CUSTOMER HOMEPAGE IS UNCHANGED';
+    const note = doc.createElement('div');
+    note.className = 'd2q-preview-note';
+    note.textContent = 'Static visual review only. Your original profile card and all unchanged homepage sections are preserved; checkout and APIs are disabled on this page.';
+    doc.body.prepend(note);
+    doc.body.prepend(bar);
+
+    // Proposed Change #1 — hero positioning only. Profile card remains exactly as live.
+    const hero = doc.getElementById('hero');
+    if (hero) {
+      const headline = doc.getElementById('heroHeadline');
+      if (headline) {
+        headline.setAttribute('aria-label', 'From Quant Theory to Desk-Ready Practice');
+        headline.innerHTML = 'From Quant Theory to <span class="gradient-text">Desk-Ready Practice</span>';
+      }
+      const subcopy = hero.querySelector('.hero-subcopy');
+      if (subcopy) {
+        subcopy.innerHTML = '<strong>Learn the model. Implement it. Break it. Validate it. Explain it in an interview.</strong><br>Practitioner-built training for derivatives pricing, numerical methods, XVA, risk, model validation, and quantitative interviews.';
+      }
+      const proofRow = hero.querySelector('.hero-proof-row');
+      if (proofRow) {
+        proofRow.innerHTML = '<span><i class="fas fa-chart-line"></i> Pricing &amp; XVA</span><span><i class="fas fa-shield-alt"></i> Risk &amp; validation</span><span><i class="fas fa-terminal"></i> Python &amp; C++</span>';
+      }
+      const cta = hero.querySelector('.hero-cta');
+      if (cta) {
+        cta.innerHTML = '<a href="#choose-path" class="btn btn-primary">Find Your Quant Path <i class="fas fa-arrow-right"></i></a><a href="#products" class="btn btn-secondary">Explore Complete Bundle</a>';
+      }
+    }
+
+    // Proposed Change #2 — replace only the existing Choose Your Path cards.
+    const section = doc.getElementById('choose-path');
+    if (section) {
+      const label = section.querySelector('.section-label');
+      if (label) label.textContent = 'Choose by role';
+      const heading = doc.getElementById('choose-path-heading');
+      if (heading) heading.innerHTML = 'What are you <span class="gradient-text">preparing for?</span>';
+      const intro = section.querySelector('.flow-heading p');
+      if (intro) intro.textContent = 'Choose your target role and Desk2Quant will take you to the most relevant starting point.';
+      const grid = section.querySelector('.flow-grid');
+      if (grid) {
+        grid.classList.add('role-preview-grid');
+        const paths = [
+          ['fa-chart-line','Pricing / Desk Quant','Derivatives, pricing models, calibration, numerical methods, and desk intuition.','Explore pricing resources'],
+          ['fa-shield-alt','Risk Quant','Market risk, VaR/ES, stress testing, P&L diagnostics, and risk frameworks.','Explore risk resources'],
+          ['fa-microscope','Model Validation Quant','Model risk, benchmarking, calibration challenge, limitations, and validation cases.','Explore validation resources'],
+          ['fa-project-diagram','XVA Quant','CVA, DVA, FVA, MVA, CCR, exposure simulation, and Monte Carlo.','Explore XVA resources'],
+          ['fa-flask','Quant Researcher','Probability, statistics, econometrics, time series, ML, and research projects.','Explore research resources'],
+          ['fa-code','Quant Developer','Python, C++, numerical implementation, systems, and interview coding.','Explore developer resources'],
+          ['fa-seedling',"I'm a Beginner",'Start from first principles, build the maths and coding base, then move into pricing.','Start with foundations'],
+          ['fa-compass','Not Sure Yet','Start with free resources while you decide which quant track fits you.','Start free']
+        ];
+        grid.innerHTML = paths.map(([icon,title,desc,action]) => '<div class="flow-card role-preview-card"><div class="flow-icon"><i class="fas '+icon+'"></i></div><h3>'+title+'</h3><p>'+desc+'</p><span class="flow-action">'+action+' <i class="fas fa-arrow-right"></i></span></div>').join('');
+      }
+    }
+
+    document.open();
+    document.write('<!doctype html>' + doc.documentElement.outerHTML);
+    document.close();
+  } catch (error) {
+    document.body.innerHTML = '<h1>Review page could not load</h1><p>' + String(error.message || error) + '</p>';
+  }
+})();
+</script>
+</body>
+</html>
