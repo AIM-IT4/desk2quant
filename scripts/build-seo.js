@@ -25,7 +25,7 @@ function safeJson(value) {
 }
 
 const STATIC_PAGES = [
-  ['/', '1.0'], ['/desk-simulator.html', '0.9'], ['/interview.html', '0.8'],
+  ['/', '1.0'], ['/desk-simulator.html', '0.9'], ['/diagnostic.html', '0.9'], ['/interview.html', '0.8'],
   ['/blog.html', '0.8'], ['/faq.html', '0.6'], ['/code-playground.html', '0.6'],
   ['/products/', '0.9'], ['/guides/', '0.9'], ['/gauntlet.html', '0.8'], ['/gauntlet-playground.html', '0.7'],
   ['/resources.html', '0.7'], ['/testimonials.html', '0.6'], ['/salary-explorer.html', '0.6'],
@@ -59,9 +59,6 @@ async function main() {
   }
   assertNonEmptyPublishedBlogs(blogs);
 
-  // Real per-product reviews for JSON-LD aggregateRating/review. Non-fatal --
-  // a fetch failure here should not block the whole SEO build, it just means
-  // pages ship without review markup instead of with truthful ratings.
   let reviewsByProduct = {};
   try {
     reviewsByProduct = await fetchProductReviews();
@@ -71,8 +68,6 @@ async function main() {
 
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
-  // Assign deterministic slugs. Curated high-value slugs are keyed by stable
-  // product ID in product-seo.js, so marketing-name edits cannot move them.
   const seen = new Map();
   products.forEach(p => {
     const slug = getProductSlug(p);
@@ -95,9 +90,6 @@ async function main() {
     blog.__slug = slug;
   });
 
-  // The directory is generated output. Clean it only after a valid catalog
-  // has been fetched and validated so renamed/deleted products cannot leave
-  // duplicate indexable HTML behind.
   for (const filename of fs.readdirSync(OUT_DIR)) {
     if (filename.endsWith('.html')) fs.unlinkSync(path.join(OUT_DIR, filename));
   }
@@ -125,7 +117,6 @@ async function main() {
 
   renderAllGuides(path.join(__dirname, '..', 'guides'));
 
-  // Hub page listing every resource.
   const items = products.map(p =>
     `      <li><a href="/products/${esc(p.__slug)}.html">${esc(p.name)}</a> &mdash; <span>${esc(clamp(p.description, 110))}</span></li>`
   ).join('\n');
@@ -200,7 +191,6 @@ ${items}
 `;
   fs.writeFileSync(path.join(OUT_DIR, 'index.html'), hub, 'utf8');
 
-  // Sitemap.
   const urls = STATIC_PAGES.map(([loc, pri]) =>
     `  <url><loc>${SITE}${loc}</loc><priority>${pri}</priority></url>`
   ).concat(products.map(p =>
