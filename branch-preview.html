@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Desk2Quant Branch Preview</title>
+<style>body{font-family:system-ui,sans-serif;background:#0b0f13;color:#fff;padding:24px}</style>
+</head>
+<body>
+<p>Loading branch homepage…</p>
+<script>
+(async function () {
+  try {
+    const res = await fetch('/index.html?branch-preview-source=1', { cache: 'no-store' });
+    if (!res.ok) throw new Error('Failed to load branch homepage');
+    const html = await res.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+
+    // Remove only the canonical-host redirect script at the top of <head>.
+    const scripts = Array.from(doc.querySelectorAll('head script'));
+    const guard = scripts.find((s) => (s.textContent || '').includes('CANONICAL-HOST-GUARD'));
+    if (guard) guard.remove();
+
+    // Prevent this preview itself from being indexed.
+    const existingRobots = doc.querySelector('meta[name="robots"]');
+    if (existingRobots) existingRobots.content = 'noindex,nofollow,noarchive';
+    else {
+      const robots = doc.createElement('meta');
+      robots.name = 'robots';
+      robots.content = 'noindex,nofollow,noarchive';
+      doc.head.appendChild(robots);
+    }
+
+    // Keep relative assets/scripts on the same Vercel branch deployment.
+    const base = doc.createElement('base');
+    base.href = location.origin + '/';
+    doc.head.prepend(base);
+
+    // Make it obvious this is not production while preserving the real page.
+    const banner = doc.createElement('div');
+    banner.style.cssText = 'position:relative;z-index:999999;background:#f59e0b;color:#111827;text-align:center;padding:8px 12px;font:800 12px/1.4 Inter,system-ui,sans-serif;letter-spacing:.04em';
+    banner.textContent = 'BRANCH PREVIEW — sales-conversion-v1 — NOT PRODUCTION';
+    doc.body.prepend(banner);
+
+    document.open();
+    document.write('<!doctype html>' + doc.documentElement.outerHTML);
+    document.close();
+  } catch (err) {
+    document.body.innerHTML = '<h1>Preview failed</h1><p>' + String(err.message || err) + '</p>';
+  }
+})();
+</script>
+</body>
+</html>
