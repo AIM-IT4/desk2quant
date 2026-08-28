@@ -1,5 +1,3 @@
-import crypto from 'crypto';
-
 const ALLOWED_ORIGIN_HOSTS = new Set([
   'desk2quant.com',
   'www.desk2quant.com',
@@ -40,22 +38,36 @@ function rateLimited(req) {
   return recent.length > RATE_LIMIT_MAX;
 }
 
-function signingKey() {
-  const seed = process.env.BREVO_API_KEY;
-  if (!seed) return null;
-  return crypto.createHash('sha256').update(`desk2quant-free-resource|${seed}`).digest();
+function toBase64Url(bytes) {
+  return Buffer.from(bytes).toString('base64url');
 }
 
-function createDownloadToken(email) {
-  const key = signingKey();
+async function signingKey() {
+  const seed = process.env.BREVO_API_KEY;
+  if (!seed) return null;
+  return globalThis.crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(`desk2quant-free-resource|${seed}`),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign', 'verify']
+  );
+}
+
+async function createDownloadToken(email) {
+  const key = await signingKey();
   if (!key) throw new Error('Lead service is not configured');
   const payload = Buffer.from(JSON.stringify({
     e: email,
     r: 'fx-derivatives-50-problems',
     x: Date.now() + TOKEN_TTL_MS
   })).toString('base64url');
-  const sig = crypto.createHmac('sha256', key).update(payload).digest('base64url');
-  return `${payload}.${sig}`;
+  const signature = await globalThis.crypto.subtle.sign(
+    'HMAC',
+    key,
+    new TextEncoder().encode(payload)
+  );
+  return `${payload}.${toBase64Url(signature)}`;
 }
 
 async function addToBrevo(email) {
@@ -129,7 +141,7 @@ export default async function handler(req, res) {
 
   try {
     await addToBrevo(email);
-    const token = createDownloadToken(email);
+    const token = await createDownloadToken(email);
     const relativeUrl = `/api/free-resource-download?token=${encodeURIComponent(token)}`;
     const absoluteUrl = `https://desk2quant.com${relativeUrl}`;
     await sendResourceEmail(email, absoluteUrl);
