@@ -1,0 +1,40 @@
+ed total \(\approx\)USD 124,000 under that interpretation.
+
+\begin{interviewtip}
+\textbf{Interview tip.} Greek units are desk-specific; clarify whether gamma is curvature in price units or already normalized to a 1\% move.
+\end{interviewtip}
+
+\subsection*{Solution 44}
+For a delta-hedged long option, positive gamma means the hedge naturally buys low and sells high as spot oscillates; theta is typically negative and represents the cost of owning convexity. In the idealized continuous model, the hedged P\&L is approximately 0.5*\allowbreak{}Gamma*\allowbreak{}S\textasciicircum{}2*\allowbreak{}(realized variance - implied variance)dt. Thus realized volatility above implied tends to benefit long gamma, before transaction costs, jumps, smile changes, and discrete hedging effects.
+
+\subsection*{Solution 45}
+Vanna is sensitivity of vega to spot, equivalently sensitivity of delta to volatility. Volga (vomma) is sensitivity of vega to volatility. Exotics can have modest first-order vega but large higher-order exposure because smile moves when spot moves and because their payoff depends strongly on where volatility is redistributed across strikes. This is especially important for barriers near the smile wings.
+
+\subsection*{Solution 46}
+The vanna-volga method starts with a base Black-Scholes/GK price. Construct weights in three liquid benchmark vanillas so the benchmark portfolio matches the exotic's vega, vanna, and volga. Observe each benchmark's market price minus base-model price. Apply the same weights to these smile premia and add the weighted correction to the exotic's base price. It is a practical approximation, not a fully dynamic arbitrage-free model.
+
+\subsection*{Solution 47}
+Simulate under domestic measure: S\_\{t+dt\}=\allowbreak{}S\_t*\allowbreak{}exp[(r\_d-r\_f-0.5 sigma\textasciicircum{}2)dt+sigma sqrt(dt) Z]. For each path compute arithmetic average A and payoff max(A-K,0), then discount by exp(-r\_d T). Estimator is the sample mean of discounted payoffs; standard error =\allowbreak{} sample std/sqrt(N). Variance reduction: antithetic variates and a control variate using a geometric-average Asian option or terminal vanilla with known/cheap value.
+
+\subsection*{Solution 48}
+GK PDE: V\_t + 0.5 sigma\textasciicircum{}2 S\textasciicircum{}2 V\_SS +(r\_d-r\_f)S V\_S - r\_d V =\allowbreak{} 0. Vanilla call terminal condition V(S,T)=\allowbreak{}max(S-K,0). Boundary: V(0,t)=\allowbreak{}0; for large S, V\(\approx\)S e\textasciicircum{}\{-r\_f tau\}-K e\textasciicircum{}\{-r\_d tau\}. Explicit schemes require CFL-like step restrictions; Crank-Nicolson is unconditionally stable in the linear sense but can oscillate near kinks unless damped. Check grid refinement, time-step refinement, domain truncation, monotonicity, and agreement with analytic GK prices.
+
+\subsection*{Solution 49}
+A disciplined validation suite includes: (1) reproduce calibration vanillas within bid-ask; (2) test out-of-sample strikes/maturities; (3) enforce/diagnose static arbitrage; (4) inspect parameter term structures and day-to-day stability; (5) finite-difference Greeks versus analytic/adjoint where available; (6) stress spot, vol, rates, correlation and basis; (7) compare barriers against alternative models/benchmarks; (8) check MC confidence intervals and PDE grid convergence; (9) assess hedging P\&L on historical scenarios; (10) document limitations and model-change triggers.
+
+\subsection*{Solution 50}
+The short up-and-out call is close to its 1.1500 barrier after spot jumps to 1.1350, so barrier hit probability rises sharply. Higher ATM vol increases both vanilla optionality and touch probability; for a knock-out, those effects compete, and barrier proximity often dominates. A more negative RR means downside puts richen versus calls, changing local skew around the relevant strike/barrier and therefore the conditional barrier dynamics. Delta/gamma can become unstable near the barrier, while vanna/volga matter because spot and vol moved together. A practical response is to re-mark under the current smile, run barrier-distance and gap stresses, reduce oversized delta/gamma with spot/forwards and liquid vanillas, hedge smile with 25D/10D instruments where possible, set tighter intraday limits, and assess liquidity if the barrier is touched. Avoid relying on a single local-vol or Black-Scholes hedge; compare model variants and include discrete-monitoring/gap risk.
+
+
+\section*{Final Review Checklist}
+Before an FX-derivatives interview, make sure you can:
+\begin{itemize}
+  \item switch quote direction without losing the domestic/foreign convention;
+  \item derive CIP and Garman--Kohlhagen rather than merely quote formulas;
+  \item explain spot, forward, and premium-adjusted delta conventions;
+  \item reconstruct 25D wing volatilities from ATM/RR/BF;
+  \item distinguish terminal-distribution fit from path-dependent exotic pricing;
+  \item discuss collateral, cross-currency basis, and model risk;
+  \item perform a Greek P\&L explain while checking units and sign conventions.
+\end{itemize}
+\end{document}

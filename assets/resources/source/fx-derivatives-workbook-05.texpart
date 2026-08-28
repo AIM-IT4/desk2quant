@@ -1,0 +1,47 @@
+ and noisy Greeks. Fixing beta, smoothing parameters over maturity, and regularization usually improve robustness.
+
+\subsection*{Solution 30}
+One objective is weighted least squares over market instruments: sum\_i w\_i[modelVol\_i(theta)-marketVol\_i]\textasciicircum{}2 + lambda R(theta), where instruments include ATM, 25D and 10D RR/BF across maturities. Choose w\_i roughly inverse bid-ask variance so liquid tight quotes matter more. R penalizes abrupt parameter jumps or implausible values. Validate out-of-sample strikes, parameter continuity, and Greek stability; a tiny calibration error with unstable parameters is not a good model.
+
+\subsection*{Solution 31}
+An up-and-out ceases to exist if spot hits an upper barrier; up-and-in activates only after that hit. Down variants use a lower barrier. For same strike, maturity, barrier and rebate conventions, vanilla =\allowbreak{} knock-in + knock-out. Thus KI =\allowbreak{} 0.042-0.027=\allowbreak{}0.015 USD per unit foreign notional.
+
+\subsection*{Solution 32}
+Daily monitoring misses some intraday barrier touches, so the discretely monitored knock-out is generally more valuable than the continuously monitored knock-out because it has a lower probability of being extinguished. The difference is a barrier-monitoring correction and grows when volatility is high or spot is near the barrier.
+
+\subsection*{Solution 33}
+Value depends strongly on distance-to-barrier, volatility, skew, rates/carry, and time. As spot approaches the barrier, hit probability becomes highly sensitive to small spot changes; delta and gamma can become very large and unstable. If payoff occurs immediately on touch, timing and discounting also matter. Hedging can be difficult because the position can disappear abruptly once the barrier is hit.
+
+\subsection*{Solution 34}
+A double-no-touch pays only if spot stays inside two barriers until expiry; its risk is dominated by survival probability and both tails. A TARF is a path-dependent structured product with repeated fixings and termination after an accumulated target is reached, often creating asymmetric leverage. Model risks: DNT - smile dynamics, barrier monitoring, joint tail/path behavior. TARF - path dependence, forward skew, fixing correlations, gap risk, and client-unwind behavior.
+
+\subsection*{Solution 35}
+Average A=\allowbreak{}(1.09+1.10+1.12+1.11)/4=\allowbreak{}1.1050. Call payoff=\allowbreak{}max(A-K,0)=\allowbreak{}max(1.1050-1.1050,0)=\allowbreak{}0. Averaging reduces effective volatility versus a single terminal fixing and therefore often lowers option value relative to a comparable vanilla.
+
+\subsection*{Solution 36}
+A quanto fixes the conversion rate between the foreign underlying payoff and domestic settlement, removing direct FX payoff exposure but not the statistical dependence between underlying and FX. Changing measure introduces a covariance term. In a common setup the foreign underlying's domestic-measure drift is shifted by a term proportional to -rho*\allowbreak{}sigma\_X*\allowbreak{}sigma\_S. The exact sign depends on whether S is domestic/foreign or its inverse and on the payoff definition.
+
+\begin{interviewtip}
+\textbf{Interview tip.} derive the sign from the chosen quote and numeraire; do not memorize it blindly.
+\end{interviewtip}
+
+\subsection*{Solution 37}
+Since \texttt{EUR/GBP} =\allowbreak{} (\texttt{EUR/USD})/(\texttt{GBP/USD})=\allowbreak{}1.0800/1.2600=\allowbreak{}0.85714 GBP per EUR. Market 0.8500 is about 0.83\% lower, which is not exactly consistent and could imply arbitrage if executable bid-ask quotes allow the cycle after transaction costs.
+
+\subsection*{Solution 38}
+Each standalone gamma assumes its own pair moves independently. A common USD factor drives both \texttt{EUR/USD} and \texttt{GBP/USD}; joint moves create covariance terms in portfolio P\&L, schematically dP\(\approx\)...+0.5 Gamma\_E dS\_E\textasciicircum{}2+0.5 Gamma\_G dS\_G\textasciicircum{}2+CrossGamma dS\_E dS\_G. Correlation changes the distribution of combined moves and can materially alter stress losses and hedging effectiveness.
+
+\subsection*{Solution 39}
+In collateralized pricing, the collateral account defines the effective funding/discounting economics. If cash flows are collateralized in currency c, the relevant discount factors and forward relationships are linked to c-collateralized curves, not simply unsecured domestic and foreign rates. Changing CSA currency can therefore change discount factors, implied forwards, and option present values even with the same spot.
+
+\subsection*{Solution 40}
+F=\allowbreak{}1.1000*\allowbreak{}(0.9850/0.9700)=\allowbreak{}1.1000*\allowbreak{}1.0154639\(\approx\)1.11701. The forward premium versus spot is about 0.01701 =\allowbreak{} 170.1 pips.
+
+\subsection*{Solution 41}
+Cross-currency basis is the spread required to reconcile actual market funding/collateral conditions with idealized CIP. It is observed through cross-currency swaps and FX swaps/forwards relative to OIS curves. Persistent basis reflects balance-sheet costs, liquidity, demand for specific currencies, regulatory constraints, and collateral conventions.
+
+\subsection*{Solution 42}
+Setup 1: F1=\allowbreak{}1.08*\allowbreak{}(0.975/0.955)=\allowbreak{}1.10262. Setup 2: F2=\allowbreak{}1.08*\allowbreak{}(0.972/0.960)=\allowbreak{}1.09350. Difference=\allowbreak{}0.00912, about 91.2 pips. This illustrates that changing collateral/discount assumptions can materially shift forwards.
+
+\subsection*{Solution 43}
+Delta P\&L: a 0.5\% spot rise means dS\(\approx\)1.10*\allowbreak{}0.005=\allowbreak{}0.0055 USD/EUR. Delta +EUR 4m gives \(\approx\)4m*\allowbreak{}0.0055=\allowbreak{}USD 22,000. Gamma term using the book's stated unit convention: 0.5*\allowbreak{}0.8m*\allowbreak{}(0.5)\textasciicircum{}2\(\approx\)USD 100,000 if the quoted gamma P\&L is per squared 1\% move; this unit convention must be confirmed. Vega P\&L=\allowbreak{}25k*\allowbreak{}0.4=\allowbreak{}USD 10,000. Theta=\allowbreak{}-USD 8,000. Estimat

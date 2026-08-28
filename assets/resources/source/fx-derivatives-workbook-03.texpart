@@ -1,0 +1,50 @@
+ =\allowbreak{} 1.0875 means 1 EUR costs 1.0875 USD. Under S =\allowbreak{} domestic per foreign, USD is domestic and EUR is foreign. If \texttt{EUR/USD} rises to 1.0950, EUR has strengthened versus USD. A long \texttt{EUR/USD} position profits; a short position loses.
+
+\begin{interviewtip}
+\textbf{Interview tip.} domestic/foreign depends on quote direction, not the trader's home country.
+\end{interviewtip}
+
+\subsection*{Solution 2}
+For JPY pairs, one pip is usually 0.01. The move 149.68-149.20 =\allowbreak{} 0.48 JPY =\allowbreak{} 48 pips. In 149.683 the third decimal is a fractional pip, commonly called a pipette (0.001 JPY here).
+
+\subsection*{Solution 3}
+The treasurer will receive EUR and then economically convert to USD, so the risk is that EUR weakens before receipt. The firm is effectively long future \texttt{EUR/USD} exposure. To hedge, sell EUR forward / buy USD forward for the expected EUR 5m receipt date.
+
+\subsection*{Solution 4}
+The no-arbitrage cross is \texttt{EUR/JPY} =\allowbreak{} 1.1000*\allowbreak{}150.00 =\allowbreak{} 165.00, but market is 166.50, so EUR is expensive versus JPY on the direct cross. Start JPY 150,000,000. Convert JPY to USD: 150,000,000/150 =\allowbreak{} USD 1,000,000. Convert USD to EUR at \texttt{EUR/USD} 1.10: 1,000,000/1.10 =\allowbreak{} EUR 909,090.91. Sell EUR for JPY at 166.50: 909,090.91*\allowbreak{}166.50 =\allowbreak{} JPY 151,363,636. Profit \(\approx\) JPY 1,363,636, about 0.91\%, ignoring spreads and execution.
+
+\subsection*{Solution 5}
+USD/EUR =\allowbreak{} 1/1.25 =\allowbreak{} 0.8000. If \texttt{EUR/USD} rises 1\% from S to 1.01S, inverse becomes 1/(1.01S) =\allowbreak{} (1/S)/1.01, a decline of about 0.9901\%, approximately -1\% for small moves. Formally d(1/S)/(1/S) \(\approx\) -dS/S to first order.
+
+\subsection*{Solution 6}
+Borrow S0 units of domestic currency, convert at spot into 1 unit foreign, invest foreign at r\_f to obtain exp(r\_f T) foreign. Lock a forward to sell that amount at F. Domestic proceeds at T are F exp(r\_f T). The domestic borrowing grows to S0 exp(r\_d T). No-arbitrage requires F exp(r\_f T)=\allowbreak{}S0 exp(r\_d T), hence F=\allowbreak{}S0 exp((r\_d-r\_f)T).
+
+\subsection*{Solution 7}
+F=\allowbreak{}1.0800*\allowbreak{}exp((0.045-0.025)*\allowbreak{}0.5)=\allowbreak{}1.0800*\allowbreak{}exp(0.01)\(\approx\)1.09085. Forward points =\allowbreak{} 1.09085-1.0800=\allowbreak{}0.01085 \(\approx\) 108.5 pips. Positive points reflect higher USD rate than EUR rate under this quote.
+
+\subsection*{Solution 8}
+With simple compounding, one domestic unit invested becomes 1+r\_d T; one foreign unit becomes 1+r\_f T. Replicating one foreign unit gives F=\allowbreak{}S(1+r\_d T)/(1+r\_f T). Numerically F=\allowbreak{}1.3000*\allowbreak{}(1+0.05*\allowbreak{}0.25)/(1+0.03*\allowbreak{}0.25)=\allowbreak{}1.3000*\allowbreak{}1.0125/1.0075\(\approx\)1.30645.
+
+\subsection*{Solution 9}
+Linear time interpolation: 4M is one third of the way from 3M to 6M, so points \(\approx\) 28 + (1/3)(61-28)=\allowbreak{}39 pips. Outright =\allowbreak{} spot + 0.0039. Limitation: forward points are driven by discount curves and day-count conventions, so linear interpolation in raw points can distort curve shape, especially across turns or stressed markets.
+
+\subsection*{Solution 10}
+Spot leg: client sells EUR 10m and receives USD 10m*\allowbreak{}1.0900 =\allowbreak{} USD 10.9m. Forward leg at 1.0945: client buys EUR 10m and pays USD 10.945m at 3M. The swap exchanges near-term EUR for USD and reverses the currency exchange later; the 45-pip difference reflects carry/funding.
+
+\subsection*{Solution 11}
+Payoff to long USD =\allowbreak{} 1,000,000*\allowbreak{}(85.20-84.00)/85.20 =\allowbreak{} USD 14,084.51. Because fixing is above contracted NDF rate, USD strengthened versus INR, so a long-USD position receives cash.
+
+\subsection*{Solution 12}
+Payoff =\allowbreak{} 2,000,000*\allowbreak{}(82.80-83.50)/82.80 =\allowbreak{} -USD 16,908.21. Negative means the long-USD party pays about USD 16.9k; INR strengthened relative to the NDF strike.
+
+\subsection*{Solution 13}
+Fixing risk is the exposure to the exact benchmark fixing print because the settlement amount is determined by that rate, not by an arbitrary tradable spot at the same instant. Basis risk arises because offshore NDFs, onshore spot/forwards, and futures can diverge due to capital controls, funding, liquidity, and fixing methodology. A hedge can therefore be directionally correct yet leave residual P\&L from benchmark mismatch, timing, and basis jumps.
+
+\subsection*{Solution 14}
+Under the domestic risk-neutral measure, dS=\allowbreak{}(r\_d-r\_f)Sdt+sigma S dW. Since foreign currency behaves like an asset with continuous yield r\_f, Black-Scholes applies with dividend yield q=\allowbreak{}r\_f. Therefore C=\allowbreak{}S e\textasciicircum{}\{-r\_f T\}N(d1)-K e\textasciicircum{}\{-r\_d T\}N(d2), where d1=\allowbreak{}[ln(S/K)+(r\_d-r\_f+0.5 sigma\textasciicircum{}2)T]/(sigma sqrt(T)) and d2=\allowbreak{}d1-sigma sqrt(T). The domestic discount factor prices the strike payment; the foreign discount factor reflects carry on the underlying FX asset.
+
+\subsection*{Solution 15}
+Compute sigma*\allowbreak{}sqrt(T)=\allowbreak{}0.12*\allowbreak{}sqrt(0.5)=\allowbreak{}0.08485. ln(1.10/1.12)=\allowbreak{}-0.01802. Drift term=\allowbreak{}(0.04-0.02+0.5*\allowbreak{}0.12\textasciicircum{}2)*\allowbreak{}0.5=\allowbreak{}0.0136. Thus d1=\allowbreak{}(-0.01802+0.0136)/0.08485=\allowbreak{}-0.0521; d2=\allowbreak{}-0.1369. Using N(d1)\(\approx\)0.4792, N(d2)\(\approx\)0.4455, C\(\approx\)1.10*\allowbreak{}e\textasciicircum{}-0.01*\allowbreak{}0.4792 -1.12*\allowbreak{}e\textasciicircum{}-0.02*\allowbreak{}0.4455 \(\approx\)0.5220-0.4891=\allowbreak{}0.0329 USD per EUR notional.
+
+\subsection*{Solution 16}
+Parity follows by subtracting the GK put from call: C-P=\allowbreak{}S e\textasciicircum{}\{-r\_fT\}-K e\textasciicircum{}\{-r\_dT\}. So P=\allowbreak{}C-S e\textasciicircum{}\{-0.01\}+K e\textasc

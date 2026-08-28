@@ -1,0 +1,121 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=22mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{booktabs,longtable,array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{tcolorbox}
+\usepackage{setspace}
+
+\definecolor{navy}{HTML}{17365D}
+\definecolor{lightgray}{HTML}{F3F5F7}
+\definecolor{midgray}{HTML}{5F6B76}
+
+\hypersetup{colorlinks=true,linkcolor=navy,urlcolor=navy,pdftitle={50 FX Derivatives Problems for Quant Interviews},pdfauthor={Desk2Quant}}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small 50 FX Derivatives Problems for Quant Interviews}
+\rhead{\small Quant Interview Practice}
+\cfoot{\thepage}
+\setlength{\headheight}{14pt}
+\titleformat{\section}{\Large\bfseries\color{navy}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{navy}}{\thesubsection}{0.7em}{}
+\setlist[enumerate]{leftmargin=*, itemsep=0.8em}
+\setstretch{1.08}
+\setlength{\emergencystretch}{3em}
+\sloppy
+
+\newtcolorbox{interviewtip}{colback=lightgray,colframe=midgray,boxrule=0.4pt,arc=1mm,left=2mm,right=2mm,top=1.5mm,bottom=1.5mm}
+
+\begin{document}
+\begin{titlepage}
+\centering
+\vspace*{25mm}
+{\Huge\bfseries\color{navy} 50 FX Derivatives Problems\\[3mm] for Quant Interviews\par}
+\vspace{8mm}
+{\Large Practice Workbook with Complete Solutions\par}
+\vspace{15mm}
+{\large For pricing, strats, model validation, market risk, and quantitative research interviews\par}
+\vfill
+\begin{tcolorbox}[colback=lightgray,colframe=navy,width=0.88\textwidth]
+\small These are original, representative interview-style problems built around common FX-derivatives themes. They are \textbf{not} claimed to be verbatim questions from any specific bank or employer.
+\end{tcolorbox}
+\vfill
+{\small Includes forwards, swaps, NDFs, Garman--Kohlhagen, Greeks, smile, barriers, quanto, collateral/basis, calibration, P\&L explain, Monte Carlo, PDEs, and model validation.}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+\section{Formula Reference}
+Throughout, \(S_t\) denotes domestic currency units per one unit of foreign currency, \(r_d\) and \(r_f\) are domestic and foreign continuously compounded rates, \(T\) is maturity, and \(\sigma\) is annualized volatility.
+
+\subsection*{Covered interest parity}
+\[F(0,T)=S_0 e^{(r_d-r_f)T}=S_0\frac{P_f(0,T)}{P_d(0,T)}.\]
+
+\subsection*{Garman--Kohlhagen}
+\[C=S_0e^{-r_fT}N(d_1)-Ke^{-r_dT}N(d_2),\qquad P=Ke^{-r_dT}N(-d_2)-S_0e^{-r_fT}N(-d_1),\]
+\[d_1=\frac{\ln(S_0/K)+(r_d-r_f+\tfrac12\sigma^2)T}{\sigma\sqrt{T}},\qquad d_2=d_1-\sigma\sqrt{T}.\]
+
+\subsection*{FX put--call parity}
+\[C-P=S_0e^{-r_fT}-Ke^{-r_dT}.\]
+
+\subsection*{Core Greeks}
+\[\Delta_{\mathrm{spot}}^{C}=e^{-r_fT}N(d_1),\qquad \Delta_{\mathrm{fwd}}^{C}=N(d_1),\]
+\[\Gamma=\frac{e^{-r_fT}n(d_1)}{S_0\sigma\sqrt{T}},\qquad \nu=S_0e^{-r_fT}n(d_1)\sqrt{T}.\]
+
+\subsection*{FX smile quotes}
+\[RR_{25}=\sigma_{25C}-\sigma_{25P},\qquad BF_{25}=\frac{\sigma_{25C}+\sigma_{25P}}{2}-\sigma_{\mathrm{ATM}}.\]
+
+\subsection*{Risk-neutral FX dynamics}
+\[dS_t=(r_d-r_f)S_t\,dt+\sigma S_t\,dW_t.\]
+
+\subsection*{Quanto intuition}
+The quanto drift correction is proportional to \(\rho\sigma_X\sigma_S\), with sign determined by the precise FX quote, numeraire, and payoff convention.
+
+\newpage
+\section{Problems}
+
+\subsection*{Problem 1 \hfill \normalfont\small [Notation] -- Easy}
+\texttt{EUR/USD} is quoted at 1.0875. Under the convention S =\allowbreak{} domestic currency per unit of foreign currency, identify the domestic and foreign currencies. If \texttt{EUR/USD} rises to 1.0950, who benefits: a trader long \texttt{EUR/USD} or short \texttt{EUR/USD}?
+\vspace{2.5mm}
+
+\subsection*{Problem 2 \hfill \normalfont\small [Notation] -- Easy}
+\texttt{USD/JPY} moves from 149.20 to 149.68. How many pips is the move? If the platform shows 149.683, what is the final decimal digit commonly called?
+\vspace{2.5mm}
+
+\subsection*{Problem 3 \hfill \normalfont\small [Notation] -- Easy}
+A corporate treasurer expects to receive EUR 5 million in three months and reports in USD. Explain the FX exposure and the sign of the hedge using \texttt{EUR/USD} forwards.
+\vspace{2.5mm}
+
+\subsection*{Problem 4 \hfill \normalfont\small [Arbitrage] -- Medium}
+Suppose \texttt{EUR/USD} =\allowbreak{} 1.1000, \texttt{USD/JPY} =\allowbreak{} 150.00, while \texttt{EUR/JPY} is quoted at 166.50. Is there triangular arbitrage? Construct one cycle starting with JPY 150,000,000 and compute the approximate profit ignoring bid-ask spreads.
+\vspace{2.5mm}
+
+\subsection*{Problem 5 \hfill \normalfont\small [Quote Inversion] -- Medium}
+If \texttt{EUR/USD} =\allowbreak{} 1.2500, compute USD/EUR. If \texttt{EUR/USD} increases by 1\%, approximately what percentage change occurs in USD/EUR? Explain why the sign flips.
+\vspace{2.5mm}
+
+\subsection*{Problem 6 \hfill \normalfont\small [Forwards] -- Medium}
+Derive continuous-compounding covered interest parity (CIP): F(0,T) =\allowbreak{} S0 exp((r\_d-r\_f)T), using a no-arbitrage cash-and-carry argument.
+\vspace{2.5mm}
+
+\subsection*{Problem 7 \hfill \normalfont\small [Forwards] -- Medium}
+\texttt{EUR/USD} spot is 1.0800, USD rate 4.5\%, EUR rate 2.5\%, T =\allowbreak{} 0.5 years, continuously compounded. Compute the 6M forward outright and forward points.
+\vspace{2.5mm}
+
+\subsection*{Problem 8 \hfill \normalfont\small [Forwards] -- Medium}
+Under annual simple compounding, derive the forward formula F =\allowbreak{} S(1+r\_d T)/(1+r\_f T). Using S=\allowbreak{}1.3000, r\_d=\allowbreak{}5\%, r\_f=\allowbreak{}3\%, T=\allowbreak{}0.25, compute F.
+\vspace{2.5mm}
+
+\subsection*{Problem 9 \hfill \normalfont\small [Forwards] -- Medium}
+A dealer quotes 3M \texttt{EUR/USD} forward points +28 and 6M points +61, where one pip is 0.0001. Estimate 4M points by linear interpolation in time and state one limitation of this approach.
+\vspace{2.5mm}
+
+\subsection*{Problem 10 \hfill \normalfont\small [FX Swap] -- Medium}
+Spot \texttt{EUR/USD} is 1.0

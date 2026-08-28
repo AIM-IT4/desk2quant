@@ -1,0 +1,85 @@
+900 and the 3M forward is 1.0945. A client sells EUR 10 million spot and buys EUR 10 million back forward. Describe the two legs and compute the USD cash flows, ignoring settlement timing details.
+\vspace{2.5mm}
+
+\subsection*{Problem 11 \hfill \normalfont\small [NDF] -- Medium}
+Explain the mechanics of a \texttt{USD/INR} NDF when the contract notional is USD 1 million, NDF rate K =\allowbreak{} 84.00 INR/USD, and fixing is 85.20. Assume USD cash settlement using payoff USD =\allowbreak{} N*\allowbreak{}(Fix-K)/Fix for a party long USD.
+\vspace{2.5mm}
+
+\subsection*{Problem 12 \hfill \normalfont\small [NDF] -- Medium}
+For the same NDF convention, N =\allowbreak{} USD 2 million, K =\allowbreak{} 83.50, fixing =\allowbreak{} 82.80. Compute the USD settlement to the long-USD party and interpret the sign.
+\vspace{2.5mm}
+
+\subsection*{Problem 13 \hfill \normalfont\small [NDF Risk] -- Hard}
+An INR NDF fixes tomorrow. Explain fixing risk, basis risk between onshore and offshore markets, and why hedging with spot or futures may not eliminate settlement P\&L.
+\vspace{2.5mm}
+
+\subsection*{Problem 14 \hfill \normalfont\small [GK Derivation] -- Hard}
+Starting from risk-neutral FX dynamics dS=\allowbreak{}(r\_d-r\_f)S dt + sigma S dW under the domestic measure, derive the Garman-Kohlhagen European call formula and define d1 and d2.
+\vspace{2.5mm}
+
+\subsection*{Problem 15 \hfill \normalfont\small [GK Numerical] -- Medium}
+Price a 6M \texttt{EUR/USD} call with S=\allowbreak{}1.1000, K=\allowbreak{}1.1200, r\_d=\allowbreak{}4\%, r\_f=\allowbreak{}2\%, sigma=\allowbreak{}12\%, T=\allowbreak{}0.5. Use Garman-Kohlhagen. Give value in USD per EUR notional.
+\vspace{2.5mm}
+
+\subsection*{Problem 16 \hfill \normalfont\small [Put-Call Parity] -- Medium}
+Derive FX put-call parity C-P =\allowbreak{} S exp(-r\_f T) - K exp(-r\_d T). For S=\allowbreak{}1.20, K=\allowbreak{}1.18, r\_d=\allowbreak{}3\%, r\_f=\allowbreak{}1\%, T=\allowbreak{}1, and C=\allowbreak{}0.075, compute P.
+\vspace{2.5mm}
+
+\subsection*{Problem 17 \hfill \normalfont\small [Synthetic] -- Medium}
+Show how a long FX call plus a short FX put with the same strike and maturity replicates a forward-like payoff. Explain the discounted cash-flow adjustment relative to a zero-cost forward.
+\vspace{2.5mm}
+
+\subsection*{Problem 18 \hfill \normalfont\small [Delta] -- Medium}
+For an unadjusted call with d1=\allowbreak{}0.35, r\_f=\allowbreak{}2\%, T=\allowbreak{}0.5, compute spot delta and forward delta. Use N(0.35)=\allowbreak{}0.6368.
+\vspace{2.5mm}
+
+\subsection*{Problem 19 \hfill \normalfont\small [Delta Conventions] -- Hard}
+Explain spot delta, forward delta, and premium-adjusted delta in FX options. Why can a 25-delta call have different strikes under different conventions?
+\vspace{2.5mm}
+
+\subsection*{Problem 20 \hfill \normalfont\small [Greeks Numerical] -- Medium}
+For S=\allowbreak{}1.10, r\_f=\allowbreak{}2\%, sigma=\allowbreak{}10\%, T=\allowbreak{}0.25, d1=\allowbreak{}0.20, and n(d1)=\allowbreak{}0.3910, compute approximate gamma and vega under Garman-Kohlhagen.
+\vspace{2.5mm}
+
+\subsection*{Problem 21 \hfill \normalfont\small [ATM] -- Medium}
+Explain ATM-spot, ATM-forward, and delta-neutral ATM conventions. Which strike equals F under ATM-forward? Why is ATM not universally S in FX?
+\vspace{2.5mm}
+
+\subsection*{Problem 22 \hfill \normalfont\small [Smile] -- Medium}
+Market quotes: ATM vol =\allowbreak{} 10.0\%, 25D RR =\allowbreak{} -1.2 vol points, 25D BF =\allowbreak{} 0.5 vol points. Using RR =\allowbreak{} sigma\_25C - sigma\_25P and BF=\allowbreak{}(sigma\_25C+sigma\_25P)/2 - sigma\_ATM, recover 25D call and put vols.
+\vspace{2.5mm}
+
+\subsection*{Problem 23 \hfill \normalfont\small [Strike From Delta] -- Hard}
+Assume unadjusted forward delta for a call: Delta\_F=\allowbreak{}N(d1)=\allowbreak{}0.25. For F=\allowbreak{}1.1000, sigma=\allowbreak{}12\%, T=\allowbreak{}0.5, derive K from d1 and compute it using N\textasciicircum{}\{-1\}(0.25)=\allowbreak{}-0.67449.
+\vspace{2.5mm}
+
+\subsection*{Problem 24 \hfill \normalfont\small [Smile Interpolation] -- Hard}
+You have implied vols at 10D put, 25D put, ATM, 25D call, 10D call for two maturities. Propose a robust interpolation scheme across strike/delta and time. Identify at least three static-arbitrage checks.
+\vspace{2.5mm}
+
+\subsection*{Problem 25 \hfill \normalfont\small [Static Arbitrage] -- Hard}
+State and explain the no-arbitrage shape restrictions on European call prices as functions of strike and maturity. Relate them to monotonicity, convexity, and calendar arbitrage.
+\vspace{2.5mm}
+
+\subsection*{Problem 26 \hfill \normalfont\small [Local Vol] -- Hard}
+Explain the intuition of Dupire local volatility. Why can a local-vol model fit the full vanilla surface exactly yet still misprice barrier options?
+\vspace{2.5mm}
+
+\subsection*{Problem 27 \hfill \normalfont\small [Heston FX] -- Hard}
+Write Heston-style FX dynamics under the domestic measure, including stochastic variance. Explain the roles of r\_d, r\_f, kappa, theta, xi, and rho.
+\vspace{2.5mm}
+
+\subsection*{Problem 28 \hfill \normalfont\small [Correlation] -- Hard}
+In a stochastic-vol FX model, what qualitative effect does negative spot-vol correlation have on the implied-volatility skew? Explain for a quote S =\allowbreak{} domestic per foreign.
+\vspace{2.5mm}
+
+\subsection*{Problem 29 \hfill \normalfont\small [SABR] -- Hard}
+Describe how SABR-style parameters alpha, beta, rho, nu affect an FX smile. Why can calibration become unstable if all parameters are free at every maturity?
+\vspace{2.5mm}
+
+\subsection*{Problem 30 \hfill \normalfont\small [Calibration] -- Hard}
+Design a calibration objective for a stochastic-vol FX model using ATM, 25D RR/BF, and 10D RR/BF across maturities. Discuss weighting by bid-ask, regularization, and parameter stability.
+\vspace{2.5mm}
+
+\subsection*{Problem 31 \hfill \normalfont\small [Barrier] -- Medium}
+Define up-and-out, up-and-in, down-and-out, and down-and-in FX options. For a vanilla call value of 4.2 cent

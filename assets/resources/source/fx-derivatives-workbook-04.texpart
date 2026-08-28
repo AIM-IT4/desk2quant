@@ -1,0 +1,44 @@
+iicircum{}\{-0.03\}. Numerically S e\textasciicircum{}-0.01\(\approx\)1.18806; K e\textasciicircum{}-0.03\(\approx\)1.14513. P\(\approx\)0.075-1.18806+1.14513=\allowbreak{}0.03207.
+
+\subsection*{Solution 17}
+At expiry, long call minus long put payoff is max(S\_T-K,0)-max(K-S\_T,0)=\allowbreak{}S\_T-K. That is the payoff of a long forward struck at K, but the time-0 value is not generally zero unless K equals the market forward. Discounted parity gives C-P=\allowbreak{}S e\textasciicircum{}\{-r\_fT\}-K e\textasciicircum{}\{-r\_dT\}. For K=\allowbreak{}F, the RHS is zero and call-put is a zero-cost forward replication.
+
+\subsection*{Solution 18}
+Spot delta =\allowbreak{} e\textasciicircum{}\{-r\_fT\}N(d1)=\allowbreak{}e\textasciicircum{}\{-0.02*\allowbreak{}0.5\}*\allowbreak{}0.6368\(\approx\)0.6305. Forward delta =\allowbreak{} N(d1)=\allowbreak{}0.6368 under the standard unadjusted convention. Forward delta removes the foreign discounting factor.
+
+\subsection*{Solution 19}
+Spot delta is sensitivity to spot and commonly includes e\textasciicircum{}\{-r\_fT\}; forward delta is sensitivity expressed against the forward and typically uses N(d1). Premium-adjusted delta subtracts the premium-related underlying amount because premium itself is paid in one currency and changes effective hedge units. Since market quotes often define 25D by a specific delta convention, changing convention changes the strike solving Delta(K)=\allowbreak{}0.25.
+
+\begin{interviewtip}
+\textbf{Interview tip.} always ask which delta and premium currency convention is being used.
+\end{interviewtip}
+
+\subsection*{Solution 20}
+Gamma \(\approx\) e\textasciicircum{}\{-r\_fT\} n(d1)/(S sigma sqrt(T)). Here e\textasciicircum{}-0.005\(\approx\)0.9950 and denominator=\allowbreak{}1.10*\allowbreak{}0.10*\allowbreak{}0.5=\allowbreak{}0.055. Gamma\(\approx\)0.995*\allowbreak{}0.391/0.055\(\approx\)7.07 per unit S. Vega =\allowbreak{} S e\textasciicircum{}\{-r\_fT\} n(d1)sqrt(T)\(\approx\)1.10*\allowbreak{}0.995*\allowbreak{}0.391*\allowbreak{}0.5\(\approx\)0.214. This is per 1.00 absolute volatility; per 1 vol point divide by 100, \(\approx\)0.00214.
+
+\subsection*{Solution 21}
+ATM-spot uses K=\allowbreak{}S. ATM-forward uses K=\allowbreak{}F. Delta-neutral ATM chooses strike so call and put deltas offset under a specified convention; this may differ from both S and F. FX has two rates and market delta conventions, so 'ATM' is convention-dependent. Under ATM-forward, K=\allowbreak{}F by definition.
+
+\subsection*{Solution 22}
+Let c=\allowbreak{}sigma\_25C and p=\allowbreak{}sigma\_25P. RR=\allowbreak{}c-p=\allowbreak{}-1.2 and (c+p)/2 -10.0=\allowbreak{}0.5, so c+p=\allowbreak{}21.0. Solving: 2c=\allowbreak{}19.8 -> c=\allowbreak{}9.9\%; p=\allowbreak{}11.1\%. Negative RR means put wing vol exceeds call wing vol.
+
+\subsection*{Solution 23}
+With forward delta 0.25, d1=\allowbreak{}N\textasciicircum{}\{-1\}(0.25)=\allowbreak{}-0.67449. In forward form d1=\allowbreak{}[ln(F/K)+0.5 sigma\textasciicircum{}2 T]/(sigma sqrt(T)). Rearranging ln(F/K)=\allowbreak{}d1 sigma sqrt(T)-0.5 sigma\textasciicircum{}2 T. Hence K=\allowbreak{}F exp(-d1 sigma sqrt(T)+0.5 sigma\textasciicircum{}2T). sigma sqrt(T)=\allowbreak{}0.08485. Exponent=\allowbreak{}0.67449*\allowbreak{}0.08485+0.0036\(\approx\)0.06084. K\(\approx\)1.10*\allowbreak{}e\textasciicircum{}0.06084\(\approx\)1.1691.
+
+\subsection*{Solution 24}
+A practical scheme is: convert delta quotes to strikes consistently; interpolate total variance w(T,k)=\allowbreak{}sigma\textasciicircum{}2 T across maturity; use an arbitrage-aware smile parameterization (e.g. SVI-style or constrained spline) across log-moneyness; then map back to delta if needed. Checks: call prices must decrease with strike, be convex in strike, and preserve calendar consistency of appropriately normalized option values/total variance. Also check positive density, stable wing extrapolation, and no discontinuities near ATM.
+
+\subsection*{Solution 25}
+For fixed maturity, call price C(K) must be non-increasing: dC/dK<=\allowbreak{}0. It must be convex: d\textasciicircum{}2C/dK\textasciicircum{}2>=\allowbreak{}0, equivalent to nonnegative risk-neutral density. Bounds include 0<=\allowbreak{}C<=\allowbreak{}S e\textasciicircum{}\{-r\_fT\}. Across maturity, one must compare consistently normalized prices/forwards; careless comparison of raw implied vols can produce false calendar-arbitrage conclusions because forwards and discount factors change.
+
+\subsection*{Solution 26}
+Dupire chooses a deterministic local volatility sigma\_loc(S,t) so that the model matches the entire continuum of vanilla prices. It is effectively inferred from derivatives of the option surface. Barriers depend on path behavior, not only terminal distributions. Local vol can generate unrealistic spot-vol co-movement and conditional path dynamics, so two models fitting the same vanillas may value barriers differently.
+
+\subsection*{Solution 27}
+A common FX Heston specification: dS=\allowbreak{}(r\_d-r\_f)Sdt+sqrt(v)S dW\_S; dv=\allowbreak{}kappa(theta-v)dt+xi sqrt(v)dW\_v; corr(dW\_S,dW\_v)=\allowbreak{}rho dt. kappa controls mean reversion, theta long-run variance, xi vol-of-vol, rho spot-variance correlation. r\_d and r\_f determine the domestic-measure drift.
+
+\subsection*{Solution 28}
+Negative spot-vol correlation means downward spot shocks tend to coincide with rising variance. Under S=\allowbreak{}domestic per foreign, this typically lifts implied vols on the lower-strike/put side, producing a negatively sloped skew in strike space. Exact market interpretation still depends on quote direction and which currency is considered the risk asset.
+
+\subsection*{Solution 29}
+In SABR intuition, alpha sets the volatility level, beta controls elasticity/backbone, rho mainly drives skew, and nu (vol-of-vol) drives smile curvature. If every maturity has four unconstrained parameters, many combinations fit sparse quotes almost equally well, causing unstable term structures

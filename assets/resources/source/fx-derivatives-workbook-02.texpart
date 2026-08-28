@@ -1,0 +1,85 @@
+s and matching knock-out value of 2.7 cents, use in-out parity to infer the knock-in value.
+\vspace{2.5mm}
+
+\subsection*{Problem 32 \hfill \normalfont\small [Barrier Monitoring] -- Medium}
+A continuously monitored up-and-out call has barrier H=\allowbreak{}1.1500. A discretely monitored version checks only daily. Which is generally more valuable, all else equal, and why?
+\vspace{2.5mm}
+
+\subsection*{Problem 33 \hfill \normalfont\small [One-Touch] -- Hard}
+A one-touch pays USD 1 million immediately if \texttt{EUR/USD} ever reaches 1.1500 before 3M expiry. Explain the key risk drivers and why its hedge near the barrier can be unstable.
+\vspace{2.5mm}
+
+\subsection*{Problem 34 \hfill \normalfont\small [Double Barrier/TARF] -- Hard}
+Explain conceptually how a double-no-touch differs from a TARF. Identify the principal model risks of each.
+\vspace{2.5mm}
+
+\subsection*{Problem 35 \hfill \normalfont\small [Asian] -- Medium}
+An Asian FX call is based on the arithmetic average of four fixings: 1.0900, 1.1000, 1.1200, 1.1100, strike 1.1050. Compute the payoff per EUR notional at maturity.
+\vspace{2.5mm}
+
+\subsection*{Problem 36 \hfill \normalfont\small [Quanto] -- Hard}
+A foreign equity follows dX/X =\allowbreak{} mu\_X dt + sigma\_X dW\_X, and FX follows dS/S =\allowbreak{} ... + sigma\_S dW\_S with corr(dW\_X,dW\_S)=\allowbreak{}rho. Explain why a quanto payoff fixed in domestic currency acquires a correlation-dependent drift adjustment. State the common sign form under a standard domestic-measure setup.
+\vspace{2.5mm}
+
+\subsection*{Problem 37 \hfill \normalfont\small [Triangular Consistency] -- Medium}
+Given \texttt{EUR/USD}=\allowbreak{}1.0800 and \texttt{GBP/USD}=\allowbreak{}1.2600, compute the consistent \texttt{EUR/GBP} cross rate. If the market \texttt{EUR/GBP} is 0.8500, is it approximately consistent?
+\vspace{2.5mm}
+
+\subsection*{Problem 38 \hfill \normalfont\small [Cross-Gamma] -- Hard}
+A portfolio is long \texttt{EUR/USD} options and \texttt{GBP/USD} options. Explain why a simultaneous USD shock can create cross-gamma/correlation risk not captured by summing standalone gammas.
+\vspace{2.5mm}
+
+\subsection*{Problem 39 \hfill \normalfont\small [Collateral] -- Hard}
+Explain why the collateral currency in a CSA can alter the valuation of an FX forward or option. Relate the argument to discounting curves and collateralized no-arbitrage.
+\vspace{2.5mm}
+
+\subsection*{Problem 40 \hfill \normalfont\small [OIS Forward] -- Hard}
+Spot \texttt{EUR/USD} =\allowbreak{} 1.1000. USD OIS discount factor P\_d(0,T)=\allowbreak{}0.9700 and EUR OIS discount factor P\_f(0,T)=\allowbreak{}0.9850 for the same maturity. Compute the collateral-consistent forward F=\allowbreak{}S*\allowbreak{}P\_f/P\_d.
+\vspace{2.5mm}
+
+\subsection*{Problem 41 \hfill \normalfont\small [Cross-Currency Basis] -- Hard}
+Explain cross-currency basis as a deviation from textbook CIP once funding and collateral conventions are included. What market instruments reveal the basis?
+\vspace{2.5mm}
+
+\subsection*{Problem 42 \hfill \normalfont\small [CSA Numerical] -- Medium}
+Two valuation setups imply 1Y discount factors P\_USD=\allowbreak{}0.955 and P\_EUR=\allowbreak{}0.975. For \texttt{EUR/USD} spot 1.0800, compute the implied forward. If an alternative collateral setup gives P\_USD=\allowbreak{}0.960 and P\_EUR=\allowbreak{}0.972, compute the new forward and difference in pips.
+\vspace{2.5mm}
+
+\subsection*{Problem 43 \hfill \normalfont\small [P\&L Explain] -- Hard}
+An FX option book has delta +EUR 4m, gamma +EUR 0.8m per (1\% spot)\textasciicircum{}2, vega +USD 25k per vol point, and theta -USD 8k/day. Spot rises 0.5\%, implied vol rises 0.4 vol points over one day. Estimate first/second-order P\&L, treating delta P\&L in USD using spot 1.10.
+\vspace{2.5mm}
+
+\subsection*{Problem 44 \hfill \normalfont\small [Discrete Hedging] -- Hard}
+Explain the gamma-theta trade-off for a delta-hedged long vanilla option. Why does realized volatility above implied volatility tend to help a long-gamma position under idealized assumptions?
+\vspace{2.5mm}
+
+\subsection*{Problem 45 \hfill \normalfont\small [Vanna/Volga] -- Hard}
+Define vanna and volga. Explain why a smile-sensitive exotic can have small Black-Scholes vega but large vanna/volga risk.
+\vspace{2.5mm}
+
+\subsection*{Problem 46 \hfill \normalfont\small [Vanna-Volga] -- Hard}
+You have three liquid benchmark vanillas: 25D put, ATM, 25D call. Explain the vanna-volga method conceptually as matching vega, vanna, and volga of an exotic with a portfolio of benchmarks, then pricing a smile correction.
+\vspace{2.5mm}
+
+\subsection*{Problem 47 \hfill \normalfont\small [Monte Carlo] -- Hard}
+Design a Monte Carlo pricer for a 1Y \texttt{EUR/USD} Asian call under lognormal GK dynamics. Specify simulation equation, discounting, estimator, standard error, and two variance-reduction methods.
+\vspace{2.5mm}
+
+\subsection*{Problem 48 \hfill \normalfont\small [PDE/Numerics] -- Hard}
+Write the Garman-Kohlhagen PDE. State sensible boundary conditions for a vanilla call and discuss stability/convergence checks for an explicit or Crank-Nicolson finite-difference solver.
+\vspace{2.5mm}
+
+\subsection*{Problem 49 \hfill \normalfont\small [Model Validation] -- Hard}
+You are validating an FX volatility model. List a disciplined validation suite spanning vanilla reproduction, arbitrage, parameter stability, Greeks, stress behavior, barrier benchmarks, and numerical convergence.
+\vspace{2.5mm}
+
+\subsection*{Problem 50 \hfill \normalfont\small [Final Synthesis] -- Hard}
+\texttt{EUR/USD} spot is 1.1000. A desk is short a 3M up-and-out call with strike 1.1100 and barrier 1.1500. The 25D RR becomes 1 vol point more negative, ATM vol rises 0.7 points, and spot jumps to 1.1350. Explain qualitatively how smile, barrier proximity, delta/gamma, vanna/volga, and hedging liquidity interact. Propose a practical risk-management response.
+\vspace{2.5mm}
+
+\newpage
+\appendix
+\section{Fully Worked Solutions}
+
+\subsection*{Solution 1}
+\texttt{EUR/USD}

@@ -1,0 +1,58 @@
+name: Build FX interview workbook PDF
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/resources/source/fx-derivatives-workbook-*.texpart'
+      - '.github/workflows/build-free-resource-pdf.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-fx-interview-workbook
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install LaTeX
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y --no-install-recommends \
+            texlive-latex-base texlive-latex-recommended texlive-latex-extra \
+            texlive-fonts-recommended lmodern
+
+      - name: Reconstruct and compile workbook
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/fx-workbook
+          cat assets/resources/source/fx-derivatives-workbook-*.texpart > build/fx-workbook/workbook.tex
+          cd build/fx-workbook
+          pdflatex -interaction=nonstopmode -halt-on-error workbook.tex
+          pdflatex -interaction=nonstopmode -halt-on-error workbook.tex
+          test -s workbook.pdf
+          head -c 4 workbook.pdf | grep -q '%PDF'
+          cp workbook.pdf ../../assets/resources/50_FX_Derivatives_Quant_Interview_Problems.pdf
+
+      - name: Commit compiled PDF
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f assets/resources/50_FX_Derivatives_Quant_Interview_Problems.pdf
+          if git diff --cached --quiet; then
+            echo 'Compiled PDF is already current.'
+            exit 0
+          fi
+          git commit -m 'build(resources): compile FX interview workbook PDF [skip ci]'
+          git push origin main
