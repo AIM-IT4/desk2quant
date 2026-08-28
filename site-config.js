@@ -20,7 +20,7 @@ window.QUANT_MENTOR = Object.freeze({
  */
 (function () {
     const BUNDLE_URL = '/product.html?id=164308cd-e3cd-4026-8fdc-337a5955ffff';
-    const BUNDLE_COVER = 'https://dntabmyurlrlnoajdnja.supabase.co/storage/v1/object/public/product-covers/complete_front_office___risk_quant_professional_bundle__41__high_quality_pdfs___60__scripts__cover_1780111596182.jpg';
+    const BUNDLE_COVER = '/assets/images/desk2quant-bundle-cover-2026.webp';
 
     function applyHomepageSalesLayer() {
         if (!document.body || !document.getElementById('hero')) return;
