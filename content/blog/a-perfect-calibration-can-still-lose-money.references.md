@@ -9,3 +9,5 @@ The article's practitioner framework is original Desk2Quant editorial framing. T
 - *Reliability Diagnostics for Physics-Informed Neural Option-Pricing Models* (2026 preprint): https://doi.org/10.21203/rs.3.rs-10370618/v1
 
 These references are research notes for editorial provenance; the published article remains educational and does not present the Model-Risk Triangle as an academic theorem.
+
+Rendering note: display mathematics is authored as LaTeX and rendered with MathJax in the generated article; pseudo-equation code blocks are not used for mathematical notation.
