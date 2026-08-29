@@ -1290,6 +1290,15 @@
                                 <label>Sample Page / Screenshot URLs</label>
                                 <textarea id="productPreviewImages" rows="3"
                                     placeholder="https://.../sample-page-1.png&#10;https://.../sample-page-2.png"></textarea>
+                                <!-- Uploads append their public URL into the textarea above rather than
+                                     writing a separate column, so preview_sample_images, the save/load
+                                     handlers and the product page rendering all stay untouched. Pasting
+                                     a URL by hand still works exactly as before. -->
+                                <input type="file" id="productPreviewImagesUpload" accept="image/*" multiple
+                                    style="margin-top:8px">
+                                <small id="productPreviewImagesStatus" style="display:block;margin-top:4px;color:#666">
+                                    Or upload images &mdash; each one is added to the list above automatically.
+                                </small>
                             </div>
 
                             <div class="form-group">
@@ -1917,6 +1926,57 @@ Brief Q&A"></textarea>
                     } catch (e) { console.error('Quill init error:', e); }
 
                     // Cropper Event Listener
+                    // Sample-page uploads. Mirrors the cover-image upload path and reuses the
+                    // existing public 'product-covers' bucket -- a new bucket would have to be
+                    // created in the Supabase dashboard first and every upload would fail until
+                    // it was. Files upload on selection and their public URLs are appended to
+                    // #productPreviewImages, so the form submit handler needs no changes.
+                    const previewUploadInput = document.getElementById('productPreviewImagesUpload');
+                    if (previewUploadInput) {
+                        previewUploadInput.addEventListener('change', async function (e) {
+                            const files = Array.from(e.target.files || []);
+                            if (!files.length) return;
+
+                            const box = document.getElementById('productPreviewImages');
+                            const status = document.getElementById('productPreviewImagesStatus');
+                            const nameField = document.getElementById('productName');
+                            const slug = (nameField && nameField.value.trim() ? nameField.value : 'product')
+                                .replace(/[^a-z0-9]/gi, '_').toLowerCase().slice(0, 40);
+
+                            const added = [];
+                            const failed = [];
+                            for (let i = 0; i < files.length; i++) {
+                                const f = files[i];
+                                status.textContent = `Uploading ${i + 1} of ${files.length}\u2026`;
+                                try {
+                                    const ext = (f.name.split('.').pop() || 'png').toLowerCase();
+                                    const fileName = `${slug}_sample_${Date.now()}_${i}.${ext}`;
+                                    const { error: upErr } = await window.supabaseAdminClient.storage
+                                        .from('product-covers')
+                                        .upload(fileName, f);
+                                    if (upErr) throw upErr;
+                                    const { data: urlData } = window.supabaseAdminClient.storage
+                                        .from('product-covers')
+                                        .getPublicUrl(fileName);
+                                    added.push(urlData.publicUrl);
+                                } catch (err) {
+                                    console.error('Sample page upload failed:', f.name, err);
+                                    failed.push(f.name);
+                                }
+                            }
+
+                            // Append, never overwrite: the box may already hold hand-pasted URLs.
+                            if (added.length) {
+                                const existing = box.value.split('\n').map(s => s.trim()).filter(Boolean);
+                                box.value = existing.concat(added).join('\n');
+                            }
+                            status.textContent = failed.length
+                                ? `Added ${added.length}. Failed: ${failed.join(', ')}`
+                                : `Added ${added.length} sample page${added.length === 1 ? '' : 's'}. Remember to Save.`;
+                            e.target.value = '';
+                        });
+                    }
+
                     const productCoverInput = document.getElementById('productCover');
                     const cropperImage = document.getElementById('cropperImage');
                     const cropperModal = document.getElementById('cropperModal');
