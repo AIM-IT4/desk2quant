@@ -2309,6 +2309,16 @@ Brief Q&A"></textarea>
                     async function loadProducts() {
                         const list = document.getElementById('productsList');
 
+                        // Logging in deliberately nulls supabaseAdminClient so it gets rebuilt with
+                        // the privileged service key, and ensureSupabaseClient() also waits for the
+                        // CDN SDK to arrive. Neither happens on its own here, so a loader that ran
+                        // in that window just reported "not initialized". Rebuild before giving up.
+                        // The typeof guard keeps the worst case identical to the old behaviour if
+                        // the helper is ever out of scope.
+                        if (!window.supabaseAdminClient && typeof ensureSupabaseClient === 'function') {
+                            await ensureSupabaseClient();
+                        }
+
                         if (!window.supabaseAdminClient) {
                             list.innerHTML = '<p style="color: red">Supabase not initialized</p>';
                             return;
@@ -2713,6 +2723,10 @@ Brief Q&A"></textarea>
                 async function loadRescheduleRequests() {
                     const list = document.getElementById('rescheduleRequestsList');
 
+                    if (!window.supabaseAdminClient && typeof ensureSupabaseClient === 'function') {
+                        await ensureSupabaseClient();
+                    }
+
                     if (!window.supabaseAdminClient) {
                         list.innerHTML = '<p style="color: red">Supabase not initialized</p>';
                         return;
@@ -3043,6 +3057,10 @@ Please contact us if you need further assistance.
                 async function loadCancellationRequests() {
                     const list = document.getElementById('cancellationRequestsList');
                     console.log('📋 Loading cancellation requests...');
+
+                    if (!window.supabaseAdminClient && typeof ensureSupabaseClient === 'function') {
+                        await ensureSupabaseClient();
+                    }
 
                     if (!window.supabaseAdminClient) {
                         list.innerHTML = '<p style="color: red">Supabase not initialized</p>';
@@ -4405,6 +4423,10 @@ Desk2Quant
                 async function loadSessions() {
                     const list = document.getElementById('sessionsList');
 
+                    if (!window.supabaseAdminClient && typeof ensureSupabaseClient === 'function') {
+                        await ensureSupabaseClient();
+                    }
+
                     if (!window.supabaseAdminClient) {
                         if (list) list.innerHTML = '<p style="color: red">Supabase not initialized</p>';
                         return;
@@ -4672,6 +4694,10 @@ Desk2Quant
                 }
 
                 async function saveAvailability() {
+                    if (!window.supabaseAdminClient && typeof ensureSupabaseClient === 'function') {
+                        await ensureSupabaseClient();
+                    }
+
                     if (!window.supabaseAdminClient) {
                         alert('Supabase not initialized');
                         return;
