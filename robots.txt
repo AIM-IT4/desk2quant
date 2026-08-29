@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://desk2quant.com/sitemap.xml
+# deploy-trigger: fx-resource-lead
