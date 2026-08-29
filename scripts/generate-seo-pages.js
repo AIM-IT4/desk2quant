@@ -28,7 +28,16 @@ function stripHtml(html) {
   return String(html || '')
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
+    // Replacing every tag with a space breaks any word an inline tag sits
+    // inside: "F<strong>eatures</strong>" became the literal "F eatures" in
+    // the XVA product's meta description. Block-level and line-breaking
+    // elements do imply a word boundary and still become a space; inline tags
+    // carry no boundary and are removed without one.
+    .replace(
+      /<\/?(?:address|article|aside|blockquote|br|dd|div|dl|dt|fieldset|figcaption|figure|footer|form|h[1-6]|header|hr|li|main|nav|ol|p|pre|section|table|tbody|td|tfoot|th|thead|tr|ul)\b[^>]*>/gi,
+      ' '
+    )
+    .replace(/<[^>]+>/g, '')
     .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/gi, '&')
     .replace(/\s+/g, ' ')
