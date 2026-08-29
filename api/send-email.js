@@ -218,29 +218,19 @@ async function captureFreeResourceLead(req, res, brevoApiKey, senderEmail, sende
         const priorLead = await existingFxLead(email, supabaseUrl, serviceKey);
         const listId = await ensureFxBrevoList(brevoApiKey);
 
+        // Brevo supports assigning listIds directly when creating/updating a
+        // contact. This is a single idempotent operation for new and existing
+        // contacts when updateEnabled=true.
         const contactResponse = await fetch('https://api.brevo.com/v3/contacts', {
             method: 'POST',
             headers: brevoHeaders(brevoApiKey),
-            body: JSON.stringify({ email, updateEnabled: true })
+            body: JSON.stringify({ email, updateEnabled: true, listIds: [listId] })
         });
 
         if (!contactResponse.ok) {
             const detail = await contactResponse.text();
             console.error('Brevo lead capture failed:', contactResponse.status, detail);
             return res.status(502).json({ error: 'Could not save your email. Please try again.' });
-        }
-
-        // One deterministic list-add step works for both newly created and
-        // pre-existing Brevo contacts.
-        const listResponse = await fetch(`https://api.brevo.com/v3/contacts/lists/${listId}/contacts/add`, {
-            method: 'POST',
-            headers: brevoHeaders(brevoApiKey),
-            body: JSON.stringify({ emails: [email] })
-        });
-        if (!listResponse.ok) {
-            const detail = await listResponse.text();
-            console.error('Brevo FX list membership failed:', listResponse.status, detail);
-            return res.status(502).json({ error: 'Could not subscribe you to the resource list. Please try again.' });
         }
 
         await upsertFxLead({ email, listId, req, supabaseUrl, serviceKey });
