@@ -18,6 +18,7 @@ const HTML_ARTIFACT_EXCLUSIONS = [
     { matches: (file) => file === 'emailjs_template.html', reason: 'EmailJS source template' },
     { matches: (file) => file.startsWith('temp_template/'), reason: 'archived upstream template' },
     { matches: (file) => file.startsWith('archive/'), reason: 'archived site artifact' },
+    { matches: (file) => file.startsWith('content/'), reason: 'article body source' },
     { matches: (file) => /^google[a-z0-9]+\.html$/i.test(file), reason: 'Google ownership token' },
     // Local-only output of scripts/preview-emails.mjs. It is gitignored, so CI
     // never sees it -- but these tests walk the filesystem, so without this a

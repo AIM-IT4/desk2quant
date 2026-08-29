@@ -30,6 +30,13 @@ emailjs_template.html
 temp_template/
 archive/
 
+# Article sources: the body copy of a post, kept for editing and review, with
+# no <head>, canonical, nav or footer. The published article is generated into
+# blog/ from Supabase, so shipping these too puts a second, naked copy of the
+# same text on a crawlable URL -- thin duplicate content competing with the
+# real page. This is the docs/*.md leak again in a new directory.
+content/
+
 # graft's cache contains extracted source INCLUDING the gauntlet reference
 # solutions. It is in .gitignore, but Vercel CLI uses THIS file instead of
 # .gitignore, so without this line a `vercel --prod` from a dev machine would
