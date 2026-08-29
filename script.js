@@ -1,4 +1,17 @@
 ﻿// ================================
+// BLOG COVER FALLBACK
+// ================================
+// cover_image_url is author-supplied data, so a post can point at a URL that
+// no longer serves an image -- an external host that has changed, or one that
+// answers with an HTML error page instead of a 404. The card then renders a
+// broken-image icon on the homepage with no signal to anyone that it happened.
+// This swaps in the site's own editorial cover the moment decoding fails.
+// onerror is cleared first so a failure of the fallback itself cannot loop.
+const BLOG_COVER_FALLBACK_SRC = '/assets/images/desk2quant-editorial-og.jpg';
+const BLOG_COVER_FALLBACK_ONERROR =
+    `this.onerror=null;this.src='${BLOG_COVER_FALLBACK_SRC}';`;
+
+// ================================
 // CANONICAL DOMAIN GUARD
 // ================================
 // Razorpay is registered to desk2quant.com, so opening a checkout from any
@@ -1774,7 +1787,7 @@ async function loadBlogsFromSupabase() {
             card.dataset.detailHref = blogHref;
 
             const imageHtml = blog.cover_image_url
-                ? `<div class="product-image" style="height:200px; padding:0; overflow:hidden;"><img loading="lazy" decoding="async" src="${escapeAttr(blog.cover_image_url)}" alt="${escapeAttr(blog.title || 'Blog post cover image')}" style="width:100%; height:100%; object-fit:cover; transition:transform 0.5s ease;"></div>`
+                ? `<div class="product-image" style="height:200px; padding:0; overflow:hidden;"><img loading="lazy" decoding="async" src="${escapeAttr(blog.cover_image_url)}" alt="${escapeAttr(blog.title || 'Blog post cover image')}" onerror="${BLOG_COVER_FALLBACK_ONERROR}" style="width:100%; height:100%; object-fit:cover; transition:transform 0.5s ease;"></div>`
                 : `<div class="product-image" style="height:200px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05);"><i class="fas fa-newspaper" style="font-size:3em; opacity:0.5;"></i></div>`;
 
             card.innerHTML = `
@@ -4070,7 +4083,7 @@ function displayBlogs(blogs) {
 
         card.innerHTML = `
             <div class="product-image blog-card-cover">
-                ${blog.cover_image_url ? `<img loading="lazy" decoding="async" src="${escapeAttr(blog.cover_image_url)}" alt="${escapeAttr(blog.title || 'Blog post cover image')}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:gray;"><i class="fas fa-newspaper fa-3x"></i></div>`}
+                ${blog.cover_image_url ? `<img loading="lazy" decoding="async" src="${escapeAttr(blog.cover_image_url)}" alt="${escapeAttr(blog.title || 'Blog post cover image')}" onerror="${BLOG_COVER_FALLBACK_ONERROR}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:gray;"><i class="fas fa-newspaper fa-3x"></i></div>`}
                 <div class="product-badge">ARTICLE</div>
             </div>
             <div class="product-content" style="display:flex; flex-direction:column;">
