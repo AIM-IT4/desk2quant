@@ -75,6 +75,19 @@ async function fetchBlogs() {
 // products.average_rating/sales_count, which are placeholder-looking (mostly
 // rating=5, sales=0) and unrelated to actual review counts.
 // Returns { [productId]: [{ name, rating, review, title }] }.
+function keepProductSpecificLinks(links) {
+  const productsPerTestimonial = new Map();
+  for (const link of links) {
+    if (!productsPerTestimonial.has(link.testimonial_id)) {
+      productsPerTestimonial.set(link.testimonial_id, new Set());
+    }
+    productsPerTestimonial.get(link.testimonial_id).add(link.product_id);
+  }
+  return links.filter(
+    (link) => productsPerTestimonial.get(link.testimonial_id).size === 1
+  );
+}
+
 async function fetchProductReviews() {
   const [linksRes, testRes] = await Promise.all([
     fetch(`${SUPABASE_URL}/rest/v1/product_reviews?select=product_id,testimonial_id`,
@@ -89,8 +102,16 @@ async function fetchProductReviews() {
   const testimonials = await testRes.json();
   const byId = new Map(testimonials.map(t => [t.id, t]));
 
+  // A testimonial linked to several products is not a review OF any one of
+  // them -- it is generic praise (typically for a mentoring session) that was
+  // attached to whatever was on offer. Google's review-snippet policy requires
+  // a review to be about the specific item, and explicitly forbids reusing the
+  // same review across products, so emitting these puts the star ratings on
+  // every product page at risk rather than only the mislinked ones.
+  // Counting DISTINCT product ids keeps a duplicated join row from looking
+  // like a second product.
   const byProduct = {};
-  for (const link of links) {
+  for (const link of keepProductSpecificLinks(links)) {
     const t = byId.get(link.testimonial_id);
     if (!t || !t.rating || !t.review) continue;
     (byProduct[link.product_id] ??= []).push(t);
@@ -108,6 +129,7 @@ module.exports = {
   fetchProducts,
   fetchBlogs,
   fetchProductReviews,
+  keepProductSpecificLinks,
   SITE,
   OUT_DIR
 };
