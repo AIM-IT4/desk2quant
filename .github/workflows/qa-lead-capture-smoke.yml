@@ -1,0 +1,31 @@
+name: QA Lead Capture Smoke
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/qa-lead-capture-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST synthetic lead to production
+        shell: bash
+        run: |
+          set -euo pipefail
+          TEST_EMAIL='qa-funnel-20260829-0440@example.com'
+          BODY='{"action":"log-lead","email":"'"$TEST_EMAIL"'","origin":"homepage","download_link":"https://desk2quant.com/assets/resources/50_FX_Derivatives_Quant_Interview_Problems.pdf"}'
+          HTTP_CODE=$(curl -sS -o /tmp/lead-response.json -w '%{http_code}' \
+            -X POST 'https://desk2quant.com/api/interview' \
+            -H 'Origin: https://desk2quant.com' \
+            -H 'Content-Type: application/json' \
+            --data "$BODY")
+          echo "HTTP_CODE=$HTTP_CODE"
+          cat /tmp/lead-response.json
+          echo
+          test "$HTTP_CODE" = '200'
+          grep -q '"success"[[:space:]]*:[[:space:]]*true' /tmp/lead-response.json
