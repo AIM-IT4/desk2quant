@@ -221,7 +221,7 @@ async function captureFreeResourceLead(req, res, brevoApiKey, senderEmail, sende
         const contactResponse = await fetch('https://api.brevo.com/v3/contacts', {
             method: 'POST',
             headers: brevoHeaders(brevoApiKey),
-            body: JSON.stringify({ email, updateEnabled: true, listIds: [listId] })
+            body: JSON.stringify({ email, updateEnabled: true })
         });
 
         if (!contactResponse.ok) {
@@ -230,8 +230,8 @@ async function captureFreeResourceLead(req, res, brevoApiKey, senderEmail, sende
             return res.status(502).json({ error: 'Could not save your email. Please try again.' });
         }
 
-        // Explicit list-add makes list membership deterministic even for a
-        // pre-existing Brevo contact updated via updateEnabled.
+        // One deterministic list-add step works for both newly created and
+        // pre-existing Brevo contacts.
         const listResponse = await fetch(`https://api.brevo.com/v3/contacts/lists/${listId}/contacts/add`, {
             method: 'POST',
             headers: brevoHeaders(brevoApiKey),
