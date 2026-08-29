@@ -9,7 +9,14 @@ function safeJson(value) {
 
 function renderPage(p, slug, related, reviews) {
   const url = `${SITE}/products/${slug}.html`;
-  const title = `${p.name} | Desk2Quant`;
+  // Product names are typed into the admin panel, so several carry a trailing
+  // space or a double space mid-string. Raw, that reaches the <title> as
+  // "...Case Study Pack  | Desk2Quant", and the same stray whitespace lands in
+  // the JSON-LD name, the breadcrumb, the FAQ questions and the H1 -- five
+  // places where Google compares strings for consistency. Normalised once here
+  // rather than at each use, so a new use site cannot reintroduce it.
+  const name = String(p.name ?? '').replace(/\s+/g, ' ').trim();
+  const title = `${name} | Desk2Quant`;
   const desc = clamp(p.description, 158) ||
     'Practitioner-built quantitative finance resource from Desk2Quant.';
   const img = p.cover_image_url || `${SITE}/assets/images/desk2quant-logo.png`;
@@ -18,7 +25,7 @@ function renderPage(p, slug, related, reviews) {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    name: p.name,
+    name,
     description: desc,
     image: img,
     url,
@@ -54,17 +61,17 @@ function renderPage(p, slug, related, reviews) {
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE}/` },
       { '@type': 'ListItem', position: 2, name: 'Resources', item: `${SITE}/products/` },
-      { '@type': 'ListItem', position: 3, name: p.name, item: url }
+      { '@type': 'ListItem', position: 3, name, item: url }
     ]
   };
 
   const faqItems = [
     {
-      question: `How is ${p.name} delivered?`,
+      question: `How is ${name} delivered?`,
       answer: 'Access is delivered digitally by email after payment is verified. Keep the purchase email so you can find the delivery link later.'
     },
     {
-      question: `Who is ${p.name} designed for?`,
+      question: `Who is ${name} designed for?`,
       answer: 'It is designed for quantitative-finance candidates and practitioners who want desk-focused explanations, practical diagnostics and interview-ready reasoning.'
     },
     {
@@ -128,11 +135,11 @@ function renderPage(p, slug, related, reviews) {
   <nav class="seo-crumbs" aria-label="Breadcrumb">
     <a href="/">Home</a> <span>/</span>
     <a href="/products/">Resources</a> <span>/</span>
-    <span aria-current="page">${esc(p.name)}</span>
+    <span aria-current="page">${esc(name)}</span>
   </nav>
 
   <article>
-    <h1>${esc(p.name)}</h1>
+    <h1>${esc(name)}</h1>
     <p class="seo-price"><strong>&#8377;${esc(price)}</strong></p>
 
     ${p.coupon_code ? `<p class="seo-coupon"><strong>Use coupon code ${esc(p.coupon_code)} at checkout for ${esc(p.discount_percentage || 10)}% off.</strong></p>` : ''}
@@ -141,7 +148,7 @@ function renderPage(p, slug, related, reviews) {
       <a class="seo-cta" href="/product.html?id=${esc(p.id)}">View details &amp; buy</a>
     </p>
 
-    ${img ? `<p><img src="${esc(img)}" alt="${esc(p.name)} cover" width="420" loading="lazy"></p>` : ''}
+    ${img ? `<p><img src="${esc(img)}" alt="${esc(name)} cover" width="420" loading="lazy"></p>` : ''}
 
     <h2>About this resource</h2>
 ${paras.map(t => `    <p>${esc(t)}</p>`).join('\n') || '    <p>Practitioner-built quantitative finance material from Desk2Quant.</p>'}
@@ -165,7 +172,7 @@ ${faqItems.map(item => `      <h3>${esc(item.question)}</h3>\n      <p>${esc(ite
     ${relHtml ? `<h2>Related resources</h2>\n    <ul>\n${relHtml}\n    </ul>` : ''}
 
     <p class="seo-cta-row">
-      <a class="seo-cta" href="/product.html?id=${esc(p.id)}">Get ${esc(p.name)}</a>
+      <a class="seo-cta" href="/product.html?id=${esc(p.id)}">Get ${esc(name)}</a>
     </p>
   </article>
 </main>
