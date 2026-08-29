@@ -922,9 +922,14 @@
             try {
                 // RLS seals non-public columns (file_url, ratings, coupon codes) from
                 // browser reads; select only the public catalog columns.
+                // buildProductPreview() reads product.preview_* but they were never
+                // fetched, so every product fell through to the generic profile text
+                // no matter what was entered in admin. They need column-level SELECT
+                // granted to anon -- without it PostgREST fails the whole query, not
+                // just the column, and the page would hit showError().
                 const { data: product, error } = await window.supabaseClient
                     .from('products')
-                    .select('id,name,description,cover_image_url,price,original_price,created_at,coupon_code,discount_percentage,enable_ppp')
+                    .select('id,name,description,cover_image_url,price,original_price,created_at,coupon_code,discount_percentage,enable_ppp,preview_summary,preview_table_of_contents,preview_target_audience,preview_prerequisites,preview_expected_outcomes,preview_sample_text,preview_sample_images')
                     .eq('id', id)
                     .single();
 
