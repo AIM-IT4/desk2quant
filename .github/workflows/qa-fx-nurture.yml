@@ -53,6 +53,7 @@ jobs:
             }
             if (u.includes('/rest/v1/lead_captures') && method === 'GET') {
               if (u.includes('consent_marketing=eq.true')) return jsonResponse(200, [{ brevo_list_id: 55 }]);
+              if (u.includes('select=brevo_list_id&limit=1')) return jsonResponse(200, [{ brevo_list_id: 55 }]);
               return jsonResponse(200, []);
             }
             if (u === 'https://api.brevo.com/v3/contacts' && method === 'POST') return jsonResponse(201, { id: 101 });
