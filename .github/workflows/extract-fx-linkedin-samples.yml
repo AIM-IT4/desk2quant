@@ -1,4 +1,4 @@
-name: Inspect FX workbook pages
+name: Extract FX LinkedIn samples
 
 on:
   push:
@@ -11,21 +11,44 @@ permissions:
   contents: read
 
 jobs:
-  inspect:
+  extract:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install PDF reader
-        run: python -m pip install --quiet pypdf
-      - name: Print page map
+      - name: Install PDF tools
+        run: |
+          python -m pip install --quiet pypdf pymupdf
+      - name: Extract exact original pages 9 and 16
         run: |
           python - <<'PY'
-          from pypdf import PdfReader
-          path='assets/resources/50_FX_Derivatives_Quant_Interview_Problems.pdf'
-          r=PdfReader(path)
-          print(f'PAGE_COUNT={len(r.pages)}')
-          for i,p in enumerate(r.pages,1):
-              text=' '.join((p.extract_text() or '').split())
-              print(f'PAGE {i}: {text[:700]}')
+          from pypdf import PdfReader, PdfWriter
+          import fitz
+          src='assets/resources/50_FX_Derivatives_Quant_Interview_Problems.pdf'
+          out='Desk2Quant_FX_Workbook_LinkedIn_Sample.pdf'
+          r=PdfReader(src)
+          w=PdfWriter()
+          for page_no in (9,16):
+              w.add_page(r.pages[page_no-1])
+          with open(out,'wb') as f:
+              w.write(f)
+          doc=fitz.open(src)
+          for page_no, name in ((9,'Desk2Quant_FX_Sample_Questions_Page9.png'),(16,'Desk2Quant_FX_Sample_Solutions_Page16.png')):
+              page=doc.load_page(page_no-1)
+              pix=page.get_pixmap(matrix=fitz.Matrix(2.5,2.5), alpha=False)
+              pix.save(name)
+          check=PdfReader(out)
+          assert len(check.pages)==2
+          print('SAMPLE_PDF_PAGES=', len(check.pages))
+          print('QUESTION_TEXT=', ' '.join((check.pages[0].extract_text() or '').split())[:500])
+          print('SOLUTION_TEXT=', ' '.join((check.pages[1].extract_text() or '').split())[:500])
           PY
+      - name: Upload sample files
+        uses: actions/upload-artifact@v4
+        with:
+          name: fx-linkedin-samples
+          path: |
+            Desk2Quant_FX_Workbook_LinkedIn_Sample.pdf
+            Desk2Quant_FX_Sample_Questions_Page9.png
+            Desk2Quant_FX_Sample_Solutions_Page16.png
+          if-no-files-found: error
