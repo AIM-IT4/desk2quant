@@ -1,0 +1,37 @@
+name: Send Aanchal Root Link Correction
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/send-aanchal-root-link-correction.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send corrected root-domain booking link
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/payload.json <<'JSON'
+          {
+            "to": "aasharma1210@gmail.com",
+            "subject": "Correction: Desk2Quant session booking link",
+            "htmlContent": "<div style=\"font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#172033;line-height:1.6\"><p>Hi Aanchal,</p><p>A quick correction to my previous email — please use the main Desk2Quant website for booking:</p><p><a href=\"https://desk2quant.com\" style=\"display:inline-block;background:#17365d;color:#fff;text-decoration:none;padding:11px 17px;border-radius:6px\">https://desk2quant.com</a></p><p>From the homepage, please go to the Sessions / Book Now section and choose the short call for tomorrow afternoon.</p><p>Regards,<br>Amit<br>Desk2Quant</p></div>",
+            "textContent": "Hi Aanchal,\n\nA quick correction to my previous email — please use the main Desk2Quant website for booking:\n\nhttps://desk2quant.com\n\nFrom the homepage, please go to the Sessions / Book Now section and choose the short call for tomorrow afternoon.\n\nRegards,\nAmit\nDesk2Quant"
+          }
+          JSON
+          HTTP_CODE=$(curl -sS -o /tmp/resp.json -w '%{http_code}' \
+            -X POST 'https://desk2quant.com/api/send-email' \
+            -H 'Origin: https://desk2quant.com' \
+            -H 'Content-Type: application/json' \
+            --data-binary @/tmp/payload.json)
+          echo "HTTP_CODE=$HTTP_CODE"
+          cat /tmp/resp.json
+          echo
+          test "$HTTP_CODE" = '200'
+          grep -q '"success"[[:space:]]*:[[:space:]]*true' /tmp/resp.json
