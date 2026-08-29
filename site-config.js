@@ -241,7 +241,7 @@ window.QUANT_MENTOR = Object.freeze({
                 }
                 .role-paths-grid {
                     display: grid;
-                    grid-template-columns: repeat(4, minmax(0, 1fr));
+                    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
                     gap: 16px;
                 }
                 .role-path-card {
@@ -493,6 +493,12 @@ window.QUANT_MENTOR = Object.freeze({
                                 <h3>Model Validation &amp; Risk</h3>
                                 <p>Practice challenging assumptions, testing models and explaining limitations the way validation and risk teams expect.</p>
                                 <span class="role-path-start">Start: Model Validation Case Study Pack — ₹799 <i class="fas fa-arrow-right"></i></span>
+                            </a>
+                            <a class="role-path-card" href="/product.html?id=ff04eb72-ff48-4917-b56c-0694fa4f4ee6">
+                                <span class="role-path-icon"><i class="fas fa-flask"></i></span>
+                                <h3>Quant Researcher &amp; Systematic Research</h3>
+                                <p>Build a defensible research workflow across time series, signals, statistical testing, leakage control, validation, decay and portfolio construction.</p>
+                                <span class="role-path-start">Start: Quant Researcher Interview Playbook — ₹799 <i class="fas fa-arrow-right"></i></span>
                             </a>
                             <a class="role-path-card" href="/product.html?id=73806d69-768b-497e-87b7-d94fa4cfd772">
                                 <span class="role-path-icon"><i class="fas fa-user-tie"></i></span>
