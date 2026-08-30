@@ -318,3 +318,111 @@
         initialiseComponents();
     }
 }());
+
+/*
+ * Bundle merchandising guard.
+ * The homepage sales layer historically hard-coded the flagship price and
+ * bundle counts, so a catalog price change could leave stale copy on-screen.
+ * This small presentation-only guard reads the live bundle record and keeps
+ * the visible homepage offer aligned with the product database.
+ */
+(function () {
+    'use strict';
+
+    const BUNDLE_ID = '164308cd-e3cd-4026-8fdc-337a5955ffff';
+    const FALLBACK_PRICE = 8999;
+
+    function formatInr(value) {
+        const amount = Number(value);
+        return `₹${Math.round(Number.isFinite(amount) ? amount : FALLBACK_PRICE).toLocaleString('en-IN')}`;
+    }
+
+    function replaceText(root, from, to) {
+        if (!root) return;
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        const nodes = [];
+        while (walker.nextNode()) nodes.push(walker.currentNode);
+        nodes.forEach(function (node) {
+            if (node.nodeValue && node.nodeValue.includes(from)) {
+                node.nodeValue = node.nodeValue.split(from).join(to);
+            }
+        });
+    }
+
+    function applyBundleCopy(price) {
+        const formatted = formatInr(price);
+        const homeRoots = [
+            document.getElementById('hero'),
+            document.getElementById('flagship-bundle')
+        ].filter(Boolean);
+
+        homeRoots.forEach(function (root) {
+            replaceText(root, '₹7,999', formatted);
+            replaceText(root, '41+ high-quality PDFs', '46+ high-quality PDFs');
+            replaceText(root, '41+ PDFs', '46+ PDFs');
+        });
+
+        const flagship = document.getElementById('flagship-bundle');
+        if (flagship) {
+            const grid = flagship.querySelector('.flagship-grid');
+            if (grid && !grid.querySelector('[data-d2q-notebooks]')) {
+                const item = document.createElement('div');
+                item.className = 'flagship-point';
+                item.setAttribute('data-d2q-notebooks', 'true');
+                item.innerHTML = '<i class="fas fa-check-circle"></i><span><strong>59 Jupyter notebooks</strong> for executable research and model workflows</span>';
+                const scriptPoint = Array.from(grid.children).find(function (child) {
+                    return /60\+ scripts/i.test(child.textContent || '');
+                });
+                if (scriptPoint && scriptPoint.nextSibling) {
+                    grid.insertBefore(item, scriptPoint.nextSibling);
+                } else {
+                    grid.appendChild(item);
+                }
+            }
+        }
+    }
+
+    async function getLivePrice() {
+        try {
+            const response = await fetch('/api/products', { cache: 'no-store' });
+            if (!response.ok) throw new Error(`products ${response.status}`);
+            const payload = await response.json();
+            const products = Array.isArray(payload) ? payload : (payload.products || []);
+            const bundle = products.find(function (product) {
+                return String(product && product.id) === BUNDLE_ID;
+            });
+            return bundle && Number(bundle.price) > 0 ? Number(bundle.price) : FALLBACK_PRICE;
+        } catch (_) {
+            return FALLBACK_PRICE;
+        }
+    }
+
+    async function initBundleGuard() {
+        const path = window.location.pathname;
+        if (!(path === '/' || path === '/index.html')) return;
+
+        const price = await getLivePrice();
+        applyBundleCopy(price);
+
+        let queued = false;
+        const observer = new MutationObserver(function () {
+            if (queued) return;
+            queued = true;
+            window.requestAnimationFrame(function () {
+                queued = false;
+                applyBundleCopy(price);
+            });
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+        window.setTimeout(function () {
+            applyBundleCopy(price);
+            observer.disconnect();
+        }, 12000);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initBundleGuard, { once: true });
+    } else {
+        initBundleGuard();
+    }
+}());
