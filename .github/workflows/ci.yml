@@ -1,0 +1,49 @@
+name: CI
+
+# The test suite is the only thing standing between a bad edit and production:
+# vercel.json rebuilds and deploys on every push to main, with no gate. Running
+# it here means a regression is caught by GitHub rather than by a customer.
+#
+# Deliberately test-only. The build (`npm run build`) reaches out to Supabase for
+# live product data, so putting it in CI would make green depend on a third-party
+# service being up and on credentials living in Actions secrets. The tests are
+# fully offline -- lead-capture stubs global.fetch, and the SEO tests read files
+# from the repo -- so this job is deterministic and needs no secrets.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Node test suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          # Matches "engines": { "node": "22.x" } in package.json, so CI cannot
+          # pass on a runtime the project does not claim to support.
+          node-version: '22.x'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
