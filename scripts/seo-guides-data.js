@@ -77,10 +77,6 @@ const PRODUCTS = {
     href: '/products/greeks-vols-ycurves-numerical-meth-mc-and-xva-guide.html',
     title: 'Greeks, Vols, Yield Curves, Numerical Methods, Monte Carlo & XVA Guide'
   },
-  sofr: {
-    href: '/products/quant-project-gauntlet-01-ois-sofr-curve-graded-project.html',
-    title: 'OIS/SOFR Curve Graded Project'
-  },
   statistics: {
     href: '/products/statistics-and-econometrics-for-quants-interview-and-desk-playbook.html',
     title: 'Statistics & Econometrics for Quants'
@@ -1323,7 +1319,6 @@ const GUIDES = [
     resources: [
       use(PRODUCTS.numerical, 'Work through desk-oriented root finding, interpolation, PDE, Monte Carlo, optimization, and calibration implementations.'),
       use(PRODUCTS.greeks, 'Connect numerical method choices to volatility, curves, Greeks, simulation, and XVA calculations.'),
-      use(PRODUCTS.sofr, 'Apply bootstrap, interpolation, validation, and sensitivity concepts in a graded OIS/SOFR curve build.'),
       use(PRODUCTS.projects, 'Choose further projects to demonstrate convergence, testing, performance, and model-risk judgment.')
     ],
     relatedSlugs: ['stochastic-calculus-interview', 'cpp-quant-interview', 'python-quant-interview']
