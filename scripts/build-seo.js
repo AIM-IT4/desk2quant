@@ -10,7 +10,7 @@ const {
   SITE,
   OUT_DIR
 } = require('./generate-seo-pages.js');
-const { renderPage } = require('./seo-template.js');
+const { renderPage, FOOTER_HTML } = require('./seo-template.js');
 const { getBlogSlug, renderBlogPage } = require('./blog-seo-template.js');
 const { renderAllGuides } = require('./seo-guide-template.js');
 const { GUIDES } = require('./seo-guides-data.js');
@@ -186,6 +186,7 @@ async function main() {
 ${items}
   </ul>
 </main>
+${FOOTER_HTML}
 </body>
 </html>
 `;

@@ -1,4 +1,5 @@
 const { esc, SITE, slugify } = require('./generate-seo-pages.js');
+const { FOOTER_HTML } = require('./seo-template.js');
 
 const ALLOWED_TAGS = new Set([
   'a', 'abbr', 'b', 'blockquote', 'br', 'caption', 'cite', 'code', 'dd', 'div', 'dl', 'dt',
@@ -470,6 +471,7 @@ ${richContent.split('\n').map(line => `      ${line}`).join('\n') || `      <p>$
       <a href="/products/">Desk2Quant resource catalog</a>.</p>
   </article>
 </main>
+${FOOTER_HTML}
 </body>
 </html>
 `.replace(/[ \t]+$/gm, '');

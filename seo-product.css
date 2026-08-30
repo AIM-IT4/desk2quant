@@ -234,3 +234,29 @@
     .seo-cta { transition: none; }
     .seo-cta:hover { transform: none; }
 }
+
+.seo-footer {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 28px 20px 48px;
+    border-top: 1px solid #dfe7e5;
+    font-size: 0.875rem;
+}
+.seo-footer nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    margin-bottom: 12px;
+}
+.seo-footer a {
+    color: #0f766e;
+    text-decoration: none;
+}
+.seo-footer a:hover,
+.seo-footer a:focus-visible {
+    text-decoration: underline;
+}
+.seo-footer p {
+    margin: 0;
+    opacity: 0.7;
+}

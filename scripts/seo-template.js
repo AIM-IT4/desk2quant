@@ -1,5 +1,23 @@
 const { esc, clamp, stripHtml, SITE } = require('./generate-seo-pages.js');
 
+// Every build-time page shares one footer. Generated pages are entry points
+// from search, so without it a visitor (and a crawler) lands on a leaf with no
+// way back into the site. Defined once and exported so the hub, blog and guide
+// templates in build-seo.js cannot drift from the product pages.
+// Only routes verified to return 200 are linked -- /about.html and
+// /contact.html do not exist and would ship 404s on 60+ pages.
+const FOOTER_HTML = `<footer class="seo-footer">
+  <nav aria-label="Footer">
+    <a href="/">Home</a>
+    <a href="/products/">All resources</a>
+    <a href="/blog.html">Blog</a>
+    <a href="/faq.html">FAQ</a>
+    <a href="/terms.html">Terms</a>
+    <a href="/privacy.html">Privacy</a>
+  </nav>
+  <p>&copy; ${new Date().getFullYear()} Desk2Quant &middot; Practical quant finance material for working desks.</p>
+</footer>`;
+
 function safeJson(value) {
   return JSON.stringify(value)
     .replace(/</g, '\\u003c')
@@ -176,9 +194,10 @@ ${faqItems.map(item => `      <h3>${esc(item.question)}</h3>\n      <p>${esc(ite
     </p>
   </article>
 </main>
+${FOOTER_HTML}
 </body>
 </html>
 `;
 }
 
-module.exports = { renderPage };
+module.exports = { renderPage, FOOTER_HTML };
