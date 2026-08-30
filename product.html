@@ -1369,7 +1369,8 @@
                     profile.sampleText,
                     descriptionText
                 ),
-                samplePdfUrl: product.preview_sample_pdf_url || product.sample_pdf_url || profile.samplePdfUrl || (product.id ? `assets/samples/${product.id}_sample.pdf` : null)
+                samplePdfUrl: product.preview_sample_pdf_url || product.sample_pdf_url || profile.samplePdfUrl || (product.id ? `assets/samples/${product.id}_sample.pdf` : null),
+                samplePdfGuessed: !(product.preview_sample_pdf_url || product.sample_pdf_url || profile.samplePdfUrl) && Boolean(product.id)
             };
         }
 
@@ -1752,18 +1753,42 @@
             element.innerHTML = items.map(item => `<li>${escapeHTML(item)}</li>`).join('');
         }
 
+        function renderPreviewPdfViewer(grid, url) {
+            grid.style.display = 'block';
+            grid.innerHTML = `
+                <div class="pdf-viewer-container" style="width: 100%; height: 750px; margin-top: 15px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-light); box-shadow: 0 16px 32px rgba(0, 0, 0, 0.12);">
+                    <iframe src="${escapeAttribute(url)}#toolbar=0" width="100%" height="100%" style="border: none;"></iframe>
+                </div>
+            `;
+        }
+
         function renderPreviewSamples(product, preview) {
             const grid = document.getElementById('preview-sample-grid');
             if (!grid) return;
 
-            if (preview.samplePdfUrl) {
-                grid.style.display = 'block';
-                grid.innerHTML = `
-                    <div class="pdf-viewer-container" style="width: 100%; height: 750px; margin-top: 15px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-light); box-shadow: 0 16px 32px rgba(0, 0, 0, 0.12);">
-                        <iframe src="${escapeAttribute(preview.samplePdfUrl)}#toolbar=0" width="100%" height="100%" style="border: none;"></iframe>
-                    </div>
-                `;
+            // An explicit URL came from the product record, so trust it.
+            if (preview.samplePdfUrl && !preview.samplePdfGuessed) {
+                renderPreviewPdfViewer(grid, preview.samplePdfUrl);
                 return;
+            }
+
+            // assets/samples/<id>_sample.pdf is a guess, and most products have
+            // no such file. Embedding it unconditionally dropped a full "This page
+            // doesn't exist" 404 inside the "Sample pages" panel. Render the card
+            // fallback first, then upgrade to the viewer only once the file is
+            // confirmed to exist -- so a missing sample degrades instead of
+            // showing an error, and there is no 404 flash on the way.
+            if (preview.samplePdfUrl && preview.samplePdfGuessed) {
+                fetch(preview.samplePdfUrl, { method: 'HEAD' })
+                    .then(res => {
+                        const type = res.headers.get('content-type') || '';
+                        // A rewrite can answer 200 with an HTML error page, so the
+                        // status alone is not enough to prove a PDF is there.
+                        if (res.ok && type.toLowerCase().includes('pdf')) {
+                            renderPreviewPdfViewer(grid, preview.samplePdfUrl);
+                        }
+                    })
+                    .catch(() => { /* offline or blocked: keep the cards */ });
             }
 
             grid.style.display = 'grid';
