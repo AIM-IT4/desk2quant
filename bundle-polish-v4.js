@@ -95,10 +95,10 @@
 
     function formatCurrentPrice() {
         const buy = document.getElementById('buy-btn');
-        if (!buy) return '₹7,999';
+        if (!buy) return '₹8,999';
         const amount = Number(buy.dataset.price);
         const currency = String(buy.dataset.currency || 'INR').toUpperCase();
-        if (!Number.isFinite(amount) || amount <= 0) return '₹7,999';
+        if (!Number.isFinite(amount) || amount <= 0) return '₹8,999';
         if (currency === 'INR') return `₹${Math.round(amount).toLocaleString('en-IN')}`;
         return `${amount.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${currency}`;
     }
@@ -126,7 +126,7 @@
         const heading = card.querySelector('h2');
         const body = card.querySelector('p:not(.bundle-final-price)');
         if (heading) heading.textContent = 'One structured quant library. One clear next step.';
-        if (body) body.textContent = '41+ PDFs • 60+ scripts • 1000+ interview problems • Python + C++ + SQL';
+        if (body) body.textContent = '46+ PDFs • 59 notebooks • 60+ scripts • 1000+ interview problems • Python + C++ + SQL';
         syncFinalPrice();
     }
 
@@ -148,10 +148,10 @@
         if (compare) {
             compare.innerHTML = `
                 <h3>Simple price comparison</h3>
-                <p class="bundle-proof-muted">Use the live total on the left as the reference point. The bundle includes those resources plus additional PDFs, scripts, projects and interview material.</p>
+                <p class="bundle-proof-muted">Use the live total on the left as the reference point. The bundle includes those resources plus additional PDFs, notebooks, scripts, projects and interview material.</p>
                 <div class="bundle-savings-stack">
-                    <div class="bundle-saving"><span>Complete Bundle</span><strong>₹7,999</strong></div>
-                    <div class="bundle-saving"><span>With COMBINED10</span><strong>≈ ₹7,199</strong></div>
+                    <div class="bundle-saving"><span>Complete Bundle</span><strong>₹8,999</strong></div>
+                    <div class="bundle-saving"><span>With COMBINED10</span><strong>≈ ₹8,099</strong></div>
                     <div class="bundle-saving"><span>Delivery</span><strong>Digital + My Access</strong></div>
                 </div>
                 <div class="bundle-compare-table" aria-label="Individual resources versus complete bundle">
