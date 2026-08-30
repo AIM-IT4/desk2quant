@@ -1,0 +1,56 @@
+name: Refresh Vol Surface sample
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/refresh-vol-surface-sample.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Wait for live sample proxy and fetch actual PDF
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/samples
+          URL='https://desk2quant.com/api/vol-surface-sample'
+          OUT='assets/samples/928a14d2-64b4-4a73-951d-dcf191fe72ad_sample.pdf'
+          for attempt in $(seq 1 30); do
+            if curl --fail --location --silent --show-error "$URL" -o "$OUT"; then
+              size=$(stat -c%s "$OUT")
+              header=$(head -c 5 "$OUT")
+              if [ "$size" -gt 250000 ] && [ "$header" = '%PDF-' ]; then
+                echo "Fetched verified PDF: ${size} bytes"
+                break
+              fi
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              echo 'Sample proxy did not become ready in time' >&2
+              exit 1
+            fi
+            sleep 10
+          done
+
+      - name: Commit actual sample pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/samples/928a14d2-64b4-4a73-951d-dcf191fe72ad_sample.pdf
+          if git diff --cached --quiet; then
+            echo 'Sample already current'
+            exit 0
+          fi
+          git commit -m 'fix(product): use actual Vol Surface Playbook sample pages'
+          git push origin main
