@@ -2612,6 +2612,24 @@ Brief Q&A"></textarea>
 
                             if (error) throw error;
 
+                            // An RLS-blocked DELETE is not an error: PostgREST simply
+                            // matches zero rows and returns { data: [], error: null }.
+                            // Without this guard the panel showed "deleted successfully",
+                            // reloaded, and the product reappeared -- looking like a refresh
+                            // glitch rather than a permission failure.
+                            //
+                            // Throwing here also protects the storage cleanup below, which
+                            // is otherwise reached whether or not the row went away: on a
+                            // delete blocked after the fetch succeeded it would strip the
+                            // cover and the resource file off a product that is still live
+                            // and still purchasable.
+                            if (!Array.isArray(data) || data.length === 0) {
+                                throw new Error(
+                                    'Delete affected 0 rows. The product was NOT removed and no files were touched. '
+                                    + 'This usually means row-level security blocked the delete for this session.'
+                                );
+                            }
+
                             // 3. Delete files from storage if they exist
                             if (product) {
                                 if (product.file_url) {
