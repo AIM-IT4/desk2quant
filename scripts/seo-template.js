@@ -1,4 +1,4 @@
-const { esc, clamp, stripHtml, SITE } = require('./generate-seo-pages.js');
+const { esc, clamp, stripHtml, seoTitle, metaDescription, SITE } = require('./generate-seo-pages.js');
 
 // Every build-time page shares one footer. Generated pages are entry points
 // from search, so without it a visitor (and a crawler) lands on a leaf with no
@@ -34,8 +34,8 @@ function renderPage(p, slug, related, reviews) {
   // places where Google compares strings for consistency. Normalised once here
   // rather than at each use, so a new use site cannot reintroduce it.
   const name = String(p.name ?? '').replace(/\s+/g, ' ').trim();
-  const title = `${name} | Desk2Quant`;
-  const desc = clamp(p.description, 158) ||
+  const title = seoTitle(name);
+  const desc = metaDescription(p.description, 158) ||
     'Practitioner-built quantitative finance resource from Desk2Quant.';
   const img = p.cover_image_url || `${SITE}/assets/images/desk2quant-logo.png`;
   const price = Number(p.price) || 0;

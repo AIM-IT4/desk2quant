@@ -1,4 +1,4 @@
-const { esc, SITE, slugify } = require('./generate-seo-pages.js');
+const { esc, SITE, slugify, seoTitle, metaDescription } = require('./generate-seo-pages.js');
 const { FOOTER_HTML } = require('./seo-template.js');
 
 const ALLOWED_TAGS = new Set([
@@ -375,8 +375,8 @@ function clampText(value, max) {
 function renderBlogPage(blog, slug) {
   const url = `${SITE}/blog/${slug}.html`;
   const headline = plainText(blog.title) || 'Desk2Quant quant finance article';
-  const title = `${headline} | Desk2Quant`;
-  const description = clampText(blog.excerpt || blog.content, 158) ||
+  const title = seoTitle(headline);
+  const description = metaDescription(plainText(blog.excerpt || blog.content), 158) ||
     'A practitioner-written quantitative finance article from Desk2Quant.';
   const image = safeUrl(blog.cover_image_url || '', { image: true, absolute: true }) ||
     `${SITE}/assets/images/desk2quant-editorial-og.jpg`;

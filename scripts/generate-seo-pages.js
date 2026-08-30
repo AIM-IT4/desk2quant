@@ -50,6 +50,51 @@ function clamp(text, max) {
   return t.slice(0, max - 1).replace(/\s+\S*$/, '') + '…';
 }
 
+const TITLE_MAX = 60;
+const BRAND = ' | Desk2Quant';
+
+// Google truncates titles around 60 characters. Several product names run past
+// 100, so the brand -- and often the distinguishing part of the name -- was
+// being cut off in results. Prefer dropping a trailing subtitle at a natural
+// separator (" : ", " - ", em dash) over slicing mid-phrase, so the title stays
+// a readable noun phrase rather than a fragment.
+function seoTitle(name, max = TITLE_MAX) {
+  const n = String(name ?? '').replace(/\s+/g, ' ').trim();
+  if (!n) return 'Desk2Quant';
+  if ((n + BRAND).length <= max) return n + BRAND;
+
+  const cuts = [];
+  const re = /\s+[:\u2013\u2014-]\s+|:\s+/g;
+  let m;
+  while ((m = re.exec(n)) !== null) cuts.push(m.index);
+
+  for (const i of cuts) {
+    const head = n.slice(0, i).trim();
+    if (head && (head + BRAND).length <= max) return head + BRAND;
+  }
+  for (const i of cuts) {
+    const head = n.slice(0, i).trim();
+    if (head && head.length <= max) return head;
+  }
+  if (n.length <= max) return n;
+  return n.slice(0, max).replace(/\s+\S*$/, '').trim();
+}
+
+// clamp() ends every over-long description with an ellipsis, which reads as
+// broken copy in a SERP snippet and wastes a character Google could show.
+// Cut at the last sentence end instead when one falls late enough to keep the
+// snippet substantial; otherwise fall back to a word boundary with no ellipsis
+// and no dangling punctuation.
+function metaDescription(text, max = 158) {
+  const t = stripHtml(text);
+  if (!t) return '';
+  if (t.length <= max) return t;
+  const head = t.slice(0, max);
+  const end = Math.max(head.lastIndexOf('. '), head.lastIndexOf('! '), head.lastIndexOf('? '));
+  if (end >= Math.floor(max * 0.6)) return head.slice(0, end + 1).trim();
+  return head.replace(/\s+\S*$/, '').replace(/[\s,;:\u2013\u2014-]+$/, '').trim();
+}
+
 function slugify(name) {
   return slugifyProductName(name);
 }
@@ -131,6 +176,8 @@ module.exports = {
   esc,
   stripHtml,
   clamp,
+  seoTitle,
+  metaDescription,
   slugify,
   getProductSlug,
   getProductPath,
