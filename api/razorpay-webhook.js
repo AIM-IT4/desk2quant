@@ -555,8 +555,17 @@ export async function handleProductPurchase(data) {
     }
 
     if (!downloadLink) {
-        console.error('No download link found for product:', productName);
-        downloadLink = '#';
+        // Emailing '#' handed the buyer a button that went nowhere: payment taken,
+        // mail delivered, link dead, no explanation for them and no signal for us
+        // beyond one log line. My Access is a real destination -- it lists
+        // everything the account owns and re-mints download links on demand -- so
+        // an unresolved product now degrades to "here is your library" instead of
+        // a broken anchor. Logged at error level with the payment id so the gap
+        // can be traced to the order rather than discovered via a support email.
+        console.error('\u{1F6A8} DELIVERY: no download link resolved, falling back to My Access', {
+            paymentId, productId, productName, customerEmail
+        });
+        downloadLink = myAccessUrl(customerEmail);
     }
 
     // Google Drive Secure Sharing Flow
