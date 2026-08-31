@@ -3,9 +3,14 @@
   "version": "1.0.0",
   "description": "QuantMentor Portfolio Website",
   "main": "script.js",
+  "bin": {
+    "d2q": "./cli/d2q.mjs"
+  },
   "scripts": {
     "build": "node generate-config.js && node scripts/build-seo.js",
     "test": "node --test \"test/**/*.test.mjs\"",
+    "test:cli": "node --test test/quant-agent-cli.test.mjs",
+    "d2q": "node cli/d2q.mjs",
     "test:seo": "node --test test/seo-routing.test.mjs test/seo-metadata.test.mjs test/seo-build-safety.test.mjs",
     "check:seo": "node scripts/check-seo.mjs",
     "check:search-console": "node scripts/check-search-console.mjs",
