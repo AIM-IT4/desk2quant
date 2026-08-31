@@ -37,6 +37,14 @@ test('quant prompts include verified topic anchors and conservative progress lan
   assert.match(messages[1].content, /Ito/);
 });
 
+test('quant prompts require terminal-native math and reject raw LaTeX conventions', () => {
+  const system = buildAgentMessages('learn', 'Ho-Lee model', {})[0].content;
+  assert.match(system, /command-line terminal/i);
+  assert.match(system, /terminal-native Unicode\/plain text/i);
+  assert.match(system, /Do NOT emit LaTeX delimiters/i);
+  assert.match(system, /reproduces the calibration target/i);
+});
+
 test('knowledge anchors cover professional quant topics', () => {
   assert.match(knowledgeFor('Heston calibration'), /parameter identifiability/i);
   assert.match(knowledgeFor('SSVI surface'), /static arbitrage/i);

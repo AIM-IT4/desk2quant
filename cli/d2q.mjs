@@ -7,6 +7,7 @@ import {
   exchangeMagicLink,
   formatProgress,
   formatSkills,
+  formatTerminalMath,
   getProgress,
   getSkills,
   loadConfig,
@@ -23,9 +24,9 @@ function hasFlag(args, flag) { return args.includes(flag); }
 function withoutFlags(args) { return args.filter(a => !a.startsWith('--')); }
 function print(value, json = false) {
   if (json) return console.log(JSON.stringify(value, null, 2));
-  if (typeof value === 'string') return console.log(value);
+  if (typeof value === 'string') return console.log(formatTerminalMath(value));
   if (value?.content) {
-    console.log(value.content);
+    console.log(formatTerminalMath(value.content));
     if (value.meta?.remainingToday !== undefined) console.log(`\n[${value.meta.remainingToday} requests remaining today]`);
     return;
   }
@@ -75,7 +76,7 @@ async function execute(command, rest, rl, json = false) {
     if (json) return print(result, true);
     console.log(`Assessment ID: ${result.assessmentId}`);
     console.log(`Skill: ${result.skill} | difficulty b=${Number(result.difficulty).toFixed(2)} | current theta=${Number(result.currentTheta).toFixed(2)}`);
-    console.log(`\n${result.question}`);
+    console.log(`\n${formatTerminalMath(result.question)}`);
     console.log(`\nSubmit with:\n  d2q submit ${result.assessmentId} "your answer"`);
     return;
   }
@@ -87,8 +88,8 @@ async function execute(command, rest, rl, json = false) {
     console.log(`Score: ${(Number(result.score) * 100).toFixed(1)}%`);
     console.log(`Theta: ${Number(result.thetaBefore).toFixed(2)} -> ${Number(result.thetaAfter).toFixed(2)}`);
     console.log(`Attempts: ${result.attempts}`);
-    console.log(`\n${result.feedback}`);
-    console.log(`\n${result.abilityNote}`);
+    console.log(`\n${formatTerminalMath(result.feedback)}`);
+    console.log(`\n${formatTerminalMath(result.abilityNote)}`);
     return;
   }
   if (COMMANDS.has(command)) {

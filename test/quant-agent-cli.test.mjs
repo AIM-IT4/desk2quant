@@ -7,6 +7,7 @@ import {
   configPath,
   exchangeMagicLink,
   formatProgress,
+  formatTerminalMath,
   loadConfig,
   logout,
   normalizeCommand,
@@ -83,4 +84,24 @@ test('formatProgress does not overstate activity as ability', () => {
   assert.match(text, /12/);
   assert.match(text, /97 remaining/);
   assert.match(text, /not an inferred ability score/i);
+});
+
+test('formatTerminalMath converts common LaTeX into readable terminal math', () => {
+  const input = String.raw`\[ dr_t = \theta(t)\,dt + \sigma\,dW_t \]
+\(P(t,T)=\exp(A(t,T)-B(t,T)r_t)\)
+\frac{\partial P}{\partial t} + \frac{1}{2}\sigma^2 \frac{\partial^2 P}{\partial r^2}=0`;
+  const text = formatTerminalMath(input);
+  assert.match(text, /dr_t = θ\(t\) dt \+ σ dW_t/);
+  assert.match(text, /P\(t,T\)=exp\(A\(t,T\)-B\(t,T\)r_t\)/);
+  assert.match(text, /\(∂ P\)\/\(∂ t\)/);
+  assert.match(text, /σ²/);
+  assert.doesNotMatch(text, /\\theta|\\sigma|\\frac|\\\[|\\\]/);
+});
+
+test('formatTerminalMath preserves fenced and inline code verbatim', () => {
+  const code = 'Use `sigma = 0.2` then:\n\\[\\sigma^2\\]\n```python\nlatex = r"\\\\frac{a}{b}"\nprint(latex)\n```';
+  const text = formatTerminalMath(code);
+  assert.match(text, /`sigma = 0\.2`/);
+  assert.match(text, /σ²/);
+  assert.match(text, /```python\nlatex = r"\\\\frac\{a\}\{b\}"\nprint\(latex\)\n```/);
 });
