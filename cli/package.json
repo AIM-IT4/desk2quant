@@ -1,6 +1,6 @@
 {
   "name": "@desk2quant/cli",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Desk2Quant terminal-native Quant Agent for aspiring and working quants",
   "type": "module",
   "bin": {
@@ -10,6 +10,7 @@
     "d2q.mjs",
     "engine.mjs",
     "tui.mjs",
+    "terminal-format.mjs",
     "README.md"
   ],
   "repository": {
