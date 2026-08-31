@@ -19,7 +19,7 @@ import {
 } from './engine.mjs';
 import { startTui } from './tui.mjs';
 
-const VERSION = '2.0.0';
+const VERSION = '2.0.1';
 
 function hasFlag(args, flag) { return args.includes(flag); }
 function withoutFlags(args) { return args.filter(a => !a.startsWith('--')); }
