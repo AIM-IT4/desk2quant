@@ -9,7 +9,6 @@ test('renderer fixes raw LaTeX and Markdown seen in the v2.0.0 TUI', () => {
 +2\rho\sigma_1\sigma_2\int_0^{T_{exp}} B_1(t,T_{exp})B_2(t,T_{exp})dt.
 
 **Takeaway** — a single-factor Gaussian model often *under-fits* the swaption surface.`;
-
   const text = formatTerminalText(input);
   assert.match(text, /σ/);
   assert.match(text, /Σ/);
@@ -17,6 +16,13 @@ test('renderer fixes raw LaTeX and Markdown seen in the v2.0.0 TUI', () => {
   assert.match(text, /ρ/);
   assert.match(text, /Takeaway/);
   assert.doesNotMatch(text, /\\sigma|\\sum|\\int|\\rho|\*\*|\*under-fits\*/);
+});
+
+test('renderer keeps named model labels readable instead of mangling them', () => {
+  const text = formatTerminalText(String.raw`\sigma^{model}_{j} - \sigma^{mkt}_{j}`);
+  assert.match(text, /σ_model/);
+  assert.match(text, /σ_mkt/);
+  assert.doesNotMatch(text, /\^\{|model\}|mkt\}/);
 });
 
 test('renderer converts common scripts when Unicode forms exist', () => {
@@ -30,11 +36,14 @@ test('renderer converts common scripts when Unicode forms exist', () => {
   assert.doesNotMatch(text, /\\Gamma|\\phi|\\sigma|\\sqrt|\\frac/);
 });
 
-test('renderer preserves fenced and inline code exactly', () => {
-  const input = 'Use `sigma = 0.2`:\n```python\nlatex = r"\\\\frac{a}{b}"\nprint(latex)\n```';
+test('renderer removes literal fenced-code markers but preserves code content', () => {
+  const input = 'Use `sigma = 0.2`:\n```python\nimport numpy as np\nprint(np.exp(1))\n```';
   const text = formatTerminalText(input);
   assert.match(text, /`sigma = 0\.2`/);
-  assert.match(text, /```python\nlatex = r"\\\\frac\{a\}\{b\}"\nprint\(latex\)\n```/);
+  assert.match(text, /Python/);
+  assert.match(text, /    import numpy as np/);
+  assert.match(text, /    print\(np\.exp\(1\)\)/);
+  assert.doesNotMatch(text, /```/);
 });
 
 test('equations are indented and wrapped without raw terminal overflow', () => {
