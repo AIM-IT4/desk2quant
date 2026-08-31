@@ -6,14 +6,18 @@ import {
   HELP,
   exchangeMagicLink,
   formatProgress,
+  formatSkills,
   getProgress,
+  getSkills,
   loadConfig,
   logout,
   requestLogin,
-  runCommand
+  runCommand,
+  startAssessment,
+  submitAssessment
 } from './engine.mjs';
 
-const VERSION = '1.0.0';
+const VERSION = '1.1.0';
 
 function hasFlag(args, flag) { return args.includes(flag); }
 function withoutFlags(args) { return args.filter(a => !a.startsWith('--')); }
@@ -61,6 +65,31 @@ async function execute(command, rest, rl, json = false) {
   if (command === 'progress') {
     const result = await getProgress();
     return print(json ? result : formatProgress(result.progress), json);
+  }
+  if (command === 'skills') {
+    const result = await getSkills();
+    return print(json ? result : `${formatSkills(result.skills)}\n\n${result.note || ''}`.trim(), json);
+  }
+  if (command === 'assess') {
+    const result = await startAssessment(rest.join(' ').trim());
+    if (json) return print(result, true);
+    console.log(`Assessment ID: ${result.assessmentId}`);
+    console.log(`Skill: ${result.skill} | difficulty b=${Number(result.difficulty).toFixed(2)} | current theta=${Number(result.currentTheta).toFixed(2)}`);
+    console.log(`\n${result.question}`);
+    console.log(`\nSubmit with:\n  d2q submit ${result.assessmentId} "your answer"`);
+    return;
+  }
+  if (command === 'submit') {
+    const assessmentId = rest.shift();
+    const answer = rest.join(' ').trim();
+    const result = await submitAssessment(assessmentId, answer);
+    if (json) return print(result, true);
+    console.log(`Score: ${(Number(result.score) * 100).toFixed(1)}%`);
+    console.log(`Theta: ${Number(result.thetaBefore).toFixed(2)} -> ${Number(result.thetaAfter).toFixed(2)}`);
+    console.log(`Attempts: ${result.attempts}`);
+    console.log(`\n${result.feedback}`);
+    console.log(`\n${result.abilityNote}`);
+    return;
   }
   if (COMMANDS.has(command)) {
     const query = rest.join(' ').trim();
