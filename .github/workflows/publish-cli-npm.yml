@@ -2,6 +2,10 @@ name: Publish Desk2Quant CLI to npm
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/npm-release-trigger'
 
 permissions:
   contents: read
@@ -21,6 +25,17 @@ jobs:
           node-version: 22
           cache: npm
           registry-url: https://registry.npmjs.org
+
+      - name: Verify npm publishing credential is available
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "NPM_TOKEN repository secret is not available to this workflow."
+            exit 1
+          fi
+          echo "NPM_TOKEN is available to the workflow."
 
       - name: Install dependencies
         run: npm ci
