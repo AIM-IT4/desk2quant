@@ -42,7 +42,7 @@ jobs:
           p.write_text(s)
 
           test = Path('test/product-email-idempotency-regression.test.mjs')
-          test.write_text("""import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport fs from 'node:fs';\n\ntest('single-product purchase emails use webhook idempotency helper', () => {\n  const src = fs.readFileSync(new URL('../api/razorpay-webhook.js', import.meta.url), 'utf8');\n  assert.match(src, /deliveryType:\\s*'product_customer_receipt'/);\n  assert.match(src, /deliveryType:\\s*'product_admin_sale'/);\n  assert.doesNotMatch(src, /const emailResponse = await fetch\\('https:\\/\\/api\\.brevo\\.com\\/v3\\/smtp\\/email'/);\n  assert.doesNotMatch(src, /const adminEmailResponse = await fetch\\('https:\\/\\/api\\.brevo\\.com\\/v3\\/smtp\\/email'/);\n});\n""")
+          test.write_text("""import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport fs from 'node:fs';\n\ntest('single-product purchase emails use webhook idempotency helper', () => {\n  const src = fs.readFileSync(new URL('../api/razorpay-webhook.js', import.meta.url), 'utf8');\n  const product = src.split('export async function handleProductPurchase')[1].split('// Handle a multi-item cart checkout')[0];\n  assert.match(product, /deliveryType:\\s*'product_customer_receipt'/);\n  assert.match(product, /deliveryType:\\s*'product_admin_sale'/);\n  assert.doesNotMatch(product, /const emailResponse = await fetch\\('https:\\/\\/api\\.brevo\\.com\\/v3\\/smtp\\/email'/);\n  assert.doesNotMatch(product, /const adminEmailResponse = await fetch\\('https:\\/\\/api\\.brevo\\.com\\/v3\\/smtp\\/email'/);\n});\n""")
           PY
       - name: Run regression and full tests
         run: |
