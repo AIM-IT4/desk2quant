@@ -2,10 +2,6 @@ name: Publish Desk2Quant CLI to npm
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.github/npm-release-trigger'
 
 permissions:
   contents: read
@@ -65,6 +61,13 @@ jobs:
       - name: Verify registry publication
         run: |
           VERSION=$(node -p "require('./cli/package.json').version")
-          PUBLISHED=$(npm view "@desk2quant/cli@${VERSION}" version)
-          test "$PUBLISHED" = "$VERSION"
-          echo "Published @desk2quant/cli@${PUBLISHED}"
+          for i in 1 2 3 4 5 6; do
+            PUBLISHED=$(npm view "@desk2quant/cli@${VERSION}" version 2>/dev/null || true)
+            if [ "$PUBLISHED" = "$VERSION" ]; then
+              echo "Published @desk2quant/cli@${PUBLISHED}"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Package publish returned success, but registry verification did not converge in time."
+          exit 1
