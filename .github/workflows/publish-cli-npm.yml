@@ -1,0 +1,55 @@
+name: Publish Desk2Quant CLI to npm
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Runtime dependency security gate
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Run Quant Agent tests
+        run: npm run test:cli
+
+      - name: Validate npm package contents
+        run: npm pack ./cli --dry-run
+
+      - name: Ensure version is not already published
+        run: |
+          VERSION=$(node -p "require('./cli/package.json').version")
+          if npm view "@desk2quant/cli@${VERSION}" version >/dev/null 2>&1; then
+            echo "@desk2quant/cli@${VERSION} is already published; refusing to overwrite an immutable npm version."
+            exit 1
+          fi
+
+      - name: Publish public package with provenance
+        run: npm publish ./cli --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Verify registry publication
+        run: |
+          VERSION=$(node -p "require('./cli/package.json').version")
+          PUBLISHED=$(npm view "@desk2quant/cli@${VERSION}" version)
+          test "$PUBLISHED" = "$VERSION"
+          echo "Published @desk2quant/cli@${PUBLISHED}"
