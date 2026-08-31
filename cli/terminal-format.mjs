@@ -103,33 +103,31 @@ function normalizeLatex(text) {
     .replace(/\\boxed\{([^{}]*)\}/g, '$1');
 
   for (const [command, symbol] of Object.entries(LATEX_SYMBOLS)) {
-    out = out.replace(new RegExp(`\\\\${command}\\b`, 'g'), symbol);
+    out = out.replace(new RegExp(`\\\\${command}(?![A-Za-z])`, 'g'), symbol);
   }
 
   out = out
-    .replace(/\\exp\b/g, 'exp')
-    .replace(/\\ln\b/g, 'ln')
-    .replace(/\\log\b/g, 'log')
-    .replace(/\\sin\b/g, 'sin')
-    .replace(/\\cos\b/g, 'cos')
-    .replace(/\\tan\b/g, 'tan')
-    .replace(/\\min\b/g, 'min')
-    .replace(/\\max\b/g, 'max')
-    .replace(/\\lim\b/g, 'lim')
-    .replace(/\\Pr\b/g, 'P')
+    .replace(/\\exp(?![A-Za-z])/g, 'exp')
+    .replace(/\\ln(?![A-Za-z])/g, 'ln')
+    .replace(/\\log(?![A-Za-z])/g, 'log')
+    .replace(/\\sin(?![A-Za-z])/g, 'sin')
+    .replace(/\\cos(?![A-Za-z])/g, 'cos')
+    .replace(/\\tan(?![A-Za-z])/g, 'tan')
+    .replace(/\\min(?![A-Za-z])/g, 'min')
+    .replace(/\\max(?![A-Za-z])/g, 'max')
+    .replace(/\\lim(?![A-Za-z])/g, 'lim')
+    .replace(/\\Pr(?![A-Za-z])/g, 'P')
     .replace(/\\mathcal\{([^{}]+)\}/g, '$1');
 
-  // Convert scripts after commands have become Unicode symbols.
   out = replaceScript(out, '^', SUPERSCRIPT);
   out = replaceScript(out, '_', SUBSCRIPT);
 
-  // Common loose model output: ^(2), _0^(T), _k=1^(2), etc.
   out = out
     .replace(/\^\(2\)/g, '²')
     .replace(/\^\(3\)/g, '³')
     .replace(/\^\(-1\)/g, '⁻¹')
     .replace(/_([0-9]+)\^([0-9]+)/g, (_m, a, b) => `${unicodeScript(a, SUBSCRIPT) ?? `_${a}`}${unicodeScript(b, SUPERSCRIPT) ?? `^${b}`}`)
-    .replace(/\\([A-Za-z]+)/g, '$1'); // Never leak raw unknown LaTeX commands.
+    .replace(/\\([A-Za-z]+)/g, '$1');
 
   return out
     .replace(/[ \t]+\n/g, '\n')
@@ -146,7 +144,6 @@ export function formatTerminalText(value = '') {
   const source = String(value ?? '').replace(/\r\n/g, '\n');
   if (!source) return source;
 
-  // Preserve code byte-for-byte. Markdown/LaTeX normalization applies only to prose.
   return source
     .split(/(```[\s\S]*?```|`[^`\n]+`)/g)
     .map((part) => part.startsWith('`') ? part : formatHumanSegment(part))
