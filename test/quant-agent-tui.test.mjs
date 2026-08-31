@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildContextQuery, inferMode, wrapText } from '../cli/tui.mjs';
+import { buildContextQuery, inferMode } from '../cli/tui.mjs';
+import { wrapTerminalText } from '../cli/terminal-format.mjs';
 
 test('TUI auto-routes common quant intents', () => {
   assert.equal(inferMode('derive the Black-Scholes PDE'), 'solve');
@@ -24,17 +25,17 @@ test('context query preserves recent conversation and quality contract', () => {
   assert.match(q, /rho unstable/);
   assert.match(q, /QUALITY CONTRACT/);
   assert.match(q, /limiting case|boundary condition/);
-  assert.ok(q.length <= 5601);
+  assert.ok(q.length <= 5600);
 });
 
 test('context query remains inside backend query limit', () => {
   const history = Array.from({ length: 20 }, (_, i) => ({ role: i % 2 ? 'assistant' : 'user', content: 'x'.repeat(1000) }));
   const q = buildContextQuery('y'.repeat(4000), history, { depth: 'deep' });
-  assert.ok(q.length <= 5601);
+  assert.ok(q.length <= 5600);
 });
 
 test('terminal wrapping keeps lines within target for ordinary prose', () => {
-  const lines = wrapText('Gamma becomes concentrated around the strike as expiry approaches because the normal density term is divided by sigma S sqrt(T).', 40);
+  const lines = wrapTerminalText('Gamma becomes concentrated around the strike as expiry approaches because the normal density term is divided by sigma S sqrt(T).', 40);
   assert.ok(lines.length > 1);
   assert.ok(lines.every((line) => line.length <= 40));
 });
