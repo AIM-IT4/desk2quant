@@ -99,14 +99,9 @@ test('formatTerminalMath converts common LaTeX into readable terminal math', () 
 });
 
 test('formatTerminalMath preserves fenced and inline code verbatim', () => {
-  const code = String.raw`Use \`sigma = 0.2\` then:
-\[\sigma^2\]
-\`\`\`python
-latex = r"\\frac{a}{b}"
-print(latex)
-\`\`\``;
+  const code = 'Use `sigma = 0.2` then:\n\\[\\sigma^2\\]\n```python\nlatex = r"\\\\frac{a}{b}"\nprint(latex)\n```';
   const text = formatTerminalMath(code);
   assert.match(text, /`sigma = 0\.2`/);
   assert.match(text, /σ²/);
-  assert.match(text, /latex = r"\\\\frac\{a\}\{b\}"/);
+  assert.match(text, /```python\nlatex = r"\\\\frac\{a\}\{b\}"\nprint\(latex\)\n```/);
 });
