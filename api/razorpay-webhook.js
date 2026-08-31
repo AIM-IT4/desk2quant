@@ -745,31 +745,45 @@ export async function handleProductPurchase(data) {
         ` });
 
         try {
-            const emailResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
-                method: 'POST',
-                headers: {
-                    'accept': 'application/json',
-                    'api-key': BREVO_API_KEY,
-                    'content-type': 'application/json'
-                },
-                body: JSON.stringify({
+            const emailResult = await sendWebhookEmailOnce({
+                paymentId,
+                deliveryType: 'product_customer_receipt',
+                BREVO_API_KEY,
+                SUPABASE_URL,
+                SUPABASE_KEY,
+                emailPayload: {
                     sender: { name: SENDER_NAME, email: SENDER_EMAIL },
                     replyTo: { email: REPLY_TO_EMAIL, name: SENDER_NAME },
                     to: [{ email: customerEmail, name: customerName }],
                     subject: `Your Purchase: ${productName}`,
                     htmlContent: customerHtml,
-                    textContent: `Hi ${customerName},\n\nThank you for your purchase!\n\nProduct: ${productName}\nAmount: ${currency} ${amount}\n\nPlease download your resource using this link:\n${downloadLink}\n\nIf the button does not work, copy and paste the same link into your browser.\n\nPayment ID: ${paymentId}${gauntletPlaygroundText(productId, productName, paymentId)}${myAccessText(customerEmail)}\n\nHave an issue? Reply to this email.\n\nSent by Desk2Quant`
-                })
-            });
+                    textContent: `Hi ${customerName},
 
-            if (emailResponse.ok) {
+Thank you for your purchase!
+
+Product: ${productName}
+Amount: ${currency} ${amount}
+
+Please download your resource using this link:
+${downloadLink}
+
+If the button does not work, copy and paste the same link into your browser.
+
+Payment ID: ${paymentId}${gauntletPlaygroundText(productId, productName, paymentId)}${myAccessText(customerEmail)}
+
+Have an issue? Reply to this email.
+
+Sent by Desk2Quant`
+                }
+            });
+            if (emailResult.skipped) {
+                console.log(`Customer purchase email already handled for ${customerEmail}: ${emailResult.reason}`);
+            } else if (emailResult.sent) {
                 console.log(`Customer purchase email sent to ${customerEmail}`);
-            } else {
-                const errorData = await emailResponse.text();
-                console.error(`Brevo Error (Product Email): ${emailResponse.status} - ${errorData}`);
             }
         } catch (err) {
             console.error('Error sending customer email:', err);
+            throw err;
         }
     }
 
@@ -862,31 +876,45 @@ export async function handleProductPurchase(data) {
         ` });
 
         try {
-            const adminEmailResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
-                method: 'POST',
-                headers: {
-                    'accept': 'application/json',
-                    'api-key': BREVO_API_KEY,
-                    'content-type': 'application/json'
-                },
-                body: JSON.stringify({
+            const adminResult = await sendWebhookEmailOnce({
+                paymentId,
+                deliveryType: 'product_admin_sale',
+                BREVO_API_KEY,
+                SUPABASE_URL,
+                SUPABASE_KEY,
+                emailPayload: {
                     sender: { name: SENDER_NAME, email: SENDER_EMAIL },
                     replyTo: { email: REPLY_TO_EMAIL, name: SENDER_NAME },
-                    to: ADMIN_EMAIL.split(',').map(email => ({ email: email.trim() })).filter(item => item.email),
+                    to: Array.from(new Map(
+                        String(ADMIN_EMAIL || '').split(',')
+                            .map((email) => email.trim()).filter(Boolean)
+                            .map((email) => [email.toLowerCase(), email])
+                    ).values()).map((email) => ({ email })),
                     subject: `New Sale: ${productName}`,
                     htmlContent: adminHtml,
-                    textContent: `New Sale Received!\n\n${customerName} just purchased a digital product.\n\nProduct Sold: ${productName}\nAmount Received: ${currency} ${amount}\nDownload Link: ${downloadLink}\n\nCustomer Details:\nName: ${customerName}\nEmail: ${customerEmail}\nPhone: ${customerPhone || 'Not provided'}\nPayment ID: ${paymentId} (Webhook)`
-                })
-            });
+                    textContent: `New Sale Received!
 
-            if (adminEmailResponse.ok) {
+${customerName} just purchased a digital product.
+
+Product Sold: ${productName}
+Amount Received: ${currency} ${amount}
+Download Link: ${downloadLink}
+
+Customer Details:
+Name: ${customerName}
+Email: ${customerEmail}
+Phone: ${customerPhone || 'Not provided'}
+Payment ID: ${paymentId} (Webhook)`
+                }
+            });
+            if (adminResult.skipped) {
+                console.log(`Admin product sale email already handled: ${adminResult.reason}`);
+            } else if (adminResult.sent) {
                 console.log('Admin notification sent via webhook');
-            } else {
-                const errorData = await adminEmailResponse.text();
-                console.error(`Brevo Error (Admin Product): ${adminEmailResponse.status} - ${errorData}`);
             }
         } catch (err) {
             console.error('Error sending admin notification:', err);
+            throw err;
         }
     }
 
