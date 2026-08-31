@@ -91,8 +91,8 @@ test('formatTerminalMath converts common LaTeX into readable terminal math', () 
 \(P(t,T)=\exp(A(t,T)-B(t,T)r_t)\)
 \frac{\partial P}{\partial t} + \frac{1}{2}\sigma^2 \frac{\partial^2 P}{\partial r^2}=0`;
   const text = formatTerminalMath(input);
-  assert.match(text, /dr_t = θ\(t\) dt \+ σ dW_t/);
-  assert.match(text, /P\(t,T\)=exp\(A\(t,T\)-B\(t,T\)r_t\)/);
+  assert.match(text, /drₜ = θ\(t\) dt \+ σ dWₜ/);
+  assert.match(text, /P\(t,T\)=exp\(A\(t,T\)-B\(t,T\)rₜ\)/);
   assert.match(text, /\(∂ P\)\/\(∂ t\)/);
   assert.match(text, /σ²/);
   assert.doesNotMatch(text, /\\theta|\\sigma|\\frac|\\\[|\\\]/);

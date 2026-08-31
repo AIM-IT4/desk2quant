@@ -6,7 +6,6 @@ import { stdin as input, stdout as output } from 'node:process';
 import {
   formatProgress,
   formatSkills,
-  formatTerminalMath,
   getProgress,
   getSkills,
   loadConfig,
@@ -14,24 +13,16 @@ import {
   startAssessment,
   submitAssessment
 } from './engine.mjs';
+import { formatTerminalText, wrapTerminalText } from './terminal-format.mjs';
 
-const VERSION = '2.0.0';
+const VERSION = '2.0.1';
 const MODES = new Set(['auto', 'learn', 'solve', 'practice', 'interview', 'project']);
 const DEPTHS = new Set(['concise', 'standard', 'deep']);
 const ESC = '\u001b[';
 
 const ANSI = {
-  reset: `${ESC}0m`,
-  bold: `${ESC}1m`,
-  dim: `${ESC}2m`,
-  cyan: `${ESC}36m`,
-  yellow: `${ESC}33m`,
-  green: `${ESC}32m`,
-  blue: `${ESC}34m`,
-  magenta: `${ESC}35m`,
-  red: `${ESC}31m`,
-  gray: `${ESC}90m`,
-  white: `${ESC}97m`
+  reset: `${ESC}0m`, bold: `${ESC}1m`, dim: `${ESC}2m`, cyan: `${ESC}36m`, yellow: `${ESC}33m`,
+  green: `${ESC}32m`, blue: `${ESC}34m`, magenta: `${ESC}35m`, red: `${ESC}31m`, gray: `${ESC}90m`, white: `${ESC}97m`
 };
 
 function color(code, value) {
@@ -47,40 +38,9 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
-function pad(value, width) {
-  const raw = String(value);
-  const len = stripAnsi(raw).length;
-  if (len >= width) return raw;
-  return raw + ' '.repeat(width - len);
-}
-
-export function wrapText(value = '', width = 80) {
-  const target = Math.max(18, Number(width) || 80);
-  const out = [];
-  for (const paragraph of String(value).replace(/\r\n/g, '\n').split('\n')) {
-    if (!paragraph) {
-      out.push('');
-      continue;
-    }
-    if (paragraph.startsWith('```') || /^\s{4}/.test(paragraph)) {
-      out.push(paragraph);
-      continue;
-    }
-    const indent = (paragraph.match(/^\s*(?:[-*•]|\d+\.)\s+/) || [''])[0];
-    const words = paragraph.trim().split(/\s+/);
-    let line = indent;
-    for (const word of words) {
-      const candidate = line.trim().length ? `${line}${line.endsWith(' ') ? '' : ' '}${word}` : word;
-      if (stripAnsi(candidate).length > target && line.trim()) {
-        out.push(line.trimEnd());
-        line = indent ? `${' '.repeat(indent.length)}${word}` : word;
-      } else {
-        line = candidate;
-      }
-    }
-    if (line.trim()) out.push(line.trimEnd());
-  }
-  return out;
+function truncate(value, n) {
+  const text = String(value || '');
+  return text.length > n ? text.slice(0, Math.max(0, n - 1)) + '…' : text;
 }
 
 export function inferMode(query = '', preferred = 'auto') {
@@ -95,12 +55,8 @@ export function inferMode(query = '', preferred = 'auto') {
 }
 
 function qualityContract(depth = 'deep') {
-  if (depth === 'concise') {
-    return 'Be direct and technically correct. State the key equation/result, define essential notation, and give the practical quant interpretation. Avoid generic filler.';
-  }
-  if (depth === 'standard') {
-    return 'Give a rigorous quant-level answer: intuition, notation, core derivation or logic, assumptions, one sanity check or example, and practical interpretation. Avoid hand-waving and generic filler.';
-  }
+  if (depth === 'concise') return 'Be direct and technically correct. State the key result, define essential notation, and give the practical quant interpretation. Avoid generic filler.';
+  if (depth === 'standard') return 'Give a rigorous quant-level answer: intuition, notation, core derivation or logic, assumptions, one sanity check or example, and practical interpretation. Avoid hand-waving and generic filler.';
   return [
     'Answer at practitioner quantitative-finance level, not as a generic chatbot.',
     'Start with the direct answer, then build intuition and mathematics.',
@@ -109,8 +65,8 @@ function qualityContract(depth = 'deep') {
     'Check at least one limiting case, unit/dimension, sign, boundary condition, or calibration identity when relevant.',
     'Use a small numerical example when it materially improves understanding.',
     'Include desk/model-risk interpretation and common failure modes where relevant.',
-    'For code, give production-minded Python with numerical/validation considerations rather than toy pseudocode.',
-    'Do not invent market data, citations, or facts. If something is uncertain, say exactly what is uncertain.',
+    'For code, give production-minded Python with numerical and validation considerations rather than toy pseudocode.',
+    'Do not invent market data, citations, or facts.',
     'End with a compact takeaway rather than repeating the whole answer.'
   ].join(' ');
 }
@@ -118,18 +74,15 @@ function qualityContract(depth = 'deep') {
 export function buildContextQuery(query, history = [], { depth = 'deep' } = {}) {
   const current = String(query || '').trim();
   const recent = Array.isArray(history) ? history.slice(-8) : [];
-  let context = recent
-    .map((m) => `${m.role === 'assistant' ? 'Desk2Quant' : 'User'}: ${String(m.content || '').trim()}`)
-    .join('\n\n');
+  let context = recent.map((m) => `${m.role === 'assistant' ? 'Desk2Quant' : 'User'}: ${String(m.content || '').trim()}`).join('\n\n');
   if (context.length > 3200) context = context.slice(context.length - 3200);
-  const pieces = [
+  const parts = [
     `QUALITY CONTRACT:\n${qualityContract(depth)}`,
     context ? `RECENT CONVERSATION CONTEXT:\n${context}` : '',
     `CURRENT USER REQUEST:\n${current}`,
-    'Answer the CURRENT USER REQUEST. Use conversation context only when it is relevant; do not restate it unnecessarily.'
+    'Answer the CURRENT USER REQUEST. Use conversation context only when relevant; do not restate it unnecessarily.'
   ].filter(Boolean);
-  const combined = pieces.join('\n\n');
-  return combined.length <= 5600 ? combined : `${combined.slice(0, 5600)}\n`;
+  return parts.join('\n\n').slice(0, 5600);
 }
 
 function configDir(env = process.env) {
@@ -142,11 +95,9 @@ function historyPath(env = process.env) {
 
 async function loadHistory(env = process.env) {
   try {
-    const raw = await fs.readFile(historyPath(env), 'utf8');
-    const parsed = JSON.parse(raw);
+    const parsed = JSON.parse(await fs.readFile(historyPath(env), 'utf8'));
     return Array.isArray(parsed?.messages) ? parsed : { messages: [] };
   } catch (err) {
-    if (err?.code === 'ENOENT') return { messages: [] };
     return { messages: [] };
   }
 }
@@ -155,131 +106,87 @@ async function saveHistory(messages, env = process.env) {
   const dir = configDir(env);
   await fs.mkdir(dir, { recursive: true, mode: 0o700 });
   const file = historyPath(env);
-  const payload = {
-    version: 1,
-    updatedAt: new Date().toISOString(),
-    messages: messages.slice(-40)
-  };
-  await fs.writeFile(file, JSON.stringify(payload, null, 2) + '\n', { encoding: 'utf8', mode: 0o600 });
+  await fs.writeFile(file, JSON.stringify({ version: 1, updatedAt: new Date().toISOString(), messages: messages.slice(-40) }, null, 2) + '\n', { encoding: 'utf8', mode: 0o600 });
   try { await fs.chmod(file, 0o600); } catch (_) {}
 }
 
-function truncate(value, n) {
-  const text = String(value || '');
-  return text.length > n ? text.slice(0, Math.max(0, n - 1)) + '…' : text;
+function horizontal(width, char = '─') {
+  return char.repeat(Math.max(8, width));
 }
 
-function divider(width, left = '├', right = '┤') {
-  return `${left}${'─'.repeat(Math.max(0, width - 2))}${right}`;
-}
-
-function top(width) { return `┌${'─'.repeat(Math.max(0, width - 2))}┐`; }
-function bottom(width) { return `└${'─'.repeat(Math.max(0, width - 2))}┘`; }
-
-function renderHeader(state, width) {
-  const inside = width - 4;
-  const left = color(ANSI.bold + ANSI.cyan, `Desk2Quant Quant Agent v${VERSION}`);
-  const right = color(ANSI.green, `${String(state.tier || 'pro').toUpperCase()} · ${state.remaining ?? '?'} left`);
-  const gap = Math.max(1, inside - stripAnsi(left).length - stripAnsi(right).length);
-  return [
-    top(width),
-    `│ ${left}${' '.repeat(gap)}${right} │`,
-    divider(width)
-  ];
-}
-
-function sidebarLines(state) {
-  const modeText = state.mode === 'auto' ? `auto → ${state.lastMode || 'learn'}` : state.mode;
-  return [
-    color(ANSI.yellow, 'MODE'),
-    ` ${modeText}`,
-    '',
-    color(ANSI.yellow, 'DEPTH'),
-    ` ${state.depth}`,
-    '',
-    color(ANSI.yellow, 'SESSION'),
-    ` ${state.email}`,
-    ` turns: ${Math.floor(state.history.length / 2)}`,
-    '',
-    color(ANSI.yellow, 'COMMANDS'),
-    ' /mode  /depth',
-    ' /progress',
-    ' /skills /assess',
-    ' /context /history',
-    ' /new /export',
-    ' /help /quit'
-  ];
-}
-
-function styleAnswerLine(line) {
+function styleLine(line) {
   const raw = String(line);
-  if (/^#{1,4}\s+/.test(raw)) return color(ANSI.bold + ANSI.cyan, raw.replace(/^#{1,4}\s+/, ''));
-  if (/^[A-Z][A-Z0-9 /&()_-]{4,}:?$/.test(raw.trim())) return color(ANSI.bold + ANSI.cyan, raw);
-  if (/^\s*(?:[-*•]|\d+\.)\s+/.test(raw)) return color(ANSI.white, raw);
+  if (/^[A-Z][A-Z0-9 /&()_-]{3,}:?$/.test(raw.trim())) return color(ANSI.bold + ANSI.cyan, raw);
+  if (/^(Takeaway|Intuition|Setup|Derivation|Example|Assumptions|Practical takeaway|Desk implication)\b/i.test(raw.trim())) return color(ANSI.bold + ANSI.cyan, raw);
+  if (/^\s*(?:[-•]|\d+\.)\s+/.test(raw)) return color(ANSI.white, raw);
+  if (/^\s{4}\S/.test(raw)) return color(ANSI.yellow, raw);
   if (/^```/.test(raw)) return color(ANSI.magenta, raw);
   return raw;
 }
 
-function chatLines(state, width, heightBudget) {
+function renderConversation(state, width, heightBudget) {
   const out = [];
-  const available = Math.max(20, width);
-  const messages = state.history.slice(-8);
+  const contentWidth = Math.max(40, width - 2);
+  const messages = state.history.slice(-6);
+
   for (const message of messages) {
     const isUser = message.role === 'user';
-    const label = isUser ? color(ANSI.bold + ANSI.blue, 'YOU') : color(ANSI.bold + ANSI.green, 'DESK2QUANT');
-    out.push(label);
-    const body = isUser ? String(message.content || '') : formatTerminalMath(String(message.content || ''));
-    for (const line of wrapText(body, available)) out.push(isUser ? color(ANSI.white, line) : styleAnswerLine(line));
+    out.push(isUser ? color(ANSI.bold + ANSI.blue, 'YOU') : color(ANSI.bold + ANSI.green, 'DESK2QUANT'));
+    const body = isUser ? String(message.content || '') : formatTerminalText(String(message.content || ''));
+    for (const line of wrapTerminalText(body, contentWidth)) out.push(isUser ? color(ANSI.white, line) : styleLine(line));
     out.push('');
   }
+
   if (state.notice) {
     out.push(color(ANSI.bold + ANSI.yellow, 'SYSTEM'));
-    for (const line of wrapText(state.notice, available)) out.push(color(ANSI.gray, line));
+    for (const line of wrapTerminalText(formatTerminalText(state.notice), contentWidth)) out.push(color(ANSI.gray, line));
     out.push('');
   }
-  if (out.length > heightBudget) return out.slice(out.length - heightBudget);
+
+  if (out.length > heightBudget) {
+    const clipped = out.slice(out.length - heightBudget);
+    clipped[0] = color(ANSI.dim, '… earlier content hidden; use /history or /export …');
+    return clipped;
+  }
   return out;
 }
 
 function renderScreen(state) {
   const width = clamp(output.columns || 110, 72, 150);
-  const height = clamp(output.rows || 34, 24, 60);
-  const sidebarWidth = width >= 96 ? 24 : 0;
-  const contentWidth = sidebarWidth ? width - sidebarWidth - 5 : width - 4;
-  const head = renderHeader(state, width);
-  const budget = Math.max(8, height - head.length - 5);
-  const chat = chatLines(state, contentWidth, budget);
-  const side = sidebarWidth ? sidebarLines(state) : [];
-  const bodyRows = Math.max(chat.length, side.length, 8);
-  const lines = [...head];
-  for (let i = 0; i < bodyRows; i += 1) {
-    const sideText = sidebarWidth ? pad(side[i] || '', sidebarWidth) : '';
-    const chatText = pad(chat[i] || '', contentWidth);
-    if (sidebarWidth) lines.push(`│ ${sideText} │ ${chatText} │`);
-    else lines.push(`│ ${chatText} │`);
-  }
-  lines.push(divider(width));
-  const status = ` ${String(state.tier || 'pro').toUpperCase()} | mode ${state.mode}${state.mode === 'auto' ? `→${state.lastMode || 'learn'}` : ''} | depth ${state.depth} | ${state.remaining ?? '?'} requests left | /help `;
-  lines.push(`│${pad(color(ANSI.dim, truncate(status, width - 2)), width - 2)}│`);
-  lines.push(bottom(width));
+  const height = clamp(output.rows || 34, 22, 60);
+  const inner = width - 2;
+  const modeText = state.mode === 'auto' ? `auto→${state.lastMode || 'learn'}` : state.mode;
+  const title = color(ANSI.bold + ANSI.cyan, `Desk2Quant Quant Agent v${VERSION}`);
+  const right = color(ANSI.green, `${String(state.tier || 'pro').toUpperCase()} · ${state.remaining ?? '?'} left`);
+  const gap = Math.max(1, inner - stripAnsi(title).length - stripAnsi(right).length);
+  const status = `${modeText} · ${state.depth} · ${truncate(state.email, 28)} · /help`;
+  const headerRows = 4;
+  const footerRows = 3;
+  const budget = Math.max(8, height - headerRows - footerRows);
+  const conversation = renderConversation(state, inner, budget);
+
+  const lines = [
+    `${title}${' '.repeat(gap)}${right}`,
+    color(ANSI.dim, horizontal(inner)),
+    color(ANSI.dim, status),
+    ''
+  ];
+  lines.push(...conversation);
+  while (lines.length < height - 2) lines.push('');
+  lines.push(color(ANSI.dim, horizontal(inner)));
+  lines.push(color(ANSI.dim, `mode ${modeText} · depth ${state.depth} · ${state.remaining ?? '?'} requests left`));
 
   if (output.isTTY) output.write(`${ESC}2J${ESC}H`);
-  output.write(lines.join('\n') + '\n');
+  output.write(lines.slice(0, height).join('\n') + '\n');
 }
 
 async function withSpinner(promise, label = 'Reasoning') {
   if (!output.isTTY) return promise;
-  const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+  const frames = ['⠋','⠙','⠹','⠸','⠼','⠴','⠦','⠧','⠇','⠏'];
   let i = 0;
-  const timer = setInterval(() => {
-    output.write(`\r${ESC}2K${color(ANSI.cyan, frames[i++ % frames.length])} ${label}…`);
-  }, 90);
-  try {
-    return await promise;
-  } finally {
-    clearInterval(timer);
-    output.write(`\r${ESC}2K`);
-  }
+  const timer = setInterval(() => output.write(`\r${ESC}2K${color(ANSI.cyan, frames[i++ % frames.length])} ${label}…`), 90);
+  try { return await promise; }
+  finally { clearInterval(timer); output.write(`\r${ESC}2K`); }
 }
 
 function parseSlash(line) {
@@ -292,21 +199,8 @@ function parseSlash(line) {
 async function exportTranscript(state) {
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   const file = path.resolve(process.cwd(), `desk2quant-session-${stamp}.md`);
-  const body = [
-    '# Desk2Quant Quant Agent Session',
-    '',
-    `- Account: ${state.email}`,
-    `- Mode: ${state.mode}`,
-    `- Depth: ${state.depth}`,
-    `- Exported: ${new Date().toISOString()}`,
-    '',
-    ...state.history.flatMap((m) => [
-      `## ${m.role === 'user' ? 'You' : 'Desk2Quant'}`,
-      '',
-      String(m.content || ''),
-      ''
-    ])
-  ].join('\n');
+  const body = ['# Desk2Quant Quant Agent Session','',`- Account: ${state.email}`,`- Mode: ${state.mode}`,`- Depth: ${state.depth}`,`- Exported: ${new Date().toISOString()}`,'',
+    ...state.history.flatMap((m) => [`## ${m.role === 'user' ? 'You' : 'Desk2Quant'}`,'',String(m.content || ''),''])].join('\n');
   await fs.writeFile(file, body, 'utf8');
   return file;
 }
@@ -320,12 +214,12 @@ function helpText() {
     '/skills — calibrated assessment skills',
     '/assess <skill> — start an adaptive question',
     '/submit <id> <answer> — grade an adaptive question',
-    '/context — show active local context',
+    '/context — show session context',
     '/history — show recent prompts',
-    '/sources — show source metadata from the latest response when available',
+    '/sources — show source metadata when available',
     '/new — start a fresh conversation',
     '/export — save the session as Markdown',
-    '/clear — clear transient system notices',
+    '/clear — clear system notices',
     '/quit — exit the TUI'
   ].join('\n');
 }
@@ -360,7 +254,7 @@ async function handleSlash(command, state) {
   if (name === 'assess') {
     if (!raw) { state.notice = 'Usage: /assess <skill>'; return false; }
     const result = await withSpinner(startAssessment(raw), 'Preparing assessment');
-    state.notice = `Assessment ID: ${result.assessmentId}\nSkill: ${result.skill} | difficulty b=${Number(result.difficulty).toFixed(2)} | current θ=${Number(result.currentTheta).toFixed(2)}\n\n${formatTerminalMath(result.question)}\n\nSubmit with: /submit ${result.assessmentId} "your answer"`;
+    state.notice = `Assessment ID: ${result.assessmentId}\nSkill: ${result.skill} | difficulty b=${Number(result.difficulty).toFixed(2)} | current θ=${Number(result.currentTheta).toFixed(2)}\n\n${result.question}\n\nSubmit with: /submit ${result.assessmentId} "your answer"`;
     return false;
   }
   if (name === 'submit') {
@@ -368,11 +262,11 @@ async function handleSlash(command, state) {
     const answer = args.join(' ').replace(/^"|"$/g, '');
     if (!id || !answer) { state.notice = 'Usage: /submit <assessment-id> <answer>'; return false; }
     const result = await withSpinner(submitAssessment(id, answer), 'Grading');
-    state.notice = `Score: ${(Number(result.score) * 100).toFixed(1)}%\nθ: ${Number(result.thetaBefore).toFixed(2)} → ${Number(result.thetaAfter).toFixed(2)}\nAttempts: ${result.attempts}\n\n${formatTerminalMath(result.feedback)}\n\n${formatTerminalMath(result.abilityNote)}`;
+    state.notice = `Score: ${(Number(result.score) * 100).toFixed(1)}%\nθ: ${Number(result.thetaBefore).toFixed(2)} → ${Number(result.thetaAfter).toFixed(2)}\nAttempts: ${result.attempts}\n\n${result.feedback}\n\n${result.abilityNote}`;
     return false;
   }
   if (name === 'context') {
-    state.notice = `Account: ${state.email} (${state.tier})\nMode: ${state.mode}${state.mode === 'auto' ? ` → ${state.lastMode || 'learn'}` : ''}\nDepth: ${state.depth}\nConversation messages in local context: ${state.history.length}\nSession expires: ${new Date(Number(state.expiresAt)).toLocaleString()}`;
+    state.notice = `Account: ${state.email} (${state.tier})\nMode: ${state.mode}${state.mode === 'auto' ? ` → ${state.lastMode || 'learn'}` : ''}\nDepth: ${state.depth}\nMessages in local context: ${state.history.length}\nSession expires: ${new Date(Number(state.expiresAt)).toLocaleString()}`;
     return false;
   }
   if (name === 'history') {
@@ -382,20 +276,17 @@ async function handleSlash(command, state) {
   }
   if (name === 'sources') {
     const sources = state.lastMeta?.sources;
-    state.notice = Array.isArray(sources) && sources.length
-      ? sources.map((s, i) => `[${i + 1}] ${typeof s === 'string' ? s : JSON.stringify(s)}`).join('\n')
-      : 'The latest backend response did not return source-level metadata. The agent still uses its server-side quant knowledge anchor, but it will not fabricate citations.';
+    state.notice = Array.isArray(sources) && sources.length ? sources.map((s, i) => `[${i + 1}] ${typeof s === 'string' ? s : JSON.stringify(s)}`).join('\n') : 'The latest response did not return source-level metadata.';
     return false;
   }
   if (name === 'new') {
     state.history = [];
-    state.notice = 'Started a fresh conversation. Previous local transcript was cleared.';
+    state.notice = 'Started a fresh conversation.';
     await saveHistory(state.history);
     return false;
   }
   if (name === 'export') {
-    const file = await exportTranscript(state);
-    state.notice = `Session exported to:\n${file}`;
+    state.notice = `Session exported to:\n${await exportTranscript(state)}`;
     return false;
   }
   if (name === 'clear') { state.notice = ''; return false; }
@@ -406,7 +297,6 @@ async function handleSlash(command, state) {
 export async function startTui({ env = process.env } = {}) {
   const cfg = await loadConfig(env);
   if (!cfg) throw new Error('Not signed in. Run `d2q login <purchase-email>` first, then run `d2q`.');
-
   const stored = await loadHistory(env);
   let progress = null;
   try { progress = await getProgress({ env }); } catch (_) {}
@@ -435,11 +325,8 @@ export async function startTui({ env = process.env } = {}) {
 
       const slash = parseSlash(line);
       if (slash) {
-        try {
-          if (await handleSlash(slash, state)) break;
-        } catch (err) {
-          state.notice = `Error: ${err.message}`;
-        }
+        try { if (await handleSlash(slash, state)) break; }
+        catch (err) { state.notice = `Error: ${err.message}`; }
         continue;
       }
 
