@@ -4,13 +4,22 @@
   "description": "Desk2Quant Quant Agent CLI for aspiring quants",
   "type": "module",
   "bin": {
-    "d2q": "./d2q.mjs"
+    "d2q": "d2q.mjs"
   },
   "files": [
     "d2q.mjs",
     "engine.mjs",
     "README.md"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AIM-IT4/desk2quant.git",
+    "directory": "cli"
+  },
+  "homepage": "https://desk2quant.com",
+  "bugs": {
+    "url": "https://github.com/AIM-IT4/desk2quant/issues"
+  },
   "engines": {
     "node": ">=20"
   },
