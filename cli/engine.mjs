@@ -70,8 +70,6 @@ export function parseMagicLink(value='') {
   return { email, accessToken: token };
 }
 
-// Backward-compatible export for older callers/tests. The implementation now
-// normalizes Markdown and LaTeX together rather than doing math-only cleanup.
 export function formatTerminalMath(value='') {
   return formatTerminalText(value);
 }
@@ -93,7 +91,7 @@ async function readJson(response) {
 export async function apiPost(route, payload, { baseUrl = BASE_URL, fetchImpl = fetch } = {}) {
   const response = await fetchImpl(`${String(baseUrl).replace(/\/$/, '')}${route}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'User-Agent': 'Desk2Quant-CLI/2.0.1' },
+    headers: { 'Content-Type': 'application/json', 'User-Agent': 'Desk2Quant-CLI/2.0.2' },
     body: JSON.stringify(payload)
   });
   return readJson(response);
