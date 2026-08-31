@@ -68,6 +68,87 @@ export function parseMagicLink(value='') {
   return { email, accessToken: token };
 }
 
+function terminalMathSegment(value='') {
+  let text = String(value);
+
+  // Strip display/inline LaTeX wrappers and layout-only commands that terminals
+  // cannot typeset. Keep the mathematical content itself.
+  text = text
+    .replace(/\\\[/g, '\n')
+    .replace(/\\\]/g, '\n')
+    .replace(/\\\(/g, '')
+    .replace(/\\\)/g, '')
+    .replace(/\\begin\{(?:aligned|align\*?|equation\*?|gather\*?)\}/g, '')
+    .replace(/\\end\{(?:aligned|align\*?|equation\*?|gather\*?)\}/g, '')
+    .replace(/\\(?:left|right|bigl|bigr|Bigl|Bigr|big|Big)\b/g, '')
+    .replace(/\\!/g, '')
+    .replace(/\\[,;:]/g, ' ')
+    .replace(/\\qquad\b/g, '    ')
+    .replace(/\\quad\b/g, '  ')
+    .replace(/\\\\/g, '\n');
+
+  // Fractions are intentionally rendered as explicit parenthesized division.
+  // Repeat to handle simple nested fractions without adding a parser dependency.
+  for (let i = 0; i < 8; i += 1) {
+    const next = text.replace(/\\(?:d|t)?frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}/g, '($1)/($2)');
+    if (next === text) break;
+    text = next;
+  }
+
+  text = text
+    .replace(/\\sqrt\s*\{([^{}]+)\}/g, '√($1)')
+    .replace(/\\mathbb\{Q\}/g, 'ℚ')
+    .replace(/\\mathbb\{R\}/g, 'ℝ')
+    .replace(/\\mathbb\{P\}/g, 'ℙ')
+    .replace(/\\text\{([^{}]*)\}/g, '$1')
+    .replace(/\\operatorname\{([^{}]*)\}/g, '$1')
+    .replace(/\\boxed\{([^{}]*)\}/g, '$1');
+
+  const symbols = {
+    theta: 'θ', sigma: 'σ', mu: 'μ', alpha: 'α', beta: 'β', gamma: 'γ',
+    delta: 'δ', rho: 'ρ', lambda: 'λ', kappa: 'κ', phi: 'φ',
+    Delta: 'Δ', Gamma: 'Γ', Theta: 'Θ', Lambda: 'Λ',
+    partial: '∂', nabla: '∇', int: '∫', sum: 'Σ', prod: 'Π', infinity: '∞', infty: '∞',
+    approx: '≈', neq: '≠', leq: '≤', geq: '≥', le: '≤', ge: '≥',
+    times: '×', cdot: '·', pm: '±', to: '→', rightarrow: '→', leftarrow: '←'
+  };
+  for (const [command, symbol] of Object.entries(symbols)) {
+    text = text.replace(new RegExp(`\\\\${command}\\b`, 'g'), symbol);
+  }
+
+  text = text
+    .replace(/\\exp\b/g, 'exp')
+    .replace(/\\ln\b/g, 'ln')
+    .replace(/\\log\b/g, 'log')
+    .replace(/\\sin\b/g, 'sin')
+    .replace(/\\cos\b/g, 'cos')
+    .replace(/\\min\b/g, 'min')
+    .replace(/\\max\b/g, 'max')
+    .replace(/_\{([^{}]+)\}/g, '_$1')
+    .replace(/\^\{([^{}]+)\}/g, '^($1)')
+    .replace(/\^2\b/g, '²')
+    .replace(/\^3\b/g, '³')
+    .replace(/\^\(-1\)/g, '⁻¹')
+    .replace(/(?<!\\)\$([^$\n]+)\$/g, '$1')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n');
+
+  return text;
+}
+
+export function formatTerminalMath(value='') {
+  const text = String(value ?? '').replace(/\r\n/g, '\n');
+  if (!text) return text;
+
+  // Never rewrite code examples. Only human-readable prose/math segments are
+  // normalized, so Python/R/SQL snippets remain byte-for-byte intact.
+  return text
+    .split(/(```[\s\S]*?```|`[^`\n]+`)/g)
+    .map(part => part.startsWith('`') ? part : terminalMathSegment(part))
+    .join('')
+    .trim();
+}
+
 async function readJson(response) {
   const text = await response.text();
   let data;
