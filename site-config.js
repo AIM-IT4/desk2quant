@@ -4,8 +4,8 @@ window.QUANT_MENTOR = Object.freeze({
     brandName: 'Desk2Quant',
     brandDescriptor: 'Desk-Ready Quant Finance Preparation',
     stats: Object.freeze({
-        products: 36,
-        paidProducts: 33,
+        products: 40,
+        paidProducts: 36,
         reviews: 25,
         averageRating: 5.0,
         mentees: 50,
