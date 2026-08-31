@@ -1,0 +1,59 @@
+name: One-time product email idempotency fix
+
+on:
+  push:
+    paths:
+      - '.github/triggers/fix-product-email-idempotency'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Patch single-product email delivery
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path('api/razorpay-webhook.js')
+          s = p.read_text()
+
+          customer_pat = re.compile(r'''        try \{\n            const emailResponse = await fetch\('https://api\.brevo\.com/v3/smtp/email', \{.*?        \} catch \(err\) \{\n            console\.error\('Error sending customer email:', err\);\n        \}\n''', re.S)
+          customer_repl = '''        try {\n            const emailResult = await sendWebhookEmailOnce({\n                paymentId,\n                deliveryType: 'product_customer_receipt',\n                BREVO_API_KEY,\n                SUPABASE_URL,\n                SUPABASE_KEY,\n                emailPayload: {\n                    sender: { name: SENDER_NAME, email: SENDER_EMAIL },\n                    replyTo: { email: REPLY_TO_EMAIL, name: SENDER_NAME },\n                    to: [{ email: customerEmail, name: customerName }],\n                    subject: `Your Purchase: ${productName}`,\n                    htmlContent: customerHtml,\n                    textContent: `Hi ${customerName},\\n\\nThank you for your purchase!\\n\\nProduct: ${productName}\\nAmount: ${currency} ${amount}\\n\\nPlease download your resource using this link:\\n${downloadLink}\\n\\nIf the button does not work, copy and paste the same link into your browser.\\n\\nPayment ID: ${paymentId}${gauntletPlaygroundText(productId, productName, paymentId)}${myAccessText(customerEmail)}\\n\\nHave an issue? Reply to this email.\\n\\nSent by Desk2Quant`\n                }\n            });\n            if (emailResult.skipped) {\n                console.log(`Customer purchase email already handled for ${customerEmail}: ${emailResult.reason}`);\n            } else if (emailResult.sent) {\n                console.log(`Customer purchase email sent to ${customerEmail}`);\n            }\n        } catch (err) {\n            console.error('Error sending customer email:', err);\n            throw err;\n        }\n'''
+          s, n1 = customer_pat.subn(customer_repl, s, count=1)
+          if n1 != 1:
+              raise SystemExit(f'customer email block patch count={n1}')
+
+          admin_pat = re.compile(r'''        try \{\n            const adminEmailResponse = await fetch\('https://api\.brevo\.com/v3/smtp/email', \{.*?        \} catch \(err\) \{\n            console\.error\('Error sending admin notification:', err\);\n        \}\n''', re.S)
+          admin_repl = '''        try {\n            const adminResult = await sendWebhookEmailOnce({\n                paymentId,\n                deliveryType: 'product_admin_sale',\n                BREVO_API_KEY,\n                SUPABASE_URL,\n                SUPABASE_KEY,\n                emailPayload: {\n                    sender: { name: SENDER_NAME, email: SENDER_EMAIL },\n                    replyTo: { email: REPLY_TO_EMAIL, name: SENDER_NAME },\n                    to: Array.from(new Map(\n                        String(ADMIN_EMAIL || '').split(',')\n                            .map((email) => email.trim()).filter(Boolean)\n                            .map((email) => [email.toLowerCase(), email])\n                    ).values()).map((email) => ({ email })),\n                    subject: `New Sale: ${productName}`,\n                    htmlContent: adminHtml,\n                    textContent: `New Sale Received!\\n\\n${customerName} just purchased a digital product.\\n\\nProduct Sold: ${productName}\\nAmount Received: ${currency} ${amount}\\nDownload Link: ${downloadLink}\\n\\nCustomer Details:\\nName: ${customerName}\\nEmail: ${customerEmail}\\nPhone: ${customerPhone || 'Not provided'}\\nPayment ID: ${paymentId} (Webhook)`\n                }\n            });\n            if (adminResult.skipped) {\n                console.log(`Admin product sale email already handled: ${adminResult.reason}`);\n            } else if (adminResult.sent) {\n                console.log('Admin notification sent via webhook');\n            }\n        } catch (err) {\n            console.error('Error sending admin notification:', err);\n            throw err;\n        }\n'''
+          s, n2 = admin_pat.subn(admin_repl, s, count=1)
+          if n2 != 1:
+              raise SystemExit(f'admin email block patch count={n2}')
+
+          p.write_text(s)
+
+          test = Path('test/product-email-idempotency-regression.test.mjs')
+          test.write_text("""import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport fs from 'node:fs';\n\ntest('single-product purchase emails use webhook idempotency helper', () => {\n  const src = fs.readFileSync(new URL('../api/razorpay-webhook.js', import.meta.url), 'utf8');\n  assert.match(src, /deliveryType:\\s*'product_customer_receipt'/);\n  assert.match(src, /deliveryType:\\s*'product_admin_sale'/);\n  assert.doesNotMatch(src, /const emailResponse = await fetch\\('https:\\/\\/api\\.brevo\\.com\\/v3\\/smtp\\/email'/);\n  assert.doesNotMatch(src, /const adminEmailResponse = await fetch\\('https:\\/\\/api\\.brevo\\.com\\/v3\\/smtp\\/email'/);\n});\n""")
+          PY
+      - name: Run regression and full tests
+        run: |
+          node --test test/product-email-idempotency-regression.test.mjs
+          npm test
+      - name: Commit fix and remove one-time workflow
+        run: |
+          rm -f .github/triggers/fix-product-email-idempotency
+          rm -f .github/workflows/one-time-fix-product-email-idempotency.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add api/razorpay-webhook.js test/product-email-idempotency-regression.test.mjs .github/workflows/one-time-fix-product-email-idempotency.yml .github/triggers/fix-product-email-idempotency
+          git commit -m 'fix(email): make product purchase notifications idempotent'
+          git push origin HEAD:main
