@@ -37,7 +37,6 @@ function cleanNamedScript(value) {
 
 function renderScriptValue(value, marker, table) {
   const raw = String(value || '');
-  // Multi-letter names are semantic labels (model, mkt, eff, exp), not indices.
   if (/^[A-Za-z]{2,}$/.test(raw)) return `${marker}${cleanNamedScript(raw)}`;
   return unicodeScript(raw, table) ?? `${marker}${cleanNamedScript(raw)}`;
 }
@@ -52,7 +51,7 @@ function replaceScript(text, marker, table) {
 
   out = out.replace(braced, (_m, v) => renderScriptValue(v, marker, table));
   out = out.replace(paren, (_m, v) => renderScriptValue(v, marker, table));
-  out = out.replace(simple, (m, v) => unicodeScript(v, table) ?? m);
+  out = out.replace(simple, (m, v) => /^[A-Za-z]{2,}$/.test(v) ? m : (unicodeScript(v, table) ?? m));
   return out;
 }
 
@@ -121,7 +120,6 @@ function normalizeLatex(text) {
     .replace(/\\Pr(?![A-Za-z])/g, 'P')
     .replace(/\\mathcal\{([^{}]+)\}/g, '$1');
 
-  // A labelled model quantity is clearer as σ_model,j than as a half-rendered superscript.
   out = out.replace(/([A-Za-z0-9σρμθλκΓΔΘ])\^\{([A-Za-z][A-Za-z0-9_-]*)\}_\{([^{}]+)\}/g, '$1_$2,$3');
 
   out = replaceScript(out, '^', SUPERSCRIPT);
@@ -193,7 +191,6 @@ export function wrapTerminalText(value = '', width = 80) {
       continue;
     }
 
-    // Code emitted by formatCodeBlock is already indented. Preserve its structure.
     if (/^\s{4}/.test(original)) {
       if (line.length <= target) result.push(original);
       else {
