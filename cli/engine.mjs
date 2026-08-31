@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 export const COMMANDS = new Set(['learn','solve','practice','interview','project']);
+export const ASSESSMENT_SKILLS = ['probability','linear_algebra','statistics','stochastic_calculus','derivatives','fixed_income','numerical_methods','programming','risk','quant_research'];
 export const BASE_URL = process.env.D2Q_BASE_URL || 'https://desk2quant.com';
 export const HELP = `Desk2Quant Quant Agent CLI
 
@@ -18,6 +19,14 @@ Quant Agent:
   d2q practice <topic>
   d2q interview <role/topic>
   d2q project <topic>
+
+Adaptive Assessment:
+  d2q assess <skill>           Start one calibrated assessment question
+  d2q submit <id> <answer>     Grade the answer and update latent skill theta
+  d2q skills                   Show calibrated skill estimates
+
+Skills:
+  ${ASSESSMENT_SKILLS.join(', ')}
 
 Options:
   --json                      Print machine-readable JSON
@@ -76,7 +85,7 @@ async function readJson(response) {
 export async function apiPost(route, payload, { baseUrl = BASE_URL, fetchImpl = fetch } = {}) {
   const response = await fetchImpl(`${String(baseUrl).replace(/\/$/, '')}${route}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'User-Agent': 'Desk2Quant-CLI/1.0' },
+    headers: { 'Content-Type': 'application/json', 'User-Agent': 'Desk2Quant-CLI/1.1' },
     body: JSON.stringify(payload)
   });
   return readJson(response);
@@ -142,35 +151,46 @@ function assertSession(config) {
   }
 }
 
-export async function runCommand(command, query='', options = {}) {
-  const c = normalizeCommand(command);
-  const q = String(query).trim();
-  if (!q) throw new Error(`${c} requires a topic/problem.`);
+async function sessionPost(action, extra = {}, options = {}) {
   const config = options.config || await loadConfig(options.env || process.env);
   assertSession(config);
   return apiPost('/api/products', {
-    action: 'agent-run',
+    action,
     email: config.email,
     agentToken: config.agentToken,
-    command: c,
-    query: q
+    ...extra
   }, {
     baseUrl: options.baseUrl || config.baseUrl || BASE_URL,
     fetchImpl: options.fetchImpl || fetch
   });
 }
 
+export async function runCommand(command, query='', options = {}) {
+  const c = normalizeCommand(command);
+  const q = String(query).trim();
+  if (!q) throw new Error(`${c} requires a topic/problem.`);
+  return sessionPost('agent-run', { command: c, query: q }, options);
+}
+
 export async function getProgress(options = {}) {
-  const config = options.config || await loadConfig(options.env || process.env);
-  assertSession(config);
-  return apiPost('/api/products', {
-    action: 'agent-progress',
-    email: config.email,
-    agentToken: config.agentToken
-  }, {
-    baseUrl: options.baseUrl || config.baseUrl || BASE_URL,
-    fetchImpl: options.fetchImpl || fetch
-  });
+  return sessionPost('agent-progress', {}, options);
+}
+
+export async function startAssessment(skill, options = {}) {
+  const s = String(skill || '').trim();
+  if (!s) throw new Error('Usage: d2q assess <skill>');
+  return sessionPost('agent-assess-start', { skill: s }, options);
+}
+
+export async function submitAssessment(assessmentId, answer, options = {}) {
+  const id = String(assessmentId || '').trim();
+  const response = String(answer || '').trim();
+  if (!id || !response) throw new Error('Usage: d2q submit <assessment-id> <answer>');
+  return sessionPost('agent-assess-submit', { assessmentId: id, answer: response }, options);
+}
+
+export async function getSkills(options = {}) {
+  return sessionPost('agent-skills', {}, options);
 }
 
 export function formatProgress(progress = {}) {
@@ -185,4 +205,13 @@ export function formatProgress(progress = {}) {
   }
   if (progress.note) lines.push(`\n${progress.note}`);
   return lines.join('\n');
+}
+
+export function formatSkills(skills = []) {
+  if (!Array.isArray(skills) || !skills.length) return 'No graded skill assessments yet. Run `d2q assess <skill>`.';
+  return skills.map(s => {
+    const theta = Number(s.theta) || 0;
+    const score = Math.round((Number(s.mean_score) || 0) * 100);
+    return `${s.skill_key}: theta=${theta.toFixed(2)} | attempts=${Number(s.attempts)||0} | mean score=${score}%`;
+  }).join('\n');
 }
