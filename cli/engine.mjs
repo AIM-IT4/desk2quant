@@ -1,15 +1,40 @@
-import { GROQ_CHAT_MODEL } from '../lib/groqModels.js';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 
 export const COMMANDS = new Set(['learn','solve','practice','interview','project']);
-export const HELP = `Desk2Quant Quant Agent CLI\n\nUsage:\n  d2q learn <topic>\n  d2q solve <problem>\n  d2q practice <topic>\n  d2q interview <role/topic>\n  d2q project <topic>\n\nEnvironment:\n  GROQ_API_KEY      enables live AI responses\n  GROQ_CHAT_MODEL   optional model override\n  D2Q_OFFLINE=1     deterministic offline mode for tests/demo`;
+export const BASE_URL = process.env.D2Q_BASE_URL || 'https://desk2quant.com';
+export const HELP = `Desk2Quant Quant Agent CLI
 
-const modePrompts = {
-  learn: 'Teach the topic from intuition to mathematics, define variables, include one worked quant-finance example, then ask one checkpoint question.',
-  solve: 'Solve rigorously. State assumptions, derive step by step, check units/edge cases, and end with the final result. If information is missing, state the minimum assumption needed.',
-  practice: 'Generate exactly five interview-style practice questions ordered from easier to harder. Do not reveal full solutions; provide short hints only.',
-  interview: 'Act as a demanding but fair quant interviewer. Ask ONE question only. Do not reveal the answer. Include the skill being tested and expected difficulty.',
-  project: 'Design one resume-worthy quant project. Include objective, mathematical model, data inputs, implementation milestones, validation tests, deliverables, and interview talking points.'
-};
+Authentication:
+  d2q login <purchase-email>   Email a Desk2Quant magic link, then paste it
+  d2q logout                   Remove the local agent session
+  d2q whoami                   Show the signed-in account and tier
+  d2q progress                 Show activity and today's usage
+
+Quant Agent:
+  d2q learn <topic>
+  d2q solve <problem>
+  d2q practice <topic>
+  d2q interview <role/topic>
+  d2q project <topic>
+
+Options:
+  --json                      Print machine-readable JSON
+  --help, -h                  Show help
+  --version, -v               Show version
+
+Security:
+  The CLI never stores or receives Desk2Quant's model/API secrets.
+  Its local session file is created with owner-only permissions.`;
+
+function configDir(env = process.env) {
+  return env.D2Q_CONFIG_DIR || path.join(os.homedir(), '.desk2quant');
+}
+
+export function configPath(env = process.env) {
+  return path.join(configDir(env), 'config.json');
+}
 
 export function normalizeCommand(command='') {
   const c = String(command).trim().toLowerCase();
@@ -17,41 +42,147 @@ export function normalizeCommand(command='') {
   throw new Error(`Unknown command "${command}". Use: ${[...COMMANDS].join(', ')}`);
 }
 
-export function buildMessages(command, query='') {
-  const c = normalizeCommand(command);
-  const q = String(query).trim() || defaultQuery(c);
-  return [
-    { role: 'system', content: `You are Desk2Quant, an expert quantitative-finance mentor for aspiring quants. ${modePrompts[c]} Be precise, mathematically correct, concise but substantive. Use plain-text equations suitable for a terminal. Never fabricate citations or claim access to proprietary notes unless supplied in context.` },
-    { role: 'user', content: q }
-  ];
-}
-
-function defaultQuery(c) {
-  return ({learn:'Black-Scholes',solve:'Explain how to compute E[S_T^2] for geometric Brownian motion.',practice:'probability',interview:'quant research',project:'volatility modelling'})[c];
-}
-
-export async function runCommand(command, query='', env=process.env) {
-  const c = normalizeCommand(command);
-  if (env.D2Q_OFFLINE === '1' || !env.GROQ_API_KEY) return offlineResponse(c, query);
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${env.GROQ_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: env.GROQ_CHAT_MODEL || GROQ_CHAT_MODEL, messages: buildMessages(c, query), temperature: c === 'solve' ? 0.2 : 0.5, max_tokens: 1800 })
-  });
-  if (!response.ok) throw new Error(`Groq request failed (${response.status}): ${(await response.text()).slice(0,300)}`);
-  const data = await response.json();
-  const text = data?.choices?.[0]?.message?.content?.trim();
-  if (!text) throw new Error('Groq returned an empty response');
-  return text;
-}
-
-export function offlineResponse(command, query='') {
-  const q = String(query).trim() || defaultQuery(command);
-  switch(command) {
-    case 'learn': return `LEARN — ${q}\n\n1. Intuition: connect the concept to prices, uncertainty, or hedging.\n2. Mathematics: write the governing equation and define every variable.\n3. Worked example: compute a small numerical case.\n4. Checkpoint: explain which assumption matters most and what breaks if it fails.\n\nOffline demo mode: set GROQ_API_KEY for a fully generated lesson.`;
-    case 'solve': return `SOLVE — ${q}\n\nMethod: identify the stochastic/process assumptions, derive symbolically, then verify limiting cases.\nOffline demo mode does not invent a numerical answer. Set GROQ_API_KEY for the full derivation.`;
-    case 'practice': return `PRACTICE — ${q}\n\n1. Easy: define the key object and one property.\n2. Easy/Medium: compute a one-step example.\n3. Medium: derive a conditional expectation or pricing relation.\n4. Hard: diagnose a modelling/numerical failure.\n5. Hard: connect the topic to a desk-level implementation.\n\nHints only in live mode.`;
-    case 'interview': return `INTERVIEW — ${q}\n\nQuestion: You observe a strategy with a high in-sample Sharpe ratio. Before trusting it, what statistical and market-microstructure checks would you perform, and why?\n\nSkill: research robustness | Difficulty: medium-hard`;
-    case 'project': return `PROJECT — ${q}\n\nObjective: build an implementation that can be defended in an interview.\nMilestones: theory -> data -> baseline -> calibration/estimation -> diagnostics -> stress tests -> report.\nValidation: unit tests, limiting cases, numerical stability, and out-of-sample checks.\nDeliverables: Python package/notebook, tests, charts, README, 2-page technical note.\n\nSet GROQ_API_KEY for a topic-specific project specification.`;
+export function parseMagicLink(value='') {
+  const raw = String(value).trim();
+  if (!raw) throw new Error('Magic link is required.');
+  let url;
+  try { url = new URL(raw); }
+  catch { throw new Error('Paste the complete Desk2Quant sign-in link from your email.'); }
+  const email = String(url.searchParams.get('email') || '').trim().toLowerCase();
+  const token = String(url.searchParams.get('tk') || '').trim();
+  if (!email || !email.includes('@') || !token) {
+    throw new Error('That link does not contain a valid Desk2Quant email/token pair.');
   }
+  const host = url.hostname.toLowerCase();
+  const allowed = host === 'desk2quant.com' || host.endsWith('.vercel.app') || host === 'localhost' || host === '127.0.0.1';
+  if (!allowed) throw new Error('Refusing a sign-in link from an untrusted host.');
+  return { email, accessToken: token };
+}
+
+async function readJson(response) {
+  const text = await response.text();
+  let data;
+  try { data = text ? JSON.parse(text) : {}; }
+  catch { throw new Error(`Desk2Quant returned an invalid response (${response.status}).`); }
+  if (!response.ok) {
+    const err = new Error(data.error || `Desk2Quant request failed (${response.status}).`);
+    err.status = response.status;
+    err.data = data;
+    throw err;
+  }
+  return data;
+}
+
+export async function apiPost(route, payload, { baseUrl = BASE_URL, fetchImpl = fetch } = {}) {
+  const response = await fetchImpl(`${String(baseUrl).replace(/\/$/, '')}${route}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'User-Agent': 'Desk2Quant-CLI/1.0' },
+    body: JSON.stringify(payload)
+  });
+  return readJson(response);
+}
+
+export async function requestLogin(email, options = {}) {
+  const normalized = String(email || '').trim().toLowerCase();
+  if (!normalized || !normalized.includes('@')) throw new Error('A valid purchase email is required.');
+  return apiPost('/api/interview', { action: 'access-login', email: normalized }, options);
+}
+
+export async function exchangeMagicLink(link, options = {}) {
+  const parsed = parseMagicLink(link);
+  const data = await apiPost('/api/products', {
+    action: 'agent-auth',
+    email: parsed.email,
+    accessToken: parsed.accessToken
+  }, options);
+  const config = {
+    version: 1,
+    email: parsed.email,
+    tier: data.tier || 'pro',
+    agentToken: data.agentToken,
+    expiresAt: data.expiresAt,
+    baseUrl: options.baseUrl || BASE_URL
+  };
+  if (!config.agentToken) throw new Error('Desk2Quant did not return an agent session.');
+  await saveConfig(config, options.env || process.env);
+  return { ...data, config };
+}
+
+export async function saveConfig(config, env = process.env) {
+  const dir = configDir(env);
+  await fs.mkdir(dir, { recursive: true, mode: 0o700 });
+  const file = configPath(env);
+  const tmp = `${file}.${process.pid}.tmp`;
+  await fs.writeFile(tmp, JSON.stringify(config, null, 2) + '\n', { encoding: 'utf8', mode: 0o600 });
+  await fs.rename(tmp, file);
+  try { await fs.chmod(file, 0o600); } catch (_) {}
+}
+
+export async function loadConfig(env = process.env) {
+  try {
+    const raw = await fs.readFile(configPath(env), 'utf8');
+    const cfg = JSON.parse(raw);
+    if (!cfg?.email || !cfg?.agentToken) return null;
+    return cfg;
+  } catch (err) {
+    if (err?.code === 'ENOENT') return null;
+    throw new Error('Could not read ~/.desk2quant/config.json. Run `d2q logout` and sign in again.');
+  }
+}
+
+export async function logout(env = process.env) {
+  try { await fs.unlink(configPath(env)); return true; }
+  catch (err) { if (err?.code === 'ENOENT') return false; throw err; }
+}
+
+function assertSession(config) {
+  if (!config) throw new Error('Not signed in. Run `d2q login <purchase-email>`.');
+  if (config.expiresAt && Date.now() >= Number(config.expiresAt)) {
+    throw new Error('Your Desk2Quant agent session expired. Run `d2q login <purchase-email>` again.');
+  }
+}
+
+export async function runCommand(command, query='', options = {}) {
+  const c = normalizeCommand(command);
+  const q = String(query).trim();
+  if (!q) throw new Error(`${c} requires a topic/problem.`);
+  const config = options.config || await loadConfig(options.env || process.env);
+  assertSession(config);
+  return apiPost('/api/products', {
+    action: 'agent-run',
+    email: config.email,
+    agentToken: config.agentToken,
+    command: c,
+    query: q
+  }, {
+    baseUrl: options.baseUrl || config.baseUrl || BASE_URL,
+    fetchImpl: options.fetchImpl || fetch
+  });
+}
+
+export async function getProgress(options = {}) {
+  const config = options.config || await loadConfig(options.env || process.env);
+  assertSession(config);
+  return apiPost('/api/products', {
+    action: 'agent-progress',
+    email: config.email,
+    agentToken: config.agentToken
+  }, {
+    baseUrl: options.baseUrl || config.baseUrl || BASE_URL,
+    fetchImpl: options.fetchImpl || fetch
+  });
+}
+
+export function formatProgress(progress = {}) {
+  const lines = [
+    `Total sessions: ${Number(progress.totalSessions) || 0}`,
+    `Today: ${Number(progress.usedToday) || 0}/${Number(progress.dailyLimit) || 0} used (${Number(progress.remainingToday) || 0} remaining)`
+  ];
+  if (progress.lastCommand) lines.push(`Last: ${progress.lastCommand} — ${progress.lastTopic || 'general quant'}`);
+  if (Array.isArray(progress.topTopics) && progress.topTopics.length) {
+    lines.push('Top topics:');
+    for (const item of progress.topTopics) lines.push(`  ${item.topic}: ${item.sessions}`);
+  }
+  if (progress.note) lines.push(`\n${progress.note}`);
+  return lines.join('\n');
 }
