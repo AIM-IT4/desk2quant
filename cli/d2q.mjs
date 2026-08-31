@@ -17,8 +17,9 @@ import {
   startAssessment,
   submitAssessment
 } from './engine.mjs';
+import { startTui } from './tui.mjs';
 
-const VERSION = '1.1.0';
+const VERSION = '2.0.0';
 
 function hasFlag(args, flag) { return args.includes(flag); }
 function withoutFlags(args) { return args.filter(a => !a.startsWith('--')); }
@@ -37,13 +38,15 @@ async function login(email, rl, json = false) {
   await requestLogin(email);
   if (!json) {
     console.log('A Desk2Quant sign-in link has been requested.');
-    console.log('Open your email, copy the complete "My Access" sign-in URL, and paste it below.');
+    console.log('Open your email and copy the raw Desk2Quant URL shown in the "Using the Quant Agent CLI?" box.');
+    console.log('Paste that complete https://desk2quant.com/my-access.html?email=...&tk=... URL below.');
   }
   const link = (await rl.question('Magic link > ')).trim();
   const result = await exchangeMagicLink(link);
   if (json) return print({ success: true, email: result.config.email, tier: result.tier, expiresAt: result.expiresAt, progress: result.progress }, true);
   console.log(`Signed in as ${result.config.email} (${result.tier}).`);
   if (result.progress) console.log('\n' + formatProgress(result.progress));
+  console.log('\nRun `d2q` to open the dedicated Quant Agent interface.');
 }
 
 async function execute(command, rest, rl, json = false) {
@@ -92,6 +95,7 @@ async function execute(command, rest, rl, json = false) {
     console.log(`\n${formatTerminalMath(result.abilityNote)}`);
     return;
   }
+  if (command === 'tui') return startTui();
   if (COMMANDS.has(command)) {
     const query = rest.join(' ').trim();
     const result = await runCommand(command, query);
@@ -106,26 +110,21 @@ async function main() {
   if (rawArgs.includes('--version') || rawArgs.includes('-v')) return console.log(`Desk2Quant Quant Agent CLI ${VERSION}`);
   const json = hasFlag(rawArgs, '--json');
   const args = withoutFlags(rawArgs);
-  const rl = readline.createInterface({ input, output });
 
-  try {
-    if (args.length) return await execute(args[0].toLowerCase(), args.slice(1), rl, json);
-
-    console.log(`Desk2Quant Quant Agent CLI ${VERSION}`);
+  if (!args.length) {
     const cfg = await loadConfig();
-    console.log(cfg ? `Signed in: ${cfg.email}` : 'Not signed in. Type: login <purchase-email>');
-    console.log('Type help for commands, or exit.');
-
-    while (true) {
-      const line = (await rl.question('d2q > ')).trim();
-      if (!line) continue;
-      if (['exit', 'quit'].includes(line.toLowerCase())) break;
-      const parts = line.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
-      const clean = parts.map(p => p.replace(/^"|"$/g, ''));
-      const command = String(clean.shift() || '').toLowerCase();
-      try { await execute(command, clean, rl, false); }
-      catch (err) { console.error(`Error: ${err.message}`); }
+    if (!cfg) {
+      console.log(`Desk2Quant Quant Agent CLI ${VERSION}`);
+      console.log('Not signed in.');
+      console.log('Run: d2q login <purchase-email>');
+      return;
     }
+    return startTui();
+  }
+
+  const rl = readline.createInterface({ input, output });
+  try {
+    return await execute(args[0].toLowerCase(), args.slice(1), rl, json);
   } finally {
     rl.close();
   }
