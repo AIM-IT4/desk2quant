@@ -1,6 +1,7 @@
 import { gradeSubmission } from '../lib/gauntletGrading.js';
 import { verifyProjectEntitlement } from './_gauntlet-entitlement.js';
 import { getServiceKey, blockIfUnconfigured } from '../lib/supabaseAdmin.js';
+import { handleQuantAgent } from '../lib/quantAgentServer.js';
 
 export default async function handler(req, res) {
     // CORS
@@ -9,6 +10,13 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') return res.status(200).end();
+
+    // Quant Agent shares this serverless route because Vercel Hobby caps the
+    // project at 12 functions. All secrets, entitlement checks and LLM calls
+    // remain server-side; the CLI only receives a signed Desk2Quant session.
+    if (req.method === 'POST' && String(req.body?.action || '').startsWith('agent-')) {
+        return handleQuantAgent(req, res);
+    }
 
     // Gauntlet grading is multiplexed onto this route because the Vercel Hobby
     // plan caps us at 12 serverless functions and we are at 12. Same pattern
