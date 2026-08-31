@@ -18,7 +18,6 @@ test('agent session token is signed, email-bound and expires', () => {
   const valid = verifyAgentToken('buyer@example.com', token);
   assert.equal(valid.tier, 'pro');
   assert.equal(verifyAgentToken('other@example.com', token), null);
-
   const expired = signAgentToken('buyer@example.com', 'pro', -1);
   assert.equal(verifyAgentToken('buyer@example.com', expired), null);
 });
@@ -42,7 +41,20 @@ test('quant prompts require terminal-native math and reject raw LaTeX convention
   assert.match(system, /command-line terminal/i);
   assert.match(system, /terminal-native Unicode\/plain text/i);
   assert.match(system, /Do NOT emit LaTeX delimiters/i);
-  assert.match(system, /reproduces the calibration target/i);
+  assert.match(system, /verify any numerical worked example/i);
+});
+
+test('conceptual questions explicitly prohibit code unless requested', () => {
+  const system = buildAgentMessages('learn', 'why do we have so many models in rates?', {})[0].content;
+  assert.match(system, /did NOT explicitly request code/i);
+  assert.match(system, /Do not output Python/i);
+  assert.match(system, /5-12 concise/i);
+});
+
+test('explicit implementation requests permit code', () => {
+  const system = buildAgentMessages('learn', 'show Python code for Hull-White calibration', {})[0].content;
+  assert.match(system, /explicitly requested implementation\/code/i);
+  assert.doesNotMatch(system, /did NOT explicitly request code/i);
 });
 
 test('knowledge anchors cover professional quant topics', () => {

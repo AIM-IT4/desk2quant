@@ -18,8 +18,7 @@ const LATEX_SYMBOLS = {
   infinity:'∞', infty:'∞', approx:'≈', sim:'∼', neq:'≠', leq:'≤', geq:'≥', le:'≤', ge:'≥',
   times:'×', cdot:'·', pm:'±', mp:'∓', to:'→', rightarrow:'→', leftarrow:'←',
   Rightarrow:'⇒', Leftarrow:'⇐', iff:'⇔', mapsto:'↦',
-  forall:'∀', exists:'∃', in:'∈', notin:'∉', subset:'⊂', subseteq:'⊆',
-  cup:'∪', cap:'∩', degree:'°'
+  forall:'∀', exists:'∃', in:'∈', notin:'∉', subset:'⊂', subseteq:'⊆', cup:'∪', cap:'∩'
 };
 
 function unicodeScript(value, table) {
@@ -32,21 +31,27 @@ function unicodeScript(value, table) {
   return out;
 }
 
+function cleanNamedScript(value) {
+  return String(value || '').replace(/\s+/g, '_').replace(/[^A-Za-z0-9_+\-=]/g, '');
+}
+
+function renderScriptValue(value, marker, table) {
+  const raw = String(value || '');
+  if (/^[A-Za-z]{2,}$/.test(raw)) return `${marker}${cleanNamedScript(raw)}`;
+  return unicodeScript(raw, table) ?? `${marker}${cleanNamedScript(raw)}`;
+}
+
 function replaceScript(text, marker, table) {
   let out = text;
-  const braced = marker === '^'
-    ? /\^\{([^{}]+)\}/g
-    : /_\{([^{}]+)\}/g;
-  const paren = marker === '^'
-    ? /\^\(([^()]+)\)/g
-    : /_\(([^()]+)\)/g;
+  const braced = marker === '^' ? /\^\{([^{}]+)\}/g : /_\{([^{}]+)\}/g;
+  const paren = marker === '^' ? /\^\(([^()]+)\)/g : /_\(([^()]+)\)/g;
   const simple = marker === '^'
-    ? /\^([0-9+\-=in]+)/g
-    : /_([0-9+\-=aehijklmnoprstuvx]+)/g;
+    ? /\^([0-9+\-=in]+)(?![A-Za-z])/g
+    : /_([0-9+\-=aehijklmnoprstuvx]+)(?![A-Za-z])/g;
 
-  out = out.replace(braced, (m, v) => unicodeScript(v, table) ?? m);
-  out = out.replace(paren, (m, v) => unicodeScript(v, table) ?? m);
-  out = out.replace(simple, (m, v) => unicodeScript(v, table) ?? m);
+  out = out.replace(braced, (_m, v) => renderScriptValue(v, marker, table));
+  out = out.replace(paren, (_m, v) => renderScriptValue(v, marker, table));
+  out = out.replace(simple, (m, v) => /^[A-Za-z]{2,}$/.test(v) ? m : (unicodeScript(v, table) ?? m));
   return out;
 }
 
@@ -72,9 +77,7 @@ function stripMarkdown(text) {
 }
 
 function normalizeLatex(text) {
-  let out = String(text || '');
-
-  out = out
+  let out = String(text || '')
     .replace(/\\\[/g, '\n')
     .replace(/\\\]/g, '\n')
     .replace(/\\\(/g, '')
@@ -89,9 +92,7 @@ function normalizeLatex(text) {
     .replace(/\\quad\b/g, '  ')
     .replace(/\\\\/g, '\n');
 
-  out = replaceFractions(out);
-
-  out = out
+  out = replaceFractions(out)
     .replace(/\\sqrt\s*\[([^\]]+)\]\s*\{([^{}]+)\}/g, '($2)^(1/$1)')
     .replace(/\\sqrt\s*\{([^{}]+)\}/g, '√($1)')
     .replace(/\\(?:text|textrm|mathrm|mathbf|mathit|operatorname)\{([^{}]*)\}/g, '$1')
@@ -119,6 +120,8 @@ function normalizeLatex(text) {
     .replace(/\\Pr(?![A-Za-z])/g, 'P')
     .replace(/\\mathcal\{([^{}]+)\}/g, '$1');
 
+  out = out.replace(/([A-Za-z0-9σρμθλκΓΔΘ])\^\{([A-Za-z][A-Za-z0-9_-]*)\}_\{([^{}]+)\}/g, '$1_$2,$3');
+
   out = replaceScript(out, '^', SUPERSCRIPT);
   out = replaceScript(out, '_', SUBSCRIPT);
 
@@ -126,7 +129,6 @@ function normalizeLatex(text) {
     .replace(/\^\(2\)/g, '²')
     .replace(/\^\(3\)/g, '³')
     .replace(/\^\(-1\)/g, '⁻¹')
-    .replace(/_([0-9]+)\^([0-9]+)/g, (_m, a, b) => `${unicodeScript(a, SUBSCRIPT) ?? `_${a}`}${unicodeScript(b, SUPERSCRIPT) ?? `^${b}`}`)
     .replace(/\\([A-Za-z]+)/g, '$1');
 
   return out
@@ -137,7 +139,23 @@ function normalizeLatex(text) {
 }
 
 function formatHumanSegment(value) {
-  return normalizeLatex(stripMarkdown(String(value || '')));
+  const raw = String(value || '');
+  if (!raw) return raw;
+  const leading = raw.match(/^\s+/)?.[0] || '';
+  const trailing = raw.match(/\s+$/)?.[0] || '';
+  const core = raw.trim();
+  if (!core) return raw;
+  return `${leading}${normalizeLatex(stripMarkdown(core))}${trailing}`;
+}
+
+function formatCodeBlock(block) {
+  const match = String(block).match(/^```([^\n`]*)\n?([\s\S]*?)\n?```$/);
+  if (!match) return block;
+  const language = String(match[1] || '').trim();
+  const code = String(match[2] || '').replace(/^\n|\n$/g, '');
+  const label = language ? language[0].toUpperCase() + language.slice(1) : 'Code';
+  const indented = code.split('\n').map((line) => `    ${line}`).join('\n');
+  return `${label}\n${indented}`;
 }
 
 export function formatTerminalText(value = '') {
@@ -146,7 +164,11 @@ export function formatTerminalText(value = '') {
 
   return source
     .split(/(```[\s\S]*?```|`[^`\n]+`)/g)
-    .map((part) => part.startsWith('`') ? part : formatHumanSegment(part))
+    .map((part) => {
+      if (part.startsWith('```')) return formatCodeBlock(part);
+      if (part.startsWith('`')) return part;
+      return formatHumanSegment(part);
+    })
     .join('')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
@@ -161,24 +183,19 @@ export function isEquationLike(line = '') {
 export function wrapTerminalText(value = '', width = 80) {
   const target = Math.max(28, Number(width) || 80);
   const result = [];
-  let inFence = false;
 
   for (const original of String(value).replace(/\r\n/g, '\n').split('\n')) {
     const line = original.trimEnd();
-    if (line.startsWith('```')) {
-      inFence = !inFence;
-      result.push(line);
+    if (!line.trim()) {
+      result.push('');
       continue;
     }
-    if (inFence || /^\s{4}/.test(original)) {
+
+    if (/^\s{4}/.test(original)) {
       if (line.length <= target) result.push(original);
       else {
         for (let i = 0; i < line.length; i += target) result.push(line.slice(i, i + target));
       }
-      continue;
-    }
-    if (!line.trim()) {
-      result.push('');
       continue;
     }
 

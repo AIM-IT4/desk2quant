@@ -98,10 +98,13 @@ test('formatTerminalMath converts common LaTeX into readable terminal math', () 
   assert.doesNotMatch(text, /\\theta|\\sigma|\\frac|\\\[|\\\]/);
 });
 
-test('formatTerminalMath preserves fenced and inline code verbatim', () => {
+test('formatTerminalMath preserves inline code and renders fenced code without fence markers', () => {
   const code = 'Use `sigma = 0.2` then:\n\\[\\sigma^2\\]\n```python\nlatex = r"\\\\frac{a}{b}"\nprint(latex)\n```';
   const text = formatTerminalMath(code);
-  assert.match(text, /`sigma = 0\.2`/);
+  assert.match(text, /Use `sigma = 0\.2` then:/);
   assert.match(text, /σ²/);
-  assert.match(text, /```python\nlatex = r"\\\\frac\{a\}\{b\}"\nprint\(latex\)\n```/);
+  assert.match(text, /Python/);
+  assert.match(text, /    latex = r"\\\\frac\{a\}\{b\}"/);
+  assert.match(text, /    print\(latex\)/);
+  assert.doesNotMatch(text, /```/);
 });
