@@ -1,6 +1,6 @@
 {
   "name": "@desk2quant/cli",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Desk2Quant terminal-native Quant Agent for aspiring and working quants",
   "type": "module",
   "bin": {
