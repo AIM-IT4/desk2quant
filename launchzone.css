@@ -707,10 +707,17 @@ body.d2q-launchzone .hero-headline {
     max-width: 1080px;
     margin: 0 auto;
     color: var(--lz-ink);
-    font-size: clamp(3.5rem, 8.1vw, 7.8rem);
+    /* Was clamp(3.5rem, 8.1vw, 7.8rem): 8.1vw meant this hit the 124.8px cap
+       on any monitor 1540px or wider, which read as billboard type rather
+       than a headline. Now caps at 68px, the usual ceiling for display type
+       at this container width.
+       Was line-height 0.92 -- below 1.0, so descenders collided with the caps
+       of the line beneath. Was letter-spacing -0.075em (-6.3px at the old
+       size), roughly 3x the normal tightening for display type. */
+    font-size: clamp(2.75rem, 5.2vw, 4.25rem);
     font-weight: 790;
-    letter-spacing: -0.075em;
-    line-height: 0.92;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
     text-align: center;
     text-wrap: balance;
 }
