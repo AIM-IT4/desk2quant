@@ -207,6 +207,20 @@
                         <a href="desk-simulator.html" class="btn btn-secondary">Try the Free Desk Simulator</a>
                     </div>
                 </div>
+
+                <figure class="hero-code reveal-up delay-200" aria-label="How a desk model is built">
+                    <div class="hc-bar" aria-hidden="true">
+                        <span class="hc-dot"></span><span class="hc-dot"></span><span class="hc-dot"></span>
+                        <span class="hc-file">desk.py</span>
+                    </div>
+                    <div class="hc-body">
+                        <span class="hc-line"><span class="hc-var">model</span> = <span class="hc-fn">HullWhite</span>(a=<span class="hc-num">0.03</span>, sigma=<span class="hc-num">0.012</span>)</span>
+                        <span class="hc-line"><span class="hc-var">model</span>.<span class="hc-fn">calibrate</span>(swaptions)</span>
+                        <span class="hc-line"><span class="hc-var">cva</span> = <span class="hc-fn">xva</span>.<span class="hc-fn">compute</span>(book, <span class="hc-var">model</span>)</span>
+                    </div>
+                    <p class="hc-out">implemented <span class="hc-sep">/</span> challenged <span class="hc-sep">/</span> hedged <span class="hc-sep">/</span> validated</p>
+                </figure>
+
                 <div class="hero-visual reveal-up delay-300">
                     <div class="profile-card">
                         <div class="profile-glow"></div>
