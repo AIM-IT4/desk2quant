@@ -795,214 +795,8 @@ body.d2q-launchzone .stat-label {
 
 body.d2q-launchzone .hero-visual {
     display: flex;
-    /* Row was safe while the profile card was the only child. The terminal
-       makes it two, and a row would push the card off-screen on narrow
-       viewports, so the stack direction is declared here rather than only
-       in the desktop rule below. */
-    flex-direction: column;
-    align-items: center;
-    gap: 24px;
     justify-content: center;
     margin-top: 48px;
-}
-
-/* ============================================================
-   HERO TERMINAL
-   Scoped to >=901px so every existing max-width breakpoint --
-   and the whole mobile hero -- keeps its current centred layout
-   untouched. Desktop gets copy left, artifact right.
-   ============================================================ */
-@media (min-width: 901px) {
-    body.d2q-launchzone .hero-container {
-        display: grid;
-        /* Was 1.04fr / 448px: the panel matched the text column's weight
-           almost 1:1 and read as a second headline competing for attention.
-           Giving copy more of the row and capping the panel narrower makes
-           it a supporting detail beside the argument, not beside itself. */
-        grid-template-columns: minmax(0, 1.32fr) minmax(280px, 328px);
-        gap: clamp(32px, 4vw, 64px);
-        align-items: start;
-        text-align: left;
-    }
-
-    body.d2q-launchzone .hero-content {
-        text-align: left;
-    }
-
-    /* The centred hero could afford 7.8rem across the full container.
-       At ~55% width that overflows into two-word lines, so the display
-       size steps down and the tracking loosens to stay readable. */
-    body.d2q-launchzone .hero-headline {
-        max-width: none;
-        margin: 0;
-        font-size: clamp(2.85rem, 4.3vw, 4.25rem);
-        letter-spacing: -0.05em;
-        line-height: 0.96;
-        text-align: left;
-        text-wrap: pretty;
-    }
-
-    body.d2q-launchzone .hero-badge {
-        margin-left: 0;
-        margin-right: auto;
-    }
-
-    body.d2q-launchzone .hero-subcopy,
-    body.d2q-launchzone .hero-value-line {
-        margin-left: 0;
-        margin-right: 0;
-        text-align: left;
-    }
-
-    body.d2q-launchzone .hero-proof-row,
-    body.d2q-launchzone .hero-stats,
-    body.d2q-launchzone .hero-cta {
-        justify-content: flex-start;
-        text-align: left;
-    }
-
-    body.d2q-launchzone .hero-visual {
-        flex-direction: column;
-        justify-content: flex-start;
-        gap: 22px;
-        margin-top: 6px;
-    }
-
-}
-
-/* The one dark object on a paper-white page: it should read as a real
-   editor buffer, not a decorative gradient. Same hard ink shadow as the
-   rest of the system so it belongs to the same design language. */
-body.d2q-launchzone .quant-terminal {
-    /* Was 448px with the full 8px shadow: at that size and weight it read
-       as a second focal point rather than a supporting detail. Narrower,
-       with a lighter shadow, it sits back and lets the headline lead. */
-    width: min(100%, 328px);
-    margin: 0 auto;
-    border: 1px solid var(--lz-ink);
-    background: var(--lz-ink);
-    box-shadow: 5px 5px 0 var(--lz-ink);
-    font-family: var(--lz-font-mono);
-    text-align: left;
-    overflow: hidden;
-}
-
-body.d2q-launchzone .quant-terminal .qt-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 11px 14px;
-    border-bottom: 1px solid #2b2b2b;
-    background: #141414;
-    color: #85857e;
-    font-size: 0.68rem;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
-}
-
-body.d2q-launchzone .quant-terminal .qt-dots {
-    display: inline-flex;
-    gap: 5px;
-}
-
-body.d2q-launchzone .quant-terminal .qt-dots i {
-    display: block;
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: #3a3a3a;
-}
-
-body.d2q-launchzone .quant-terminal .qt-dots i:first-child { background: var(--lz-danger); }
-body.d2q-launchzone .quant-terminal .qt-dots i:nth-child(2) { background: var(--lz-warning); }
-body.d2q-launchzone .quant-terminal .qt-dots i:last-child { background: var(--lz-signal); }
-
-body.d2q-launchzone .quant-terminal .qt-file { color: var(--lz-paper); }
-body.d2q-launchzone .quant-terminal .qt-branch { margin-left: auto; }
-
-body.d2q-launchzone .quant-terminal .qt-body {
-    margin: 0;
-    padding: 14px 16px 10px;
-    color: #d4d4cc;
-    font-family: inherit;
-    /* Was 0.775rem/1.85: quieted a step so the panel reads as a detail
-       glimpsed over someone's shoulder, not a code sample to study. */
-    font-size: 0.7rem;
-    line-height: 1.7;
-    white-space: pre;
-    overflow-x: auto;
-}
-
-body.d2q-launchzone .quant-terminal .qt-c { color: #6d786f; font-style: italic; }
-body.d2q-launchzone .quant-terminal .qt-f { color: #7ed6ce; }
-body.d2q-launchzone .quant-terminal .qt-v { color: var(--lz-warning); }
-body.d2q-launchzone .quant-terminal .qt-k { color: #ff9d7a; }
-body.d2q-launchzone .quant-terminal .qt-p { color: var(--lz-signal); font-weight: 700; }
-
-/* Caret on the prompt line. CSS-only and purely decorative: nothing here
-   gates the message, so with animation suppressed the panel still reads
-   exactly the same. */
-body.d2q-launchzone .quant-terminal .qt-p::after {
-    content: "";
-    display: inline-block;
-    width: 7px;
-    height: 1.05em;
-    margin-left: 7px;
-    background: var(--lz-signal);
-    vertical-align: text-bottom;
-    animation: qt-caret 1.15s steps(1, end) infinite;
-}
-
-@keyframes qt-caret {
-    0%, 45% { opacity: 1; }
-    46%, 100% { opacity: 0; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    body.d2q-launchzone .quant-terminal .qt-p::after {
-        animation: none;
-        opacity: 1;
-    }
-}
-
-/* Four bordered chips fought the note below for attention and added
-   height the smaller panel no longer has room for. One quiet line of
-   checkmarks makes the same point without a second row of boxes. */
-body.d2q-launchzone .quant-terminal .qt-out {
-    margin: 0;
-    padding: 0 16px 12px;
-    color: #6d786f;
-    font-family: inherit;
-    font-size: 0.68rem;
-    letter-spacing: 0.01em;
-}
-
-body.d2q-launchzone .quant-terminal .qt-ok {
-    color: #7ed6ce;
-}
-
-body.d2q-launchzone .quant-terminal .qt-ok::before {
-    content: "\2713\00a0";
-    color: var(--lz-signal);
-}
-
-body.d2q-launchzone .quant-terminal .qt-out .qt-sep {
-    margin: 0 5px;
-    color: #3a3a3a;
-}
-
-/* The payoff line: the only sentence in the panel, so it gets the
-   contrast the code deliberately gives up. */
-body.d2q-launchzone .quant-terminal .qt-note {
-    margin: 0;
-    padding: 11px 16px;
-    border-top: 1px solid #2b2b2b;
-    background: #0c0c0c;
-    color: var(--lz-paper);
-    font-family: var(--lz-font-sans);
-    font-size: 0.78rem;
-    line-height: 1.4;
-    letter-spacing: -0.01em;
 }
 
 body.d2q-launchzone .hero-visual .profile-card {
@@ -1020,20 +814,6 @@ body.d2q-launchzone .hero-visual .profile-card {
     text-align: left;
 }
 
-/* Sits beside the terminal in a ~328px column, not the 880px full-width
-   band this card is built for. Placed here, after the base rule, so it
-   actually wins the cascade at equal specificity -- the same override
-   inside the earlier @media (min-width: 901px) block lost to this base
-   rule regardless of the media query, because source order broke the tie.
-   170px for the portrait would leave ~68px for name, title and
-   credentials; 92px keeps every line on one row. */
-@media (min-width: 901px) {
-    body.d2q-launchzone .hero-visual .profile-card {
-        width: 100%;
-        grid-template-columns: 92px minmax(0, 1fr);
-    }
-}
-
 body.d2q-launchzone .hero-visual .profile-glow {
     display: none;
 }
@@ -1046,17 +826,6 @@ body.d2q-launchzone .hero-visual .profile-image {
     padding: 3px;
     background: var(--lz-white);
     border-radius: 3px;
-}
-
-/* Placed after the base rule above, for the same reason documented beside
-   the profile-name override further down: equal-specificity rules resolve
-   by source order regardless of which media query matched, so an override
-   declared earlier in the file loses even when its condition is true. */
-@media (min-width: 901px) {
-    body.d2q-launchzone .hero-visual .profile-image {
-        width: 92px;
-        height: 92px;
-    }
 }
 
 body.d2q-launchzone .hero-visual .profile-image img {
@@ -1092,33 +861,6 @@ body.d2q-launchzone .hero-visual .profile-note {
     font-size: 0.86rem;
     line-height: 1.5;
     font-style: italic;
-}
-
-/* Placed after every rule above so it actually wins at equal specificity --
-   the same override inside the earlier @media block lost twice already for
-   exactly this reason. Every line here was sized for the 880px full-width
-   band, where the text column runs to ~640px; at 174px "Amit Kumar Jha"
-   broke mid-name and the title wrapped three lines. */
-@media (min-width: 901px) {
-    body.d2q-launchzone .hero-visual .profile-name {
-        font-size: 1.28rem;
-        line-height: 1.25;
-    }
-
-    body.d2q-launchzone .hero-visual .profile-title {
-        font-size: 0.82rem;
-        line-height: 1.4;
-    }
-
-    body.d2q-launchzone .hero-visual .profile-credentials {
-        font-size: 0.78rem;
-        line-height: 1.45;
-    }
-
-    body.d2q-launchzone .hero-visual .profile-note {
-        font-size: 0.76rem;
-        line-height: 1.45;
-    }
 }
 
 body.d2q-launchzone .hero-visual .profile-tags {

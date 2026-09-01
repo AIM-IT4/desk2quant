@@ -208,24 +208,6 @@
                     </div>
                 </div>
                 <div class="hero-visual reveal-up delay-300">
-                    <figure class="quant-terminal" aria-label="A model is not finished when it prices. Desk2Quant covers implementation, challenge, hedging and validation.">
-                        <figcaption class="qt-bar">
-                            <span class="qt-dots" aria-hidden="true"><i></i><i></i><i></i></span>
-                            <span class="qt-file">desk_ready.py</span>
-                            <span class="qt-branch" aria-hidden="true">EUR / SOFR</span>
-                        </figcaption>
-                        <pre class="qt-body" aria-hidden="true"><code><span class="qt-line"><span class="qt-c"># most courses stop here</span></span>
-<span class="qt-line">price  = <span class="qt-f">black_scholes</span>(S, K, r, <span class="qt-v">sigma</span>, T)</span>
-<span class="qt-line"></span>
-<span class="qt-line"><span class="qt-c"># the desk starts here</span></span>
-<span class="qt-line">greeks = <span class="qt-f">risk.sensitivities</span>(price)</span>
-<span class="qt-line">hedge  = <span class="qt-f">book.rebalance</span>(greeks, <span class="qt-v">limits</span>)</span>
-<span class="qt-line"><span class="qt-p">&gt;&gt;&gt;</span> <span class="qt-f">desk.explain</span>(pnl, under_pressure=<span class="qt-k">True</span>)</span></code></pre>
-                        <p class="qt-out">
-                            <span class="qt-ok">implemented</span><span class="qt-sep">/</span><span class="qt-ok">challenged</span><span class="qt-sep">/</span><span class="qt-ok">hedged</span><span class="qt-sep">/</span><span class="qt-ok">validated</span>
-                        </p>
-                        <p class="qt-note">You will be asked all four. Not just the formula.</p>
-                    </figure>
                     <div class="profile-card">
                         <div class="profile-glow"></div>
                         <div class="profile-image">
