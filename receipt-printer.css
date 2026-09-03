@@ -517,6 +517,7 @@
         display: none !important;
     }
 
+    .printer-feed-chamber,
     .receipt-feed-chamber {
         width: 100% !important;
         margin: 0 !important;

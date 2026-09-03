@@ -116,13 +116,14 @@ export default async function handler(req, res) {
     // gmail fallback because ADMIN_EMAIL was simply never set, and nothing in
     // the logs said so -- the same silent-fallback shape as the REPLY_TO_EMAIL
     // bug that killed every purchase email.
-    if (!process.env.ADMIN_EMAIL) {
-        console.warn('CONFIG: ADMIN_EMAIL not set - sale alerts fall back to hello@desk2quant.com');
+    const rawAdminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || process.env.ADMIN_EMAIL;
+    if (!rawAdminEmail) {
+        console.warn('CONFIG: ADMIN_EMAIL/ADMIN_NOTIFICATION_EMAIL not set - sale alerts fall back to hello@desk2quant.com');
     }
     if (!process.env.SENDER_EMAIL) {
         console.warn('CONFIG: SENDER_EMAIL not set - sending as hello@desk2quant.com');
     }
-    const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'hello@desk2quant.com';
+    const ADMIN_EMAIL = rawAdminEmail || 'hello@desk2quant.com';
     const SENDER_EMAIL = process.env.SENDER_EMAIL || 'hello@desk2quant.com';
     const SENDER_NAME = process.env.SENDER_NAME || 'Desk2Quant';
 
@@ -200,8 +201,13 @@ export default async function handler(req, res) {
             let productType = payment.notes?.type; // 'product' or 'session'
 
             // Razorpay does NOT copy order notes to payment notes.
-            // Fallback: fetch the order to get the original notes.
-            if (!productType && payment.order_id && RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {
+            // Fallback: fetch the order to get the original notes if missing.
+            const hasRequiredNotes = productType && (
+                (productType === 'cart' && payment.notes?.cart_items) ||
+                (productType === 'product' && (payment.notes?.product_id || payment.notes?.product_name)) ||
+                (productType === 'session' && payment.notes?.session_id)
+            );
+            if (!hasRequiredNotes && payment.order_id && RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {
                 try {
                     const orderResp = await fetch(
                         `https://api.razorpay.com/v1/orders/${payment.order_id}`,

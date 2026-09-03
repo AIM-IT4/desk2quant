@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -1093,7 +1093,7 @@
                         } else if (inputCodeUpper && (inputCodeUpper === expected20Code || inputCodeUpper === hardcoded20)) {
                             isValid = true;
                             appliedDiscount = 20;
-                        } else if (inputCodeUpper && /^[A-Z]{3,40}20(?:[A-F0-9]{8})?$/.test(inputCodeUpper)) {
+                        } else if (inputCodeUpper && /^[A-Z]{2,40}20(?:[A-F0-9]{8})?$/.test(inputCodeUpper)) {
                             // Personalised post-purchase coupon (e.g. VENKAT20). Verified
                             // server-side by exact issued code against recommendation_emails
                             // via an RPC that never exposes the underlying table (see

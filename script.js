@@ -628,7 +628,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 isValid = true;
                 appliedDiscount = 20;
                 window.activeModalCoupon.percent = 20; // Ensure checkout button uses 20%
-            } else if (inputCodeUpper && /^[A-Z]{3,40}20(?:[A-F0-9]{8})?$/.test(inputCodeUpper)) {
+            } else if (inputCodeUpper && /^[A-Z]{2,40}20(?:[A-F0-9]{8})?$/.test(inputCodeUpper)) {
                 // Personalised post-purchase/post-booking coupon (e.g. AYAN20). Verified
                 // server-side by exact issued code against recommendation_emails via an
                 // RPC that never exposes the underlying table (see migrations 0006/0008),
@@ -5236,7 +5236,7 @@ async function resolveCartCouponDiscount(item, inputCode) {
     const hardcoded20 = mapKey ? CART_COUPON_MAP_20[mapKey].toUpperCase() : null;
     if (inputCodeUpper === expected20Code || inputCodeUpper === hardcoded20) return { valid: true, percent: 20 };
 
-    if (/^[A-Z]{3,40}20(?:[A-F0-9]{8})?$/.test(inputCodeUpper)) {
+    if (/^[A-Z]{2,40}20(?:[A-F0-9]{8})?$/.test(inputCodeUpper)) {
         try {
             const rpcResp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/validate_recommendation_coupon_code`, {
                 method: 'POST',
@@ -5631,14 +5631,18 @@ async function runCartCheckout(cart, userDetails, releaseBtn) {
             // Snapshot names before saveCart([]) clears the drawer.
             const purchasedNames = cart.map((i) => i.name);
             const cartItemsSnapshot = cart.map((i) => ({ name: i.name, price: i.price }));
+            const paidAmountMajor = (orderData && typeof orderData.amount === 'number')
+                ? (orderData.amount / 100)
+                : cart.reduce((acc, i) => acc + (Number(i.price) || 0), 0);
             const cartMeta = {
                 paymentId: paymentId,
-                amount: totalAmount,
-                currency: 'INR',
+                orderId: orderData?.order_id || null,
+                amount: paidAmountMajor,
+                currency: orderData?.currency || currency || 'INR',
                 customerEmail: customerEmail,
                 items: cartItemsSnapshot,
                 productName: purchasedNames,
-                downloadLink: '#'
+                downloadLink: 'https://desk2quant.com/my-access.html'
             };
             window.__lastOrderData = cartMeta;
 

@@ -442,6 +442,40 @@ export default async function handler(req, res) {
                 : `https://drive.google.com/file/d/${driveFileId}/view?usp=drivesdk`);
         }
 
+        // Persist purchase row with service-role privileges if not already recorded.
+        // This ensures the buyer appears in My Access and revenue stats even if the webhook was delayed.
+        try {
+            const checkResp = await fetch(
+                `${SUPABASE_URL}/rest/v1/purchases?payment_id=eq.${encodeURIComponent(paymentId)}&select=id`,
+                { headers: serviceHeaders() }
+            );
+            const existing = checkResp.ok ? await checkResp.json() : [];
+            if (!existing || existing.length === 0) {
+                const capturedAmount = isZeroDecimalCurrency(payment.currency) ? payment.amount : (payment.amount / 100);
+                await fetch(`${SUPABASE_URL}/rest/v1/purchases`, {
+                    method: 'POST',
+                    headers: {
+                        ...serviceHeaders(),
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify({
+                        customer_email: email,
+                        product_name: productName,
+                        amount: capturedAmount,
+                        currency: payment.currency || 'INR',
+                        payment_id: paymentId,
+                        source: 'frontend',
+                        download_link: downloadLink,
+                        created_at: new Date().toISOString()
+                    })
+                });
+                console.log(`grant-access: logged purchase row for ${paymentId}`);
+            }
+        } catch (dbErr) {
+            console.warn('grant-access: could not persist fallback purchase row:', dbErr.message);
+        }
+
         return res.status(200).json({
             success: true,
             product: productName || null,
