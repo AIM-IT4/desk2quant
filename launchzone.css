@@ -2024,6 +2024,8 @@ body.d2q-launchzone .theme-toggle {
     body.d2q-launchzone #user-details-modal,
     body.d2q-launchzone .scorecard-overlay {
         padding: 10px;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
     }
 
     body.d2q-launchzone .modal-content,
@@ -2032,6 +2034,8 @@ body.d2q-launchzone .theme-toggle {
     body.d2q-launchzone #user-details-modal > div,
     body.d2q-launchzone .scorecard-box {
         max-height: calc(100dvh - 20px) !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
         box-shadow: 5px 5px 0 var(--lz-ink) !important;
     }
 }

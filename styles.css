@@ -4272,7 +4272,9 @@ body {
 .success-modal-close,
 .social-link,
 .footer-social a,
-#blogShareBar button {
+#blogShareBar button,
+.cart-trigger-btn,
+.cart-drawer-close {
     min-width: 44px;
     min-height: 44px;
 }
