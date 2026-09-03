@@ -393,7 +393,7 @@ export default async function handler(req, res) {
 
         if (!downloadLink) {
             if (productId === '00000000-0000-0000-0000-000000000001' || String(productName).includes('Test')) {
-                downloadLink = 'https://desk2quant.com/my-access.html';
+                downloadLink = 'https://desk2quant.com/assets/resources/50_FX_Derivatives_Quant_Interview_Problems.pdf';
             } else {
                 return res.status(404).json({ error: 'No download link found for this purchase', product: productName || null });
             }
