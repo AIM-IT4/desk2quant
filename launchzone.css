@@ -2655,9 +2655,12 @@ body.d2q-launchzone .learn-band-figure:hover .fig-stack {
 /* Hardware layer compositing for fixed/interactive shells (prevents repaint storms during scroll) */
 body.d2q-launchzone .navbar,
 body.d2q-launchzone .promo-announcement-bar,
-body.d2q-launchzone .d2q-terminal-window,
+body.d2q-launchzone .d2q-terminal-window {
+    backface-visibility: hidden;
+}
+
 body.d2q-launchzone .cart-drawer {
-    transform: translateZ(0);
+    will-change: transform;
     backface-visibility: hidden;
 }
 
