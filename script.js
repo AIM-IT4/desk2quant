@@ -3787,21 +3787,213 @@ async function initSessionPayment(description, amount, customerEmail, currency =
 }
 
 /**
- * Handle successful session payment - send email notification
+ * Handle successful session payment - send email notification and open calendar lock
  */
 async function handleSessionPaymentSuccess(response) {
     const paymentId = response?.payment_id || response?.razorpay_payment_id || '';
+
+    let booking = window.pendingBooking;
+    if (!booking) {
+        try {
+            const stored = localStorage.getItem('pendingBooking');
+            if (stored) booking = JSON.parse(stored);
+        } catch (e) { }
+    }
 
     // Paid bookings are fulfilled exactly once by the verified Razorpay webhook.
     // Keeping email/database work off the browser prevents duplicate confirmations.
     if (!String(paymentId).startsWith('FREE_SESSION_')) {
         try { localStorage.removeItem('pendingBooking'); } catch (e) { }
-        showToast('✅ Payment received! Your booking is being confirmed and your private session link will arrive by email shortly.', 'success', 0);
+        showToast('✅ Payment received! Lock in your exact calendar slot below.', 'success', 0);
+        window.openPostPaymentCalendarModal({
+            paymentId: paymentId,
+            sessionName: booking ? booking.sessionType : 'Quant Mentorship Session',
+            name: booking ? booking.name : '',
+            email: booking ? booking.email : '',
+            date: booking ? booking.date : '',
+            time: booking ? booking.time : ''
+        });
         return;
     }
 
-    return fulfillFreeSessionBooking({ payment_id: paymentId });
+    const freeRes = await fulfillFreeSessionBooking({ payment_id: paymentId });
+    window.openPostPaymentCalendarModal({
+        paymentId: paymentId,
+        sessionName: booking ? booking.sessionType : 'Free Test Session',
+        name: booking ? booking.name : '',
+        email: booking ? booking.email : '',
+        date: booking ? booking.date : '',
+        time: booking ? booking.time : ''
+    });
+    return freeRes;
 }
+
+/* ==========================================================================
+   Two-Way Google Calendar Integration & Post-Payment Slot Lock (Cal.com)
+   ========================================================================== */
+
+function ensureCalSdkLoaded() {
+    if (window.Cal) return;
+    (function (C, A, L) {
+        let p = function (a, ar) { a.q.push(ar); };
+        let d = C.document;
+        C.Cal = C.Cal || function () {
+            let cal = C.Cal;
+            let ar = arguments;
+            if (!cal.loaded) {
+                cal.ns = {};
+                cal.q = cal.q || [];
+                const s = d.createElement("script");
+                s.src = A;
+                s.async = true;
+                d.head.appendChild(s);
+                cal.loaded = true;
+            }
+            if (ar[0] === L) {
+                const api = function () { p(api, arguments); };
+                const namespace = ar[1];
+                api.q = api.q || [];
+                if (typeof namespace === "string") {
+                    cal.ns[namespace] = cal.ns[namespace] || api;
+                    p(cal.ns[namespace], ar);
+                    p(cal, ["initNamespace", namespace]);
+                } else p(cal, ar);
+                return;
+            }
+            p(cal, ar);
+        };
+    })(window, "https://app.cal.com/embed/embed.js", "init");
+
+    Cal("init", { origin: "https://app.cal.com" });
+    Cal("ui", {
+        theme: "dark",
+        styles: { branding: { brandColor: "#0f766e" } },
+        hideEventTypeDetails: false,
+        layout: "month_view"
+    });
+}
+
+function initCalEmbed(containerSelector, calLink, prefill = {}) {
+    ensureCalSdkLoaded();
+    const container = document.querySelector(containerSelector);
+    if (!container) return;
+
+    const cleanSelector = containerSelector.replace('#', '');
+    container.innerHTML = `<div id="${cleanSelector}-inner" style="width:100%;height:100%;min-height:520px;overflow:auto;"></div>`;
+
+    const config = {
+        theme: "dark"
+    };
+    if (prefill.name) config.name = prefill.name;
+    if (prefill.email) config.email = prefill.email;
+    if (prefill.notes) config.notes = prefill.notes;
+
+    Cal("inline", {
+        elementOrSelector: `#${cleanSelector}-inner`,
+        calLink: calLink || 'amit-kumar-jha',
+        config: config
+    });
+}
+
+window.switchBookingTab = function(tab) {
+    const formPanel = document.getElementById('bookingFormPanel');
+    const calPanel = document.getElementById('bookingCalContainer');
+    const tabForm = document.getElementById('tabBookingForm');
+    const tabCal = document.getElementById('tabBookingCal');
+
+    if (tab === 'cal') {
+        if (formPanel) formPanel.style.display = 'none';
+        if (calPanel) calPanel.classList.add('active');
+        if (tabForm) tabForm.classList.remove('active');
+        if (tabCal) tabCal.classList.add('active');
+
+        const calConfig = window.D2Q_CALENDAR_CONFIG || {};
+        const calLink = calConfig.calLink || 'amit-kumar-jha';
+        initCalEmbed('#cal-inline-embed', calLink);
+    } else {
+        if (formPanel) formPanel.style.display = 'block';
+        if (calPanel) calPanel.classList.remove('active');
+        if (tabForm) tabForm.classList.add('active');
+        if (tabCal) tabCal.classList.remove('active');
+    }
+};
+
+window.openPostPaymentCalendarModal = function(data = {}) {
+    const modal = document.getElementById('calendarBookingModal');
+    if (!modal) return;
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+
+    const payBadge = document.getElementById('calPaymentId');
+    if (payBadge) payBadge.textContent = data.paymentId || 'CONFIRMED';
+
+    const calConfig = window.D2Q_CALENDAR_CONFIG || {};
+    const calLink = calConfig.calLink || 'amit-kumar-jha';
+
+    // Setup 1-Click Google Calendar Event Link
+    const gcalBtn = document.getElementById('calAddToGcalBtn');
+    if (gcalBtn) {
+        const title = encodeURIComponent((calConfig.eventTitle || 'Desk2Quant Mentorship Session') + (data.sessionName ? ' - ' + data.sessionName : ''));
+        const details = encodeURIComponent(
+            (calConfig.eventDescription || 'Private 1-on-1 mentorship session.') +
+            '\n\nStudent: ' + (data.name || 'Candidate') +
+            '\nEmail: ' + (data.email || '') +
+            '\nPayment ID: ' + (data.paymentId || '') +
+            '\nPlatform: Desk2Quant (https://desk2quant.com)'
+        );
+        gcalBtn.href = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}`;
+    }
+
+    // Embed live Cal.com scheduler prefilled with student info
+    initCalEmbed('#cal-modal-embed', calLink, {
+        name: data.name,
+        email: data.email,
+        notes: `Desk2Quant Session (${data.sessionName || 'Mentorship'}) - Payment ID: ${data.paymentId || ''}`
+    });
+};
+
+window.closeCalendarModal = function() {
+    const modal = document.getElementById('calendarBookingModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+};
+
+window.downloadSessionIcs = function() {
+    const booking = window.pendingBooking || {};
+    const title = 'Desk2Quant Mentorship Session - Amit Kumar Jha';
+    const desc = '1-on-1 Quantitative Finance Mentorship with Amit Kumar Jha.\\nStudent: ' + (booking.name || 'Candidate') + '\\nPlatform: Desk2Quant (https://desk2quant.com)';
+    const now = new Date();
+    const startStr = now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const endStr = new Date(now.getTime() + 45 * 60000).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+    const icsData = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Desk2Quant//Mentorship Calendar//EN',
+        'CALSCALE:GREGORIAN',
+        'METHOD:REQUEST',
+        'BEGIN:VEVENT',
+        'UID:d2q-' + Date.now() + '@desk2quant.com',
+        'DTSTAMP:' + startStr,
+        'DTSTART:' + startStr,
+        'DTEND:' + endStr,
+        'SUMMARY:' + title,
+        'DESCRIPTION:' + desc,
+        'ORGANIZER;CN=Amit Kumar Jha:mailto:jha.8@alumni.iitj.ac.in',
+        'STATUS:CONFIRMED',
+        'END:VEVENT',
+        'END:VCALENDAR'
+    ].join('\r\n');
+
+    const blob = new Blob([icsData], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'Desk2Quant-Mentorship-Session.ics';
+    link.click();
+    showToast('📅 Calendar invite (.ics) downloaded!', 'success');
+};
 
 async function fulfillFreeSessionBooking(response) {
     const paymentId = response.payment_id;

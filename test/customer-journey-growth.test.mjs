@@ -1,4 +1,4 @@
-﻿import test from 'node:test';
+import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 
@@ -42,4 +42,26 @@ test('script.js getSmartCartOrderBump logic correctly differentiates recommendat
 test('ui-components.js has no whatsapp floating hotline script', async () => {
     const code = await fs.readFile('ui-components.js', 'utf8');
     assert.doesNotMatch(code, /initWhatsAppHotline/);
+});
+
+test('index.html contains calendar tab switcher, live calendar embed, and post-payment modal', async () => {
+    const html = await fs.readFile('index.html', 'utf8');
+    assert.match(html, /class="booking-tab-switcher"/);
+    assert.match(html, /id="bookingCalContainer"/);
+    assert.match(html, /id="calendarBookingModal"/);
+    assert.match(html, /id="calAddToGcalBtn"/);
+    assert.match(html, /id="calDownloadIcsBtn"/);
+});
+
+test('site-config.js defines D2Q_CALENDAR_CONFIG for two-way sync', async () => {
+    const code = await fs.readFile('site-config.js', 'utf8');
+    assert.match(code, /window\.D2Q_CALENDAR_CONFIG/);
+    assert.match(code, /amit-kumar-jha/);
+});
+
+test('script.js defines switchBookingTab and openPostPaymentCalendarModal', async () => {
+    const code = await fs.readFile('script.js', 'utf8');
+    assert.match(code, /window\.switchBookingTab/);
+    assert.match(code, /window\.openPostPaymentCalendarModal/);
+    assert.match(code, /window\.downloadSessionIcs/);
 });

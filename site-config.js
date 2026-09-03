@@ -13,6 +13,17 @@ window.QUANT_MENTOR = Object.freeze({
     })
 });
 
+/* 100% Free Two-Way Google Calendar Sync via Cal.com */
+window.D2Q_CALENDAR_CONFIG = Object.freeze({
+    enabled: true,
+    provider: 'cal', // Free Cal.com with two-way Google Calendar sync
+    calLink: 'amit-kumar-jha', // Customizable Cal.com username
+    mentorName: 'Amit Kumar Jha',
+    mentorEmail: 'jha.8@alumni.iitj.ac.in',
+    eventTitle: 'Desk2Quant 1-on-1 Mentorship & Code Review',
+    eventDescription: 'Private 1-on-1 quantitative finance mentorship and code review session with Amit Kumar Jha (Desk2Quant founder, Model Risk Quant at UBS).'
+});
+
 /*
  * Homepage sales hierarchy.
  * Frontend-only: no checkout, Razorpay, Supabase, delivery, email or API logic is changed here.
