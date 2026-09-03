@@ -36,6 +36,16 @@ const BLOG_COVER_FALLBACK_ONERROR =
 })();
 
 // ================================
+// EXTERNAL TOOLS INITIALIZATION (CLARITY & LIVE CHAT)
+// ================================
+try {
+    if (typeof window.initClarity === 'function') window.initClarity();
+    if (typeof window.initLiveChat === 'function') window.initLiveChat();
+} catch (e) {
+    /* never block script.js execution */
+}
+
+// ================================
 // CANONICAL PRODUCT URLS
 // ================================
 // The storefront remains interactive on product.html?id=..., but search and

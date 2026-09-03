@@ -435,6 +435,8 @@ window.MathJax = {
 <meta name="description" content="${esc(description)}">
 <meta name="robots" content="index,follow,max-image-preview:large">
 <link rel="canonical" href="${esc(url)}">
+<meta name="google-site-verification" content="google4995af590646a7a2">
+<meta name="msvalidate.01" content="BING_WEBMASTER_VERIFICATION_TOKEN">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Desk2Quant">
 <meta property="og:url" content="${esc(url)}">

@@ -109,6 +109,8 @@ function renderHead({ title, description, canonical, type = 'article', jsonLd = 
 <meta name="author" content="Desk2Quant Editorial Team">
 <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
 <link rel="canonical" href="${esc(canonical)}">
+<meta name="google-site-verification" content="google4995af590646a7a2">
+<meta name="msvalidate.01" content="BING_WEBMASTER_VERIFICATION_TOKEN">
 <link rel="icon" type="image/png" href="/assets/images/desk2quant-logo.png?v=3">
 <meta property="og:type" content="${esc(type)}">
 <meta property="og:site_name" content="Desk2Quant">

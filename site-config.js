@@ -24,6 +24,110 @@ window.D2Q_CALENDAR_CONFIG = Object.freeze({
     eventDescription: 'Private 1-on-1 quantitative finance mentorship and code review session with Amit Kumar Jha (Desk2Quant founder, Model Risk Quant at UBS).'
 });
 
+/* Microsoft Clarity (Heatmaps & Session Recording) - 100% Free */
+window.D2Q_CLARITY_CONFIG = Object.freeze({
+    enabled: true,
+    projectId: '...' // Microsoft Clarity Project ID (e.g., 'qf461e7k85')
+});
+
+/* Tawk.to Live Chat Widget - 100% Free */
+window.D2Q_LIVE_CHAT_CONFIG = Object.freeze({
+    enabled: false,
+    propertyId: '',
+    widgetId: '',
+    position: 'bottom-left' // 'bottom-left' or 'bottom-right'; bottom-left avoids overlapping advisor widget & scroll-to-top button
+});
+
+/**
+ * Clean, safe loader for Microsoft Clarity.
+ * Activates gracefully only when enabled and configured with a real project ID.
+ * Never throws an exception and will not block rendering if blocked by adblockers.
+ */
+function initClarity() {
+    try {
+        var config = window.D2Q_CLARITY_CONFIG;
+        if (!config || !config.enabled) return;
+        var projectId = (config.projectId || '').trim();
+        if (!projectId || projectId === '...' || projectId.indexOf('YOUR_') === 0) return;
+        if (window.clarity) return;
+
+        (function (c, l, a, r, i, t, y) {
+            c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments); };
+            t = l.createElement(r);
+            t.async = 1;
+            t.src = 'https://www.clarity.ms/tag/' + encodeURIComponent(i);
+            t.onerror = function () { /* Gracefully handle adblockers or network failure without throwing */ };
+            y = l.getElementsByTagName(r)[0];
+            if (y && y.parentNode) {
+                y.parentNode.insertBefore(t, y);
+            } else if (document.head) {
+                document.head.appendChild(t);
+            }
+        })(window, document, 'clarity', 'script', projectId);
+    } catch (e) {
+        // Defensive: never let analytics affect UX
+    }
+}
+window.initClarity = initClarity;
+
+/**
+ * Clean, safe async injector for Tawk.to Live Chat.
+ * Activates only when enabled with valid propertyId and widgetId.
+ * Configured so it doesn't interfere with existing floating buttons and causes zero console errors.
+ */
+function initLiveChat() {
+    try {
+        var config = window.D2Q_LIVE_CHAT_CONFIG;
+        if (!config || !config.enabled) return;
+        var propId = (config.propertyId || '').trim();
+        var widgetId = (config.widgetId || '').trim();
+        if (!propId || !widgetId || propId === '...' || widgetId === '...') return;
+        if (window.Tawk_API && window.Tawk_API.isChatMaximized) return;
+
+        window.Tawk_API = window.Tawk_API || {};
+        window.Tawk_LoadStart = new Date();
+
+        if (config.position === 'bottom-left' || !config.position) {
+            window.Tawk_API.customStyle = window.Tawk_API.customStyle || {};
+            window.Tawk_API.customStyle.visibility = {
+                desktop: { position: 'bottom-left', xOffset: 20, yOffset: 20 },
+                mobile: { position: 'bottom-left', xOffset: 12, yOffset: 12 }
+            };
+        }
+
+        var s1 = document.createElement('script');
+        s1.id = 'd2q-tawk-script';
+        s1.async = true;
+        s1.src = 'https://embed.tawk.to/' + encodeURIComponent(propId) + '/' + encodeURIComponent(widgetId);
+        s1.charset = 'UTF-8';
+        s1.setAttribute('crossorigin', '*');
+        s1.onerror = function () { /* Adblocker safe */ };
+
+        var s0 = document.getElementsByTagName('script')[0];
+        if (s0 && s0.parentNode) {
+            s0.parentNode.insertBefore(s1, s0);
+        } else if (document.head) {
+            document.head.appendChild(s1);
+        }
+    } catch (e) {
+        // Defensive: never let chat widget failure affect UX
+    }
+}
+window.initLiveChat = initLiveChat;
+
+// Auto-run when DOM is ready
+if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () {
+            initClarity();
+            initLiveChat();
+        }, { once: true });
+    } else {
+        initClarity();
+        initLiveChat();
+    }
+}
+
 /*
  * Homepage sales hierarchy.
  * Frontend-only: no checkout, Razorpay, Supabase, delivery, email or API logic is changed here.
