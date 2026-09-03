@@ -424,10 +424,6 @@ export async function handleProductPurchase(data) {
         // through now fails loudly below instead of silently mailing the wrong PDF.
         //
         // Add an entry here only after confirming the Drive file is that product.
-        'Live Verification Test Pack (1 INR)': 'https://desk2quant.com/assets/resources/50_FX_Derivatives_Quant_Interview_Problems.pdf',
-        'Live Verification Test Pack (Rs 1)': 'https://desk2quant.com/assets/resources/50_FX_Derivatives_Quant_Interview_Problems.pdf',
-        'Live Verification Test Pack (₹1)': 'https://desk2quant.com/assets/resources/50_FX_Derivatives_Quant_Interview_Problems.pdf',
-        '🧪 Live Verification Test Pack (₹1)': 'https://desk2quant.com/assets/resources/50_FX_Derivatives_Quant_Interview_Problems.pdf'
     };
 
     let downloadLink = checkoutDownloadLink || '';

@@ -2092,20 +2092,6 @@ async function displaySupabaseProducts(products) {
     if (resourcesGrid) resourcesGrid.innerHTML = '';
 
     let paidProducts = products.filter(p => p.price > 0);
-
-    // Provide the 1 INR live verification test product at the top of the products grid
-    paidProducts.unshift({
-        id: '00000000-0000-0000-0000-000000000001',
-        name: 'Live Verification Test Pack (1 INR)',
-        description: 'Official 1 INR End-to-End Live Checkout & Tax Invoice Verification Test Pack. Tests Razorpay payment gateway, automated access granting, and the animated mini thermal receipt printer with the authentic paper-cut design.',
-        cover_image_url: 'https://dntabmyurlrlnoajdnja.supabase.co/storage/v1/object/public/product-covers/numerical_methods_cover_author_1783741116013.png',
-        price: 1,
-        original_price: 99,
-        created_at: new Date().toISOString(),
-        coupon_code: null,
-        discount_percentage: 0,
-        enable_ppp: false
-    });
     const freeProducts = products.filter(p => p.price === 0);
 
     // Store the unsorted paid list so the sort control can re-sort without a refetch
@@ -2254,27 +2240,10 @@ async function displaySupabaseProducts(products) {
 
 // Global scope for product modal
 window.openProductModal = async function (id) {
+    if (!window.supabaseClient) return;
     try {
-        let product = null;
-        if (id === '00000000-0000-0000-0000-000000000001' || id === 'd2q-test-product-1inr') {
-            product = {
-                id: '00000000-0000-0000-0000-000000000001',
-                name: 'Live Verification Test Pack (1 INR)',
-                description: '<p>Official 1 INR End-to-End Live Checkout & Tax Invoice Verification Test Pack.</p><p>Tests Razorpay payment gateway, automated access granting, and the animated mini thermal receipt printer with the authentic paper-cut design.</p>',
-                cover_image_url: 'https://dntabmyurlrlnoajdnja.supabase.co/storage/v1/object/public/product-covers/numerical_methods_cover_author_1783741116013.png',
-                price: 1,
-                original_price: 99,
-                created_at: new Date().toISOString(),
-                coupon_code: null,
-                discount_percentage: 0,
-                enable_ppp: false
-            };
-        } else if (window.supabaseClient) {
-            const { data, error } = await window.supabaseClient.from('products').select('id,name,description,cover_image_url,price,original_price,created_at,coupon_code,discount_percentage,enable_ppp').eq('id', id).single();
-            if (error || !data) return;
-            product = data;
-        }
-        if (!product) return;
+        const { data: product, error } = await window.supabaseClient.from('products').select('id,name,description,cover_image_url,price,original_price,created_at,coupon_code,discount_percentage,enable_ppp').eq('id', id).single();
+        if (error || !product) return;
 
         const modal = document.getElementById('productModal');
         if (!modal) return;
