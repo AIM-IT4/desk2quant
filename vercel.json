@@ -343,11 +343,6 @@
       "source": "/gauntlet/projects/:slug/reference.mjs",
       "destination": "/404.html",
       "permanent": true
-    },
-    {
-      "source": "/products/quant-project-gauntlet-01-ois-sofr-curve-graded-project.html",
-      "destination": "/products/",
-      "permanent": true
     }
   ]
 }
