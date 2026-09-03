@@ -2502,6 +2502,7 @@ async function updateServicesSection(sessions) {
                     const option = options.find(opt => opt.text.includes(service));
                     if (option) {
                         serviceSelect.value = option.value;
+                        serviceSelect.dispatchEvent(new Event('change'));
                         // Scroll to booking form
                         document.getElementById('contact').scrollIntoView({ behavior: 'smooth' });
                     }
@@ -2558,7 +2559,10 @@ async function updateBookingForm(sessions) {
     }
 
     // Ensure Resume Teardown option is present
-    const hasResumeOpt = Array.from(bookingSelect.options).some(o => o.value.includes('resume') || o.text.includes('Resume'));
+    const hasResumeOpt = Array.from(bookingSelect.options).some(o =>
+        o.value.includes('resume') || o.value.includes('teardown') ||
+        (o.text && (o.text.toLowerCase().includes('resume') || o.text.toLowerCase().includes('teardown')))
+    );
     if (!hasResumeOpt) {
         const resumeOpt = document.createElement('option');
         const localResumePrice = await convertPrice(1299, userCountryCode, true);
@@ -2566,6 +2570,13 @@ async function updateBookingForm(sessions) {
         const priceText = isLocal ? formatPrice(localResumePrice) : '₹1,299';
         resumeOpt.value = 'resume_teardown|1299|45';
         resumeOpt.innerHTML = `📄 Quant Resume & Project Teardown (45 min) - ${priceText}`;
+        const matchedDbSession = sessions && sessions.find(s => {
+            const n = (s.name || '').toLowerCase();
+            return (n.includes('resume') || n.includes('teardown')) && s.is_active !== false;
+        });
+        if (matchedDbSession && matchedDbSession.id) {
+            resumeOpt.dataset.sessionId = matchedDbSession.id;
+        }
         bookingSelect.appendChild(resumeOpt);
     }
 
@@ -2578,7 +2589,10 @@ window.selectResumeAudit = function (e) {
     if (contact) contact.scrollIntoView({ behavior: 'smooth' });
     const select = document.getElementById('bookingService');
     if (select) {
-        const opt = Array.from(select.options).find(o => o.value.includes('resume') || o.text.includes('Resume'));
+        const opt = Array.from(select.options).find(o =>
+            o.value.includes('resume') || o.value.includes('teardown') ||
+            (o.text && (o.text.toLowerCase().includes('resume') || o.text.toLowerCase().includes('teardown')))
+        );
         if (opt) {
             select.value = opt.value;
             select.dispatchEvent(new Event('change'));
@@ -3610,36 +3624,62 @@ if (bookingForm) {
         const price = parts[1] || '0';
         const duration = parts[2] || '60';
 
+        const selectedOption = bookingService.options[bookingService.selectedIndex];
+        const optSessionId = selectedOption?.dataset?.sessionId;
+
         // Try to find session info from dynamic sessions
         let sessionInfo = null;
 
         if (window.dynamicSessions && Array.isArray(window.dynamicSessions)) {
-            // First try exact slug or plain name match
-            sessionInfo = window.dynamicSessions.find(s =>
-                s.name.toLowerCase().replace(/\s+/g, '_') === sessionType ||
-                s.name.toLowerCase() === sessionType.replace(/_/g, ' ')
-            );
+            // 1. Exact match by dataset sessionId if available
+            if (optSessionId) {
+                sessionInfo = window.dynamicSessions.find(s => s.id === optSessionId);
+            }
 
-            // Flexible matching for resume teardown / audit: match any active teardown/resume session
-            if (!sessionInfo && (sessionType.includes('resume') || sessionType.includes('teardown'))) {
+            // 2. Exact slug, name or prefix match
+            if (!sessionInfo) {
+                sessionInfo = window.dynamicSessions.find(s => {
+                    const normName = s.name.toLowerCase().replace(/\s+/g, '_');
+                    const plainName = s.name.toLowerCase();
+                    return normName === sessionType ||
+                        plainName === sessionType.replace(/_/g, ' ') ||
+                        normName.startsWith(sessionType + '_') ||
+                        plainName.startsWith(sessionType.replace(/_/g, ' '));
+                });
+            }
+
+            // 3. Flexible keyword matching across all session types (resume/teardown, quick, deep, interview)
+            if (!sessionInfo) {
                 sessionInfo = window.dynamicSessions.find(s => {
                     const nameLower = (s.name || '').toLowerCase();
-                    return (nameLower.includes('resume') || nameLower.includes('teardown')) && s.is_active !== false;
+                    if (sessionType.includes('resume') || sessionType.includes('teardown')) {
+                        return (nameLower.includes('resume') || nameLower.includes('teardown')) && s.is_active !== false;
+                    }
+                    if (sessionType === 'quick') return nameLower.includes('quick') && s.is_active !== false;
+                    if (sessionType === 'deep') return nameLower.includes('deep') && s.is_active !== false;
+                    if (sessionType === 'interview') return nameLower.includes('interview') && s.is_active !== false;
+                    return false;
                 }) || window.dynamicSessions.find(s => {
                     const nameLower = (s.name || '').toLowerCase();
-                    return nameLower.includes('resume') || nameLower.includes('teardown');
+                    if (sessionType.includes('resume') || sessionType.includes('teardown')) {
+                        return nameLower.includes('resume') || nameLower.includes('teardown');
+                    }
+                    if (sessionType === 'quick') return nameLower.includes('quick');
+                    if (sessionType === 'deep') return nameLower.includes('deep');
+                    if (sessionType === 'interview') return nameLower.includes('interview');
+                    return false;
                 });
             }
         }
 
         // If still not found, create session info from the dropdown text
         if (!sessionInfo) {
-            const selectedOption = bookingService.options[bookingService.selectedIndex];
             if (selectedOption && selectedOption.text) {
-                const match = selectedOption.text.match(/[🆓\s]*([^\(]+)/);
+                const cleanText = selectedOption.text.replace(/^[\s\uD800-\uDBFF\uDC00-\uDFFF\u2600-\u27BF🆓📄]+/, '');
+                const match = cleanText.match(/([^\(]+)/);
                 const sessionName = match ? match[1].trim() : 'Session';
                 sessionInfo = {
-                    id: selectedOption.dataset?.sessionId || null,
+                    id: optSessionId || null,
                     name: sessionName,
                     price: parseInt(price) || 0,
                     duration: parseInt(duration) || 60
@@ -3982,9 +4022,15 @@ window.downloadSessionIcs = function() {
     const booking = window.pendingBooking || {};
     const title = 'Desk2Quant Mentorship Session - Amit Kumar Jha';
     const desc = '1-on-1 Quantitative Finance Mentorship with Amit Kumar Jha.\\nStudent: ' + (booking.name || 'Candidate') + '\\nPlatform: Desk2Quant (https://desk2quant.com)';
-    const now = new Date();
-    const startStr = now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    const endStr = new Date(now.getTime() + 45 * 60000).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    let startDate = new Date();
+    if (booking.bookingDate && booking.time) {
+        const parsed = new Date(`${booking.bookingDate} ${booking.time}`);
+        if (!isNaN(parsed.getTime())) startDate = parsed;
+    }
+    const durationMins = parseInt(booking.duration) || 45;
+    const endDate = new Date(startDate.getTime() + durationMins * 60000);
+    const startStr = startDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const endStr = endDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
     const icsData = [
         'BEGIN:VCALENDAR',

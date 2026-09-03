@@ -95,3 +95,88 @@ test('high-intent subpages load site-config.js for sitewide Clarity and live cha
     }
 });
 
+test('api/interview.js actively rejects create-free-booking and inserts zero rows', async () => {
+    process.env.SUPABASE_URL = 'https://supabase.test';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
+    process.env.GROQ_API_KEY = 'test-groq-key';
+
+    const { default: handler } = await import('../api/interview.js');
+    let insertedBooking = false;
+    const originalFetch = global.fetch;
+    global.fetch = async (url, opts = {}) => {
+        if (String(url).includes('/rest/v1/bookings') && opts.method === 'POST') {
+            insertedBooking = true;
+        }
+        return { ok: true, status: 200, json: async () => [] };
+    };
+
+    try {
+        let statusCode = null;
+        let responseBody = null;
+        const req = {
+            method: 'POST',
+            body: { action: 'create-free-booking', email: 'free@test.com', name: 'Free User' },
+            headers: { 'x-forwarded-for': '127.0.0.1' },
+            socket: {}
+        };
+        const res = {
+            setHeader() {},
+            status(code) { statusCode = code; return this; },
+            json(data) { responseBody = data; return this; }
+        };
+
+        await handler(req, res);
+        assert.equal(statusCode, 400, 'Must reject with 400 status');
+        assert.equal(insertedBooking, false, 'Must never insert rows into bookings');
+    } finally {
+        global.fetch = originalFetch;
+    }
+});
+
+test('session resolution logic handles quick, deep, interview, teardown and exact dataset IDs', () => {
+    const dynamicSessions = [
+        { id: 'sess-quick-1', name: 'Quick Consultation', price: 499, duration: 30, is_active: true },
+        { id: 'sess-deep-2', name: 'Deep Dive Session', price: 999, duration: 60, is_active: true },
+        { id: 'sess-mock-3', name: 'Interview Prep', price: 1499, duration: 90, is_active: true },
+        { id: 'sess-tear-4', name: 'Quant Resume & Project Teardown', price: 1299, duration: 45, is_active: true }
+    ];
+
+    function resolveSession(sessionType, optSessionId = null) {
+        let sessionInfo = null;
+        if (optSessionId) {
+            sessionInfo = dynamicSessions.find(s => s.id === optSessionId);
+        }
+        if (!sessionInfo) {
+            sessionInfo = dynamicSessions.find(s => {
+                const normName = s.name.toLowerCase().replace(/\s+/g, '_');
+                const plainName = s.name.toLowerCase();
+                return normName === sessionType ||
+                    plainName === sessionType.replace(/_/g, ' ') ||
+                    normName.startsWith(sessionType + '_') ||
+                    plainName.startsWith(sessionType.replace(/_/g, ' '));
+            });
+        }
+        if (!sessionInfo) {
+            sessionInfo = dynamicSessions.find(s => {
+                const nameLower = (s.name || '').toLowerCase();
+                if (sessionType.includes('resume') || sessionType.includes('teardown')) {
+                    return (nameLower.includes('resume') || nameLower.includes('teardown')) && s.is_active !== false;
+                }
+                if (sessionType === 'quick') return nameLower.includes('quick') && s.is_active !== false;
+                if (sessionType === 'deep') return nameLower.includes('deep') && s.is_active !== false;
+                if (sessionType === 'interview') return nameLower.includes('interview') && s.is_active !== false;
+                return false;
+            });
+        }
+        return sessionInfo;
+    }
+
+    // Static HTML options
+    assert.equal(resolveSession('quick')?.id, 'sess-quick-1');
+    assert.equal(resolveSession('deep')?.id, 'sess-deep-2');
+    assert.equal(resolveSession('interview')?.id, 'sess-mock-3');
+    assert.equal(resolveSession('resume_teardown')?.id, 'sess-tear-4');
+    // Direct ID option
+    assert.equal(resolveSession('arbitrary_slug', 'sess-tear-4')?.id, 'sess-tear-4');
+});
+
