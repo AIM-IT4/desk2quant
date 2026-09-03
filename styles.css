@@ -1,4 +1,4 @@
-﻿/* ================================
+/* ================================
    CSS Design System - Desk2Quant
    Light Theme
    ================================ */
@@ -3134,9 +3134,9 @@ body.d2q-reference .footer .logo-img {
 
 html.reveal-enabled .reveal-up {
     opacity: 0;
-    transform: translateY(30px);
-    transition: opacity 0.8s cubic-bezier(0.2, 1, 0.3, 1),
-        transform 0.8s cubic-bezier(0.2, 1, 0.3, 1);
+    transform: translateY(18px);
+    transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
     will-change: opacity, transform;
 }
 
@@ -3157,15 +3157,15 @@ html.reveal-enabled .reveal-up.revealed {
 
 /* Staggered Delays */
 .delay-100 {
-    transition-delay: 100ms;
+    transition-delay: 60ms;
 }
 
 .delay-200 {
-    transition-delay: 200ms;
+    transition-delay: 120ms;
 }
 
 .delay-300 {
-    transition-delay: 300ms;
+    transition-delay: 180ms;
 }
 
 .delay-400 {
@@ -3280,17 +3280,21 @@ html.reveal-enabled .reveal-up.revealed {
    10/10 Design Enhancements
    ================================ */
 
-/* --- Scroll Progress Bar --- */
+/* --- Scroll Progress Bar (GPU Hardware Accelerated) --- */
 .scroll-progress {
     position: fixed;
     top: 0;
     left: 0;
     height: 3px;
-    width: 0%;
+    width: 100%;
+    transform: scaleX(0);
+    transform-origin: left top;
     background: var(--accent-gradient);
     z-index: 9999;
-    transition: width 0.1s linear;
+    will-change: transform;
+    transition: transform 0.05s linear;
     box-shadow: 0 0 10px rgba(244, 63, 94, 0.5);
+    pointer-events: none;
 }
 
 /* --- Hero Particle Canvas --- */

@@ -258,28 +258,31 @@ document.addEventListener('DOMContentLoaded', function () {
     const scrollTopBtn = document.getElementById('scrollTopBtn');
 
     if (navbar) {
-        // Scroll handler is rAF-throttled and passive: it previously ran on every
-        // scroll event and read scrollHeight each time (forcing layout), which added
-        // avoidable jank. Behaviour is unchanged - only the scheduling.
         let __scrollTicking = false;
+        let __cachedDocHeight = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+
+        const __updateDocHeight = () => {
+            __cachedDocHeight = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+        };
+        window.addEventListener('resize', __updateDocHeight, { passive: true });
+
         const __onScroll = () => {
-            if (window.scrollY > 20) {
+            const currentY = window.scrollY || window.pageYOffset;
+            if (currentY > 20) {
                 navbar.classList.add('scrolled');
             } else {
                 navbar.classList.remove('scrolled');
             }
 
-            // Scroll progress bar
+            // Scroll progress bar: GPU-accelerated scaleX eliminates forced layout reflow on every frame
             if (scrollProgress) {
-                const scrollTop = window.scrollY;
-                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-                const scrollPercent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-                scrollProgress.style.width = scrollPercent + '%';
+                const scrollRatio = Math.min(1, Math.max(0, currentY / __cachedDocHeight));
+                scrollProgress.style.transform = `scaleX(${scrollRatio})`;
             }
 
             // Scroll-to-top button
             if (scrollTopBtn) {
-                if (window.scrollY > 600) {
+                if (currentY > 600) {
                     scrollTopBtn.classList.add('visible');
                 } else {
                     scrollTopBtn.classList.remove('visible');

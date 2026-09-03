@@ -2649,3 +2649,43 @@ body.d2q-launchzone .learn-band-figure:hover .fig-stack {
     box-shadow: 12px 12px 0 rgba(255, 255, 255, 0.3);
 }
 
+/* ==========================================================
+   Butter-Smooth Performance & Touch Responsiveness Upgrades
+   ========================================================== */
+/* Hardware layer compositing for fixed/interactive shells (prevents repaint storms during scroll) */
+body.d2q-launchzone .navbar,
+body.d2q-launchzone .promo-announcement-bar,
+body.d2q-launchzone .d2q-terminal-window,
+body.d2q-launchzone .cart-drawer {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+/* Instant tap feedback & eliminate 300ms mobile tap delay */
+body.d2q-launchzone button,
+body.d2q-launchzone a,
+body.d2q-launchzone .scenario-chip,
+body.d2q-launchzone .filter-btn,
+body.d2q-launchzone .btn {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Micro-interaction feedback on tap/press */
+body.d2q-launchzone .btn:active,
+body.d2q-launchzone .scenario-chip:active,
+body.d2q-launchzone .filter-btn:active,
+body.d2q-launchzone .cart-add-btn:active {
+    transform: scale(0.97);
+    transition: transform 0.08s ease;
+}
+
+/* Smooth momentum scrolling & prevent page rubberbanding on horizontal scrollbars */
+body.d2q-launchzone .scenario-chips,
+body.d2q-launchzone .terminal-scenario-bar,
+body.d2q-launchzone .filter-buttons,
+body.d2q-launchzone .cart-items {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+}
+

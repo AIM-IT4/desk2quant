@@ -63,7 +63,10 @@
     let currentScenarioIdx = 0;
     let isTyping = false;
     let autoPlayTimer = null;
+    let typeInterval = null;
+    let streamTimer = null;
     let isPaused = false;
+    let isVisible = true;
 
     function initTerminal() {
         const termScreen = document.getElementById('termLogHistory');
@@ -74,7 +77,36 @@
         if (termWindow) {
             termWindow.addEventListener('mouseenter', () => { isPaused = true; });
             termWindow.addEventListener('mouseleave', () => { isPaused = false; });
+
+            // Free CPU/GPU cycles when terminal is scrolled off-screen
+            if ('IntersectionObserver' in window) {
+                const visObserver = new IntersectionObserver((entries) => {
+                    entries.forEach((entry) => {
+                        const wasVisible = isVisible;
+                        isVisible = entry.isIntersecting;
+                        if (!isVisible) {
+                            isPaused = true;
+                            clearTimeout(autoPlayTimer);
+                        } else if (!wasVisible && isVisible) {
+                            isPaused = false;
+                            scheduleNext();
+                        }
+                    });
+                }, { rootMargin: '60px' });
+                visObserver.observe(termWindow);
+            }
         }
+
+        // Pause when tab is backgrounded
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                isPaused = true;
+                clearTimeout(autoPlayTimer);
+            } else if (isVisible) {
+                isPaused = false;
+                scheduleNext();
+            }
+        });
 
         runScenario(0);
     }
@@ -89,6 +121,9 @@
         });
 
         clearTimeout(autoPlayTimer);
+        clearInterval(typeInterval);
+        clearTimeout(streamTimer);
+
         const scenario = scenarios[currentScenarioIdx];
         const termScreen = document.getElementById('termLogHistory');
         const termCmd = document.getElementById('termCurrentCommand');
@@ -101,7 +136,7 @@
         // Type command
         let charIdx = 0;
         const textToType = scenario.command;
-        const typeInterval = setInterval(() => {
+        typeInterval = setInterval(() => {
             if (charIdx < textToType.length) {
                 termCmd.textContent += textToType.charAt(charIdx);
                 charIdx++;
@@ -115,7 +150,6 @@
 
     function streamOutput(lines, lineIdx) {
         if (lineIdx >= lines.length) {
-            // Schedule next scenario after 5.5 seconds unless paused
             scheduleNext();
             return;
         }
@@ -131,7 +165,7 @@
         termScreen.scrollTop = termScreen.scrollHeight;
 
         const delay = line.type === 'value' ? 450 : 260;
-        setTimeout(() => {
+        streamTimer = setTimeout(() => {
             streamOutput(lines, lineIdx + 1);
         }, delay);
     }
@@ -139,10 +173,10 @@
     function scheduleNext() {
         clearTimeout(autoPlayTimer);
         autoPlayTimer = setTimeout(() => {
-            if (!isPaused) {
+            if (!isPaused && isVisible) {
                 const nextIdx = (currentScenarioIdx + 1) % scenarios.length;
                 runScenario(nextIdx);
-            } else {
+            } else if (isPaused && isVisible) {
                 scheduleNext();
             }
         }, 5000);
