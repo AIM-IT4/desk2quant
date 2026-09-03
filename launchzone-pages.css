@@ -582,17 +582,6 @@ body.d2q-launchzone .navbar .logo-img {
     height: 34px !important;
 }
 
-body.d2q-launchzone .hero-content {
-    display: flex;
-    flex-direction: column;
-}
-
-body.d2q-launchzone .hero-badge { order: 1; align-self: center; }
-body.d2q-launchzone .hero-headline { order: 2; }
-body.d2q-launchzone .hero-subcopy { order: 3; }
-body.d2q-launchzone .hero-proof-row { order: 4; }
-body.d2q-launchzone .hero-cta { order: 5; }
-body.d2q-launchzone .hero-stats { order: 6; }
 
 body.d2q-launchzone main > section.lead-capture {
     color: var(--lz-white);

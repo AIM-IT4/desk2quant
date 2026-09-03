@@ -1,4 +1,4 @@
-﻿// ================================
+// ================================
 // BLOG COVER FALLBACK
 // ================================
 // cover_image_url is author-supplied data, so a post can point at a URL that
@@ -317,7 +317,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const productStat = document.getElementById('stat-products');
         if (studentStat) studentStat.textContent = `${STATS_CONFIG.mentees}+`;
         if (reachStat) reachStat.textContent = `${STATS_CONFIG.resourceUsers}+`;
-        if (productStat) productStat.textContent = String(STATS_CONFIG.products);
+        if (productStat) productStat.textContent = `${STATS_CONFIG.products}+`;
     }
     updateStats();
 

@@ -668,17 +668,20 @@ body.d2q-launchzone .hero-container {
 
 body.d2q-launchzone .hero-split-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
-    gap: clamp(32px, 4vw, 56px);
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: clamp(28px, 3.5vw, 52px);
     align-items: stretch;
     width: 100%;
+    min-width: 0;
 }
 
 @media (max-width: 1060px) {
     body.d2q-launchzone .hero-split-grid {
-        grid-template-columns: 1fr;
-        gap: 36px;
+        grid-template-columns: 100%;
+        gap: 32px;
         align-items: start;
+        width: 100%;
+        min-width: 0;
     }
 }
 
@@ -761,6 +764,9 @@ body.d2q-launchzone .hero-value-line {
     color: var(--lz-ink);
     font-family: var(--lz-font-mono);
     letter-spacing: 0.01em;
+    max-width: 100%;
+    box-sizing: border-box;
+    word-break: break-word;
 }
 
 body.d2q-launchzone .hero-value-line strong {
@@ -1994,18 +2000,6 @@ body.d2q-launchzone .theme-toggle {
         width: 100%;
     }
 
-    body.d2q-launchzone .hero-stats {
-        grid-template-columns: 1fr;
-    }
-
-    body.d2q-launchzone .stat-item {
-        border-right: 0;
-        border-bottom: 1px solid var(--lz-line);
-    }
-
-    body.d2q-launchzone .stat-item:last-child {
-        border-bottom: 0;
-    }
 
     body.d2q-launchzone .section-headline {
         font-size: clamp(2.5rem, 12vw, 4rem);
@@ -2054,151 +2048,351 @@ body.d2q-launchzone .theme-toggle {
 }
 
 @media (max-width: 768px) {
+    body.d2q-launchzone {
+        overflow-x: hidden;
+    }
+
+    body.d2q-launchzone .hero {
+        overflow: hidden;
+        width: 100%;
+        padding-top: clamp(60px, 8vw, 90px);
+        padding-bottom: clamp(48px, 6vw, 72px);
+    }
+
     body.d2q-launchzone .hero-container {
+        width: 100%;
+        max-width: 100%;
         padding-inline: 16px;
+        box-sizing: border-box;
+        overflow: hidden;
+        min-width: 0;
     }
 
     body.d2q-launchzone .hero-split-grid {
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: column;
         gap: 28px;
+        width: 100%;
+        min-width: 0;
+    }
+
+    body.d2q-launchzone .hero-content {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        text-align: left;
+    }
+
+    body.d2q-launchzone .hero-badge {
+        font-size: 10px;
+        padding: 6px 10px;
+        margin: 0 0 14px 0;
+        max-width: 100%;
+        box-sizing: border-box;
+        white-space: normal;
+        word-break: break-word;
     }
 
     body.d2q-launchzone .hero-headline {
-        font-size: clamp(1.85rem, 6.5vw, 2.4rem);
-        line-height: 1.15;
+        font-size: clamp(1.85rem, 6.2vw, 2.35rem);
+        line-height: 1.14;
+        margin: 0 0 14px 0;
+        word-break: break-word;
+        overflow-wrap: break-word;
     }
 
     body.d2q-launchzone .hero-subcopy {
-        font-size: 0.96rem;
+        font-size: 0.94rem;
         line-height: 1.55;
+        margin: 0 0 14px 0;
+        word-break: break-word;
+    }
+
+    body.d2q-launchzone .hero-value-line {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px 8px;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        margin: 0 0 18px 0;
+        padding: 8px 12px;
+        font-size: 11px;
+        line-height: 1.45;
+        word-break: break-word;
+        border-radius: 4px;
+    }
+
+    body.d2q-launchzone .hero-proof-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+        width: 100%;
+        box-sizing: border-box;
+        margin: 0 0 20px 0;
+    }
+
+    body.d2q-launchzone .hero-proof-row span {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        min-height: 36px;
+        margin-left: 0;
+        padding: 6px 8px;
+        font-size: 9.5px;
+        border: 1px solid var(--lz-line-strong);
+        background: rgba(255, 255, 255, 0.85);
+        border-radius: 3px;
+        box-sizing: border-box;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-align: center;
     }
 
     body.d2q-launchzone .hero-cta {
+        display: flex;
         flex-direction: column;
         width: 100%;
+        gap: 10px;
+        margin: 0 0 20px 0;
     }
 
     body.d2q-launchzone .hero-cta .btn {
         width: 100%;
+        box-sizing: border-box;
         justify-content: center;
         text-align: center;
+        padding: 13px 18px;
+        font-size: 13.5px;
     }
 
     body.d2q-launchzone .hero-stats {
-        grid-template-columns: repeat(3, 1fr);
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        border: 1px solid var(--lz-line-strong) !important;
+        border-radius: 4px !important;
+        background: var(--lz-white) !important;
+        overflow: hidden !important;
+        margin: 0 !important;
     }
 
     body.d2q-launchzone .stat-item {
-        padding: 12px 10px;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 8px 4px !important;
+        border-right: 1px solid var(--lz-line) !important;
+        border-bottom: 0 !important;
+        text-align: center !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    body.d2q-launchzone .stat-item:last-child {
+        border-right: 0 !important;
     }
 
     body.d2q-launchzone .stat-value {
-        font-size: 1.35rem;
+        font-size: 1.25rem !important;
+        line-height: 1.1 !important;
+        font-weight: 700 !important;
+        color: var(--lz-ink) !important;
     }
 
     body.d2q-launchzone .stat-label {
-        font-size: 8.5px;
+        font-size: 7.5px !important;
+        letter-spacing: 0.03em !important;
+        line-height: 1.2 !important;
+        margin-top: 3px !important;
+        color: var(--lz-muted) !important;
+        text-transform: uppercase !important;
+    }
+
+    /* Terminal Side */
+    body.d2q-launchzone .hero-terminal-side {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
     }
 
     body.d2q-launchzone .d2q-terminal-window {
+        width: 100%;
         max-width: 100%;
-        box-shadow: 5px 5px 0 var(--lz-signal);
+        min-width: 0;
+        box-sizing: border-box;
+        border-radius: 6px;
+        box-shadow: 4px 4px 0 var(--lz-signal);
+    }
+
+    body.d2q-launchzone .terminal-titlebar {
+        padding: 8px 12px;
+        gap: 8px;
+        min-width: 0;
+        box-sizing: border-box;
+    }
+
+    body.d2q-launchzone .terminal-title-text {
+        font-size: 10px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+    }
+
+    body.d2q-launchzone .terminal-live-badge {
+        font-size: 8px;
+        white-space: nowrap;
+        gap: 4px;
+        flex-shrink: 0;
     }
 
     body.d2q-launchzone .terminal-screen {
-        min-height: 200px;
-        max-height: 230px;
-        font-size: 11px;
-        padding: 12px;
+        min-height: 190px;
+        max-height: 220px;
+        padding: 10px 12px;
+        font-size: 10.5px;
+        line-height: 1.5;
+        overflow-x: hidden;
+        word-break: break-word;
+        box-sizing: border-box;
+    }
+
+    body.d2q-launchzone .term-command-line {
+        font-size: 10px;
+        gap: 4px;
+        margin-bottom: 6px;
+        flex-wrap: wrap;
+        word-break: break-all;
+    }
+
+    body.d2q-launchzone .term-log-line {
+        font-size: 10px;
+        line-height: 1.45;
+        word-break: break-word;
+        overflow-wrap: break-word;
+    }
+
+    body.d2q-launchzone .terminal-scenario-bar {
+        padding: 7px 10px;
+        gap: 6px;
+        width: 100%;
+        box-sizing: border-box;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    body.d2q-launchzone .scenario-label {
+        font-size: 9px;
+        flex-shrink: 0;
+    }
+
+    body.d2q-launchzone .scenario-chips {
+        gap: 5px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    body.d2q-launchzone .scenario-chips::-webkit-scrollbar {
+        display: none;
+    }
+
+    body.d2q-launchzone .scenario-chip {
+        font-size: 9px;
+        padding: 3px 6px;
+        flex-shrink: 0;
     }
 
     body.d2q-launchzone .terminal-value-footer {
-        grid-template-columns: repeat(2, 1fr);
-        font-size: 10px;
-        padding: 8px 10px;
-        gap: 6px;
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        padding: 8px 10px !important;
+        font-size: 9px !important;
+        gap: 5px 8px !important;
+        box-sizing: border-box !important;
+        text-align: left !important;
     }
 
+    body.d2q-launchzone .value-item {
+        justify-content: flex-start !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        min-width: 0 !important;
+    }
+
+    /* Profile Card */
     body.d2q-launchzone .hero-visual {
-        margin-top: 36px;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        margin-top: 32px;
+        box-sizing: border-box;
     }
 
     body.d2q-launchzone .hero-visual .profile-card {
+        width: 100%;
+        max-width: 100%;
         grid-template-columns: 1fr;
         justify-items: center;
         text-align: center;
-        padding: 24px 18px;
-        box-shadow: 5px 5px 0 var(--lz-signal);
+        padding: 22px 16px;
+        box-shadow: 4px 4px 0 var(--lz-signal);
+        box-sizing: border-box;
     }
 
     body.d2q-launchzone .hero-visual .profile-image {
         grid-row: auto;
-        margin-bottom: 16px;
-        width: 110px;
-        height: 110px;
+        margin-bottom: 14px;
+        width: 100px;
+        height: 100px;
     }
 
     body.d2q-launchzone .hero-visual .profile-name {
-        font-size: 1.45rem;
+        font-size: 1.35rem;
     }
 
     body.d2q-launchzone .hero-visual .profile-title {
-        font-size: 0.95rem;
+        font-size: 0.9rem;
     }
 
     body.d2q-launchzone .hero-visual .profile-credentials {
-        font-size: 0.82rem;
+        font-size: 0.8rem;
     }
 
     body.d2q-launchzone .hero-visual .profile-tags,
     body.d2q-launchzone .hero-visual .social-links {
         justify-content: center;
+        flex-wrap: wrap;
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 420px) {
     body.d2q-launchzone .hero-proof-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 4px;
+        grid-template-columns: 1fr;
+        gap: 5px;
     }
 
     body.d2q-launchzone .hero-proof-row span {
-        margin-left: 0;
-        padding: 8px 10px;
-        font-size: 9.5px;
-        text-align: center;
-        justify-content: center;
+        font-size: 9px;
+        min-height: 32px;
     }
 
-    body.d2q-launchzone .hero-stats {
-        grid-template-columns: 1fr;
+    body.d2q-launchzone .stat-value {
+        font-size: 1.15rem !important;
     }
 
-    body.d2q-launchzone .stat-item {
-        border-right: 0;
-        border-bottom: 1px solid var(--lz-line);
-        padding: 10px 14px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    body.d2q-launchzone .stat-item:last-child {
-        border-bottom: 0;
-    }
-
-    body.d2q-launchzone .terminal-value-footer {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        font-size: 10.5px;
-        padding: 10px;
-        text-align: left;
-    }
-
-    body.d2q-launchzone .value-item {
-        justify-content: flex-start;
+    body.d2q-launchzone .stat-label {
+        font-size: 7px !important;
     }
 }
 

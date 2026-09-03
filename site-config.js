@@ -4,8 +4,8 @@ window.QUANT_MENTOR = Object.freeze({
     brandName: 'Desk2Quant',
     brandDescriptor: 'Desk-Ready Quant Finance Preparation',
     stats: Object.freeze({
-        products: 40,
-        paidProducts: 36,
+        products: 46,
+        paidProducts: 41,
         reviews: 25,
         averageRating: 5.0,
         mentees: 50,
@@ -407,16 +407,7 @@ window.QUANT_MENTOR = Object.freeze({
             valueLine.innerHTML = '<strong>Flagship:</strong> 46+ PDFs • 60+ scripts • 1000+ interview problems • Python + C++ + SQL';
         }
 
-        if (proof) {
-            proof.innerHTML = '<span><i class="fas fa-chart-line"></i> Pricing &amp; XVA</span><span><i class="fas fa-shield-alt"></i> Risk &amp; validation</span><span><i class="fas fa-code"></i> Implementation</span>';
-        }
-
-        if (cta) {
-            cta.innerHTML = `
-                <a href="${BUNDLE_URL}" class="btn btn-primary">Explore Complete Bundle — ₹7,999 <i class="fas fa-arrow-right"></i></a>
-                <a href="#products" class="btn btn-secondary">Browse Individual Resources</a>
-            `;
-        }
+        // Do not clobber hero proof or cta already configured in index.html
 
         if (!document.getElementById('flagship-bundle')) {
             const about = document.querySelector('.about-desksection');
