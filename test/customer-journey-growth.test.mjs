@@ -44,10 +44,11 @@ test('ui-components.js has no whatsapp floating hotline script', async () => {
     assert.doesNotMatch(code, /initWhatsAppHotline/);
 });
 
-test('index.html contains calendar tab switcher, live calendar embed, and post-payment modal', async () => {
+test('index.html enforces payment before calendar access and has post-payment calendar modal', async () => {
     const html = await fs.readFile('index.html', 'utf8');
-    assert.match(html, /class="booking-tab-switcher"/);
-    assert.match(html, /id="bookingCalContainer"/);
+    assert.doesNotMatch(html, /class="booking-tab-switcher"/);
+    assert.doesNotMatch(html, /id="bookingCalContainer"/);
+    assert.match(html, /id="bookingForm"/);
     assert.match(html, /id="calendarBookingModal"/);
     assert.match(html, /id="calAddToGcalBtn"/);
     assert.match(html, /id="calDownloadIcsBtn"/);

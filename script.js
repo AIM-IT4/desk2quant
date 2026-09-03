@@ -3690,9 +3690,9 @@ async function initSessionPayment(description, amount, customerEmail, currency =
         history.replaceState(null, '', window.location.pathname + window.location.search);
     }
 
-    // Handle FREE sessions (0 value)
+    // Require valid payment amount for all sessions
     if (amount <= 0) {
-        handleSessionPaymentSuccess({ payment_id: 'FREE_SESSION_' + Date.now() });
+        showToast('Please select a valid paid session.', 'error');
         return;
     }
 
@@ -3791,6 +3791,10 @@ async function initSessionPayment(description, amount, customerEmail, currency =
  */
 async function handleSessionPaymentSuccess(response) {
     const paymentId = response?.payment_id || response?.razorpay_payment_id || '';
+    if (!paymentId) {
+        showToast('Payment verification failed. Please contact support.', 'error');
+        return;
+    }
 
     let booking = window.pendingBooking;
     if (!booking) {
@@ -3800,32 +3804,16 @@ async function handleSessionPaymentSuccess(response) {
         } catch (e) { }
     }
 
-    // Paid bookings are fulfilled exactly once by the verified Razorpay webhook.
-    // Keeping email/database work off the browser prevents duplicate confirmations.
-    if (!String(paymentId).startsWith('FREE_SESSION_')) {
-        try { localStorage.removeItem('pendingBooking'); } catch (e) { }
-        showToast('✅ Payment received! Lock in your exact calendar slot below.', 'success', 0);
-        window.openPostPaymentCalendarModal({
-            paymentId: paymentId,
-            sessionName: booking ? booking.sessionType : 'Quant Mentorship Session',
-            name: booking ? booking.name : '',
-            email: booking ? booking.email : '',
-            date: booking ? booking.date : '',
-            time: booking ? booking.time : ''
-        });
-        return;
-    }
-
-    const freeRes = await fulfillFreeSessionBooking({ payment_id: paymentId });
+    try { localStorage.removeItem('pendingBooking'); } catch (e) { }
+    showToast('✅ Payment received! Lock in your calendar slot below.', 'success', 0);
     window.openPostPaymentCalendarModal({
         paymentId: paymentId,
-        sessionName: booking ? booking.sessionType : 'Free Test Session',
+        sessionName: booking ? booking.sessionType : 'Quant Mentorship Session',
         name: booking ? booking.name : '',
         email: booking ? booking.email : '',
         date: booking ? booking.date : '',
         time: booking ? booking.time : ''
     });
-    return freeRes;
 }
 
 /* ==========================================================================

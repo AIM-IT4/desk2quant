@@ -1208,106 +1208,74 @@
                                     <a href="https://x.com/Akjha2023" target="_blank">Follow @Akjha2023</a>
                                 </div>
                             </div>
-                            </div>
-                            <div class="contact-method">
-                                <div class="method-icon">
-                                    <i class="fas fa-calendar-check" style="color: #0f766e; font-size: 20px;"></i>
-                                </div>
-                                <div class="method-details">
-                                    <span class="method-label">Live Google Calendar</span>
-                                    <a href="#contact" onclick="window.switchBookingTab && window.switchBookingTab('cal')">Two-Way Live Sync</a>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
                     <div class="contact-form-wrapper reveal-up delay-300">
-                        <div class="booking-tab-switcher">
-                            <button type="button" class="booking-tab-btn active" id="tabBookingForm" onclick="window.switchBookingTab('form')">
-                                <i class="fas fa-bolt"></i> Direct Booking &amp; Payment
-                            </button>
-                            <button type="button" class="booking-tab-btn" id="tabBookingCal" onclick="window.switchBookingTab('cal')">
-                                <i class="fas fa-calendar-alt"></i> Live Google Calendar Sync
-                            </button>
-                        </div>
-
-                        <div id="bookingFormPanel">
-                            <form class="contact-form" id="bookingForm">
-                                <h3>Book a Session</h3>
+                        <form class="contact-form" id="bookingForm">
+                            <h3>Book a Session</h3>
+                            <div class="form-group">
+                                <label for="bookingName">Full Name *</label>
+                                <input type="text" id="bookingName" name="name" required placeholder="Your name">
+                            </div>
+                            <div class="form-group">
+                                <label for="bookingEmail">Email Address *</label>
+                                <input type="email" id="bookingEmail" name="email" required
+                                    placeholder="you@example.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="bookingPhone">Phone Number</label>
+                                <input type="tel" id="bookingPhone" name="phone" placeholder="+91 98765 43210">
+                            </div>
+                            <div class="form-group">
+                                <label for="bookingService">Select Session *</label>
+                                <select id="bookingService" name="service" required>
+                                    <option value="">Choose a session type</option>
+                                    <option value="quick|499|30">Quick Consultation (30 min) - ₹499</option>
+                                    <option value="deep|999|60">Deep Dive Session (60 min) - ₹999</option>
+                                    <option value="interview|1499|90">Interview Prep (90 min) - ₹1,499</option>
+                                    <option value="resume_teardown|1299|45">📄 Quant Resume &amp; Project Teardown (45 min) - ₹1,299</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
                                 <div class="form-group">
-                                    <label for="bookingName">Full Name *</label>
-                                    <input type="text" id="bookingName" name="name" required placeholder="Your name">
+                                    <label for="bookingDate">Preferred Date *</label>
+                                    <input type="date" id="bookingDate" name="date" required>
                                 </div>
                                 <div class="form-group">
-                                    <label for="bookingEmail">Email Address *</label>
-                                    <input type="email" id="bookingEmail" name="email" required
-                                        placeholder="you@example.com">
-                                </div>
-                                <div class="form-group">
-                                    <label for="bookingPhone">Phone Number</label>
-                                    <input type="tel" id="bookingPhone" name="phone" placeholder="+91 98765 43210">
-                                </div>
-                                <div class="form-group">
-                                    <label for="bookingService">Select Session *</label>
-                                    <select id="bookingService" name="service" required>
-                                        <option value="">Choose a session type</option>
-                                        <option value="free|0|15" style="color: #22c55e;">🆓 Free Test Session (15 min) -
-                                            FREE
-                                        </option>
-                                        <option value="quick|499|30">Quick Consultation (30 min) - ₹499</option>
-                                        <option value="deep|999|60">Deep Dive Session (60 min) - ₹999</option>
-                                        <option value="interview|1499|90">Interview Prep (90 min) - ₹1,499</option>
-                                        <option value="resume_teardown|1299|45">📄 Quant Resume &amp; Project Teardown (45 min) - ₹1,299</option>
+                                    <label for="bookingTime">Preferred Time *</label>
+                                    <select id="bookingTime" name="time" required>
+                                        <option value="">Select time slot</option>
+                                        <option value="10:00 AM">10:00 AM</option>
+                                        <option value="11:00 AM">11:00 AM</option>
+                                        <option value="12:00 PM">12:00 PM</option>
+                                        <option value="2:00 PM">2:00 PM</option>
+                                        <option value="3:00 PM">3:00 PM</option>
+                                        <option value="4:00 PM">4:00 PM</option>
+                                        <option value="5:00 PM">5:00 PM</option>
+                                        <option value="6:00 PM">6:00 PM</option>
+                                        <option value="7:00 PM">7:00 PM</option>
+                                        <option value="8:00 PM">8:00 PM</option>
                                     </select>
                                 </div>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="bookingDate">Preferred Date *</label>
-                                        <input type="date" id="bookingDate" name="date" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="bookingTime">Preferred Time *</label>
-                                        <select id="bookingTime" name="time" required>
-                                            <option value="">Select time slot</option>
-                                            <option value="10:00 AM">10:00 AM</option>
-                                            <option value="11:00 AM">11:00 AM</option>
-                                            <option value="12:00 PM">12:00 PM</option>
-                                            <option value="2:00 PM">2:00 PM</option>
-                                            <option value="3:00 PM">3:00 PM</option>
-                                            <option value="4:00 PM">4:00 PM</option>
-                                            <option value="5:00 PM">5:00 PM</option>
-                                            <option value="6:00 PM">6:00 PM</option>
-                                            <option value="7:00 PM">7:00 PM</option>
-                                            <option value="8:00 PM">8:00 PM</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label for="bookingMessage">What do you want to discuss?</label>
-                                    <textarea id="bookingMessage" name="message" rows="3"
-                                        placeholder="Tell me about your goals, topics you want to cover..."></textarea>
-                                </div>
-                                <div class="booking-price" id="bookingPrice" style="display: none;">
-                                    <span>Session Fee:</span>
-                                    <strong id="priceDisplay">₹0</strong>
-                                </div>
-                                <button type="submit" class="btn btn-primary btn-full" id="bookingSubmitBtn">
-                                    <i class="fas fa-credit-card"></i>
-                                    Pay &amp; Book Session
-                                </button>
-                                <p class="form-note">
-                                    <i class="fas fa-video"></i> Private Google Meet link &amp; calendar invite will be confirmed immediately
-                                </p>
-                            </form>
-                        </div>
-
-                        <div class="booking-cal-panel" id="bookingCalContainer">
-                            <div class="cal-sync-banner" style="margin-bottom:12px;">
-                                <i class="fas fa-calendar-check"></i>
-                                <span>Real-time availability synced directly with Amit Kumar Jha's Google Calendar. No scheduling conflicts.</span>
                             </div>
-                            <div id="cal-inline-embed" style="width:100%;height:600px;overflow:auto;"></div>
-                        </div>
+                            <div class="form-group">
+                                <label for="bookingMessage">What do you want to discuss?</label>
+                                <textarea id="bookingMessage" name="message" rows="3"
+                                    placeholder="Tell me about your goals, topics you want to cover..."></textarea>
+                            </div>
+                            <div class="booking-price" id="bookingPrice" style="display: none;">
+                                <span>Session Fee:</span>
+                                <strong id="priceDisplay">₹0</strong>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-full" id="bookingSubmitBtn">
+                                <i class="fas fa-credit-card"></i>
+                                Pay &amp; Book Session
+                            </button>
+                            <p class="form-note">
+                                <i class="fas fa-video"></i> Private Google Meet link &amp; calendar invite confirmed after payment
+                            </p>
+                        </form>
                     </div>
                 </div>
             </div>
