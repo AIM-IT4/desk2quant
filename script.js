@@ -2096,7 +2096,7 @@ async function displaySupabaseProducts(products) {
     // Provide the 1 INR live verification test product at the top of the products grid
     paidProducts.unshift({
         id: '00000000-0000-0000-0000-000000000001',
-        name: '🧪 Live Verification Test Pack (₹1)',
+        name: 'Live Verification Test Pack (1 INR)',
         description: 'Official 1 INR End-to-End Live Checkout & Tax Invoice Verification Test Pack. Tests Razorpay payment gateway, automated access granting, and the animated mini thermal receipt printer with the authentic paper-cut design.',
         cover_image_url: 'https://dntabmyurlrlnoajdnja.supabase.co/storage/v1/object/public/product-covers/numerical_methods_cover_author_1783741116013.png',
         price: 1,
@@ -2259,7 +2259,7 @@ window.openProductModal = async function (id) {
         if (id === '00000000-0000-0000-0000-000000000001' || id === 'd2q-test-product-1inr') {
             product = {
                 id: '00000000-0000-0000-0000-000000000001',
-                name: '🧪 Live Verification Test Pack (₹1)',
+                name: 'Live Verification Test Pack (1 INR)',
                 description: '<p>Official 1 INR End-to-End Live Checkout & Tax Invoice Verification Test Pack.</p><p>Tests Razorpay payment gateway, automated access granting, and the animated mini thermal receipt printer with the authentic paper-cut design.</p>',
                 cover_image_url: 'https://dntabmyurlrlnoajdnja.supabase.co/storage/v1/object/public/product-covers/numerical_methods_cover_author_1783741116013.png',
                 price: 1,
@@ -2868,7 +2868,7 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
         amount: orderData.amount,
         currency: orderData.currency,
         name: 'Desk2Quant',
-        description: productName,
+        description: (productName || 'Desk2Quant Digital Access').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '').replace(/[\u2600-\u27BF]/g, '').trim(),
         order_id: orderData.order_id,
         handler: async function (response) {
             const paymentId = response.razorpay_payment_id;

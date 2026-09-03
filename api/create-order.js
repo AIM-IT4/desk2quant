@@ -103,11 +103,29 @@ export default async function handler(req, res) {
             }
         }
 
+        function sanitizeNotesForRazorpay(notesObj) {
+            const clean = {};
+            for (const [k, v] of Object.entries(notesObj || {})) {
+                if (v === null || v === undefined) continue;
+                // Razorpay notes cannot handle 4-byte UTF-8 emojis or characters > \uFFFF.
+                // Strip emojis and non-standard UTF-8 symbols, convert ₹ to Rs, and truncate to 255 chars.
+                clean[k] = String(v)
+                    .replace(/\u20B9/g, 'Rs ')
+                    .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '')
+                    .replace(/[\u2600-\u27BF]/g, '')
+                    .substring(0, 255)
+                    .trim();
+            }
+            return clean;
+        }
+
+        const sanitizedNotes = sanitizeNotesForRazorpay(orderNotes);
+
         const orderPayload = {
             amount: amountInSubunits,
             currency: expected.currency,
             payment_capture: 1, // ✅ INSTANT CAPTURE — payment is captured immediately on authorization
-            notes: orderNotes
+            notes: sanitizedNotes
         };
 
         console.log('📦 Creating Razorpay order:', {
