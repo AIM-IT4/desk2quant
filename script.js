@@ -5343,14 +5343,23 @@ window.removeCartItemCoupon = function (productId) {
     renderCartDrawer();
 };
 
-// Adds a product to the cart by ID, looking up its details from the already
-// loaded product list (window.allProducts / window.allPaidProducts) so no
-// extra network round-trip is needed.
-window.addToCart = function (productId) {
+// Adds a product to the cart by ID or product object, looking up its details from the already
+// loaded product list (window.allProducts / window.allPaidProducts) or using the object provided.
+window.addToCart = function (productOrId) {
     const source = window.allProducts || window.allPaidProducts || [];
-    const product = source.find((p) => p.id === productId);
-    if (!product) {
-        console.error('addToCart: product not found in loaded list:', productId);
+    let product = null;
+    let productId = '';
+
+    if (typeof productOrId === 'string') {
+        productId = productOrId;
+        product = source.find((p) => p.id === productId);
+    } else if (productOrId && typeof productOrId === 'object') {
+        productId = productOrId.id;
+        product = source.find((p) => p.id === productId) || productOrId;
+    }
+
+    if (!product || !productId) {
+        console.error('addToCart: product not found:', productOrId);
         return;
     }
 
@@ -5362,7 +5371,7 @@ window.addToCart = function (productId) {
         cart.push({
             id: product.id,
             name: product.name,
-            price: product.price,
+            price: Number(product.price),
             enablePpp: !!product.enable_ppp,
             quantity: 1,
             // Per-item coupon state (applied in the cart drawer). productCouponCode/
@@ -5465,38 +5474,42 @@ async function renderCartDrawer() {
     }
     list.innerHTML = rows;
 
-    // Order Bump Special Offer
+    // Contextual Order Bump Offer based on cart items
     if (bumpContainer) {
-        const BUMP_PRODUCT = {
-            id: 'a51492ad-ecae-4146-be3f-f7937847e4af',
-            name: 'Complete Quant ATS Friendly Resume LaTeX + DOCX Template Pack',
-            price: 399,
-            enablePpp: false,
-            quantity: 1
-        };
-        const isBumpInCart = cart.some(item => item.id === BUMP_PRODUCT.id);
-        const localBump = await convertPrice(BUMP_PRODUCT.price, window.userCountryCode, false);
-        const isLocalBump = localBump.currency.code !== 'INR';
-        const displayBumpPrice = isLocalBump ? formatPrice(localBump) : '₹' + BUMP_PRODUCT.price;
+        const bumpProduct = getSmartCartOrderBump(cart);
+        if (!bumpProduct) {
+            bumpContainer.innerHTML = '';
+        } else {
+            const isBumpInCart = cart.some(item => item.id === bumpProduct.id);
+            const localBump = await convertPrice(bumpProduct.price, window.userCountryCode, false);
+            const isLocalBump = localBump.currency.code !== 'INR';
+            const displayBumpPrice = isLocalBump ? formatPrice(localBump) : '₹' + bumpProduct.price;
+            const encodedProduct = encodeURIComponent(JSON.stringify({
+                id: bumpProduct.id,
+                name: bumpProduct.name,
+                price: bumpProduct.price,
+                enable_ppp: false
+            }));
 
-        bumpContainer.innerHTML = `
-            <div class="cart-order-bump ${isBumpInCart ? 'bump-added' : ''}">
-                <div class="bump-header">
-                    <span class="bump-badge"><i class="fas fa-bolt"></i> ONE-TIME SPECIAL OFFER</span>
-                    <span class="bump-save-tag">SAVE 60%</span>
-                </div>
-                <label class="bump-card" for="cartOrderBumpCheckbox">
-                    <input type="checkbox" id="cartOrderBumpCheckbox" ${isBumpInCart ? 'checked' : ''} onchange="window.toggleCartOrderBump(this)">
-                    <div class="bump-content">
-                        <p class="bump-title">Add Quant ATS Resume & Cover Letter Pack</p>
-                        <p class="bump-desc">LaTeX + DOCX templates tested for Citadel, Jane Street & Tier-1 banks.</p>
-                        <p class="bump-pricing">
-                            <span class="bump-old-price">${isLocalBump ? '' : '₹999'}</span>
-                            <strong class="bump-new-price">${displayBumpPrice}</strong>
-                        </p>
+            bumpContainer.innerHTML = `
+                <div class="cart-order-bump ${isBumpInCart ? 'bump-added' : ''}">
+                    <div class="bump-header">
+                        <span class="bump-badge"><i class="fas fa-bolt"></i> ${bumpProduct.badge}</span>
+                        <span class="bump-save-tag">${bumpProduct.save}</span>
                     </div>
-                </label>
-            </div>`;
+                    <label class="bump-card" for="cartOrderBumpCheckbox">
+                        <input type="checkbox" id="cartOrderBumpCheckbox" ${isBumpInCart ? 'checked' : ''} data-bump-product="${encodedProduct}" onchange="window.toggleCartOrderBump(this)">
+                        <div class="bump-content">
+                            <p class="bump-title">${bumpProduct.title}</p>
+                            <p class="bump-desc">${bumpProduct.desc}</p>
+                            <p class="bump-pricing">
+                                <span class="bump-old-price">${isLocalBump ? '' : '₹' + bumpProduct.originalPrice}</span>
+                                <strong class="bump-new-price">${displayBumpPrice}</strong>
+                            </p>
+                        </div>
+                    </label>
+                </div>`;
+        }
     }
 
     if (totalDisplay) {
@@ -5507,19 +5520,84 @@ async function renderCartDrawer() {
     window.currentCartTotalInr = totalInr;
 }
 
+function getSmartCartOrderBump(cart) {
+    if (!cart || cart.length === 0) return null;
+
+    const cartIds = new Set(cart.map(item => item.id));
+    const cartText = cart.map(item => (item.name || '').toLowerCase()).join(' ');
+
+    const CATALOG = [
+        {
+            id: 'a51492ad-ecae-4146-be3f-f7937847e4af',
+            name: 'Complete Quant ATS Friendly Resume LaTeX + DOCX Template Pack',
+            price: 399,
+            originalPrice: 999,
+            badge: 'APPLICATION ACCELERATOR',
+            save: 'SAVE 60%',
+            title: 'Add Quant ATS Resume & Cover Letter Pack',
+            desc: 'LaTeX + DOCX templates tested for Citadel, Jane Street & Tier-1 banks.',
+            enablePpp: false,
+            score: (cartText.includes('python') || cartText.includes('c++') || cartText.includes('model') || cartText.includes('stochastic') || cartText.includes('derivatives') || cartText.includes('greek')) ? 15 : 6
+        },
+        {
+            id: 'df618802-04a8-4fcf-837e-f12dc9db2276',
+            name: 'Common Mistakes in Quant Interviews — Desk Fixes Edition',
+            price: 449,
+            originalPrice: 899,
+            badge: 'INTERVIEW ACCELERATOR',
+            save: 'SAVE 50%',
+            title: 'Add Common Mistakes in Quant Interviews',
+            desc: 'How candidates fail technical rounds & how to fix your answers on the spot.',
+            enablePpp: false,
+            score: (cartText.includes('resume') || cartText.includes('interview') || cartText.includes('cheatcode')) ? 18 : 5
+        },
+        {
+            id: 'b4db1697-0b90-4d50-90cb-6312940a187c',
+            name: 'Greek Explainer Lab – The Production Quant Edition',
+            price: 449,
+            originalPrice: 999,
+            badge: 'TRADING DESK ESSENTIAL',
+            save: 'SAVE 55%',
+            title: 'Add Greek Explainer Lab: Production Edition',
+            desc: 'Master Delta, Gamma, Vega, Vanna, Volga & P&L explain with visual intuition.',
+            enablePpp: false,
+            score: (cartText.includes('fixed income') || cartText.includes('rate') || cartText.includes('option') || cartText.includes('fx') || cartText.includes('pricing')) ? 16 : 4
+        },
+        {
+            id: '73806d69-768b-497e-87b7-d94fa4cfd772',
+            name: 'Quant Interview Problem Book (1000+ Problems with solutions)',
+            price: 499,
+            originalPrice: 1199,
+            badge: 'PRACTICE DRILL COMPANION',
+            save: 'SAVE 58%',
+            title: 'Add 1000+ Quant Interview Problem Book',
+            desc: 'Probability, brainteasers, calculus & coding problems with step-by-step solutions.',
+            enablePpp: false,
+            score: (cartText.includes('math') || cartText.includes('beginner') || cartText.includes('calculus') || cartText.includes('linear algebra')) ? 14 : 3
+        }
+    ];
+
+    // Filter out products already present in cart
+    const available = CATALOG.filter(c => !cartIds.has(c.id));
+    if (available.length === 0) return null;
+
+    available.sort((a, b) => b.score - a.score);
+    return available[0];
+}
+
 window.toggleCartOrderBump = function(checkbox) {
-    const BUMP_PRODUCT = {
-        id: 'a51492ad-ecae-4146-be3f-f7937847e4af',
-        name: 'Complete Quant ATS Friendly Resume LaTeX + DOCX Template Pack',
-        price: 399,
-        enablePpp: false,
-        quantity: 1
-    };
-    if (checkbox.checked) {
-        addToCart(BUMP_PRODUCT);
-        showToast('⚡ Quant ATS Resume Pack added to your cart!', 'success');
-    } else {
-        removeFromCart(BUMP_PRODUCT.id);
+    const raw = checkbox.dataset.bumpProduct;
+    if (!raw) return;
+    try {
+        const product = JSON.parse(decodeURIComponent(raw));
+        if (checkbox.checked) {
+            window.addToCart(product);
+            showToast('⚡ ' + product.name + ' added to cart!', 'success');
+        } else {
+            window.removeFromCart(product.id);
+        }
+    } catch (err) {
+        console.error('toggleCartOrderBump parse error:', err);
     }
 };
 

@@ -1077,10 +1077,8 @@ function shareResultLinkedIn() {
     if (!currentScenario || !currentSession?.score) return;
     const shareUrl = new URL('desk-simulator.html', window.location.href);
     shareUrl.hash = `case=${currentScenario.id}&mode=${currentSession.mode}`;
-    const text = encodeURIComponent(
-        `I scored ${currentSession.score.total}/100 on "${currentScenario.title}" in the @Desk2Quant Trading Desk Simulator! Can you diagnose the incident?\n\nTest your quantitative desk-readiness here: ${shareUrl.href}`
-    );
-    window.open(`https://www.linkedin.com/feed/?shareActive=true&text=${text}`, '_blank', 'noopener,noreferrer');
+    const url = encodeURIComponent(shareUrl.href);
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank', 'noopener,noreferrer');
 }
 
 function downloadCertificate() {

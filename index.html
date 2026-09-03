@@ -448,7 +448,7 @@
                             <button type="button" class="btn btn-bt-solution" id="btSolutionBtn" onclick="window.toggleBtSolution()">
                                 <i class="fas fa-key"></i> <span id="btSolutionBtnText">Reveal Worked Solution</span>
                             </button>
-                            <a href="https://www.linkedin.com/feed/?shareActive=true&text=100%20tigers%20and%201%20sheep%20quant%20brainteaser%20on%20Desk2Quant" id="btShareLinkedIn" target="_blank" rel="noopener noreferrer" class="btn btn-bt-share" title="Share on LinkedIn">
+                            <a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fdesk2quant.com%2F%23brainteaser" id="btShareLinkedIn" target="_blank" rel="noopener noreferrer" class="btn btn-bt-share" title="Share on LinkedIn">
                                 <i class="fab fa-linkedin"></i> Share Puzzle
                             </a>
                         </div>
@@ -558,10 +558,7 @@
                                 date.textContent = 'Puzzle #' + (dayOfYear % PUZZLES.length + 1) + ' · ' + formatted;
                             }
                             if (share) {
-                                const shareText = encodeURIComponent(
-                                    "💡 Today's Quant Interview Brainteaser from @Desk2Quant:\n\n\"" + puzzle.question + "\"\n\nCan you solve this without checking the worked solution? Try it here: https://desk2quant.com/#brainteaser"
-                                );
-                                share.href = "https://www.linkedin.com/feed/?shareActive=true&text=" + shareText;
+                                share.href = "https://www.linkedin.com/sharing/share-offsite/?url=" + encodeURIComponent("https://desk2quant.com/#brainteaser");
                             }
                         } catch (err) {
                             console.warn('Daily puzzle sync error:', err);
