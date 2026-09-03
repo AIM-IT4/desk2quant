@@ -2544,8 +2544,34 @@ async function updateBookingForm(sessions) {
         bookingSelect.appendChild(option);
     }
 
+    // Ensure Resume Teardown option is present
+    const hasResumeOpt = Array.from(bookingSelect.options).some(o => o.value.includes('resume') || o.text.includes('Resume'));
+    if (!hasResumeOpt) {
+        const resumeOpt = document.createElement('option');
+        const localResumePrice = await convertPrice(1299, userCountryCode, true);
+        const isLocal = localResumePrice.currency.code !== 'INR';
+        const priceText = isLocal ? formatPrice(localResumePrice) : '₹1,299';
+        resumeOpt.value = 'resume_teardown|1299|45';
+        resumeOpt.innerHTML = `📄 Quant Resume & Project Teardown (45 min) - ${priceText}`;
+        bookingSelect.appendChild(resumeOpt);
+    }
+
     qmLog('✅ Booking form updated with ' + sessions.length + ' sessions');
 }
+
+window.selectResumeAudit = function (e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const contact = document.getElementById('contact');
+    if (contact) contact.scrollIntoView({ behavior: 'smooth' });
+    const select = document.getElementById('bookingService');
+    if (select) {
+        const opt = Array.from(select.options).find(o => o.value.includes('resume') || o.text.includes('Resume'));
+        if (opt) {
+            select.value = opt.value;
+            select.dispatchEvent(new Event('change'));
+        }
+    }
+};
 
 // Default links (fallback) - will be updated from Supabase
 const PRODUCT_DOWNLOAD_LINKS = {
