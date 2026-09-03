@@ -2541,7 +2541,10 @@ async function updateBookingForm(sessions) {
         const localPrice = await convertPrice(session.price, userCountryCode, true);
         const isLocalCurrency = localPrice.currency.code !== 'INR';
 
-        option.value = `${valueType}| ${session.price}| ${session.duration} `;
+        option.value = `${valueType}|${session.price}|${session.duration}`;
+        if (session.id) {
+            option.dataset.sessionId = session.id;
+        }
         if (session.price === 0) {
             option.innerHTML = `🆓 ${session.name} (${session.duration} min) - FREE`;
         } else if (isLocalCurrency) {
@@ -3602,16 +3605,31 @@ if (bookingForm) {
             return;
         }
 
-        const [sessionType, price, duration] = serviceValue.split('|');
+        const parts = serviceValue.split('|').map(s => s.trim());
+        const sessionType = parts[0] || '';
+        const price = parts[1] || '0';
+        const duration = parts[2] || '60';
 
         // Try to find session info from dynamic sessions
         let sessionInfo = null;
 
-        if (window.dynamicSessions) {
+        if (window.dynamicSessions && Array.isArray(window.dynamicSessions)) {
+            // First try exact slug or plain name match
             sessionInfo = window.dynamicSessions.find(s =>
                 s.name.toLowerCase().replace(/\s+/g, '_') === sessionType ||
                 s.name.toLowerCase() === sessionType.replace(/_/g, ' ')
             );
+
+            // Flexible matching for resume teardown / audit: match any active teardown/resume session
+            if (!sessionInfo && (sessionType.includes('resume') || sessionType.includes('teardown'))) {
+                sessionInfo = window.dynamicSessions.find(s => {
+                    const nameLower = (s.name || '').toLowerCase();
+                    return (nameLower.includes('resume') || nameLower.includes('teardown')) && s.is_active !== false;
+                }) || window.dynamicSessions.find(s => {
+                    const nameLower = (s.name || '').toLowerCase();
+                    return nameLower.includes('resume') || nameLower.includes('teardown');
+                });
+            }
         }
 
         // If still not found, create session info from the dropdown text
@@ -3621,6 +3639,7 @@ if (bookingForm) {
                 const match = selectedOption.text.match(/[🆓\s]*([^\(]+)/);
                 const sessionName = match ? match[1].trim() : 'Session';
                 sessionInfo = {
+                    id: selectedOption.dataset?.sessionId || null,
                     name: sessionName,
                     price: parseInt(price) || 0,
                     duration: parseInt(duration) || 60
@@ -3917,13 +3936,14 @@ window.switchBookingTab = function(tab) {
 };
 
 window.openPostPaymentCalendarModal = function(data = {}) {
+    if (!data || !data.paymentId || typeof data.paymentId !== 'string' || !data.paymentId.trim().startsWith('pay_')) return;
     const modal = document.getElementById('calendarBookingModal');
     if (!modal) return;
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
 
     const payBadge = document.getElementById('calPaymentId');
-    if (payBadge) payBadge.textContent = data.paymentId || 'CONFIRMED';
+    if (payBadge) payBadge.textContent = data.paymentId.trim();
 
     const calConfig = window.D2Q_CALENDAR_CONFIG || {};
     const calLink = calConfig.calLink || 'desk2quant';
@@ -3993,291 +4013,6 @@ window.downloadSessionIcs = function() {
     showToast('📅 Calendar invite (.ics) downloaded!', 'success');
 };
 
-async function fulfillFreeSessionBooking(response) {
-    const paymentId = response.payment_id;
-
-    try {
-        // Try to get booking from window, fallback to localStorage
-        let booking = window.pendingBooking;
-        if (!booking) {
-            try {
-                const stored = localStorage.getItem('pendingBooking');
-                if (stored) booking = JSON.parse(stored);
-            } catch (e) { console.warn('Could not retrieve booking from localStorage:', e); }
-        }
-
-        if (!booking || !booking.email) {
-            console.error('❌ No booking data found!');
-            alert('Error: Booking data was lost. Please contact support with Payment ID: ' + paymentId);
-            return;
-        }
-
-        qmLog('📧 Booking object:', booking);
-        qmLog('📧 Email to send to:', booking.email);
-
-        // Generate unique meeting link for this booking
-        const uniqueMeetLink = generateFreeSessionLink();
-        qmLog('🔗 Generated unique meeting link:', uniqueMeetLink);
-
-        // ===== STEP 0: DEDUP CHECK + STORE via server-side bookings API =====
-        // The bookings table is RLS-sealed from the browser, so free-session
-        // bookings are created (and deduped) server-side with the service role.
-        let freeBookingStored = false;
-        try {
-            const createResp = await fetch('/api/interview', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'create-free-booking',
-                    email: booking.email,
-                    name: booking.name,
-                    phone: booking.phone,
-                    serviceName: booking.sessionType,
-                    servicePrice: booking.price,
-                    serviceDuration: booking.duration,
-                    bookingDate: booking.bookingDate || new Date(booking.date).toISOString().split('T')[0],
-                    bookingTime: booking.time,
-                    message: booking.message,
-                    paymentId,
-                    meetLink: uniqueMeetLink
-                })
-            });
-            const createJson = await createResp.json();
-            if (createResp.ok && createJson.success) {
-                if (createJson.alreadyExists) {
-                    qmLog('ℹ️ Booking already exists for payment', paymentId, '— skipping duplicate');
-                    alert(`✅ Booking already confirmed!\nPayment ID: ${paymentId}\nCheck your email for details.`);
-                    try { localStorage.removeItem('pendingBooking'); } catch (e) { }
-                    return;
-                }
-                freeBookingStored = true;
-                qmLog('✅ Free booking stored server-side:', createJson.booking);
-            } else {
-                console.error('❌ Free booking creation failed:', createJson.error);
-            }
-        } catch (e) {
-            console.warn('Free booking create failed (proceeding to email):', e);
-        }
-
-        // Signed manage link: the bookings self-service requires this token, so
-        // the confirmation email carries the customer's only way to view,
-        // reschedule, or cancel (a bare email is no longer sufficient).
-        const manageToken = (createJson && createJson.success && createJson.manageToken) ? createJson.manageToken : '';
-        const manageUrl = `${window.location.origin}/my-bookings.html?email=${encodeURIComponent(booking.email)}&tk=${encodeURIComponent(manageToken)}`;
-
-        // ===== STEP 1: SEND CUSTOMER EMAIL FIRST (HIGHEST PRIORITY) =====
-        qmLog('📧 Sending session confirmation to customer:', booking.email);
-
-        qmLog('📧 Sending customer email securely via API...');
-
-        const htmlContent = `
-            <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
-                <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                    <div style="background-color: #1a1a1a; padding: 20px; text-align: center;">
-                        <span style="color: #ffffff; font-size: 24px; font-weight: bold; letter-spacing: 1px;">Desk2Quant</span>
-                    </div>
-                    <div style="padding: 30px;">
-                        <div style="margin-bottom: 20px;">
-                            <span style="display: inline-block; background: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; margin-right: 10px;">Booking Confirmed</span>
-                            <span style="display: inline-block; background: #d1fae5; color: #065f46; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase;">Paid</span>
-                        </div>
-                        <p style="font-size: 16px; margin-bottom: 25px;">Hi <strong>${booking.name}</strong>, your mentoring session is confirmed.</p>
-
-                        <div style="background: #f9f8f4; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
-                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Session Details</p>
-                            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                                <tr><td style="padding: 5px 0; color: #666; width: 30%;">Session</td><td style="padding: 5px 0; color: #1a1a1a; font-weight: bold;">${booking.sessionType}</td></tr>
-                                <tr><td style="padding: 5px 0; color: #666;">Duration</td><td style="padding: 5px 0; color: #1a1a1a;">${booking.duration} mins</td></tr>
-                                <tr><td style="padding: 5px 0; color: #666;">Date</td><td style="padding: 5px 0; color: #1a1a1a;">${booking.date}</td></tr>
-                                <tr><td style="padding: 5px 0; color: #666;">Time</td><td style="padding: 5px 0; color: #1a1a1a;">${booking.time}</td></tr>
-                                <tr><td style="padding: 5px 0; color: #666;">Amount Paid</td><td style="padding: 5px 0; color: #1a1a1a;">${booking.pay_currency === 'INR' ? '₹' : '$'}${booking.pay_currency === 'INR' ? booking.price : Math.round(booking.price * 0.012)}</td></tr>
-                                <tr><td style="padding: 5px 0; color: #666;">Payment ID</td><td style="padding: 5px 0; color: #1a1a1a;">${paymentId}</td></tr>
-                            </table>
-                        </div>
-
-                        <div style="background: #f9f8f4; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
-                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Join Your Session</p>
-                            <a href="${uniqueMeetLink}" style="display: inline-block; background: #10b981; color: #ffffff; font-weight: bold; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-size: 14px;">Join Meeting</a>
-                            <p style="margin-top: 10px; font-size: 13px; color: #666; word-break: break-all;">${uniqueMeetLink}</p>
-                        </div>
-
-                        <div style="background: #fffbeb; padding: 20px; border-radius: 6px; border-left: 4px solid #f59e0b;">
-                            <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Need to Reschedule or Cancel?</p>
-                            <p style="margin: 0 0 12px 0; font-size: 14px; color: #1a1a1a;">View, reschedule, or cancel your booking anytime with this secure link:</p>
-                            <p style="margin: 0;"><a href="${manageUrl}" style="display: inline-block; background: #10b981; color: #ffffff; font-weight: bold; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-size: 13px;">Manage Booking</a></p>
-                        </div>
-                    </div>
-                    <div style="background-color: #1a1a1a; padding: 25px 20px; text-align: center; color: #888; font-size: 12px;">
-                        <p style="margin: 0 0 10px 0;">Sent by Desk2Quant</p>
-                        <p style="margin: 0;">Have an issue? Reply to this email.</p>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        const textContent = `🎉 Your session has been booked!
-
-Hi ${booking.name},
-
-Session: ${booking.sessionType} (${booking.duration} mins)
-Date: ${booking.date}
-Time: ${booking.time}
-Amount Paid: ${booking.pay_currency === 'INR' ? '₹' + booking.price : '$' + Math.round(booking.price * 0.012)}
-Payment ID: ${paymentId}
-
-JOIN YOUR SESSION HERE:
-${uniqueMeetLink}
-
-Need to Reschedule or Cancel?
-Open your secure manage link:
-${manageUrl}
-
-Best regards,
-${BUSINESS_NAME}`;
-
-        try {
-            const result = await sendEmailWithBrevo(
-                booking.email,
-                `Booking Confirmed: ${booking.sessionType}`,
-                htmlContent,
-                textContent
-            );
-
-            if (result.success) {
-                qmLog('✅ Session confirmation SUCCESS via Brevo');
-            } else {
-                console.error('❌ Brevo session email FAILED:', result.error);
-            }
-        } catch (error) {
-            console.error('❌ Session email failed:', error);
-        }
-
-        // ===== STEP 2: STORE BOOKING (handled server-side in STEP 0) =====
-        // The booking was already persisted via the server-side bookings API in
-        // STEP 0 (dedup + insert atomically). Keep a localStorage copy only as a
-        // fallback breadcrumb for paid-session webhook pickup / diagnostics.
-        if (!freeBookingStored) {
-            try {
-                localStorage.setItem('pendingBooking', JSON.stringify({
-                    ...booking,
-                    payment_id: paymentId,
-                    meet_link: uniqueMeetLink,
-                    saved_at: Date.now()
-                }));
-            } catch (e) { console.warn('localStorage save failed:', e); }
-        }
-
-        // ===== STEP 3: SEND ADMIN NOTIFICATION (TERTIARY) =====
-        try {
-            const emailBody = `
-New Booking Details:
-━━━━━━━━━━━━━━━━━━━━
-📋 Session: ${booking.sessionType} (${booking.duration} mins)
-💰 Amount Paid: ${booking.pay_currency === 'INR' ? '₹' + booking.price : '$' + Math.round(booking.price * 0.012)}
-🆔 Payment ID: ${paymentId}
-
-👤 Customer Details:
-   Name: ${booking.name}
-   Email: ${booking.email}
-   Phone: ${booking.phone}
-
-📅 Scheduled For:
-   Date: ${booking.date}
-   Time: ${booking.time}
-
-📝 Customer Message:
-   ${booking.message}
-
-🔗 Private Session Link:
-   ${uniqueMeetLink}
-━━━━━━━━━━━━━━━━━━━━
-    `.trim();
-
-            const adminHtml = `
-        <div style="font-family: Arial, sans-serif; background-color: #f9f8f4; padding: 40px 20px; color: #1a1a1a;">
-            <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                <div style="background-color: #1a1a1a; padding: 20px; text-align: center;">
-                    <span style="color: #ffffff; font-size: 24px; font-weight: bold; letter-spacing: 1px;">Desk2Quant Admin</span>
-                </div>
-                <div style="padding: 30px;">
-                    <div style="margin-bottom: 20px;">
-                        <span style="display: inline-block; background: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase;">New Booking Received</span>
-                    </div>
-                    <p style="font-size: 16px; margin-bottom: 25px;"><strong>${booking.name}</strong> booked a mentoring session.</p>
-                    <div style="background: #f9f8f4; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
-                        <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Session Details</p>
-                        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                            <tr><td style="padding: 5px 0; color: #666; width: 30%;">Session</td><td style="padding: 5px 0; color: #1a1a1a; font-weight: bold;">${booking.sessionType}</td></tr>
-                            <tr><td style="padding: 5px 0; color: #666;">Duration</td><td style="padding: 5px 0; color: #1a1a1a;">${booking.duration} mins</td></tr>
-                            <tr><td style="padding: 5px 0; color: #666;">Date</td><td style="padding: 5px 0; color: #1a1a1a;">${booking.date}</td></tr>
-                            <tr><td style="padding: 5px 0; color: #666;">Time</td><td style="padding: 5px 0; color: #1a1a1a;">${booking.time}</td></tr>
-                            <tr><td style="padding: 5px 0; color: #666;">Amount</td><td style="padding: 5px 0; color: #1a1a1a;">${booking.pay_currency === 'INR' ? '₹' : (booking.pay_currency || '$')}${booking.pay_currency === 'INR' ? booking.price : Math.round(booking.price * 0.012)}</td></tr>
-                        </table>
-                    </div>
-                    <div style="background: #f9f8f4; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
-                        <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Customer Details</p>
-                        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                            <tr><td style="padding: 5px 0; color: #666; width: 30%;">Name</td><td style="padding: 5px 0; color: #1a1a1a;">${booking.name}</td></tr>
-                            <tr><td style="padding: 5px 0; color: #666;">Email</td><td style="padding: 5px 0; color: #1a1a1a;"><a href="mailto:${booking.email}" style="color: #2563eb; text-decoration: none;">${booking.email}</a></td></tr>
-                            <tr><td style="padding: 5px 0; color: #666;">Phone</td><td style="padding: 5px 0; color: #1a1a1a;">${booking.phone}</td></tr>
-                            <tr><td style="padding: 5px 0; color: #666;">Payment ID</td><td style="padding: 5px 0; color: #1a1a1a;">${paymentId}</td></tr>
-                        </table>
-                    </div>
-                    <div style="background: #f9f8f4; padding: 20px; border-radius: 6px;">
-                        <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Meeting Link</p>
-                        <a href="${uniqueMeetLink}" style="display: inline-block; background: #10b981; color: #ffffff; font-weight: bold; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-size: 14px;">Join Meeting</a>
-                        <p style="margin-top: 10px; font-size: 13px; color: #666; word-break: break-all;">${uniqueMeetLink}</p>
-                    </div>
-                    <div style="background: #fffbeb; padding: 20px; border-radius: 6px; margin-top: 16px; border-left: 4px solid #f59e0b;">
-                        <p style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0; letter-spacing: 0.5px;">Customer Message</p>
-                        <p style="margin: 0; color: #1a1a1a; font-size: 14px;">${booking.message}</p>
-                    </div>
-                </div>
-                <div style="background-color: #1a1a1a; padding: 20px; text-align: center; color: #888; font-size: 12px;">
-                    <p style="margin: 0;">Sent by Desk2Quant</p>
-                </div>
-            </div>
-        </div>
-    `;
-            await sendAdminNotification(`New Booking: ${booking.name} - ${booking.sessionType}`, adminHtml, emailBody);
-        } catch (adminErr) {
-            console.error('⚠️ Admin notification failed (non-blocking):', adminErr);
-        }
-
-        // Clear localStorage backup
-        try { localStorage.removeItem('pendingBooking'); } catch (e) { }
-
-
-        // Show success message to customer
-        alert(`🎉 Session Booked Successfully!
-
-Payment ID: ${paymentId}
-
-📅 ${booking.sessionType}
-📆 ${booking.date}
-⏰ ${booking.time}
-
-✅ Confirmation email with your private session link has been sent to ${booking.email}
-
-📩 IMPORTANT: Please check your Spam/Junk folder if you don't see the email in your Inbox.
-
-🔄 Need to Reschedule or Cancel?
-Open your secure manage link:
-${manageUrl}
-
-Thank you for booking!`);
-
-        // Reset form
-        const bookingForm = document.getElementById('bookingForm');
-        if (bookingForm) bookingForm.reset();
-        const bookingPrice = document.getElementById('bookingPrice');
-        if (bookingPrice) bookingPrice.style.display = 'none';
-
-    } catch (outerErr) {
-        console.error('❌ handleSessionPaymentSuccess failed:', outerErr);
-        alert('Payment received (ID: ' + paymentId + '). If you did not get a confirmation email, please contact support.');
-    }
-}
 
 // --- BLOG & RESOURCES LOGIC ---
 

@@ -60,9 +60,38 @@ test('site-config.js defines D2Q_CALENDAR_CONFIG for two-way sync', async () => 
     assert.match(code, /desk2quant/);
 });
 
-test('script.js defines switchBookingTab and openPostPaymentCalendarModal', async () => {
+test('script.js defines switchBookingTab and openPostPaymentCalendarModal with strict payment gating', async () => {
     const code = await fs.readFile('script.js', 'utf8');
     assert.match(code, /window\.switchBookingTab/);
     assert.match(code, /window\.openPostPaymentCalendarModal/);
     assert.match(code, /window\.downloadSessionIcs/);
+    // Verified gate: requires string paymentId starting with pay_
+    assert.match(code, /!data\.paymentId\.trim\(\)\.startsWith\('pay_'\)/);
 });
+
+test('api/interview.js does not expose create-free-booking action or handler', async () => {
+    const code = await fs.readFile('api/interview.js', 'utf8');
+    assert.doesNotMatch(code, /'create-free-booking'/);
+    assert.doesNotMatch(code, /action\s*===\s*['"]create-free-booking['"]/);
+});
+
+test('script.js generates clean option values without extra whitespace and flexibly matches resume teardown', async () => {
+    const code = await fs.readFile('script.js', 'utf8');
+    assert.match(code, /option\.value\s*=\s*`\$\{valueType\}\|\$\{session\.price\}\|\$\{session\.duration\}`/);
+    assert.match(code, /nameLower\.includes\('resume'\)\s*\|\|\s*nameLower\.includes\('teardown'\)/);
+});
+
+test('high-intent subpages load site-config.js for sitewide Clarity and live chat coverage', async () => {
+    const pages = [
+        'product.html',
+        'interview.html',
+        'desk-simulator.html',
+        'salary-explorer.html',
+        'diagnostic.html'
+    ];
+    for (const page of pages) {
+        const html = await fs.readFile(page, 'utf8');
+        assert.match(html, /<script[^>]+src=["'][^"']*site-config\.js["'][^>]*defer/i, `${page} must load site-config.js with defer`);
+    }
+});
+

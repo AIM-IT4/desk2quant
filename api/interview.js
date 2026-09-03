@@ -92,7 +92,6 @@ function httpRequest(url, options, postData) {
 const BOOKINGS_ACTIONS = new Set([
     'my-bookings',             // { email }            -> bookings for that email
     'bookings-slots',          // { date }             -> taken times for a date
-    'create-free-booking',     // { booking fields }   -> insert a FREE session booking (deduped)
     'reschedule-booking',      // { bookingId, email, date, time, reason }
     'cancel-booking',          // { bookingId, email, refundAmount, refundPercentage }
     'accept-admin-reschedule', // { bookingId, email }
@@ -220,49 +219,12 @@ async function handleBookingsAction(req, res, action) {
             return res.status(200).json({ success: true, slots: rows });
         }
 
-        // Mutations get a light rate limit (create, reschedule, cancel, accept,
+        // Mutations get a light rate limit (reschedule, cancel, accept,
         // counter-propose all write rows). Reads (list/slots) are free.
-        if (['create-free-booking', 'reschedule-booking', 'cancel-booking',
+        if (['reschedule-booking', 'cancel-booking',
              'accept-admin-reschedule', 'counter-propose'].includes(action)
             && isBookingsRateLimited(req)) {
             return res.status(429).json({ error: 'Too many requests. Please wait a moment and try again.' });
-        }
-
-        // 3. CREATE a free session booking (deduped by payment_id).
-        if (action === 'create-free-booking') {
-            const { name, phone, serviceName, servicePrice, serviceDuration, bookingDate, bookingTime, message, paymentId, meetLink } = body;
-            if (!email || !serviceName || !bookingDate || !bookingTime) {
-                return res.status(400).json({ error: 'Missing required booking fields' });
-            }
-            const dup = await fetch(
-                `${SUPABASE_URL}/rest/v1/bookings?payment_id=eq.${encodeURIComponent(paymentId || '')}&select=id`,
-                { headers }
-            );
-            const dupRows = dup.ok ? await dup.json() : [];
-            if (Array.isArray(dupRows) && dupRows.length > 0) {
-                return res.status(200).json({ success: true, alreadyExists: true });
-            }
-            const ins = await fetch(`${SUPABASE_URL}/rest/v1/bookings`, {
-                method: 'POST',
-                headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=representation' },
-                body: JSON.stringify({
-                    email, name, phone,
-                    service_name: serviceName,
-                    service_price: Number(servicePrice) || 0,
-                    service_duration: Number(serviceDuration) || null,
-                    booking_date: bookingDate,
-                    booking_time: bookingTime,
-                    message: message || null,
-                    status: 'upcoming',
-                    payment_id: paymentId || `FREE_SESSION_${Date.now()}`,
-                    meet_link: meetLink || null
-                })
-            });
-            if (!ins.ok) return res.status(502).json({ error: 'Failed to create booking' });
-            const created = await ins.json();
-            // Return the signed manage token so the client can embed the
-            // "Manage booking" link in the confirmation email it sends.
-            return res.status(200).json({ success: true, booking: Array.isArray(created) ? created[0] : created, manageToken: signBookingToken(email) });
         }
 
         // --- Mutations: bookingId + matching email required ---
