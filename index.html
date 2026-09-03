@@ -101,6 +101,7 @@
 
     <link rel="stylesheet" href="launchzone.css?v=16">
     <link rel="stylesheet" href="launchzone-pages.css?v=2">
+    <link rel="stylesheet" href="receipt-printer.css?v=1">
 </head>
 
 <body class="d2q-reference d2q-launchzone">
@@ -1297,6 +1298,7 @@
     <script src="product-seo.js?v=1" defer></script>
     <script src="script.js?v=19" defer></script>
     <script src="hero-terminal.js" defer></script>
+    <script src="receipt-printer.js?v=1" defer></script>
     <script>document.addEventListener('DOMContentLoaded', function(){ if(typeof renderSalaryWidget==='function') setTimeout(renderSalaryWidget, 800); });</script>
 
     <!-- Scroll to Top Button -->
@@ -1358,10 +1360,13 @@
                 <p class="success-subtitle">We have sent the download details to your email (please check your spam/junk folder as well).</p>
             </div>
 
-            <div class="download-action-box">
+            <div class="download-action-box" style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
                 <a id="successDownloadBtn" href="#" target="_blank" class="btn btn-primary btn-success-download">
                     <i class="fas fa-download"></i> Download Your Product
                 </a>
+                <button type="button" class="btn btn-secondary" onclick="if(window.showReceiptPrinter) window.showReceiptPrinter(window.__lastOrderData)">
+                    <i class="fas fa-receipt"></i> Print Tax Invoice
+                </button>
             </div>
 
             <div class="success-modal-divider"></div>

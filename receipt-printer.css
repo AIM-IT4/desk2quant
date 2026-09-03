@@ -1,0 +1,537 @@
+/* ==========================================================================
+   DESK2QUANT // MINI THERMAL RECEIPT PRINTER & TAX INVOICE MODAL
+   ========================================================================== */
+
+/* Modal Backdrop */
+.receipt-printer-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: rgba(10, 11, 15, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                visibility 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow-y: auto;
+}
+
+.receipt-printer-backdrop.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Modal Window Container */
+.receipt-printer-dialog {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform: scale(0.92) translateY(20px);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.receipt-printer-backdrop.active .receipt-printer-dialog {
+    transform: scale(1) translateY(0);
+}
+
+/* ==========================================================================
+   MINI THERMAL PRINTER MACHINE CASING
+   ========================================================================== */
+.thermal-printer-machine {
+    width: 100%;
+    background: linear-gradient(180deg, #222530 0%, #171821 100%);
+    border: 1px solid #333748;
+    border-radius: 20px 20px 10px 10px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75),
+                0 0 0 1px rgba(255, 255, 255, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    padding: 16px 20px 14px;
+    position: relative;
+    z-index: 10;
+    box-sizing: border-box;
+}
+
+/* Printer Top Control Strip */
+.printer-controls-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.printer-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'JetBrains Mono', monospace, sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.printer-brand-logo {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #f59e0b;
+    border-radius: 2px;
+}
+
+.printer-status-light {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    padding: 3px 8px;
+    border-radius: 12px;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    background: #10b981;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #10b981;
+    animation: statusBlink 1.4s infinite ease-in-out;
+}
+
+.thermal-printer-machine.is-printing .status-dot {
+    background: #3b82f6;
+    box-shadow: 0 0 8px #3b82f6;
+    animation: statusBlink 0.5s infinite alternate;
+}
+
+.thermal-printer-machine.is-printing .printer-status-light {
+    color: #60a5fa;
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.35);
+}
+
+@keyframes statusBlink {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.35; transform: scale(0.8); }
+}
+
+/* Machine Slot (The Paper Ejection Mouth) */
+.printer-eject-mouth {
+    position: relative;
+    background: #090a0f;
+    height: 10px;
+    border-radius: 5px;
+    border: 1px solid #14161f;
+    box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.9);
+    margin-top: 6px;
+}
+
+/* Serrated Metal Tear Blade */
+.printer-tear-blade {
+    position: absolute;
+    bottom: -3px;
+    left: 4px;
+    right: 4px;
+    height: 3px;
+    background: linear-gradient(90deg, #475569 0%, #94a3b8 50%, #475569 100%);
+    border-radius: 1px;
+    opacity: 0.85;
+}
+
+/* ==========================================================================
+   PAPER ROLL & FEED CONTAINER
+   ========================================================================== */
+.printer-feed-chamber {
+    position: relative;
+    width: calc(100% - 24px);
+    margin: -4px auto 0;
+    z-index: 5;
+    overflow: hidden;
+    padding-bottom: 8px;
+}
+
+/* The Animated Paper Sheet with Tooth Sawtooth Cut */
+.receipt-paper-sheet {
+    background: #fdfdfc;
+    color: #111827;
+    font-family: 'JetBrains Mono', 'Courier New', Courier, monospace;
+    font-size: 11px;
+    line-height: 1.45;
+    padding: 24px 20px 22px;
+    box-sizing: border-box;
+    box-shadow: 0 20px 35px -5px rgba(0, 0, 0, 0.35),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+    position: relative;
+    transform-origin: top center;
+
+    /* REALISTIC JAGGED SAWTOOTH PAPER CUT DESIGN (Top & Bottom) */
+    clip-path: polygon(
+        0% 0px, 2.5% 6px, 5% 0px, 7.5% 6px, 10% 0px, 12.5% 6px, 15% 0px, 17.5% 6px, 20% 0px, 22.5% 6px, 25% 0px, 27.5% 6px, 30% 0px, 32.5% 6px, 35% 0px, 37.5% 6px, 40% 0px, 42.5% 6px, 45% 0px, 47.5% 6px, 50% 0px, 52.5% 6px, 55% 0px, 57.5% 6px, 60% 0px, 62.5% 6px, 65% 0px, 67.5% 6px, 70% 0px, 72.5% 6px, 75% 0px, 77.5% 6px, 80% 0px, 82.5% 6px, 85% 0px, 87.5% 6px, 90% 0px, 92.5% 6px, 95% 0px, 97.5% 6px, 100% 0px,
+        100% calc(100% - 6px), 97.5% 100%, 95% calc(100% - 6px), 92.5% 100%, 90% calc(100% - 6px), 87.5% 100%, 85% calc(100% - 6px), 82.5% 100%, 80% calc(100% - 6px), 77.5% 100%, 75% calc(100% - 6px), 72.5% 100%, 70% calc(100% - 6px), 67.5% 100%, 65% calc(100% - 6px), 62.5% 100%, 60% calc(100% - 6px), 57.5% 100%, 55% calc(100% - 6px), 52.5% 100%, 50% calc(100% - 6px), 47.5% 100%, 45% calc(100% - 6px), 42.5% 100%, 40% calc(100% - 6px), 37.5% 100%, 35% calc(100% - 6px), 32.5% 100%, 30% calc(100% - 6px), 27.5% 100%, 25% calc(100% - 6px), 22.5% 100%, 20% calc(100% - 6px), 17.5% 100%, 15% calc(100% - 6px), 12.5% 100%, 10% calc(100% - 6px), 7.5% 100%, 5% calc(100% - 6px), 2.5% 100%, 0% calc(100% - 6px)
+    );
+
+    /* Printing Ejection Animation */
+    animation: printPaperFeed 2.2s cubic-bezier(0.18, 0.88, 0.28, 1) forwards;
+}
+
+@keyframes printPaperFeed {
+    0% {
+        transform: translateY(-80%);
+        opacity: 0.2;
+    }
+    20% {
+        transform: translateY(-50%);
+        opacity: 0.9;
+    }
+    50% {
+        transform: translateY(-20%);
+    }
+    75% {
+        transform: translateY(-6%);
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Subtle thermal print texture */
+.receipt-paper-sheet::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.015) 0px,
+        rgba(0, 0, 0, 0.015) 1px,
+        transparent 1px,
+        transparent 3px
+    );
+    pointer-events: none;
+}
+
+/* ==========================================================================
+   RECEIPT / INVOICE CONTENT LAYOUT
+   ========================================================================== */
+.receipt-header {
+    text-align: center;
+    border-bottom: 1px dashed #9ca3af;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+
+.receipt-logo-title {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    color: #030712;
+    margin: 0 0 2px;
+}
+
+.receipt-subtitle {
+    font-size: 9px;
+    color: #4b5563;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin: 0 0 4px;
+}
+
+.receipt-badge-tax {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    background: #111827;
+    color: #ffffff;
+    padding: 2px 6px;
+    border-radius: 2px;
+    letter-spacing: 0.05em;
+    margin-top: 3px;
+}
+
+/* Metadata Rows */
+.receipt-meta-grid {
+    margin-bottom: 10px;
+    font-size: 10.5px;
+}
+
+.receipt-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 3px;
+}
+
+.receipt-row-label {
+    color: #4b5563;
+}
+
+.receipt-row-value {
+    font-weight: 600;
+    color: #111827;
+    text-align: right;
+    word-break: break-all;
+}
+
+.receipt-divider {
+    border-top: 1px dashed #9ca3af;
+    margin: 8px 0;
+}
+
+/* Items List */
+.receipt-items-heading {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 10px;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 4px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+}
+
+.receipt-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+    font-size: 10.5px;
+}
+
+.receipt-item-desc {
+    flex: 1;
+    padding-right: 8px;
+    font-weight: 500;
+    color: #111827;
+}
+
+.receipt-item-amount {
+    font-weight: 700;
+    color: #111827;
+    white-space: nowrap;
+}
+
+/* Totals Summary */
+.receipt-total-section {
+    margin-top: 6px;
+}
+
+.receipt-total-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10.5px;
+    margin-bottom: 2px;
+}
+
+.receipt-grand-total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 800;
+    color: #030712;
+    border-top: 1px dashed #6b7280;
+    border-bottom: 1px dashed #6b7280;
+    padding: 6px 0;
+    margin: 6px 0;
+}
+
+/* Verified Seal */
+.receipt-paid-stamp {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin: 10px 0;
+    padding: 5px;
+    border: 1.5px solid #059669;
+    border-radius: 4px;
+    color: #059669;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/* Barcode Simulation */
+.receipt-barcode-box {
+    text-align: center;
+    margin-top: 10px;
+}
+
+.receipt-barcode-bars {
+    height: 30px;
+    margin: 0 auto 4px;
+    width: 80%;
+    background: repeating-linear-gradient(
+        90deg,
+        #111827 0px,
+        #111827 2px,
+        transparent 2px,
+        transparent 4px,
+        #111827 4px,
+        #111827 5px,
+        transparent 5px,
+        transparent 8px,
+        #111827 8px,
+        #111827 11px,
+        transparent 11px,
+        transparent 13px,
+        #111827 13px,
+        #111827 15px,
+        transparent 15px,
+        transparent 16px
+    );
+}
+
+.receipt-barcode-num {
+    font-size: 9px;
+    color: #6b7280;
+    letter-spacing: 0.15em;
+}
+
+.receipt-footer-thanks {
+    text-align: center;
+    font-size: 9px;
+    color: #6b7280;
+    margin-top: 8px;
+    line-height: 1.4;
+}
+
+/* ==========================================================================
+   ACTIONS BAR (PRINT / DOWNLOAD / CLOSE)
+   ========================================================================== */
+.printer-actions-bar {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 14px;
+    z-index: 20;
+}
+
+.printer-btn-primary {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 18px;
+    background: #10b981;
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+    transition: transform 0.15s ease, background 0.15s ease;
+    text-decoration: none;
+    box-sizing: border-box;
+}
+
+.printer-btn-primary:hover {
+    background: #059669;
+    transform: translateY(-1px);
+}
+
+.printer-btn-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.printer-btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 14px;
+    background: #272a37;
+    color: #e2e8f0;
+    border: 1px solid #3e445b;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+    box-sizing: border-box;
+}
+
+.printer-btn-action:hover {
+    background: #33384a;
+    color: #ffffff;
+}
+
+.printer-btn-close {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #94a3b8;
+}
+
+.printer-btn-close:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+/* ==========================================================================
+   PRINT MEDIA STYLES (CLEAN REAL INVOICE PRINTER OUTPUT)
+   ========================================================================== */
+@media print {
+    body * {
+        visibility: hidden !important;
+    }
+
+    #receiptPrinterModal,
+    #receiptPrinterModal .receipt-paper-sheet,
+    #receiptPrinterModal .receipt-paper-sheet * {
+        visibility: visible !important;
+    }
+
+    #receiptPrinterModal {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .thermal-printer-machine,
+    .printer-actions-bar {
+        display: none !important;
+    }
+
+    .receipt-feed-chamber {
+        width: 100% !important;
+        margin: 0 !important;
+        overflow: visible !important;
+    }
+
+    .receipt-paper-sheet {
+        clip-path: none !important;
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+        width: 100% !important;
+        max-width: 400px !important;
+        margin: 0 auto !important;
+        padding: 20px !important;
+        animation: none !important;
+        transform: none !important;
+    }
+}

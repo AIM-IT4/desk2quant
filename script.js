@@ -2911,9 +2911,23 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
                 } catch (_) { /* keep the checkout link */ }
             }
 
+            const orderMeta = {
+                paymentId: paymentId,
+                amount: inrAmountForLogging !== null ? inrAmountForLogging : amount,
+                currency: currency || 'INR',
+                customerEmail: customerEmail,
+                productName: productName,
+                downloadLink: downloadLink
+            };
+            window.__lastOrderData = orderMeta;
+
+            if (typeof window.showReceiptPrinter === 'function') {
+                window.showReceiptPrinter(orderMeta);
+            }
+
             if (downloadLink && downloadLink !== 'YOUR_DRIVE_LINK_HERE') {
                 if (typeof window.showSuccessModal === 'function') {
-                    window.showSuccessModal(productName, downloadLink);
+                    window.showSuccessModal(productName, downloadLink, orderMeta);
                 } else {
                     showToast('🎉 Payment successful! Check your email for the download link — including your Spam/Junk folder.', 'success', 0);
                     window.open(downloadLink, '_blank');
@@ -5616,13 +5630,27 @@ async function runCartCheckout(cart, userDetails, releaseBtn) {
             // call above is just a fast fallback, not a duplicate path.
             // Snapshot names before saveCart([]) clears the drawer.
             const purchasedNames = cart.map((i) => i.name);
+            const cartItemsSnapshot = cart.map((i) => ({ name: i.name, price: i.price }));
+            const cartMeta = {
+                paymentId: paymentId,
+                amount: totalAmount,
+                currency: 'INR',
+                customerEmail: customerEmail,
+                items: cartItemsSnapshot,
+                productName: purchasedNames,
+                downloadLink: '#'
+            };
+            window.__lastOrderData = cartMeta;
+
             saveCart([]);
             renderCartDrawer();
 
+            if (typeof window.showReceiptPrinter === 'function') {
+                window.showReceiptPrinter(cartMeta);
+            }
+
             if (typeof window.showSuccessModal === 'function') {
-                // Pass the real product names (not a "2 items" summary) so the
-                // cross-sell keyword match can actually hit a strategy.
-                window.showSuccessModal(purchasedNames, '#');
+                window.showSuccessModal(purchasedNames, '#', cartMeta);
             } else {
                 alert('🎉 Payment Successful!\n\nCheck your email for your download links.\n\nIMPORTANT: Please check your Spam/Junk folder.');
             }
