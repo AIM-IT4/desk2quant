@@ -25,7 +25,7 @@ test('site-config.js defines D2Q_CLARITY_CONFIG and D2Q_LIVE_CHAT_CONFIG', async
     assert.match(content, /projectId:/);
 
     assert.match(content, /window\.D2Q_LIVE_CHAT_CONFIG\s*=\s*Object\.freeze\(\{/);
-    assert.match(content, /enabled:\s*false/);
+    assert.match(content, /enabled:\s*(true|false)/);
     assert.match(content, /propertyId:/);
     assert.match(content, /widgetId:/);
     assert.match(content, /window\.initClarity\s*=\s*initClarity/);

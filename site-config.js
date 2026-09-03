@@ -32,10 +32,10 @@ window.D2Q_CLARITY_CONFIG = Object.freeze({
 
 /* Tawk.to Live Chat Widget - 100% Free */
 window.D2Q_LIVE_CHAT_CONFIG = Object.freeze({
-    enabled: false,
-    propertyId: '',
-    widgetId: '',
-    position: 'bottom-left' // 'bottom-left' or 'bottom-right'; bottom-left avoids overlapping advisor widget & scroll-to-top button
+    enabled: true,
+    propertyId: '6a996a06f31d2934469232b9',
+    widgetId: '1k1jkcb5o',
+    position: 'bottom-left' // 'bottom-left' avoids overlapping advisor widget & scroll-to-top button
 });
 
 /**
