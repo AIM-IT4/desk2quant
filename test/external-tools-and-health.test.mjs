@@ -1,54 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
-import healthHandler from '../api/health.js';
 
-function mockRes() {
-    return {
-        statusCode: 200,
-        body: null,
-        headers: {},
-        setHeader(k, v) { this.headers[k.toLowerCase()] = v; },
-        status(code) { this.statusCode = code; return this; },
-        json(payload) { this.body = payload; return this; },
-        end() { return this; }
-    };
-}
-
-test('api/health.js GET returns 200 with status ok, timestamp, and uptime', async () => {
-    const req = { method: 'GET' };
-    const res = mockRes();
-    await healthHandler(req, res);
-
-    assert.equal(res.statusCode, 200);
-    assert.ok(res.body, 'Response body should be present');
-    assert.equal(res.body.status, 'ok');
-    assert.ok(typeof res.body.uptime === 'number' && res.body.uptime >= 0, 'Uptime should be non-negative number');
-    assert.ok(typeof res.body.timestamp === 'string', 'Timestamp should be string');
-    const parsedDate = new Date(res.body.timestamp);
-    assert.ok(!isNaN(parsedDate.getTime()), 'Timestamp should be valid ISO date');
-    assert.equal(res.headers['access-control-allow-origin'], '*');
-    assert.equal(res.headers['cache-control'], 'no-cache, no-store, must-revalidate');
+test('health.json exists and returns valid status ok for uptime monitors', async () => {
+    const raw = await fs.readFile('health.json', 'utf8');
+    const data = JSON.parse(raw);
+    assert.equal(data.status, 'ok');
+    assert.equal(data.service, 'Desk2Quant');
+    assert.ok(data.uptime);
 });
 
-test('api/health.js OPTIONS and HEAD return 200', async () => {
-    const reqOptions = { method: 'OPTIONS' };
-    const resOptions = mockRes();
-    await healthHandler(reqOptions, resOptions);
-    assert.equal(resOptions.statusCode, 200);
-
-    const reqHead = { method: 'HEAD' };
-    const resHead = mockRes();
-    await healthHandler(reqHead, resHead);
-    assert.equal(resHead.statusCode, 200);
-});
-
-test('api/health.js rejects unsupported methods with 405', async () => {
-    const req = { method: 'POST' };
-    const res = mockRes();
-    await healthHandler(req, res);
-    assert.equal(res.statusCode, 405);
-    assert.equal(res.body?.error, 'Method not allowed');
+test('vercel.json rewrites /api/health to /health.json without consuming serverless function slots', async () => {
+    const raw = await fs.readFile('vercel.json', 'utf8');
+    const data = JSON.parse(raw);
+    const rewrite = data.rewrites?.find(r => r.source === '/api/health');
+    assert.ok(rewrite, 'Rewrite for /api/health should exist');
+    assert.equal(rewrite.destination, '/health.json');
 });
 
 test('site-config.js defines D2Q_CLARITY_CONFIG and D2Q_LIVE_CHAT_CONFIG', async () => {

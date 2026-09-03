@@ -2,6 +2,12 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "node generate-config.js && node scripts/build-seo.js",
   "outputDirectory": ".",
+  "rewrites": [
+    {
+      "source": "/api/health",
+      "destination": "/health.json"
+    }
+  ],
   "redirects": [
     {
       "source": "/api/reminders.js",

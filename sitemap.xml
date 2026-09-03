@@ -2,6 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://desk2quant.com/</loc><priority>1.0</priority></url>
   <url><loc>https://desk2quant.com/desk-simulator.html</loc><priority>0.9</priority></url>
+  <url><loc>https://desk2quant.com/diagnostic.html</loc><priority>0.9</priority></url>
   <url><loc>https://desk2quant.com/interview.html</loc><priority>0.8</priority></url>
   <url><loc>https://desk2quant.com/blog.html</loc><priority>0.8</priority></url>
   <url><loc>https://desk2quant.com/faq.html</loc><priority>0.6</priority></url>
@@ -17,7 +18,9 @@
   <url><loc>https://desk2quant.com/refund.html</loc><priority>0.3</priority></url>
   <url><loc>https://desk2quant.com/privacy.html</loc><priority>0.3</priority></url>
   <url><loc>https://desk2quant.com/terms.html</loc><priority>0.3</priority></url>
-  <url><loc>https://desk2quant.com/products/quant-project-gauntlet-01-ois-sofr-curve-graded-project.html</loc><priority>0.8</priority></url>
+  <url><loc>https://desk2quant.com/products/the-vol-surface-construction-playbook-svi-ssvi-static-arbitrage-and-du.html</loc><priority>0.8</priority></url>
+  <url><loc>https://desk2quant.com/products/quant-researcher-interview-playbook-time-series-signals-and-statistica.html</loc><priority>0.8</priority></url>
+  <url><loc>https://desk2quant.com/products/50-fx-derivatives-problems-for-quant-interviews.html</loc><priority>0.8</priority></url>
   <url><loc>https://desk2quant.com/products/xva-calculus-lab.html</loc><priority>0.8</priority></url>
   <url><loc>https://desk2quant.com/products/ats-friendly-quant-resume-template-latex.html</loc><priority>0.8</priority></url>
   <url><loc>https://desk2quant.com/products/numerical-methods-for-quants.html</loc><priority>0.8</priority></url>
@@ -54,7 +57,8 @@
   <url><loc>https://desk2quant.com/products/probability-theory-for-quants-desk-first.html</loc><priority>0.8</priority></url>
   <url><loc>https://desk2quant.com/products/fx-models-quant-interview-playbook.html</loc><priority>0.8</priority></url>
   <url><loc>https://desk2quant.com/products/cpp-for-quants.html</loc><priority>0.8</priority></url>
-  <url><loc>https://desk2quant.com/products/complete-front-office-and-risk-quant-professional-bundle-41-plus-high.html</loc><priority>0.8</priority></url>
+  <url><loc>https://desk2quant.com/products/complete-front-office-and-risk-quant-professional-bundle-46-plus-high.html</loc><priority>0.8</priority></url>
+  <url><loc>https://desk2quant.com/blog/a-perfect-calibration-can-still-lose-money-model-risk-triangle.html</loc><priority>0.7</priority></url>
   <url><loc>https://desk2quant.com/blog/first-90-days-as-a-quant-what-nobody-tells-you.html</loc><priority>0.7</priority></url>
   <url><loc>https://desk2quant.com/blog/xva-in-plain-english-why-banks-price-counterparty-risk.html</loc><priority>0.7</priority></url>
   <url><loc>https://desk2quant.com/blog/7-interview-red-flags-not-ready-for-the-desk.html</loc><priority>0.7</priority></url>
