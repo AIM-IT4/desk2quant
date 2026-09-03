@@ -1240,6 +1240,33 @@ body.d2q-launchzone .hero-visual .social-link {
     border-color: var(--lz-white);
 }
 
+body.d2q-launchzone .hero-visual .profile-research-badge {
+    display: flex;
+    justify-content: flex-start;
+    margin: 12px 0 16px;
+}
+
+body.d2q-launchzone .hero-visual .arxiv-pill {
+    background: var(--lz-white);
+    color: var(--lz-ink);
+    border: 1px solid var(--lz-ink);
+    border-radius: 3px;
+    box-shadow: 2px 2px 0 var(--lz-ink);
+    font-family: var(--lz-font-sans);
+    font-weight: 700;
+}
+
+body.d2q-launchzone .hero-visual .arxiv-pill:hover {
+    background: var(--lz-ink);
+    color: var(--lz-white);
+    box-shadow: none;
+    transform: translate(2px, 2px);
+}
+
+body.d2q-launchzone .hero-visual .arxiv-pill:hover .arxiv-x {
+    color: var(--lz-signal);
+}
+
 /* ----- Buttons and controls ----- */
 body.d2q-launchzone .btn,
 body.d2q-launchzone .btn-start,
