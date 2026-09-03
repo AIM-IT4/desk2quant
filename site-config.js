@@ -27,7 +27,7 @@ window.D2Q_CALENDAR_CONFIG = Object.freeze({
 /* Microsoft Clarity (Heatmaps & Session Recording) - 100% Free */
 window.D2Q_CLARITY_CONFIG = Object.freeze({
     enabled: true,
-    projectId: '...' // Microsoft Clarity Project ID (e.g., 'qf461e7k85')
+    projectId: 'ycjcdlveyz'
 });
 
 /* Tawk.to Live Chat Widget - 100% Free */
