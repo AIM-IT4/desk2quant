@@ -56,7 +56,7 @@ test('index.html contains calendar tab switcher, live calendar embed, and post-p
 test('site-config.js defines D2Q_CALENDAR_CONFIG for two-way sync', async () => {
     const code = await fs.readFile('site-config.js', 'utf8');
     assert.match(code, /window\.D2Q_CALENDAR_CONFIG/);
-    assert.match(code, /amit-kumar-jha/);
+    assert.match(code, /desk2quant/);
 });
 
 test('script.js defines switchBookingTab and openPostPaymentCalendarModal', async () => {

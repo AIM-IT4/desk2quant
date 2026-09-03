@@ -3890,7 +3890,7 @@ function initCalEmbed(containerSelector, calLink, prefill = {}) {
 
     Cal("inline", {
         elementOrSelector: `#${cleanSelector}-inner`,
-        calLink: calLink || 'amit-kumar-jha',
+        calLink: calLink || 'desk2quant',
         config: config
     });
 }
@@ -3908,7 +3908,7 @@ window.switchBookingTab = function(tab) {
         if (tabCal) tabCal.classList.add('active');
 
         const calConfig = window.D2Q_CALENDAR_CONFIG || {};
-        const calLink = calConfig.calLink || 'amit-kumar-jha';
+        const calLink = calConfig.calLink || 'desk2quant';
         initCalEmbed('#cal-inline-embed', calLink);
     } else {
         if (formPanel) formPanel.style.display = 'block';
@@ -3928,7 +3928,7 @@ window.openPostPaymentCalendarModal = function(data = {}) {
     if (payBadge) payBadge.textContent = data.paymentId || 'CONFIRMED';
 
     const calConfig = window.D2Q_CALENDAR_CONFIG || {};
-    const calLink = calConfig.calLink || 'amit-kumar-jha';
+    const calLink = calConfig.calLink || 'desk2quant';
 
     // Setup 1-Click Google Calendar Event Link
     const gcalBtn = document.getElementById('calAddToGcalBtn');

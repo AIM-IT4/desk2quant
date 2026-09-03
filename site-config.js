@@ -17,7 +17,7 @@ window.QUANT_MENTOR = Object.freeze({
 window.D2Q_CALENDAR_CONFIG = Object.freeze({
     enabled: true,
     provider: 'cal', // Free Cal.com with two-way Google Calendar sync
-    calLink: 'amit-kumar-jha', // Customizable Cal.com username
+    calLink: 'desk2quant', // Cal.com username
     mentorName: 'Amit Kumar Jha',
     mentorEmail: 'jha.8@alumni.iitj.ac.in',
     eventTitle: 'Desk2Quant 1-on-1 Mentorship & Code Review',
