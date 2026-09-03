@@ -235,3 +235,24 @@ test('missing payment_id or email is rejected', async () => {
 
     assert.equal(res.statusCode, 400);
 });
+
+test('refunded payment is refused', async () => {
+    const { res: resAmount } = await run({
+        payment: cartPayment({ amount_refunded: 80000, refund_status: 'full' }),
+        order: cartOrder(),
+        body: { payment_id: 'pay_CART1', email: 'buyer@example.com' }
+    });
+
+    assert.equal(resAmount.statusCode, 402);
+    assert.deepEqual(resAmount.body, { error: 'Payment has been refunded' });
+
+    const { res: resPartial } = await run({
+        payment: cartPayment({ amount_refunded: 1000, refund_status: 'partial' }),
+        order: cartOrder(),
+        body: { payment_id: 'pay_CART1', email: 'buyer@example.com' }
+    });
+
+    assert.equal(resPartial.statusCode, 402);
+    assert.deepEqual(resPartial.body, { error: 'Payment has been refunded' });
+});
+

@@ -166,6 +166,9 @@ export default async function handler(req, res) {
         if (payment.status !== 'captured') {
             return res.status(402).json({ error: `Payment not captured (status: ${payment.status})` });
         }
+        if ((Number(payment.amount_refunded) || 0) > 0 || payment.refund_status === 'full') {
+            return res.status(402).json({ error: 'Payment has been refunded' });
+        }
 
         // Email must match the payment's email or the email recorded in notes —
         // prevents third parties with a payment_id from granting themselves access
