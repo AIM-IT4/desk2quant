@@ -392,18 +392,19 @@ window.QUANT_MENTOR = Object.freeze({
 
         if (headline) {
             headline.setAttribute('aria-label', 'Build Quant Skills That Survive the Interview and the Desk');
-            headline.innerHTML = 'Build Quant Skills That Survive the <span class="gradient-text">Interview — and the Desk</span>';
+            headline.innerHTML = 'Build Quant Skills That Survive the <span class="gradient-text">Interview and the Desk</span>';
         }
 
         if (subcopy) {
             subcopy.innerHTML = '<strong>Stop learning models as isolated formulas. Learn how they are implemented, challenged, hedged, validated, and explained under pressure.</strong><br>Desk-focused preparation for pricing, XVA, risk, model validation, numerical methods, Python, C++, and quant interviews.';
 
-            if (!hero.querySelector('.hero-value-line')) {
-                const valueLine = document.createElement('p');
+            let valueLine = hero.querySelector('.hero-value-line');
+            if (!valueLine) {
+                valueLine = document.createElement('p');
                 valueLine.className = 'hero-value-line';
-                valueLine.innerHTML = '<strong>Flagship:</strong> 41+ PDFs • 60+ scripts • 1000+ interview problems • Python + C++ + SQL';
                 subcopy.insertAdjacentElement('afterend', valueLine);
             }
+            valueLine.innerHTML = '<strong>Flagship:</strong> 46+ PDFs • 60+ scripts • 1000+ interview problems • Python + C++ + SQL';
         }
 
         if (proof) {

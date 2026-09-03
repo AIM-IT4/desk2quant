@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-<script>/* CANONICAL-HOST-GUARD v1: Razorpay is registered to desk2quant.com - force canonical host + root path before any checkout code runs. */!function(){try{var h=location.hostname.toLowerCase(),dev=/^(localhost|127.0.0.1|0.0.0.0|[::1])$/.test(h);if(!dev&&h!=='desk2quant.com'){location.replace('https://desk2quant.com'+location.pathname+location.search+location.hash)}else if(location.pathname==='/index.html'){location.replace('https://desk2quant.com/'+location.search+location.hash)}}catch(e){}}();</script>
+<script>/* CANONICAL-HOST-GUARD v1: Razorpay is registered to desk2quant.com - force canonical host + root path before any checkout code runs. */!function(){try{var h=location.hostname.toLowerCase(),dev=/^(localhost|127.0.0.1|0.0.0.0|[::1])$/.test(h);if(!dev&&h!=='desk2quant.com'){location.replace('https://desk2quant.com'+location.pathname+location.search+location.hash)}else if(!dev&&location.pathname==='/index.html'){location.replace('https://desk2quant.com/'+location.search+location.hash)}}catch(e){}}();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
@@ -168,45 +168,109 @@
                 <div class="grid-overlay"></div>
             </div>
             <div class="hero-container">
-                <div class="hero-content">
-                    <div class="hero-badge">
-                        <span class="badge-dot"></span>
-                        Practitioner-built quant training
-                    </div>
-                    <h1 class="hero-headline" id="heroHeadline"
-                        aria-label="Quant Finance Interview Preparation and Desk-Ready Training">
-                        Quant Finance Interview Preparation <span class="gradient-text">&amp; Desk-Ready Training</span>
-                    </h1>
-                    <p class="subheadline hero-subcopy">
-                        <strong>Learn the models. Think like the desk.</strong><br>
-                        Book direct 1-on-1 mentorship for a focused plan, or try free Desk Simulator practice
-                        before your next quant interview.
-                    </p>
-                    <div class="hero-proof-row" aria-label="Desk2Quant highlights">
-                        <span><i class="fas fa-chart-line"></i> Pricing &amp; risk</span>
-                        <span><i class="fas fa-terminal"></i> Python &amp; C++</span>
-                        <span><i class="fas fa-user-check"></i> Interview pressure</span>
-                    </div>
-                    <div class="hero-stats">
-                        <div class="stat-item">
-                            <span class="stat-value" id="stat-students">50+</span>
-                            <span class="stat-label">Professionals mentored</span>
+                <!-- Top Row: Left Copy + Right Dynamic Terminal -->
+                <div class="hero-split-grid">
+                    <div class="hero-content">
+                        <div class="hero-badge">
+                            <span class="badge-dot"></span>
+                            Practitioner-built quant finance system
                         </div>
-                        <div class="stat-item">
-                            <span class="stat-value" id="stat-experience">500+</span>
-                            <span class="stat-label">Learners reached</span>
+                        <h1 class="hero-headline" id="heroHeadline"
+                            aria-label="Build Quant Skills That Survive the Interview and the Desk">
+                            Build Quant Skills That Survive the <span class="gradient-text">Interview and the Desk</span>
+                        </h1>
+                        <p class="subheadline hero-subcopy">
+                            <strong>Stop learning models as isolated formulas. Learn how they are implemented, challenged, hedged, validated, and explained under pressure.</strong><br>
+                            Desk-focused preparation for pricing, XVA, risk, model validation, numerical methods, Python, C++, and quant interviews.
+                            <span class="hero-subtext-note" style="display:none;">Book direct 1-on-1 mentorship for a focused plan, or try free Desk Simulator practice before your next quant interview.</span>
+                        </p>
+                        <p class="hero-value-line">
+                            <strong>Flagship:</strong> 46+ PDFs &bull; 60+ scripts &bull; 1000+ interview problems &bull; Python + C++ + SQL
+                        </p>
+                        <div class="hero-proof-row" aria-label="Desk2Quant highlights">
+                            <span><i class="fas fa-chart-line"></i> Pricing &amp; XVA</span>
+                            <span><i class="fas fa-shield-alt"></i> Risk &amp; validation</span>
+                            <span><i class="fas fa-code"></i> Implementation</span>
+                            <span><i class="fas fa-user-check"></i> Interview pressure</span>
                         </div>
-                        <div class="stat-item">
-                            <span class="stat-value" id="stat-products">40</span>
-                            <span class="stat-label">Learning resources</span>
+                        <div class="hero-cta reveal-up delay-200">
+                            <a href="#contact" class="btn btn-primary">Book 1-on-1 Mentorship <i
+                                    class="fas fa-arrow-right"></i></a>
+                            <a href="desk-simulator.html" class="btn btn-secondary">Try the Free Desk Simulator</a>
+                        </div>
+                        <div class="hero-stats">
+                            <div class="stat-item">
+                                <span class="stat-value" id="stat-students">50+</span>
+                                <span class="stat-label">Professionals mentored</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value" id="stat-experience">500+</span>
+                                <span class="stat-label">Learners reached</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value" id="stat-products">46+</span>
+                                <span class="stat-label">Learning resources</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="hero-cta reveal-up delay-200">
-                        <a href="#contact" class="btn btn-primary">Book 1-on-1 Mentorship <i
-                                class="fas fa-arrow-right"></i></a>
-                        <a href="desk-simulator.html" class="btn btn-secondary">Try the Free Desk Simulator</a>
+
+                    <!-- Parallel Right: Dynamic Terminal Execution -->
+                    <div class="hero-terminal-side reveal-up delay-200">
+                        <div class="d2q-terminal-window" id="heroTerminalWindow" aria-label="Desk2Quant Live Quant Terminal">
+                            <div class="terminal-titlebar">
+                                <div class="terminal-traffic-lights">
+                                    <span class="traffic-light close"></span>
+                                    <span class="traffic-light minimize"></span>
+                                    <span class="traffic-light maximize"></span>
+                                </div>
+                                <div class="terminal-title-text">
+                                    <i class="fas fa-terminal"></i> d2q desk-simulator v2.4
+                                </div>
+                                <div class="terminal-live-badge">
+                                    <span class="live-dot"></span> LIVE EXECUTION
+                                </div>
+                            </div>
+
+                            <div class="terminal-panel" id="panelTerminal">
+                                <div class="terminal-screen" id="terminalScreen">
+                                    <div class="term-command-line">
+                                        <span class="term-prompt">quant@desk2quant</span><span class="term-sep">:</span><span class="term-dir">~/engine</span><span class="term-symbol">$</span>
+                                        <span class="term-command-text" id="termCurrentCommand"></span>
+                                        <span class="term-cursor" id="termCursor"></span>
+                                    </div>
+                                    <div class="term-log-history" id="termLogHistory"></div>
+                                </div>
+
+                                <div class="terminal-scenario-bar">
+                                    <span class="scenario-label">Simulate:</span>
+                                    <div class="scenario-chips">
+                                        <button type="button" class="scenario-chip active" onclick="triggerHeroScenario(0)">
+                                            <span class="chip-num">01</span> Vol &amp; Pricing
+                                        </button>
+                                        <button type="button" class="scenario-chip" onclick="triggerHeroScenario(1)">
+                                            <span class="chip-num">02</span> Desk P&amp;L
+                                        </button>
+                                        <button type="button" class="scenario-chip" onclick="triggerHeroScenario(2)">
+                                            <span class="chip-num">03</span> Model Risk
+                                        </button>
+                                        <button type="button" class="scenario-chip" onclick="triggerHeroScenario(3)">
+                                            <span class="chip-num">04</span> Platform Scope
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="terminal-value-footer">
+                                    <div class="value-item"><i class="fas fa-file-pdf"></i> <strong>46+</strong> PDFs</div>
+                                    <div class="value-item"><i class="fas fa-terminal"></i> <strong>60+</strong> Scripts</div>
+                                    <div class="value-item"><i class="fas fa-brain"></i> <strong>1000+</strong> Problems</div>
+                                    <div class="value-item"><i class="fas fa-code"></i> <strong>Python &bull; C++ &bull; SQL</strong></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                <!-- Bottom Row: The Original Profile Card at the EXACT same position where it was -->
                 <div class="hero-visual reveal-up delay-300">
                     <div class="profile-card">
                         <div class="profile-glow"></div>
@@ -1232,6 +1296,7 @@
     <script src="site-config.js"></script>
     <script src="product-seo.js?v=1"></script>
     <script src="script.js?v=19" defer></script>
+    <script src="hero-terminal.js" defer></script>
     <script>document.addEventListener('DOMContentLoaded', function(){ if(typeof renderSalaryWidget==='function') setTimeout(renderSalaryWidget, 800); });</script>
 
     <!-- Scroll to Top Button -->
