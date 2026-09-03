@@ -156,6 +156,8 @@ function bindEvents() {
         if (currentScenario) openScenario(currentScenario.id, { fresh: true });
     });
     document.getElementById('shareResultButton').addEventListener('click', shareResult);
+    document.getElementById('shareLinkedInButton')?.addEventListener('click', shareResultLinkedIn);
+    document.getElementById('downloadCertButton')?.addEventListener('click', downloadCertificate);
     elements.simLeadForm?.addEventListener('submit', submitSimLead);
 
     elements.nextCaseButton.addEventListener('click', () => {
@@ -1069,6 +1071,107 @@ async function shareResult() {
     } catch {
         window.prompt('Copy your score and challenge link:', `${shareText} ${shareUrl.href}`);
     }
+}
+
+function shareResultLinkedIn() {
+    if (!currentScenario || !currentSession?.score) return;
+    const shareUrl = new URL('desk-simulator.html', window.location.href);
+    shareUrl.hash = `case=${currentScenario.id}&mode=${currentSession.mode}`;
+    const text = encodeURIComponent(
+        `I scored ${currentSession.score.total}/100 on "${currentScenario.title}" in the @Desk2Quant Trading Desk Simulator! Can you diagnose the incident?\n\nTest your quantitative desk-readiness here: ${shareUrl.href}`
+    );
+    window.open(`https://www.linkedin.com/feed/?shareActive=true&text=${text}`, '_blank', 'noopener,noreferrer');
+}
+
+function downloadCertificate() {
+    if (!currentScenario || !currentSession?.score) return;
+    const name = window.prompt('Enter your name for the Desk-Ready Certificate:', 'Quant Candidate') || 'Quant Candidate';
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = 1200;
+    canvas.height = 800;
+    const ctx = canvas.getContext('2d');
+
+    // Background
+    const bgGrad = ctx.createLinearGradient(0, 0, 1200, 800);
+    bgGrad.addColorStop(0, '#0a0f1d');
+    bgGrad.addColorStop(1, '#071019');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, 1200, 800);
+
+    // Border
+    ctx.strokeStyle = '#0f766e';
+    ctx.lineWidth = 8;
+    ctx.strokeRect(30, 30, 1140, 740);
+
+    ctx.strokeStyle = '#d97706';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(42, 42, 1116, 716);
+
+    // Brand
+    ctx.fillStyle = '#14b8a6';
+    ctx.font = 'bold 24px "Space Grotesk", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('DESK2QUANT · TRADING DESK SIMULATOR', 600, 120);
+
+    // Title
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 44px "Space Grotesk", sans-serif';
+    ctx.fillText('CERTIFICATE OF INCIDENT DIAGNOSIS', 600, 190);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '20px "Space Grotesk", sans-serif';
+    ctx.fillText('This certifies that', 600, 260);
+
+    // Candidate Name
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = 'bold 48px "Space Grotesk", sans-serif';
+    ctx.fillText(name.trim(), 600, 330);
+
+    // Incident details
+    ctx.fillStyle = '#e2e8f0';
+    ctx.font = '22px "Space Grotesk", sans-serif';
+    ctx.fillText('has successfully investigated and diagnosed the market incident:', 600, 395);
+
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = 'bold 30px "Space Grotesk", sans-serif';
+    ctx.fillText(`"${currentScenario.title}"`, 600, 450);
+
+    // Score & Band
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 32px "Space Grotesk", sans-serif';
+    ctx.fillText(`Score: ${currentSession.score.total}/100 · Rating: ${String(currentSession.score.band || 'Desk Ready').toUpperCase()}`, 600, 520);
+
+    // Divider
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(300, 570);
+    ctx.lineTo(900, 570);
+    ctx.stroke();
+
+    // Footer credentials
+    const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '18px "Space Grotesk", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Date: ${today}`, 200, 650);
+    ctx.fillText(`Verification: desk2quant.com/desk-simulator.html`, 200, 685);
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 20px "Space Grotesk", sans-serif';
+    ctx.fillText('Amit Kumar Jha', 1000, 650);
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '16px "Space Grotesk", sans-serif';
+    ctx.fillText('Founder & Model Risk Quant · UBS', 1000, 685);
+
+    // Trigger download
+    const link = document.createElement('a');
+    link.download = `Desk2Quant-Certificate-${currentScenario.id}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('Certificate generated & downloaded!');
 }
 
 function getCaseIdFromHash() {

@@ -570,6 +570,99 @@ body.d2q-launchzone .cart-item-remove {
     font-size: 13px;
 }
 
+/* Cart Order Bump Add-on */
+body.d2q-launchzone .cart-order-bump {
+    margin: 16px 0 10px;
+    padding: 12px;
+    background: #fffbeb;
+    border: 1.5px dashed #d97706;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+body.d2q-launchzone .cart-order-bump.bump-added {
+    background: #f0fdf4;
+    border-color: #16a34a;
+    border-style: solid;
+}
+
+body.d2q-launchzone .bump-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+body.d2q-launchzone .bump-badge {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    color: #b45309;
+    background: #fef3c7;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+body.d2q-launchzone .bump-save-tag {
+    font-size: 10px;
+    font-weight: 800;
+    color: #15803d;
+    background: #dcfce7;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+body.d2q-launchzone .bump-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+}
+
+body.d2q-launchzone .bump-card input[type="checkbox"] {
+    margin-top: 3px;
+    width: 17px;
+    height: 17px;
+    accent-color: var(--lz-ink);
+    cursor: pointer;
+}
+
+body.d2q-launchzone .bump-content {
+    flex: 1;
+}
+
+body.d2q-launchzone .bump-title {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--lz-ink);
+    margin: 0 0 3px;
+    line-height: 1.3;
+}
+
+body.d2q-launchzone .bump-desc {
+    font-size: 11px;
+    color: #4b5563;
+    margin: 0 0 6px;
+    line-height: 1.35;
+}
+
+body.d2q-launchzone .bump-pricing {
+    font-size: 12px;
+    margin: 0;
+}
+
+body.d2q-launchzone .bump-strikethrough {
+    text-decoration: line-through;
+    color: #9ca3af;
+    margin-right: 6px;
+    font-size: 11px;
+}
+
+body.d2q-launchzone .bump-deal-price {
+    color: #b45309;
+    font-weight: 800;
+}
+
 body.d2q-launchzone .cart-drawer-footer {
     padding: 18px 24px 22px;
     background: var(--lz-white);
@@ -2721,5 +2814,281 @@ body.d2q-launchzone .filter-buttons,
 body.d2q-launchzone .cart-items {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
+}
+
+/* Daily Quant Brainteaser */
+body.d2q-launchzone .brainteaser-section {
+    padding: 60px 0;
+    background: #f8faf9;
+    border-top: 1px solid var(--lz-ink);
+    border-bottom: 1px solid var(--lz-ink);
+}
+
+body.d2q-launchzone .brainteaser-card {
+    background: #ffffff;
+    border: 2px solid var(--lz-ink);
+    border-radius: 8px;
+    box-shadow: 6px 6px 0 var(--lz-ink);
+    padding: 36px 40px;
+}
+
+body.d2q-launchzone .brainteaser-tag-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+body.d2q-launchzone .brainteaser-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #eefaf8;
+    border: 1px solid #0f766e;
+    color: #0f766e;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    padding: 4px 10px;
+    border-radius: 4px;
+}
+
+body.d2q-launchzone .brainteaser-date {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    font-family: var(--lz-font-mono, monospace);
+}
+
+body.d2q-launchzone .brainteaser-title {
+    font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+    font-weight: 800;
+    color: var(--lz-ink);
+    margin: 6px 0 8px;
+    line-height: 1.2;
+}
+
+body.d2q-launchzone .brainteaser-subtext {
+    color: #4b5563;
+    font-size: 1rem;
+    margin-bottom: 24px;
+}
+
+body.d2q-launchzone .brainteaser-question-box {
+    background: #fdfefe;
+    border: 1.5px solid #d1d5db;
+    border-left: 5px solid #0f766e;
+    border-radius: 6px;
+    padding: 22px 24px;
+    margin-bottom: 24px;
+}
+
+body.d2q-launchzone .bt-category-pill {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #0f766e;
+    margin-bottom: 8px;
+}
+
+body.d2q-launchzone .bt-question {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--lz-ink);
+    line-height: 1.45;
+    margin: 0 0 10px;
+}
+
+body.d2q-launchzone .bt-context {
+    font-size: 0.88rem;
+    color: #6b7280;
+    font-style: italic;
+    margin: 0;
+}
+
+body.d2q-launchzone .brainteaser-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+body.d2q-launchzone .btn-bt-hint {
+    background: #fffbeb;
+    border: 1px solid #d97706;
+    color: #92400e;
+    font-weight: 700;
+    padding: 10px 18px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+body.d2q-launchzone .btn-bt-hint:hover {
+    background: #fef3c7;
+}
+
+body.d2q-launchzone .btn-bt-solution {
+    background: #0f766e;
+    border: 1px solid #0f766e;
+    color: #ffffff;
+    font-weight: 700;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+body.d2q-launchzone .btn-bt-solution:hover {
+    background: #115e59;
+}
+
+body.d2q-launchzone .btn-bt-share {
+    background: #0a66c2;
+    border: 1px solid #0a66c2;
+    color: #ffffff !important;
+    font-weight: 700;
+    padding: 10px 18px;
+    border-radius: 4px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+body.d2q-launchzone .btn-bt-share:hover {
+    background: #084e96;
+}
+
+body.d2q-launchzone .bt-panel {
+    border-radius: 6px;
+    padding: 18px 22px;
+    margin-top: 14px;
+    font-size: 0.95rem;
+}
+
+body.d2q-launchzone .bt-hint-panel {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #78350f;
+}
+
+body.d2q-launchzone .bt-solution-panel {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #14532d;
+}
+
+@media (max-width: 600px) {
+    body.d2q-launchzone .brainteaser-card {
+        padding: 24px 20px;
+    }
+    body.d2q-launchzone .brainteaser-actions button,
+    body.d2q-launchzone .brainteaser-actions a {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+    }
+}
+
+/* Resume Teardown Banner */
+body.d2q-launchzone .resume-teardown-banner {
+    margin-top: 48px;
+    padding: 36px 40px;
+    background: #ffffff;
+    border: 2px solid var(--lz-ink);
+    border-radius: 8px;
+    box-shadow: 6px 6px 0 var(--lz-ink);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+}
+
+body.d2q-launchzone .teardown-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    color: #b45309;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+body.d2q-launchzone .teardown-content h3 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--lz-ink);
+    margin: 0 0 10px;
+}
+
+body.d2q-launchzone .teardown-content p {
+    color: #4b5563;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin: 0 0 16px;
+    max-width: 680px;
+}
+
+body.d2q-launchzone .teardown-features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: var(--lz-ink);
+}
+
+body.d2q-launchzone .teardown-features i {
+    color: #16a34a;
+    margin-right: 8px;
+}
+
+body.d2q-launchzone .teardown-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+body.d2q-launchzone .btn-teardown {
+    padding: 16px 28px !important;
+    font-size: 1.05rem !important;
+    white-space: nowrap;
+}
+
+body.d2q-launchzone .teardown-subtext {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+@media (max-width: 900px) {
+    body.d2q-launchzone .resume-teardown-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 28px 24px;
+    }
+    body.d2q-launchzone .teardown-action {
+        width: 100%;
+        align-items: stretch;
+    }
+    body.d2q-launchzone .btn-teardown {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+    }
 }
 

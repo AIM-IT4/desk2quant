@@ -420,9 +420,31 @@
         }, 12000);
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initBundleGuard, { once: true });
-    } else {
+    function initWhatsAppHotline() {
+        if (document.getElementById('d2q-whatsapp-widget')) return;
+        const widget = document.createElement('aside');
+        widget.id = 'd2q-whatsapp-widget';
+        widget.className = 'd2q-whatsapp-widget';
+        widget.setAttribute('aria-label', 'Chat with Amit on WhatsApp');
+        widget.innerHTML = `
+            <a href="https://wa.me/919958742542?text=Hi%20Amit%2C%20I%20am%20exploring%20Desk2Quant%20for%20quant%20finance%20preparation.%20Could%20you%20help%20guide%20me%20on%20the%20best%20path%3F"
+               target="_blank" rel="noopener noreferrer" class="whatsapp-float-btn" title="Chat directly with Amit on WhatsApp" aria-label="Chat directly with Amit on WhatsApp">
+                <i class="fab fa-whatsapp" aria-hidden="true"></i>
+                <span class="whatsapp-tooltip">Ask Amit on WhatsApp</span>
+                <span class="whatsapp-pulse-dot"></span>
+            </a>
+        `;
+        document.body.appendChild(widget);
+    }
+
+    function onReady() {
         initBundleGuard();
+        initWhatsAppHotline();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', onReady, { once: true });
+    } else {
+        onReady();
     }
 }());

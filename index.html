@@ -421,6 +421,52 @@
             </div>
         </section>
 
+        <!-- Daily Quant Brainteaser Section -->
+        <section class="brainteaser-section" id="brainteaser" aria-labelledby="brainteaser-heading">
+            <div class="section-container">
+                <div class="brainteaser-card">
+                    <div class="brainteaser-header">
+                        <div class="brainteaser-tag-row">
+                            <span class="brainteaser-badge"><i class="fas fa-brain"></i> QUANT BRAINTEASER OF THE DAY</span>
+                            <span class="brainteaser-date" id="btDateDisplay">Updated Today</span>
+                        </div>
+                        <h2 id="brainteaser-heading" class="brainteaser-title">Test Your Trading Desk Intuition</h2>
+                        <p class="brainteaser-subtext">Real quantitative interview puzzles asked at Citadel, Millennium, Jane Street, and top investment banks.</p>
+                    </div>
+
+                    <div class="brainteaser-body">
+                        <div class="brainteaser-question-box">
+                            <div class="bt-category-pill" id="btCategory">Probability & Martingales</div>
+                            <h3 class="bt-question" id="btQuestion">Loading daily desk problem…</h3>
+                            <p class="bt-context" id="btContext"></p>
+                        </div>
+
+                        <div class="brainteaser-actions">
+                            <button type="button" class="btn btn-bt-hint" id="btHintBtn" onclick="window.toggleBtHint()">
+                                <i class="fas fa-lightbulb"></i> <span id="btHintBtnText">Show Hint</span>
+                            </button>
+                            <button type="button" class="btn btn-bt-solution" id="btSolutionBtn" onclick="window.toggleBtSolution()">
+                                <i class="fas fa-key"></i> <span id="btSolutionBtnText">Reveal Worked Solution</span>
+                            </button>
+                            <a href="#" id="btShareLinkedIn" target="_blank" rel="noopener noreferrer" class="btn btn-bt-share" title="Share on LinkedIn">
+                                <i class="fab fa-linkedin"></i> Share Puzzle
+                            </a>
+                        </div>
+
+                        <div class="bt-panel bt-hint-panel" id="btHintPanel" style="display:none;">
+                            <strong style="color:var(--lz-warning,#d97706);display:block;margin-bottom:6px;"><i class="fas fa-lightbulb"></i> Desk Hint:</strong>
+                            <p id="btHintText" style="margin:0;line-height:1.6;"></p>
+                        </div>
+
+                        <div class="bt-panel bt-solution-panel" id="btSolutionPanel" style="display:none;">
+                            <strong style="color:#0f766e;display:block;margin-bottom:8px;"><i class="fas fa-check-circle"></i> Rigorous Solution & Intuition:</strong>
+                            <div id="btSolutionText" style="line-height:1.7;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section class="learn-band">
             <div class="section-container">
                 <div class="learn-band-grid">
@@ -487,6 +533,25 @@
                         <div class="skeleton-line short"></div>
                         <div class="skeleton-line medium"></div>
                         <div class="skeleton-line"></div>
+                    </div>
+                </div>
+
+                <div class="resume-teardown-banner reveal-up">
+                    <div class="teardown-content">
+                        <div class="teardown-badge"><i class="fas fa-file-code"></i> SPECIALIZED AUDIT</div>
+                        <h3>Quant Resume &amp; Project Line-by-Line Teardown</h3>
+                        <p>Have your CV, GitHub repositories, and quantitative projects audited directly by Amit Kumar Jha (IIT Jodhpur / UBS). Get brutally honest feedback on formatting, ATS readability, mathematics terminology, and project credibility before applying to Citadel, Jane Street, Millennium, or Tier-1 banks.</p>
+                        <ul class="teardown-features">
+                            <li><i class="fas fa-check-circle"></i> Line-by-line bullet rewriting for high-signal quantitative metrics</li>
+                            <li><i class="fas fa-check-circle"></i> Code review of your GitHub pricing or backtesting repos</li>
+                            <li><i class="fas fa-check-circle"></i> 48-hour turn-around with detailed video/audio commentary</li>
+                        </ul>
+                    </div>
+                    <div class="teardown-action">
+                        <a href="https://topmate.io/amit_kumar_jha" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-teardown">
+                            <i class="fas fa-calendar-check"></i> Book Resume Audit
+                        </a>
+                        <span class="teardown-subtext">Direct 1-on-1 via Topmate</span>
                     </div>
                 </div>
             </div>
@@ -1236,6 +1301,7 @@
         <div class="cart-drawer-body" id="cartDrawerBody">
             <p class="cart-empty-state" id="cartEmptyState">Your cart is empty. Add products to buy them together in one checkout.</p>
             <ul class="cart-items-list" id="cartItemsList"></ul>
+            <div class="cart-order-bump-container" id="cartOrderBumpContainer"></div>
         </div>
         <div class="cart-drawer-footer" id="cartDrawerFooter" hidden>
             <div class="cart-total-row">
@@ -1442,6 +1508,7 @@
             });
         })();
     </script>
+    <script src="brainteaser.js?v=1" defer></script>
 </body>
 
 </html>

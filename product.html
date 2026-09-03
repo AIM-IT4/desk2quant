@@ -647,6 +647,158 @@
             padding: 40px;
             font-style: italic;
         }
+
+        /* Sample Peek Inside Modal */
+        .btn-peek-sample {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px 28px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            background: rgba(15, 118, 110, 0.08);
+            border: 1.5px solid #0f766e;
+            color: #0f766e;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-peek-sample:hover {
+            background: #0f766e;
+            color: #ffffff;
+        }
+
+        .sample-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(10, 15, 20, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            box-sizing: border-box;
+        }
+
+        .sample-modal-card {
+            background: var(--bg-card, #ffffff);
+            border: 1px solid var(--border-light, #e2e8f0);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 640px;
+            max-height: calc(100dvh - 32px);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+            margin: auto;
+        }
+
+        .sample-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 24px 14px;
+            border-bottom: 1px solid var(--border-light, #e2e8f0);
+            background: var(--bg-secondary, #fafafa);
+        }
+
+        .sample-badge {
+            font-size: 10.5px;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            color: #0f766e;
+            background: #eefaf8;
+            border: 1px solid #99d5cf;
+            padding: 2px 7px;
+            border-radius: 3px;
+            display: inline-block;
+            margin-bottom: 4px;
+        }
+
+        .sample-modal-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: var(--text-primary);
+        }
+
+        .sample-close-btn {
+            background: none;
+            border: none;
+            font-size: 26px;
+            line-height: 1;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .sample-close-btn:hover {
+            color: var(--text-primary);
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .sample-modal-tabs {
+            display: flex;
+            background: var(--bg-tertiary, #f1f5f9);
+            border-bottom: 1px solid var(--border-light, #e2e8f0);
+            padding: 0 12px;
+            gap: 6px;
+            overflow-x: auto;
+        }
+
+        .sample-tab {
+            padding: 12px 16px;
+            border: none;
+            background: none;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .sample-tab.active {
+            color: #0f766e;
+            border-bottom-color: #0f766e;
+            background: var(--bg-card, #ffffff);
+        }
+
+        .sample-modal-body {
+            padding: 22px 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .sample-bullets {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+
+        .sample-modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-light, #e2e8f0);
+            background: var(--bg-secondary, #fafafa);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
     </style>
 
 
@@ -737,6 +889,9 @@
                 <div class="action-buttons">
                     <button id="buy-btn" class="btn btn-primary" style="padding: 16px 40px; font-size: 1.1rem;">
                         <i class="fas fa-shopping-cart"></i> Buy Now
+                    </button>
+                    <button id="p-peek-btn" class="btn btn-peek-sample" type="button" onclick="window.openSampleModal()">
+                        <i class="fas fa-book-open"></i> Peek Inside
                     </button>
                     <button id="p-cart-add-btn" class="cart-add-btn" type="button" title="Add to cart" aria-label="Add to cart" style="display:none;">
                         <i class="fas fa-plus"></i>
@@ -2162,6 +2317,7 @@
         <div class="cart-drawer-body" id="cartDrawerBody">
             <p class="cart-empty-state" id="cartEmptyState">Your cart is empty. Add products to buy them together in one checkout.</p>
             <ul class="cart-items-list" id="cartItemsList"></ul>
+            <div class="cart-order-bump-container" id="cartOrderBumpContainer"></div>
         </div>
         <div class="cart-drawer-footer" id="cartDrawerFooter" hidden>
             <div class="cart-total-row">
@@ -2173,6 +2329,78 @@
             </button>
         </div>
     </aside>
+
+    <!-- Product Sample Peek Inside Modal -->
+    <div id="samplePreviewModal" class="sample-modal-backdrop" role="dialog" aria-modal="true" aria-label="Sample Preview" style="display:none;">
+        <div class="sample-modal-card">
+            <div class="sample-modal-header">
+                <div>
+                    <span class="sample-badge"><i class="fas fa-eye"></i> PEEK INSIDE</span>
+                    <h3 id="sampleModalTitle">Resource Sample Preview</h3>
+                </div>
+                <button type="button" class="sample-close-btn" onclick="window.closeSampleModal()" aria-label="Close preview">&times;</button>
+            </div>
+            <div class="sample-modal-tabs">
+                <button type="button" class="sample-tab active" onclick="window.switchSampleTab('outline', this)">📋 Overview & Scope</button>
+                <button type="button" class="sample-tab" onclick="window.switchSampleTab('math', this)">📐 Math & Derivatives</button>
+                <button type="button" class="sample-tab" onclick="window.switchSampleTab('code', this)">💻 Code & Implementation</button>
+            </div>
+            <div class="sample-modal-body">
+                <div id="sample-tab-outline" class="sample-tab-panel active">
+                    <div class="sample-content-box">
+                        <h4 style="margin:0 0 12px;color:var(--text-primary);">Chapter Hierarchy & Deliverables</h4>
+                        <ul class="sample-bullets">
+                            <li><i class="fas fa-check-circle" style="color:#0f766e;margin-right:8px;"></i> Complete mathematical foundation with no intermediate derivations skipped</li>
+                            <li><i class="fas fa-check-circle" style="color:#0f766e;margin-right:8px;"></i> Real desk trade scenarios, Greeks intuition, and risk limit checks</li>
+                            <li><i class="fas fa-check-circle" style="color:#0f766e;margin-right:8px;"></i> Interview-style diagnostic questions with rigorous model answers</li>
+                            <li><i class="fas fa-check-circle" style="color:#0f766e;margin-right:8px;"></i> Clean, vectorized Python and modern C++ reference scripts</li>
+                        </ul>
+                    </div>
+                </div>
+                <div id="sample-tab-math" class="sample-tab-panel" style="display:none;">
+                    <div class="sample-math-box">
+                        <h4 style="margin:0 0 12px;color:var(--text-primary);">Derivation Sample: Risk-Neutral Pricing & Greeks</h4>
+                        <div class="latex-preview-block" style="background:var(--bg-tertiary);padding:16px;border-radius:8px;font-family:var(--font-mono,monospace);font-size:0.9rem;line-height:1.7;color:var(--text-primary);border:1px solid var(--border-light);">
+                            dS_t = (r - q) S_t dt + &sigma; S_t dW_t<sup>&Qopf;</sup><br>
+                            V(S, t) = e<sup>-r(T-t)</sup> &Eopf;<sup>&Qopf;</sup>[(S_T - K)<sup>+</sup> | &Fscr;_t]<br>
+                            &Delta; = &part;V / &part;S = e<sup>-q(T-t)</sup> N(d_1)<br>
+                            &Gamma; = &part;<sup>2</sup>V / &part;S<sup>2</sup> = [e<sup>-q(T-t)</sup> &phi;(d_1)] / [S &sigma; &radic;(T-t)]<br>
+                            &Vscr; = &part;V / &part;&sigma; = S e<sup>-q(T-t)</sup> &radic;(T-t) &phi;(d_1)
+                        </div>
+                        <p style="margin-top:10px;font-size:0.85rem;color:var(--text-muted);">Includes full higher-order Greeks (Vanna, Volga, Charm, Speed) and P&L explain equations.</p>
+                    </div>
+                </div>
+                <div id="sample-tab-code" class="sample-tab-panel" style="display:none;">
+                    <div class="sample-code-box">
+                        <div class="sample-code-header" style="display:flex;justify-content:space-between;background:rgba(0,0,0,0.2);padding:8px 12px;border-radius:6px 6px 0 0;font-size:0.82rem;color:var(--text-muted);">
+                            <span><i class="fab fa-python" style="color:#3b82f6;"></i> production_pricer.py</span>
+                            <span>Python 3.11+ / NumPy</span>
+                        </div>
+                        <pre style="background:#0d1117;color:#e6edf3;padding:16px;border-radius:0 0 6px 6px;margin:0;overflow-x:auto;font-family:var(--font-mono,monospace);font-size:0.85rem;line-height:1.5;"><code>import numpy as np
+from scipy.stats import norm
+
+def calculate_greeks(S: float, K: float, T: float, r: float, sigma: float, q: float = 0.0):
+    """Vectorized production Greeks computation for trading desks."""
+    d1 = (np.log(S / K) + (r - q + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
+    d2 = d1 - sigma * np.sqrt(T)
+    delta = np.exp(-q * T) * norm.cdf(d1)
+    gamma = (np.exp(-q * T) * norm.pdf(d1)) / (S * sigma * np.sqrt(T))
+    vega = S * np.exp(-q * T) * np.sqrt(T) * norm.pdf(d1)
+    return {"delta": float(delta), "gamma": float(gamma), "vega": float(vega)}</code></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="sample-modal-footer">
+                <div class="sample-footer-text">
+                    <strong style="display:block;color:var(--text-primary);font-size:0.95rem;">Unlock the full 50+ page guide & code repositories</strong>
+                    <span style="font-size:0.82rem;color:var(--text-muted);">Instant digital download with free future edition updates.</span>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="window.closeSampleModal(); document.getElementById('buy-btn')?.click();">
+                    <i class="fas fa-lock"></i> Unlock Full Resource
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- User Details Modal (Product Page) -->
     <div id="user-details-modal"
@@ -2214,6 +2442,49 @@
         </div>
     </div>
 
+    <script>
+        window.openSampleModal = function() {
+            const modal = document.getElementById('samplePreviewModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                const title = document.getElementById('p-title')?.textContent;
+                if (title && document.getElementById('sampleModalTitle')) {
+                    document.getElementById('sampleModalTitle').textContent = title + ' (Sample Preview)';
+                }
+            }
+        };
+
+        window.closeSampleModal = function() {
+            const modal = document.getElementById('samplePreviewModal');
+            if (modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        };
+
+        window.switchSampleTab = function(tabName, btn) {
+            document.querySelectorAll('.sample-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.sample-tab-panel').forEach(p => {
+                p.style.display = 'none';
+                p.classList.remove('active');
+            });
+            if (btn) btn.classList.add('active');
+            const target = document.getElementById('sample-tab-' + tabName);
+            if (target) {
+                target.style.display = 'block';
+                target.classList.add('active');
+            }
+        };
+
+        document.getElementById('samplePreviewModal')?.addEventListener('click', function(e) {
+            if (e.target === this) window.closeSampleModal();
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') window.closeSampleModal();
+        });
+    </script>
     <script src="receipt-printer.js?v=1" defer></script>
     <script src="ui-components.js?v=1" defer></script>
 </body>

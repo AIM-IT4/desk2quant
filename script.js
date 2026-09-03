@@ -5385,8 +5385,11 @@ async function renderCartDrawer() {
 
     updateCartBadge(cart);
 
+    const bumpContainer = document.getElementById('cartOrderBumpContainer');
+
     if (cart.length === 0) {
         list.innerHTML = '';
+        if (bumpContainer) bumpContainer.innerHTML = '';
         if (emptyState) emptyState.hidden = false;
         if (footer) footer.hidden = true;
         return;
@@ -5436,6 +5439,40 @@ async function renderCartDrawer() {
     }
     list.innerHTML = rows;
 
+    // Order Bump Special Offer
+    if (bumpContainer) {
+        const BUMP_PRODUCT = {
+            id: 'a51492ad-ecae-4146-be3f-f7937847e4af',
+            name: 'Complete Quant ATS Friendly Resume LaTeX + DOCX Template Pack',
+            price: 399,
+            enablePpp: false,
+            quantity: 1
+        };
+        const isBumpInCart = cart.some(item => item.id === BUMP_PRODUCT.id);
+        const localBump = await convertPrice(BUMP_PRODUCT.price, window.userCountryCode, false);
+        const isLocalBump = localBump.currency.code !== 'INR';
+        const displayBumpPrice = isLocalBump ? formatPrice(localBump) : '₹' + BUMP_PRODUCT.price;
+
+        bumpContainer.innerHTML = `
+            <div class="cart-order-bump ${isBumpInCart ? 'bump-added' : ''}">
+                <div class="bump-header">
+                    <span class="bump-badge"><i class="fas fa-bolt"></i> ONE-TIME SPECIAL OFFER</span>
+                    <span class="bump-save-tag">SAVE 60%</span>
+                </div>
+                <label class="bump-card" for="cartOrderBumpCheckbox">
+                    <input type="checkbox" id="cartOrderBumpCheckbox" ${isBumpInCart ? 'checked' : ''} onchange="window.toggleCartOrderBump(this)">
+                    <div class="bump-content">
+                        <p class="bump-title">Add Quant ATS Resume & Cover Letter Pack</p>
+                        <p class="bump-desc">LaTeX + DOCX templates tested for Citadel, Jane Street & Tier-1 banks.</p>
+                        <p class="bump-pricing">
+                            <span class="bump-old-price">${isLocalBump ? '' : '₹999'}</span>
+                            <strong class="bump-new-price">${displayBumpPrice}</strong>
+                        </p>
+                    </div>
+                </label>
+            </div>`;
+    }
+
     if (totalDisplay) {
         totalDisplay.textContent = (totalCurrency && totalCurrency.code !== 'INR')
             ? formatPrice({ amount: Math.round(totalLocalAmount), currency: totalCurrency })
@@ -5443,6 +5480,22 @@ async function renderCartDrawer() {
     }
     window.currentCartTotalInr = totalInr;
 }
+
+window.toggleCartOrderBump = function(checkbox) {
+    const BUMP_PRODUCT = {
+        id: 'a51492ad-ecae-4146-be3f-f7937847e4af',
+        name: 'Complete Quant ATS Friendly Resume LaTeX + DOCX Template Pack',
+        price: 399,
+        enablePpp: false,
+        quantity: 1
+    };
+    if (checkbox.checked) {
+        addToCart(BUMP_PRODUCT);
+        showToast('⚡ Quant ATS Resume Pack added to your cart!', 'success');
+    } else {
+        removeFromCart(BUMP_PRODUCT.id);
+    }
+};
 
 function openCartDrawer() {
     document.getElementById('cartDrawer')?.classList.add('active');
