@@ -87,13 +87,12 @@ function initLiveChat() {
         window.Tawk_API = window.Tawk_API || {};
         window.Tawk_LoadStart = new Date();
 
-        if (config.position === 'bottom-left' || !config.position) {
-            window.Tawk_API.customStyle = window.Tawk_API.customStyle || {};
-            window.Tawk_API.customStyle.visibility = {
-                desktop: { position: 'bottom-left', xOffset: 20, yOffset: 20 },
-                mobile: { position: 'bottom-left', xOffset: 12, yOffset: 12 }
-            };
-        }
+        window.Tawk_API.customStyle = {
+            visibility: {
+                desktop: { position: 'bl', xOffset: 20, yOffset: 20 },
+                mobile: { position: 'bl', xOffset: 12, yOffset: 12 }
+            }
+        };
 
         var s1 = document.createElement('script');
         s1.id = 'd2q-tawk-script';
