@@ -51,7 +51,9 @@ test('exchangeMagicLink stores owner-only session config', async () => {
   assert.equal(cfg.email, 'buyer@example.com');
   assert.equal(cfg.agentToken, 'signed-agent-token');
   const stat = await fs.stat(configPath(env));
-  assert.equal(stat.mode & 0o077, 0);
+  if (process.platform !== 'win32') {
+    assert.equal(stat.mode & 0o077, 0);
+  }
   assert.equal(await logout(env), true);
   assert.equal(await loadConfig(env), null);
 });
