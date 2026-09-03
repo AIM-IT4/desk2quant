@@ -1,37 +1,51 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <script>/* CANONICAL-HOST-GUARD v1: Razorpay is registered to desk2quant.com - force canonical host + root path before any checkout code runs. */!function(){try{var h=location.hostname.toLowerCase(),dev=/^(localhost|127.0.0.1|0.0.0.0|[::1])$/.test(h);if(!dev&&h!=='desk2quant.com'){location.replace('https://desk2quant.com'+location.pathname+location.search+location.hash)}else if(location.pathname==='/index.html'){location.replace('https://desk2quant.com/'+location.search+location.hash)}}catch(e){}}();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex,nofollow,noarchive">
-    <title>Test Payment - Desk2Quant</title>
+    <title>Live ₹1 Test Payment & Receipt Verification - Desk2Quant</title>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <link rel="stylesheet" href="receipt-printer.css?v=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        body { font-family: system-ui, sans-serif; background: #0f0f0f; color: #e5e5e5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 40px; max-width: 420px; width: 90%; text-align: center; }
-        h1 { font-size: 1.5rem; margin: 0 0 8px; }
-        p { color: #888; margin: 0 0 24px; }
-        #pay-btn { background: #e95836; color: #fff; border: none; padding: 14px 32px; border-radius: 8px; font-size: 1.1rem; font-weight: 600; cursor: pointer; width: 100%; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: #0c0d12; color: #e2e8f0; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+        .card { background: #161822; border: 1px solid #272a38; border-radius: 16px; padding: 36px 28px; max-width: 440px; width: 100%; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
+        h1 { font-size: 1.45rem; margin: 0 0 8px; color: #fff; font-weight: 700; }
+        p { color: #94a3b8; font-size: 0.9rem; margin: 0 0 20px; line-height: 1.5; }
+        .amount { font-size: 2.8rem; font-weight: 800; color: #10b981; margin: 16px 0; }
+        .currency { font-size: 1rem; color: #64748b; }
+        .input-group { text-align: left; margin-bottom: 18px; }
+        .input-group label { display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+        .input-group input { width: 100%; box-sizing: border-box; background: #0e1017; border: 1px solid #2e3346; border-radius: 8px; padding: 12px 14px; color: #fff; font-size: 0.95rem; }
+        .input-group input:focus { outline: none; border-color: #10b981; }
+        #pay-btn { background: #10b981; color: #fff; border: none; padding: 14px 24px; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; width: 100%; transition: background 0.15s ease, transform 0.15s ease; box-shadow: 0 4px 14px rgba(16,185,129,0.3); }
         #pay-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        #pay-btn:hover:not(:disabled) { background: #d44a2a; }
-        #result { margin-top: 16px; padding: 12px; border-radius: 6px; display: none; word-break: break-all; font-size: 0.85rem; }
-        .success { background: #064e3b; color: #6ee7b7; display: block !important; }
-        .error { background: #450a0a; color: #fca5a5; display: block !important; }
-        .info { background: #1e3a5f; color: #93c5fd; display: block !important; }
-        .amount { font-size: 2.5rem; font-weight: 700; color: #fff; margin: 20px 0; }
-        .currency { font-size: 1rem; color: #888; }
+        #pay-btn:hover:not(:disabled) { background: #059669; transform: translateY(-1px); }
+        #result { margin-top: 16px; padding: 12px; border-radius: 8px; display: none; word-break: break-all; font-size: 0.85rem; text-align: left; }
+        .success { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); display: block !important; }
+        .error { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); display: block !important; }
+        .info { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); display: block !important; }
+        .home-link { display: inline-block; margin-top: 20px; color: #64748b; font-size: 0.85rem; text-decoration: none; }
+        .home-link:hover { color: #94a3b8; text-decoration: underline; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1>🧪 E2E Payment Test</h1>
-        <p>Test Razorpay integration with a real ₹1 charge</p>
+        <h1>🧪 E2E Live Test Checkout</h1>
+        <p>Live ₹1 Razorpay test with real automated Tax Invoice printing &amp; paper-cut receipt generation.</p>
         <div class="amount">₹1 <span class="currency">INR</span></div>
-        <button id="pay-btn" onclick="startPayment()">Pay ₹1 — Test Now</button>
+        <div class="input-group">
+            <label for="test-email">Your Email (Invoice will be billed to this)</label>
+            <input type="email" id="test-email" value="amit.test@desk2quant.com" placeholder="name@example.com">
+        </div>
+        <button id="pay-btn" onclick="startPayment()">Pay ₹1 &amp; Print Real Invoice</button>
         <div id="result"></div>
+        <a href="/" class="home-link">&larr; Back to Desk2Quant Homepage</a>
     </div>
 
+    <script src="receipt-printer.js?v=1"></script>
     <script>
         const RAZORPAY_KEY_ID = 'rzp_live_TDMg5qFcBBSOxf';
         const resultEl = document.getElementById('result');
@@ -43,18 +57,25 @@
         }
 
         async function startPayment() {
+            const emailInput = document.getElementById('test-email');
+            const email = (emailInput && emailInput.value.trim()) || 'amit.test@desk2quant.com';
+
             btn.disabled = true;
-            btn.textContent = 'Processing...';
-            showResult('Creating order...', 'info');
+            btn.textContent = 'Connecting to Razorpay...';
+            showResult('Creating real ₹1 Razorpay order...', 'info');
 
             try {
                 const orderRes = await fetch('/api/create-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        amount: 1,
                         currency: 'INR',
-                        notes: { type: 'product', product_name: 'E2E Test Product', test: 'true' }
+                        notes: {
+                            type: 'product',
+                            product_id: '00000000-0000-0000-0000-000000000001',
+                            product_name: '🧪 Live Verification Test Pack (₹1)',
+                            customer_email: email
+                        }
                     })
                 });
 
@@ -62,32 +83,49 @@
                     const err = await orderRes.text();
                     showResult('Order creation failed: ' + err, 'error');
                     btn.disabled = false;
-                    btn.textContent = 'Pay ₹1 — Test Now';
+                    btn.textContent = 'Pay ₹1 & Print Real Invoice';
                     return;
                 }
 
                 const orderData = await orderRes.json();
-                showResult('Order created: ' + orderData.order_id, 'info');
+                showResult('Order created: ' + orderData.order_id + '. Opening payment...', 'info');
 
                 const options = {
                     key: RAZORPAY_KEY_ID,
                     amount: orderData.amount,
                     currency: orderData.currency,
                     name: 'Desk2Quant',
-                    description: 'E2E Test - ₹1',
+                    description: '🧪 Live Verification Test Pack - ₹1',
                     order_id: orderData.order_id,
-                    handler: function (response) {
-                        showResult('✅ Payment successful!\nPayment ID: ' + response.razorpay_payment_id + '\nOrder ID: ' + response.razorpay_order_id, 'success');
-                        btn.textContent = '✅ Done — Test Passed';
+                    prefill: {
+                        email: email
+                    },
+                    handler: async function (response) {
+                        showResult('✅ Payment captured!\nPayment ID: ' + response.razorpay_payment_id + '\nOrder ID: ' + response.razorpay_order_id, 'success');
+                        btn.textContent = '✅ Payment Verified';
+
+                        // Trigger the mini thermal receipt printer with the real payment details!
+                        if (typeof window.showReceiptPrinter === 'function') {
+                            window.showReceiptPrinter({
+                                paymentId: response.razorpay_payment_id,
+                                orderId: response.razorpay_order_id,
+                                amount: 1,
+                                currency: 'INR',
+                                customerEmail: email,
+                                productName: '🧪 Live Verification Test Pack (₹1)',
+                                downloadLink: 'https://desk2quant.com/my-access.html',
+                                date: new Date()
+                            });
+                        }
                     },
                     modal: {
                         ondismiss: function () {
                             showResult('⏹ Payment cancelled by user', 'error');
                             btn.disabled = false;
-                            btn.textContent = 'Pay ₹1 — Test Now';
+                            btn.textContent = 'Pay ₹1 & Print Real Invoice';
                         }
                     },
-                    theme: { color: '#e95836' }
+                    theme: { color: '#10b981' }
                 };
 
                 const razorpay = new Razorpay(options);
@@ -96,7 +134,7 @@
             } catch (err) {
                 showResult('Error: ' + err.message, 'error');
                 btn.disabled = false;
-                btn.textContent = 'Pay ₹1 — Test Now';
+                btn.textContent = 'Pay ₹1 & Print Real Invoice';
             }
         }
     </script>
