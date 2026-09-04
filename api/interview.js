@@ -93,7 +93,7 @@ const BOOKINGS_ACTIONS = new Set([
     'my-bookings',             // { email }            -> bookings for that email
     'bookings-slots',          // { date }             -> taken times for a date
     'reschedule-booking',      // { bookingId, email, date, time, reason }
-    'cancel-booking',          // { bookingId, email, refundAmount, refundPercentage }
+    'cancel-booking',          // { bookingId, email }
     'accept-admin-reschedule', // { bookingId, email }
     'counter-propose'          // { bookingId, email, date, time }
 ]);
@@ -142,6 +142,69 @@ const LEAD_ORIGINS = {
  */
 function verifyCustomerToken(email, token) {
     return verifyBookingToken(email, token) || !!verifyAccessToken(email, token, 'session');
+}
+
+/**
+ * Server-side refund calculation based on session date, time, and price.
+ * Follows Desk2Quant cancellation policy:
+ *   >= 24 hours notice: 100% refund
+ *   >= 12 hours notice: 50% refund
+ *   <  12 hours notice: 0% refund
+ */
+export function calculateBookingRefund(bookingDate, bookingTime, servicePrice) {
+    const rawDate = String(bookingDate || '').trim();
+    const dateMatch = rawDate.match(/^(\d{4}-\d{2}-\d{2})/);
+    const cleanDate = dateMatch ? dateMatch[1] : rawDate;
+
+    const cleanTime = String(bookingTime || '').trim().replace(/\s*IST\s*$/i, '').trim();
+    const match12 = cleanTime.match(/^(\d{1,2})(?::(\d{2}))?(?::(\d{2}))?\s*(AM|PM)$/i);
+    let hours = 0;
+    let minutes = 0;
+    let seconds = 0;
+    if (match12) {
+        hours = parseInt(match12[1], 10);
+        minutes = match12[2] ? parseInt(match12[2], 10) : 0;
+        seconds = match12[3] ? parseInt(match12[3], 10) : 0;
+        const ampm = match12[4].toUpperCase();
+        if (ampm === 'PM' && hours < 12) hours += 12;
+        if (ampm === 'AM' && hours === 12) hours = 0;
+    } else {
+        const match24 = cleanTime.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+        if (match24) {
+            hours = parseInt(match24[1], 10);
+            minutes = parseInt(match24[2], 10);
+            seconds = match24[3] ? parseInt(match24[3], 10) : 0;
+        }
+    }
+    const hStr = String(hours).padStart(2, '0');
+    const mStr = String(minutes).padStart(2, '0');
+    const sStr = String(seconds).padStart(2, '0');
+
+    // Mentorship sessions are scheduled in IST (UTC+05:30)
+    let bookingDateTime = new Date(`${cleanDate}T${hStr}:${mStr}:${sStr}+05:30`);
+    if (isNaN(bookingDateTime.getTime())) {
+        bookingDateTime = new Date(`${cleanDate}T${hStr}:${mStr}:${sStr}`);
+    }
+
+    let percentage = 0;
+    if (!isNaN(bookingDateTime.getTime())) {
+        const hoursUntilSession = (bookingDateTime.getTime() - Date.now()) / (1000 * 60 * 60);
+        if (hoursUntilSession >= 24) {
+            percentage = 100;
+        } else if (hoursUntilSession >= 12) {
+            percentage = 50;
+        } else {
+            percentage = 0;
+        }
+    }
+
+    const cleanPrice = typeof servicePrice === 'string'
+        ? Number(servicePrice.replace(/[^0-9.]/g, ''))
+        : Number(servicePrice);
+    const price = Math.max(0, isNaN(cleanPrice) ? 0 : cleanPrice);
+    const amount = Math.round(price * percentage / 100);
+
+    return { percentage, amount };
 }
 
 // Columns the my-bookings page renders (plus id/email for mutations). Exposing
@@ -257,9 +320,12 @@ async function handleBookingsAction(req, res, action) {
             const time = String(body.time || '').trim();
             const reason = String(body.reason || '').trim();
             if (!date || !time) return res.status(400).json({ error: 'date and time are required' });
-            const booking = await fetchBooking('email');
+            const booking = await fetchBooking('email,status');
             if (!booking || String(booking.email || '').trim().toLowerCase() !== email || !verifyCustomerToken(email, body.token)) {
                 return res.status(403).json({ error: 'Booking not found for this email, or the manage link is invalid. Use the link from your confirmation email.' });
+            }
+            if (String(booking.status || '').trim().toLowerCase() !== 'confirmed') {
+                return res.status(400).json({ error: 'Only confirmed bookings can be rescheduled.' });
             }
             const ok = await patchBooking({
                 requested_date: date,
@@ -271,17 +337,23 @@ async function handleBookingsAction(req, res, action) {
             return res.status(200).json({ success: true });
         }
 
-        // 5. CANCEL request (refund amounts computed client-side from the same
-        //    policy the page always used; stored server-side for the admin).
+        // 5. CANCEL request (refund amounts computed server-side from policy
+        //    based on booking_date, booking_time, and service_price; stored server-side).
         //    The branded confirmation email is sent from here (service side),
         //    so the customer always gets it even if their browser closes.
         if (action === 'cancel-booking') {
-            const refundAmount = Number(body.refundAmount) || 0;
-            const refundPercentage = Number(body.refundPercentage) || 0;
-            const booking = await fetchBooking('email,name,service_name,service_price,booking_date,booking_time');
+            const booking = await fetchBooking('email,name,service_name,service_price,booking_date,booking_time,status');
             if (!booking || String(booking.email || '').trim().toLowerCase() !== email || !verifyCustomerToken(email, body.token)) {
                 return res.status(403).json({ error: 'Booking not found for this email, or the manage link is invalid. Use the link from your confirmation email.' });
             }
+            if (String(booking.status || '').trim().toLowerCase() !== 'confirmed') {
+                return res.status(400).json({ error: 'Only confirmed bookings can be cancelled.' });
+            }
+            const { percentage: refundPercentage, amount: refundAmount } = calculateBookingRefund(
+                booking.booking_date,
+                booking.booking_time,
+                booking.service_price
+            );
             const ok = await patchBooking({
                 status: 'cancellation_requested',
                 cancellation_requested_at: new Date().toISOString(),
@@ -351,7 +423,7 @@ async function handleBookingsAction(req, res, action) {
                 console.error('Cancellation email failed (booking still cancelled):', err.message);
             }
 
-            return res.status(200).json({ success: true, emailSent });
+            return res.status(200).json({ success: true, emailSent, refundAmount, refundPercentage });
         }
 
         // 6. ACCEPT the admin's proposed reschedule.

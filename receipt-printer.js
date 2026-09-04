@@ -66,6 +66,33 @@
         return `INV-${year}-${rand}`;
     }
 
+    function escapeHtml(text) {
+        if (text == null) return '';
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function sanitizeDownloadLink(link) {
+        if (!link || typeof link !== 'string' || link.trim() === '#') {
+            return 'my-access.html';
+        }
+        const trimmed = link.trim();
+        // Strictly allow https: scheme
+        if (/^https:\/\/[^\s/$.?#].[^\s]*$/i.test(trimmed)) {
+            return trimmed;
+        }
+        // Allow relative paths: must not contain a protocol scheme (no ':' before '/')
+        // and must not start with '//' (protocol-relative)
+        if (!trimmed.startsWith('//') && !/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed)) {
+            return trimmed;
+        }
+        return 'my-access.html';
+    }
+
     function createOrGetModal() {
         let modal = document.getElementById('receiptPrinterModal');
         if (!modal) {
@@ -115,7 +142,7 @@
         const dateStr = formatReceiptDate(data.date);
         const customerEmail = data.customerEmail || data.email || 'customer@desk2quant.com';
         const currency = data.currency || 'INR';
-        const currSymbol = currency === 'USD' ? '$' : '₹';
+        const currSymbol = currency === 'USD' ? '$' : (currency === 'EUR' ? '€' : (currency === 'GBP' ? '£' : '₹'));
 
         let items = [];
         if (Array.isArray(data.items) && data.items.length > 0) {
@@ -133,7 +160,7 @@
         const gstAmount = Math.round((totalAmount - (totalAmount / 1.18)) * 100) / 100;
         const subtotal = Math.round((totalAmount - gstAmount) * 100) / 100;
 
-        const downloadLink = data.downloadLink && data.downloadLink !== '#' ? data.downloadLink : 'my-access.html';
+        const downloadLink = sanitizeDownloadLink(data.downloadLink);
 
         // Render HTML inside modal
         modal.innerHTML = `
@@ -169,19 +196,19 @@
                         <div class="receipt-meta-grid">
                             <div class="receipt-row">
                                 <span class="receipt-row-label">INVOICE NO:</span>
-                                <span class="receipt-row-value">${invoiceNo}</span>
+                                <span class="receipt-row-value">${escapeHtml(invoiceNo)}</span>
                             </div>
                             <div class="receipt-row">
                                 <span class="receipt-row-label">DATE &amp; TIME:</span>
-                                <span class="receipt-row-value">${dateStr}</span>
+                                <span class="receipt-row-value">${escapeHtml(dateStr)}</span>
                             </div>
                             <div class="receipt-row">
                                 <span class="receipt-row-label">TXN REF:</span>
-                                <span class="receipt-row-value">${paymentId}</span>
+                                <span class="receipt-row-value">${escapeHtml(paymentId)}</span>
                             </div>
                             <div class="receipt-row">
                                 <span class="receipt-row-label">BILLED TO:</span>
-                                <span class="receipt-row-value">${customerEmail}</span>
+                                <span class="receipt-row-value">${escapeHtml(customerEmail)}</span>
                             </div>
                             <div class="receipt-row">
                                 <span class="receipt-row-label">PAYMENT:</span>
@@ -199,7 +226,7 @@
                         <div class="receipt-items-list">
                             ${items.map(item => `
                                 <div class="receipt-item-row">
-                                    <span class="receipt-item-desc">1x ${item.name}</span>
+                                    <span class="receipt-item-desc">1x ${escapeHtml(item.name)}</span>
                                     <span class="receipt-item-amount">${currSymbol}${Number(item.price || totalAmount).toLocaleString('en-IN')}</span>
                                 </div>
                             `).join('')}
@@ -232,7 +259,7 @@
                         <!-- BARCODE -->
                         <div class="receipt-barcode-box">
                             <div class="receipt-barcode-bars"></div>
-                            <span class="receipt-barcode-num">${paymentId.toUpperCase()}</span>
+                            <span class="receipt-barcode-num">${escapeHtml(paymentId.toUpperCase())}</span>
                         </div>
 
                         <div class="receipt-footer-thanks">
@@ -245,7 +272,7 @@
 
                 <!-- ACTION BUTTONS -->
                 <div class="printer-actions-bar">
-                    <a href="${downloadLink}" target="_blank" class="printer-btn-primary" id="receiptDownloadBtn">
+                    <a href="${escapeHtml(downloadLink)}" target="_blank" rel="noopener noreferrer" class="printer-btn-primary" id="receiptDownloadBtn">
                         <i class="fas fa-arrow-down"></i> Download / Access Files
                     </a>
                     <div class="printer-btn-group">

@@ -9,6 +9,27 @@
 import { sendRecommendationEmail } from '../lib/recommendationEmail.js';
 import { getServiceKey, blockIfUnconfigured } from '../lib/supabaseAdmin.js';
 import { emailShell, escapeHtml } from '../lib/emailBranding.js';
+import { authorizeCronRequest } from '../lib/cronAuth.js';
+
+// In-memory sliding-window rate limit for reminders endpoint
+const RATE_LIMIT_MAX = 30;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const rateLimitBuckets = new Map();
+
+function isRateLimited(req) {
+    const forwarded = String(req.headers?.['x-forwarded-for'] || '');
+    const ip = forwarded.split(',')[0].trim() || req.socket?.remoteAddress || 'unknown';
+    const now = Date.now();
+    const hits = (rateLimitBuckets.get(ip) || []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+    hits.push(now);
+    rateLimitBuckets.set(ip, hits);
+    if (rateLimitBuckets.size > 5000) {
+        for (const [key, times] of rateLimitBuckets) {
+            if (!times.some((t) => now - t < RATE_LIMIT_WINDOW_MS)) rateLimitBuckets.delete(key);
+        }
+    }
+    return hits.length > RATE_LIMIT_MAX;
+}
 
 // Module-scope constants so sendReminder can access them
 const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || process.env.SENDER_EMAIL || 'hello@desk2quant.com';
@@ -18,18 +39,14 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
 
-    // Verify secret to prevent unauthorized calls
-    const secret = req.query.secret || req.headers['x-cron-secret'];
-    const expectedSecret = process.env.CRON_SECRET;
-
-    if (!expectedSecret) {
-        return res.status(500).json({
-            error: 'CRON_SECRET not configured in environment variables'
-        });
+    if (isRateLimited(req)) {
+        return res.status(429).json({ error: 'Too many requests. Please wait a moment and try again.' });
     }
 
-    if (secret !== expectedSecret) {
-        return res.status(401).json({ error: 'Unauthorized' });
+    // Verify secret to prevent unauthorized calls (timing-safe via SHA-256 and crypto.timingSafeEqual)
+    const auth = authorizeCronRequest(req);
+    if (!auth.ok) {
+        return res.status(auth.status).json({ error: auth.error });
     }
 
     // Configuration from environment variables

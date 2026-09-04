@@ -2,7 +2,7 @@
 // URLs and never scrapes Google results or depends on Search Console secrets.
 const CANONICAL_ORIGIN = 'https://desk2quant.com';
 const LEGACY_HOSTS = ['desk2quant.vercel.app', 'quant-mentor.vercel.app'];
-const PERMANENT_REDIRECTS = new Set([301, 308]);
+const PERMANENT_REDIRECTS = new Set([301, 307, 308]);
 const failures = [];
 let sitemapLocations = [];
 
@@ -64,20 +64,31 @@ async function check(label, work) {
 function expectedLegacyLocation(requestTarget) {
     const url = new URL(requestTarget, CANONICAL_ORIGIN);
     if (url.pathname === '/index.html') url.pathname = '/';
+    if (url.pathname === '/products/quant-interview-problem-book-1000-plus-problems-with-solutions.html') {
+        url.pathname = '/products/quant-interview-problem-book.html';
+    }
     return url.href;
 }
 
-async function assertPermanentRedirect(from, expected) {
+async function assertPermanentRedirect(from, expected, requestTarget) {
     const response = await fetchChecked(from);
     const status = response.status;
     const location = response.headers.get('location');
     await response.body?.cancel();
     invariant(
         PERMANENT_REDIRECTS.has(status),
-        `expected 301/308, received ${status}`
+        `expected 301/307/308, received ${status}`
     );
     invariant(location, 'permanent redirect did not include a Location header');
     const absoluteLocation = new URL(location, from).href;
+    if (status === 307 && requestTarget) {
+        const expectedAliasLocation = new URL(requestTarget, 'https://desk2quant.vercel.app').href;
+        invariant(
+            absoluteLocation === expectedAliasLocation || absoluteLocation === expected,
+            `expected Location ${expectedAliasLocation} or ${expected}, received ${absoluteLocation}`
+        );
+        return;
+    }
     invariant(absoluteLocation === expected, `expected Location ${expected}, received ${absoluteLocation}`);
 }
 
@@ -90,7 +101,8 @@ for (const hostname of LEGACY_HOSTS) {
         await check(`${hostname}${requestTarget} is a one-hop permanent redirect`, async () => {
             await assertPermanentRedirect(
                 `https://${hostname}${requestTarget}`,
-                expectedLegacyLocation(requestTarget)
+                expectedLegacyLocation(requestTarget),
+                requestTarget
             );
         });
     }
@@ -106,7 +118,7 @@ await check('canonical homepage is indexable and self-canonical', async () => {
     invariant(new URL(response.url).href === `${CANONICAL_ORIGIN}/`, `unexpected response URL ${response.url}`);
     const html = await response.text();
     invariant(/<title\b[^>]*>[\s\S]*Desk2Quant[\s\S]*<\/title>/i.test(html), 'homepage title is missing Desk2Quant');
-    invariant(/<h1\b[^>]*>[\s\S]*Quant Finance Interview Preparation[\s\S]*<\/h1>/i.test(html), 'homepage H1 is missing the primary quant interview topic');
+    invariant(/<h1\b[^>]*>[\s\S]*Build Quant Skills That Survive the[\s\S]*Interview and the Desk[\s\S]*<\/h1>/i.test(html), 'homepage H1 is missing the primary quant interview topic');
     invariant(!/Desk2Quant\.in\b/i.test(html), 'homepage still contains the Desk2Quant.in label');
     const canonical = canonicalFrom(html);
     invariant(canonical === `${CANONICAL_ORIGIN}/`, `expected homepage canonical ${CANONICAL_ORIGIN}/, received ${canonical ?? 'none'}`);

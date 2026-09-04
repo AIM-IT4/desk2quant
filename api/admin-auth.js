@@ -17,9 +17,41 @@
 // of truth that is correct regardless of what state the purchases table
 // is in.
 
+import crypto from 'crypto';
+
+// In-memory sliding-window rate limit for admin authentication attempts
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const rateLimitBuckets = new Map();
+
+function isRateLimited(req) {
+    const forwarded = String(req.headers?.['x-forwarded-for'] || '');
+    const ip = forwarded.split(',')[0].trim() || req.socket?.remoteAddress || 'unknown';
+    const now = Date.now();
+    const hits = (rateLimitBuckets.get(ip) || []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+    hits.push(now);
+    rateLimitBuckets.set(ip, hits);
+    if (rateLimitBuckets.size > 5000) {
+        for (const [key, times] of rateLimitBuckets) {
+            if (!times.some((t) => now - t < RATE_LIMIT_WINDOW_MS)) rateLimitBuckets.delete(key);
+        }
+    }
+    return hits.length > RATE_LIMIT_MAX;
+}
+
+function safeEqual(a, b) {
+    const ha = crypto.createHash('sha256').update(String(a), 'utf8').digest();
+    const hb = crypto.createHash('sha256').update(String(b), 'utf8').digest();
+    return crypto.timingSafeEqual(ha, hb);
+}
+
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    if (isRateLimited(req)) {
+        return res.status(429).json({ success: false, error: 'Too many requests. Please wait a moment and try again.' });
     }
 
     const { password, action } = req.body || {};
@@ -30,7 +62,7 @@ export default async function handler(req, res) {
         return res.status(500).json({ success: false, error: 'Server configuration error' });
     }
 
-    if (!password || password !== adminPassword) {
+    if (!password || typeof password !== 'string' || !safeEqual(password, adminPassword)) {
         return res.status(401).json({ success: false, error: 'Invalid password' });
     }
 

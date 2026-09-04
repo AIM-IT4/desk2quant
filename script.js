@@ -2924,31 +2924,8 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
                     .catch(err => { console.warn('grant-access call failed:', err); return null; });
             }
 
-            if (window.supabaseClient && customerEmail) {
-                // Revenue rows must be self-consistent: `amount` is the INR value
-                // (inrAmountForLogging), so `currency` must say INR -- not the
-                // display currency the buyer saw. Previously a EUR shopper's row
-                // stored { amount: 699, currency: 'EUR' }, i.e. an INR figure
-                // labelled EUR, which inflated any revenue-by-currency total.
-                const loggedAmount = inrAmountForLogging !== null ? inrAmountForLogging : ((currency === 'INR') ? amount : 0);
-                const loggedCurrency = inrAmountForLogging !== null ? 'INR' : (currency || 'INR');
-                window.supabaseClient.from('purchases').insert({
-                    customer_email: customerEmail,
-                    product_name: productName,
-                    amount: Math.round(loggedAmount),
-                    currency: loggedCurrency,
-                    payment_id: paymentId,
-                    source: 'frontend',
-                    download_link: downloadLink,
-                    // Explicit UTC timestamp from the browser clock -- the purchases
-                    // table's created_at DEFAULT has been observed storing timestamps
-                    // ~5.5h in the past (timezone-handling bug), so don't rely on it.
-                    created_at: new Date().toISOString()
-                }).then(() => qmLog('✅ Purchase logged to Supabase')).catch(err => console.error('❌ Failed to log purchase:', err));
-            }
-
-            // NOTE: purchase emails (customer + admin) are sent server-side by
-            // /api/razorpay-webhook — do not send from frontend (caused duplicates)
+            // NOTE: purchases are logged and emails sent server-side by
+            // /api/razorpay-webhook — no client-side insert needed.
 
             // B3/B7: prefer the link grant-access just verified. Awaiting it means
             // the share has completed before we hand the buyer a Drive URL, and a
@@ -2973,10 +2950,6 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
                 downloadLink: downloadLink
             };
             window.__lastOrderData = orderMeta;
-
-            if (typeof window.showReceiptPrinter === 'function') {
-                window.showReceiptPrinter(orderMeta);
-            }
 
             if (downloadLink && downloadLink !== 'YOUR_DRIVE_LINK_HERE') {
                 if (typeof window.showSuccessModal === 'function') {
@@ -5776,10 +5749,6 @@ async function runCartCheckout(cart, userDetails, releaseBtn) {
 
             saveCart([]);
             renderCartDrawer();
-
-            if (typeof window.showReceiptPrinter === 'function') {
-                window.showReceiptPrinter(cartMeta);
-            }
 
             if (typeof window.showSuccessModal === 'function') {
                 window.showSuccessModal(purchasedNames, '#', cartMeta);
