@@ -26,7 +26,7 @@ function loadEnv() {
     return env;
 }
 
-export async function supabaseRequest(endpoint, options = {}) {
+export async function supabaseRequest(endpoint, options = {}, retries = 3) {
     const env = loadEnv();
     const url = `${env.SUPABASE_URL}/rest/v1${endpoint}`;
     const headers = {
@@ -37,27 +37,36 @@ export async function supabaseRequest(endpoint, options = {}) {
         ...(options.headers || {})
     };
 
-    const res = await fetch(url, {
-        ...options,
-        headers
-    });
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            const res = await fetch(url, {
+                ...options,
+                headers
+            });
 
-    const contentRange = res.headers.get('content-range');
-    const totalCount = contentRange ? Number(contentRange.split('/')[1]) : null;
+            const contentRange = res.headers.get('content-range');
+            const totalCount = contentRange ? Number(contentRange.split('/')[1]) : null;
 
-    let data;
-    const text = await res.text();
-    try {
-        data = text ? JSON.parse(text) : null;
-    } catch {
-        data = text;
+            let data;
+            const text = await res.text();
+            try {
+                data = text ? JSON.parse(text) : null;
+            } catch {
+                data = text;
+            }
+
+            if (!res.ok) {
+                throw new Error(`Supabase error (${res.status}): ${typeof data === 'object' ? JSON.stringify(data) : data}`);
+            }
+
+            return { data, totalCount, status: res.status };
+        } catch (err) {
+            if (attempt === retries || err.message.startsWith('Supabase error')) {
+                throw err;
+            }
+            await new Promise(r => setTimeout(r, 500 * attempt));
+        }
     }
-
-    if (!res.ok) {
-        throw new Error(`Supabase error (${res.status}): ${typeof data === 'object' ? JSON.stringify(data) : data}`);
-    }
-
-    return { data, totalCount, status: res.status };
 }
 
 async function getStats() {
@@ -98,6 +107,55 @@ async function main() {
         const { data, totalCount } = await supabaseRequest(`/products?select=id,name,price,is_active&order=price.desc&limit=${limit}`);
         console.log(`Products (Total: ${totalCount}):`);
         console.table(data);
+    } else if (command === 'customer') {
+        const query = args[0];
+        if (!query) {
+            console.error('Usage: node scripts/db.mjs customer <email-or-name-or-paymentId>');
+            process.exit(1);
+        }
+        console.log(`\n🔍 Searching for customer matching "${query}"...\n`);
+
+        // Search purchases
+        const pFilter = query.includes('@')
+            ? `/purchases?customer_email=ilike.*${encodeURIComponent(query)}*&order=created_at.desc`
+            : `/purchases?or=(customer_email.ilike.*${encodeURIComponent(query)}*,payment_id.eq.${encodeURIComponent(query)})&order=created_at.desc`;
+        const purchases = await supabaseRequest(pFilter);
+
+        // Search bookings
+        const bFilter = query.includes('@')
+            ? `/bookings?email=ilike.*${encodeURIComponent(query)}*&order=created_at.desc`
+            : `/bookings?or=(email.ilike.*${encodeURIComponent(query)}*,name.ilike.*${encodeURIComponent(query)}*,payment_id.eq.${encodeURIComponent(query)})&order=created_at.desc`;
+        const bookings = await supabaseRequest(bFilter);
+
+        console.log(`--- Purchases Found (${purchases.data?.length || 0}) ---`);
+        if (purchases.data?.length) {
+            console.table(purchases.data.map(p => ({
+                id: p.id,
+                email: p.customer_email,
+                product: p.product_name,
+                amount: `${p.currency || 'INR'} ${p.amount}`,
+                payment_id: p.payment_id,
+                date: new Date(p.created_at).toLocaleString()
+            })));
+        } else {
+            console.log('No purchases found.');
+        }
+
+        console.log(`\n--- Bookings Found (${bookings.data?.length || 0}) ---`);
+        if (bookings.data?.length) {
+            console.table(bookings.data.map(b => ({
+                id: b.id,
+                name: b.name,
+                email: b.email,
+                service: b.service_name,
+                date: b.booking_date,
+                time: b.booking_time,
+                status: b.status,
+                meet_link: b.meet_link || 'N/A'
+            })));
+        } else {
+            console.log('No bookings found.');
+        }
     } else if (command === 'query') {
         const [endpoint, ...rest] = args;
         if (!endpoint) {
@@ -108,7 +166,7 @@ async function main() {
         console.log(JSON.stringify(res.data, null, 2));
     } else {
         console.log(`Unknown command: ${command}`);
-        console.log('Available commands: stats, purchases, bookings, products, query <endpoint>');
+        console.log('Available commands: stats, purchases, bookings, products, customer <email|name|paymentId>, query <endpoint>');
     }
 }
 
