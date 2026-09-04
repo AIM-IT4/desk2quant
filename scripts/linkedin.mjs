@@ -293,6 +293,41 @@ export async function publishDocumentPost(text, filePath, title = 'Quant Finance
     throw new Error(`LinkedIn document post failed (${res.status}): ${errBody}`);
 }
 
+export async function publishComment(postUrn, text) {
+    const config = loadConfig();
+    if (!config.accessToken) {
+        throw new Error('LINKEDIN_ACCESS_TOKEN is not set. Run auth first.');
+    }
+
+    let personUrn = config.personUrn;
+    if (!personUrn) {
+        const profile = await getUserProfile(config.accessToken);
+        personUrn = `urn:li:person:${profile.sub}`;
+        saveConfig({ LINKEDIN_PERSON_URN: personUrn });
+    }
+
+    const targetUrn = encodeURIComponent(postUrn.trim());
+    const res = await fetch(`https://api.linkedin.com/v2/socialActions/${targetUrn}/comments`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${config.accessToken}`,
+            'Content-Type': 'application/json',
+            'X-Restli-Protocol-Version': '2.0.0'
+        },
+        body: JSON.stringify({
+            actor: personUrn,
+            message: { text: text.trim() }
+        })
+    });
+
+    if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Failed to publish comment (${res.status}): ${errText}`);
+    }
+
+    return await res.json();
+}
+
 // CLI handler
 async function main() {
     const args = process.argv.slice(2);
@@ -389,6 +424,25 @@ async function main() {
         return;
     }
 
+    if (command === '--comment' || command === 'comment') {
+        const postUrn = args[1];
+        const text = args[2];
+        if (!postUrn || !text) {
+            console.error('Usage: node scripts/linkedin.mjs --comment <postUrn> "Comment text"');
+            process.exit(1);
+        }
+        try {
+            console.log(`Publishing comment on ${postUrn}...`);
+            const res = await publishComment(postUrn, text);
+            console.log('✅ Comment published successfully!');
+            console.log(`Comment ID: ${res.id}`);
+        } catch (err) {
+            console.error('❌ Failed to publish comment:', err.message);
+            process.exit(1);
+        }
+        return;
+    }
+
     console.log(`
 Desk2Quant LinkedIn Automation CLI
 
@@ -398,6 +452,7 @@ Commands:
   node scripts/linkedin.mjs --status                   Check connection & profile status
   node scripts/linkedin.mjs --post "text" [url]        Publish a post to your LinkedIn profile
   node scripts/linkedin.mjs --carousel <pdf> [title] [text] Publish a PDF document carousel post
+  node scripts/linkedin.mjs --comment <postUrn> "text" Post a comment on a LinkedIn post
 `);
 }
 
