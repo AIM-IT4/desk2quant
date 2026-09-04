@@ -2502,13 +2502,14 @@ body.d2q-launchzone .theme-toggle {
 
 @media (max-width: 420px) {
     body.d2q-launchzone .hero-proof-row {
-        grid-template-columns: 1fr;
-        gap: 5px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
     }
 
     body.d2q-launchzone .hero-proof-row span {
-        font-size: 9px;
-        min-height: 32px;
+        font-size: 8.5px;
+        min-height: 30px;
+        padding: 4px 6px;
     }
 
     body.d2q-launchzone .stat-value {
