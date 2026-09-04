@@ -179,7 +179,7 @@ export async function publishPost(text, url) {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${config.accessToken}`,
-            'Linkedin-Version': '202401',
+            'Linkedin-Version': '202503',
             'X-Restli-Protocol-Version': '2.0.0',
             'Content-Type': 'application/json'
         },
@@ -193,6 +193,104 @@ export async function publishPost(text, url) {
 
     const errBody = await res.text();
     throw new Error(`LinkedIn post failed (${res.status}): ${errBody}`);
+}
+
+export async function uploadDocument(filePath) {
+    const config = loadConfig();
+    if (!config.accessToken) {
+        throw new Error('LINKEDIN_ACCESS_TOKEN is not set. Run auth first.');
+    }
+
+    let personUrn = config.personUrn;
+    if (!personUrn) {
+        const profile = await getUserProfile(config.accessToken);
+        personUrn = `urn:li:person:${profile.sub}`;
+        saveConfig({ LINKEDIN_PERSON_URN: personUrn });
+    }
+
+    const fileBuffer = fs.readFileSync(filePath);
+
+    const initRes = await fetch('https://api.linkedin.com/rest/documents?action=initializeUpload', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${config.accessToken}`,
+            'Linkedin-Version': '202503',
+            'X-Restli-Protocol-Version': '2.0.0',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            initializeUploadRequest: {
+                owner: personUrn
+            }
+        })
+    });
+
+    if (!initRes.ok) {
+        const errText = await initRes.text();
+        throw new Error(`Failed to initialize document upload (${initRes.status}): ${errText}`);
+    }
+
+    const initData = await initRes.json();
+    const { uploadUrl, document: documentUrn } = initData.value;
+
+    const uploadRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${config.accessToken}`,
+            'Content-Type': 'application/pdf'
+        },
+        body: fileBuffer
+    });
+
+    if (!uploadRes.ok && uploadRes.status !== 201) {
+        const errText = await uploadRes.text();
+        throw new Error(`Failed to upload document binary (${uploadRes.status}): ${errText}`);
+    }
+
+    return { documentUrn, personUrn };
+}
+
+export async function publishDocumentPost(text, filePath, title = 'Quant Finance Document') {
+    const config = loadConfig();
+    const { documentUrn, personUrn } = await uploadDocument(filePath);
+
+    const payload = {
+        author: personUrn,
+        commentary: text,
+        visibility: 'PUBLIC',
+        distribution: {
+            feedDistribution: 'MAIN_FEED',
+            targetEntities: [],
+            thirdPartyDistributionChannels: []
+        },
+        content: {
+            media: {
+                id: documentUrn,
+                title: title
+            }
+        },
+        lifecycleState: 'PUBLISHED',
+        isReshareDisabledByAuthor: false
+    };
+
+    const res = await fetch('https://api.linkedin.com/rest/posts', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${config.accessToken}`,
+            'Linkedin-Version': '202503',
+            'X-Restli-Protocol-Version': '2.0.0',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (res.status === 201) {
+        const postUrn = res.headers.get('x-restli-id') || res.headers.get('x-linkedin-id') || 'Created';
+        return { success: true, postUrn, documentUrn };
+    }
+
+    const errBody = await res.text();
+    throw new Error(`LinkedIn document post failed (${res.status}): ${errBody}`);
 }
 
 // CLI handler
@@ -270,6 +368,27 @@ async function main() {
         return;
     }
 
+    if (command === '--carousel' || command === 'carousel' || command === '--post-carousel') {
+        const pdfPath = args[1];
+        const title = args[2] || 'Desk2Quant Document';
+        const text = args[3] || '';
+        if (!pdfPath) {
+            console.error('Usage: node scripts/linkedin.mjs --carousel <pdfPath> [title] [text]');
+            process.exit(1);
+        }
+        try {
+            console.log(`Uploading carousel document: ${pdfPath}...`);
+            const res = await publishDocumentPost(text, pdfPath, title);
+            console.log('✅ Document Carousel published successfully to LinkedIn!');
+            console.log(`Post URN: ${res.postUrn}`);
+            console.log(`Document URN: ${res.documentUrn}`);
+        } catch (err) {
+            console.error('❌ Failed to publish document post:', err.message);
+            process.exit(1);
+        }
+        return;
+    }
+
     console.log(`
 Desk2Quant LinkedIn Automation CLI
 
@@ -278,6 +397,7 @@ Commands:
   node scripts/linkedin.mjs --exchange <code>          Exchange authorization code for token
   node scripts/linkedin.mjs --status                   Check connection & profile status
   node scripts/linkedin.mjs --post "text" [url]        Publish a post to your LinkedIn profile
+  node scripts/linkedin.mjs --carousel <pdf> [title] [text] Publish a PDF document carousel post
 `);
 }
 
