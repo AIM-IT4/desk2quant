@@ -20,7 +20,8 @@
     "test:indexnow": "node scripts/submit-indexnow.mjs --self-test",
     "db": "node scripts/db.mjs",
     "drive": "node scripts/drive.mjs",
-    "vercel": "node scripts/vercel.mjs"
+    "vercel": "node scripts/vercel.mjs",
+    "linkedin": "node scripts/linkedin.mjs"
   },
   "keywords": [],
   "author": "Amit Kumar Jha",

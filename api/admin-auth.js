@@ -18,6 +18,7 @@
 // is in.
 
 import crypto from 'crypto';
+import { handleLinkedInOAuth, publishPost } from '../lib/linkedin.js';
 
 // In-memory sliding-window rate limit for admin authentication attempts
 const RATE_LIMIT_MAX = 10;
@@ -46,6 +47,19 @@ function safeEqual(a, b) {
 }
 
 export default async function handler(req, res) {
+    // 1. Check for LinkedIn OAuth callback or authorization redirect
+    const isLinkedIn = Boolean(
+        req.query?.code ||
+        req.query?.error ||
+        req.query?.linkedin ||
+        req.headers?.['x-matched-path']?.includes('linkedin') ||
+        req.url?.includes('linkedin')
+    );
+
+    if (isLinkedIn) {
+        return handleLinkedInOAuth(req, res);
+    }
+
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
@@ -88,6 +102,17 @@ export default async function handler(req, res) {
 
     if (action === 'revenue') {
         return handleRevenueLookup(req, res);
+    }
+
+    if (action === 'linkedin-post') {
+        const { text, url, token, urn } = req.body || {};
+        if (!text) return res.status(400).json({ success: false, error: 'text is required' });
+        try {
+            const result = await publishPost(text, url, token, urn);
+            return res.status(200).json({ success: true, postUrn: result.postUrn });
+        } catch (err) {
+            return res.status(500).json({ success: false, error: err.message });
+        }
     }
 
     return res.status(400).json({ success: false, error: 'Unknown action' });

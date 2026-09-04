@@ -6,6 +6,14 @@
     {
       "source": "/api/health",
       "destination": "/health.json"
+    },
+    {
+      "source": "/api/auth/linkedin/callback",
+      "destination": "/api/admin-auth"
+    },
+    {
+      "source": "/api/linkedin",
+      "destination": "/api/admin-auth"
     }
   ],
   "redirects": [
