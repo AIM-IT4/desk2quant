@@ -4757,8 +4757,18 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
             const couponCode = newest.coupon_code || 'VOL20';
             const discountPct = newest.discount_percentage || (couponCode === 'VOL20' ? 20 : 15);
 
+            // Split into main title and subtitle for responsive mobile display
+            const rawName = newest.name || 'New Resource';
+            const parts = rawName.split(/—|--| - /);
+            const mainTitle = parts[0].trim();
+            const subTitle = parts.length > 1 ? parts.slice(1).join(' - ').trim() : '';
+
             if (textEl) {
-                textEl.innerHTML = `<strong>${escapeHtml(newest.name)}</strong> is live.`;
+                if (subTitle) {
+                    textEl.innerHTML = `<strong class="promo-title">${escapeHtml(mainTitle)}</strong><span class="promo-subtitle"> &mdash; ${escapeHtml(subTitle)}</span> is live.`;
+                } else {
+                    textEl.innerHTML = `<strong class="promo-title">${escapeHtml(mainTitle)}</strong> is live.`;
+                }
             }
             if (codeEl) {
                 codeEl.textContent = couponCode;

@@ -27,6 +27,8 @@
             'background:linear-gradient(135deg,#2563eb,#1e40af);color:#fff;}',
             '.d2q-adv-head strong{font-size:15px;}',
             '.d2q-adv-head small{display:block;opacity:.85;font-size:11px;font-weight:400;}',
+            '.d2q-adv-head a{color:#bfdbfe;text-decoration:underline;cursor:pointer;}',
+            '.d2q-adv-head a:hover{color:#fff;}',
             '.d2q-adv-x{background:transparent;border:0;color:#fff;font-size:22px;line-height:1;cursor:pointer;padding:0 4px;}',
             '.d2q-adv-log{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#f8fafc;}',
             '.d2q-adv-msg{max-width:86%;padding:10px 13px;border-radius:14px;font-size:13.5px;line-height:1.5;',
@@ -94,7 +96,7 @@
         panel.hidden = true;
         panel.innerHTML =
             '<div class="d2q-adv-head"><span><strong>Which pack is right for me?</strong>' +
-            '<small>Tell me your background &amp; target role</small></span>' +
+            '<small>AI Quant Advisor &bull; <a href="#contact" class="d2q-adv-mentorship-link">1-on-1 Mentorship</a></small></span>' +
             '<button class="d2q-adv-x" type="button" aria-label="Close advisor">&times;</button></div>' +
             '<div class="d2q-adv-log"></div>' +
             '<form class="d2q-adv-form"><input type="text" maxlength="600" autocomplete="off" ' +
@@ -107,6 +109,15 @@
         els.input = panel.querySelector('input');
         els.send = panel.querySelector('button[type=submit]');
         panel.querySelector('.d2q-adv-x').addEventListener('click', close);
+        var mentorLink = panel.querySelector('.d2q-adv-mentorship-link');
+        if (mentorLink) {
+            mentorLink.addEventListener('click', function (e) {
+                e.preventDefault();
+                close();
+                var contactEl = document.getElementById('contact');
+                if (contactEl) contactEl.scrollIntoView({ behavior: 'smooth' });
+            });
+        }
         els.form.addEventListener('submit', submit);
         add('assistant', GREETING);
     }
