@@ -30,12 +30,12 @@ window.D2Q_CLARITY_CONFIG = Object.freeze({
     projectId: 'ycjcdlveyz'
 });
 
-/* Live Chat Config: Consolidated into the unified Desk2Quant Product & Career Advisor */
+/* Tawk.to Live Chat Widget */
 window.D2Q_LIVE_CHAT_CONFIG = Object.freeze({
-    enabled: false, // Disabled to prevent duplicate widgets and mobile iframe intrusive auto-open
+    enabled: true,
     propertyId: '6a996a06f31d2934469232b9',
     widgetId: '1k1jkcb5o',
-    position: 'bottom-left'
+    position: 'bottom-left' // 'bottom-left' avoids overlapping advisor widget & scroll-to-top button
 });
 
 /**
@@ -86,6 +86,13 @@ function initLiveChat() {
 
         window.Tawk_API = window.Tawk_API || {};
         window.Tawk_LoadStart = new Date();
+
+        // Ensure the chat widget stays collapsed as an icon and never auto-expands over page content
+        window.Tawk_API.onLoad = function () {
+            if (typeof window.Tawk_API.minimize === 'function') {
+                window.Tawk_API.minimize();
+            }
+        };
 
         window.Tawk_API.customStyle = {
             visibility: {
