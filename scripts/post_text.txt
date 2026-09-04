@@ -1,0 +1,38 @@
+A candidate gave an answer in an options interview last week that sounded mathematically spotless:
+
+"If we're delta-hedged, our directional risk is zero. A 4% move in spot doesn't hurt us."
+
+On a trading desk, that candidate just blew up the book.
+
+Why? Because Black-Scholes assumes continuous replication. Desks rehedge discretely.
+
+The actual instantaneous PnL on a delta-hedged book isn't zero:
+
+PnL ~ 0.5 * Gamma * (dS)^2 + Theta * dt
+
+If you are short gamma, that 4% move produces a quadratic loss that steamrolls your accrued theta. If you don't quote your gamma and your local vol smile dynamic in the first 10 seconds of that question, the desk knows you've only read textbook pricing proofs.
+
+Swipe through the slides below for the 4 core traps that break candidates in quant interviews:
+
+1. The Discrete Delta Myth (Rehedging slippage & gamma blowup)
+2. Flat Vega Fallacy (Why Vanna & Volga dominate skew rotation)
+3. PnL Attribution Disconnect (Realized variance vs implied carry)
+4. Dupire Local Vol Breakdown (Why SLV is required in production)
+
+We put together desk-ready practitioner notes built around actual trading desk fixes:
+
+- Common Mistakes in Quant Interviews (Desk Fixes Edition):
+https://desk2quant.com/products/common-mistakes-in-quant-interviews-desk-fixes-edition.html
+
+- Quantitative Finance for Absolute Beginners:
+https://desk2quant.com/products/quantitative-finance-for-absolute-beginners-from-desk-to-quant.html
+
+- Derivatives Products & Pricing Master Pack (6 PDFs):
+https://desk2quant.com/products/derivatives-products-and-pricing-master-pack-6-pdfs-ir-fx-equity-credi.html
+
+- Complete 40-Guide Quant Library:
+https://desk2quant.com/products/
+
+(Use coupon code MISTAKES10 or BEGINNER10 for 10% off this week)
+
+#QuantitativeFinance #QuantTrading #Derivatives #FinancialEngineering #Desk2Quant
