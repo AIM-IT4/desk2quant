@@ -87,11 +87,72 @@ function initLiveChat() {
         window.Tawk_API = window.Tawk_API || {};
         window.Tawk_LoadStart = new Date();
 
+        var isChatOpen = false;
+
+        function getHeroThreshold() {
+            var hero = document.getElementById('hero');
+            return hero ? Math.max(hero.offsetHeight - 120, 280) : -1;
+        }
+
+        function updateTawkVisibility() {
+            if (!window.Tawk_API) return;
+            // Never hide or disrupt if user is actively chatting
+            if (isChatOpen) return;
+            if (typeof window.Tawk_API.isChatMaximized === 'function' && window.Tawk_API.isChatMaximized()) {
+                return;
+            }
+
+            var modalActive = document.querySelector('.promo-popup-modal.active, .success-modal.active, #cartDrawer.active, .product-modal.active');
+            if (modalActive) {
+                if (typeof window.Tawk_API.hideWidget === 'function') {
+                    window.Tawk_API.hideWidget();
+                }
+                return;
+            }
+
+            var threshold = getHeroThreshold();
+            // If on a page with #hero and visitor hasn't scrolled past it, hide widget & previews
+            if (threshold > 0 && window.scrollY < threshold) {
+                if (typeof window.Tawk_API.hideWidget === 'function') {
+                    window.Tawk_API.hideWidget();
+                }
+            } else {
+                if (typeof window.Tawk_API.showWidget === 'function') {
+                    window.Tawk_API.showWidget();
+                }
+            }
+        }
+
+        // Hide widget immediately before load if currently in hero section
+        window.Tawk_API.onBeforeLoad = function () {
+            var threshold = getHeroThreshold();
+            if (threshold > 0 && window.scrollY < threshold) {
+                if (typeof window.Tawk_API.hideWidget === 'function') {
+                    window.Tawk_API.hideWidget();
+                }
+            }
+        };
+
         // Ensure the chat widget stays collapsed as an icon and never auto-expands over page content
         window.Tawk_API.onLoad = function () {
             if (typeof window.Tawk_API.minimize === 'function') {
                 window.Tawk_API.minimize();
             }
+            updateTawkVisibility();
+        };
+
+        window.Tawk_API.onChatMaximized = function () {
+            isChatOpen = true;
+        };
+
+        window.Tawk_API.onChatMinimized = function () {
+            isChatOpen = false;
+            updateTawkVisibility();
+        };
+
+        window.Tawk_API.onChatEnded = function () {
+            isChatOpen = false;
+            updateTawkVisibility();
         };
 
         window.Tawk_API.customStyle = {
@@ -100,6 +161,9 @@ function initLiveChat() {
                 mobile: { position: 'bl', xOffset: 12, yOffset: 12 }
             }
         };
+
+        window.addEventListener('scroll', updateTawkVisibility, { passive: true });
+        window.addEventListener('resize', updateTawkVisibility, { passive: true });
 
         var s1 = document.createElement('script');
         s1.id = 'd2q-tawk-script';

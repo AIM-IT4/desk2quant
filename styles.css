@@ -4392,3 +4392,15 @@ body {
     }
 }
 
+/* Live Chat & Advisor Modal Protection */
+body:has(.promo-popup-modal.active) iframe[title*="chat" i],
+body:has(.success-modal.active) iframe[title*="chat" i],
+body:has(#cartDrawer.active) iframe[title*="chat" i],
+body:has(.product-modal.active) iframe[title*="chat" i],
+body:has(.modal.active) iframe[title*="chat" i],
+body:has(.promo-popup-modal.active) .widget-visible,
+body:has(.success-modal.active) .widget-visible,
+body:has(#cartDrawer.active) .widget-visible {
+    display: none !important;
+}
+

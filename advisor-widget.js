@@ -51,7 +51,7 @@
             '  .d2q-adv-fab .d2q-adv-fab-text{display:inline;}',
             '  .d2q-adv-fab{padding:8px 12px;font-size:11.5px;}',
             '}',
-            'body:has(.promo-popup-modal.active) .d2q-adv-fab, body:has(.success-modal.active) .d2q-adv-fab, body:has(#cartDrawer.active) .d2q-adv-fab { display: none !important; }'
+            'body:has(.promo-popup-modal.active) .d2q-adv-fab, body:has(.success-modal.active) .d2q-adv-fab, body:has(#cartDrawer.active) .d2q-adv-fab, body:has(.product-modal.active) .d2q-adv-fab { display: none !important; }'
         ].join('');
     }
 
@@ -188,26 +188,23 @@
         document.body.appendChild(fab);
         els.fab = fab;
 
-        // Mobile ergonomics: On mobile screens, keep the FAB hidden while the
-        // visitor is reading the hero section so it never covers proof points
-        // or hero buttons. It cleanly fades in once the visitor scrolls down.
-        function handleMobileScroll() {
-            if (window.innerWidth <= 768) {
-                var hero = document.getElementById('hero');
-                var threshold = hero ? Math.max(hero.offsetHeight - 120, 280) : 320;
-                if (window.scrollY < threshold) {
-                    fab.classList.add('is-hero-hidden');
-                } else {
-                    fab.classList.remove('is-hero-hidden');
-                }
+        // Hero ergonomics: Keep the FAB hidden while the visitor is reading
+        // the hero section so it never covers proof points or hero buttons on
+        // mobile, or creates dual-widget clutter alongside Tawk on desktop.
+        // It cleanly fades in once the visitor scrolls down into the content.
+        function handleScroll() {
+            var hero = document.getElementById('hero');
+            var threshold = hero ? Math.max(hero.offsetHeight - 120, 280) : -1;
+            if (threshold > 0 && window.scrollY < threshold) {
+                fab.classList.add('is-hero-hidden');
             } else {
                 fab.classList.remove('is-hero-hidden');
             }
         }
 
-        window.addEventListener('scroll', handleMobileScroll, { passive: true });
-        window.addEventListener('resize', handleMobileScroll, { passive: true });
-        handleMobileScroll();
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        window.addEventListener('resize', handleScroll, { passive: true });
+        handleScroll();
     }
 
     if (document.readyState === 'loading') {
