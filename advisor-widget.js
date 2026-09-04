@@ -15,9 +15,10 @@
         return [
             '.d2q-adv-fab{position:fixed;right:20px;bottom:20px;z-index:9990;display:flex;align-items:center;gap:8px;',
             'padding:12px 18px;border:0;border-radius:999px;cursor:pointer;font:600 14px/1 inherit;color:#fff;',
-            'background:linear-gradient(135deg,#2563eb,#1e40af);box-shadow:0 6px 22px rgba(37,99,235,.38);}',
+            'background:linear-gradient(135deg,#2563eb,#1e40af);box-shadow:0 6px 22px rgba(37,99,235,.38);transition:transform .25s ease,opacity .25s ease;}',
             '.d2q-adv-fab:hover{transform:translateY(-2px);}',
             '.d2q-adv-fab[hidden]{display:none;}',
+            '.d2q-adv-fab.is-hero-hidden{opacity:0;pointer-events:none;transform:translateY(16px);}',
             '.d2q-adv-panel{position:fixed;right:20px;bottom:20px;z-index:10001;width:min(380px,calc(100vw - 32px));',
             'height:min(560px,calc(100vh - 40px));display:flex;flex-direction:column;overflow:hidden;',
             'background:#fff;color:#0f172a;border-radius:16px;box-shadow:0 20px 60px rgba(2,6,23,.28);}',
@@ -40,8 +41,15 @@
             'font:600 13.5px/1 inherit;cursor:pointer;}',
             '.d2q-adv-form button:disabled{opacity:.55;cursor:default;}',
             '@media (prefers-reduced-motion:reduce){.d2q-adv-fab{transition:none;}.d2q-adv-fab:hover{transform:none;}}',
-            '@media (max-width:480px){.d2q-adv-panel{right:8px;left:8px;bottom:8px;width:auto;height:min(70vh,520px);}',
-            '.d2q-adv-fab{right:14px;bottom:14px;padding:11px 15px;font-size:13px;}}'
+            '@media (max-width:768px){',
+            '  .d2q-adv-panel{right:8px;left:8px;bottom:8px;width:auto;height:min(70vh,520px);}',
+            '  .d2q-adv-fab{right:14px;bottom:14px;padding:9px 13px;font-size:12px;gap:5px;}',
+            '}',
+            '@media (max-width:420px){',
+            '  .d2q-adv-fab .d2q-adv-fab-text{display:inline;}',
+            '  .d2q-adv-fab{padding:8px 12px;font-size:11.5px;}',
+            '}',
+            'body:has(.promo-popup-modal.active) .d2q-adv-fab, body:has(.success-modal.active) .d2q-adv-fab, body:has(#cartDrawer.active) .d2q-adv-fab { display: none !important; }'
         ].join('');
     }
 
@@ -163,10 +171,32 @@
         var fab = document.createElement('button');
         fab.type = 'button';
         fab.className = 'd2q-adv-fab';
-        fab.innerHTML = '<span aria-hidden="true">\uD83D\uDCAC</span><span>Which pack suits me?</span>';
+        fab.setAttribute('aria-label', 'Open Quant Pack Advisor');
+        fab.innerHTML = '<span aria-hidden="true">\uD83D\uDCAC</span><span class="d2q-adv-fab-text">Which pack suits me?</span>';
         fab.addEventListener('click', open);
         document.body.appendChild(fab);
         els.fab = fab;
+
+        // Mobile ergonomics: On mobile screens, keep the FAB hidden while the
+        // visitor is reading the hero section so it never covers proof points
+        // or hero buttons. It cleanly fades in once the visitor scrolls down.
+        function handleMobileScroll() {
+            if (window.innerWidth <= 768) {
+                var hero = document.getElementById('hero');
+                var threshold = hero ? Math.max(hero.offsetHeight - 120, 280) : 320;
+                if (window.scrollY < threshold) {
+                    fab.classList.add('is-hero-hidden');
+                } else {
+                    fab.classList.remove('is-hero-hidden');
+                }
+            } else {
+                fab.classList.remove('is-hero-hidden');
+            }
+        }
+
+        window.addEventListener('scroll', handleMobileScroll, { passive: true });
+        window.addEventListener('resize', handleMobileScroll, { passive: true });
+        handleMobileScroll();
     }
 
     if (document.readyState === 'loading') {

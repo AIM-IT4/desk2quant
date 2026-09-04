@@ -3468,9 +3468,19 @@ body {
 .scroll-top-btn:hover {
     background: var(--accent-primary);
     border-color: var(--accent-primary);
-    color: #fff;
+    color: white;
     transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(244, 63, 94, 0.3);
+    box-shadow: var(--shadow-glow);
+}
+
+@media (max-width: 768px) {
+    .scroll-top-btn {
+        bottom: 74px;
+        right: 16px;
+        width: 40px;
+        height: 40px;
+        font-size: 0.9rem;
+    }
 }
 
 /* --- Staggered Card Entry --- */

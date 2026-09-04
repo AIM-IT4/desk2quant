@@ -4866,14 +4866,7 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
         // 2. Setup Popup Triggers (Only if not already shown in this session)
         const promoShown = sessionStorage.getItem('launch_promo_shown');
         if (promoShown !== 'true') {
-            // Trigger 2a: Time-delay (20 seconds)
-            setTimeout(() => {
-                if (sessionStorage.getItem('launch_promo_shown') !== 'true') {
-                    window.triggerPromoModal();
-                }
-            }, 20000);
-
-            // Trigger 2b: Exit Intent (mouse moves out of top viewport)
+            // Trigger: Exit Intent only (desktop mouse moves out of top viewport)
             document.addEventListener('mouseleave', (e) => {
                 if (e.clientY < 20) { // mouse moved out towards address bar
                     if (sessionStorage.getItem('launch_promo_shown') !== 'true') {

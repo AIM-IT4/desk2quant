@@ -510,15 +510,7 @@ if (typeof document !== 'undefined') {
         }
 
         if (subcopy) {
-            subcopy.innerHTML = '<strong>Stop learning models as isolated formulas. Learn how they are implemented, challenged, hedged, validated, and explained under pressure.</strong><br>Desk-focused preparation for pricing, XVA, risk, model validation, numerical methods, Python, C++, and quant interviews.';
-
-            let valueLine = hero.querySelector('.hero-value-line');
-            if (!valueLine) {
-                valueLine = document.createElement('p');
-                valueLine.className = 'hero-value-line';
-                subcopy.insertAdjacentElement('afterend', valueLine);
-            }
-            valueLine.innerHTML = '<strong>Flagship:</strong> 46+ PDFs • 60+ scripts • 1000+ interview problems • Python + C++ + SQL';
+            subcopy.innerHTML = 'Stop learning models as isolated formulas. Master how they are implemented, stress-tested, hedged, validated, and explained under real desk and interview pressure.<span class="hero-subtext-note" style="display:none;">Book direct 1-on-1 mentorship for a focused plan, or try free Desk Simulator practice before your next quant interview.</span>';
         }
 
         // Do not clobber hero proof or cta already configured in index.html

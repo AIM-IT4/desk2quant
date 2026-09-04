@@ -117,9 +117,9 @@
     <div id="launchPromoBanner" class="promo-announcement-bar">
         <div class="promo-content">
             <span class="promo-tag">NEW RELEASE</span>
-            <span class="promo-text"><strong>Numerical Methods for Quants</strong> — 93-page field manual with runnable code.</span>
+            <span class="promo-text"><strong>Numerical Methods for Quants</strong> &mdash; 93-page field manual with runnable code.</span>
             <span class="promo-coupon">Use code <strong class="promo-code-box">LAUNCH15</strong> at checkout for <strong>15% OFF</strong>!</span>
-            <button class="btn btn-promo-cta" onclick="triggerPromoModal()">Claim Discount</button>
+            <a href="#products" class="btn btn-promo-cta" style="text-decoration:none; display:inline-flex; align-items:center; gap:4px;">Explore Library <i class="fas fa-arrow-right" style="font-size:11px;"></i></a>
         </div>
             <button class="promo-close-btn" onclick="dismissPromoBanner(event)" aria-label="Close promotion">&times;</button>
     </div>
@@ -186,12 +186,8 @@
                             Build Quant Skills That Survive the <span class="gradient-text">Interview and the Desk</span>
                         </h1>
                         <p class="subheadline hero-subcopy">
-                            <strong>Stop learning models as isolated formulas. Learn how they are implemented, challenged, hedged, validated, and explained under pressure.</strong><br>
-                            Desk-focused preparation for pricing, XVA, risk, model validation, numerical methods, Python, C++, and quant interviews.
+                            Stop learning models as isolated formulas. Master how they are implemented, stress-tested, hedged, validated, and explained under real desk and interview pressure.
                             <span class="hero-subtext-note" style="display:none;">Book direct 1-on-1 mentorship for a focused plan, or try free Desk Simulator practice before your next quant interview.</span>
-                        </p>
-                        <p class="hero-value-line">
-                            <strong>Flagship:</strong> 46+ PDFs &bull; 60+ scripts &bull; 1000+ interview problems &bull; Python + C++ + SQL
                         </p>
                         <div class="hero-proof-row" aria-label="Desk2Quant highlights">
                             <span><i class="fas fa-chart-line"></i> Pricing &amp; XVA</span>
@@ -406,6 +402,214 @@
                 </div>
             </div>
         </section>
+        <!-- Services Section -->
+        <section class="services" id="services">
+            <div class="section-container">
+                <div class="section-header reveal-up">
+                    <span class="section-label" style="color: var(--accent-primary);">Mentorship</span>
+                    <h2 class="section-headline">Personalized <span class="gradient-text">1&#8209;on&#8209;1 Sessions</span></h2>
+                    <p class="subheadline">Practical, practitioner-led sessions designed to bridge the gap between
+                        theory and the desk.</p>
+                </div>
+
+                <div class="services-grid">
+                    <!-- Skeleton loading cards (replaced by JS) -->
+                    <div class="skeleton-service">
+                        <div class="skeleton-icon"></div>
+                        <div class="skeleton-line title"></div>
+                        <div class="skeleton-line short"></div>
+                        <div class="skeleton-line medium"></div>
+                        <div class="skeleton-line"></div>
+                    </div>
+                    <div class="skeleton-service">
+                        <div class="skeleton-icon"></div>
+                        <div class="skeleton-line title"></div>
+                        <div class="skeleton-line short"></div>
+                        <div class="skeleton-line medium"></div>
+                        <div class="skeleton-line"></div>
+                    </div>
+                    <div class="skeleton-service">
+                        <div class="skeleton-icon"></div>
+                        <div class="skeleton-line title"></div>
+                        <div class="skeleton-line short"></div>
+                        <div class="skeleton-line medium"></div>
+                        <div class="skeleton-line"></div>
+                    </div>
+                </div>
+
+                <div class="resume-teardown-banner reveal-up">
+                    <div class="teardown-content">
+                        <div class="teardown-badge"><i class="fas fa-file-code"></i> SPECIALIZED AUDIT</div>
+                        <h3>Quant Resume &amp; Project Line-by-Line Teardown</h3>
+                        <p>Have your CV, GitHub repositories, and quantitative projects audited directly by Amit Kumar Jha (IIT Jodhpur / UBS). Get brutally honest feedback on formatting, ATS readability, mathematics terminology, and project credibility before applying to Citadel, Jane Street, Millennium, or Tier-1 banks.</p>
+                        <ul class="teardown-features">
+                            <li><i class="fas fa-check-circle"></i> Line-by-line bullet rewriting for high-signal quantitative metrics</li>
+                            <li><i class="fas fa-check-circle"></i> Code review of your GitHub pricing or backtesting repos</li>
+                            <li><i class="fas fa-check-circle"></i> 48-hour turn-around with detailed video/audio commentary</li>
+                        </ul>
+                    </div>
+                    <div class="teardown-action">
+                        <a href="#contact" class="btn btn-primary btn-teardown" onclick="window.selectResumeAudit(event)">
+                            <i class="fas fa-calendar-check"></i> Book Resume Audit
+                        </a>
+                        <span class="teardown-subtext">Direct 1-on-1 via Desk2Quant Session</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Products Section -->
+        <section class="products-section" id="products">
+            <div class="section-container">
+                <div class="section-header reveal-up">
+                    <span class="section-label" style="color: var(--accent-secondary);">Resources</span>
+                    <h2 class="section-headline">Premium <span class="gradient-text">Digital Products</span></h2>
+                    <p class="subheadline">Curated study materials, coding scripts, and interview guides from years
+                        of experience.</p>
+                </div>
+
+                <div class="products-toolbar">
+                    <div class="products-search" role="search">
+                        <label for="productSearchInput" class="sr-only">Search products</label>
+                        <i class="fas fa-search" aria-hidden="true"></i>
+                        <input type="search" id="productSearchInput" placeholder="Search products..."
+                            autocomplete="off" spellcheck="false" aria-controls="productsGrid">
+                    </div>
+                    <div class="products-filter">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="notes">Notes & PDFs</button>
+                        <button class="filter-btn" data-filter="code">Code & Scripts</button>
+                        <button class="filter-btn" data-filter="bundle">Bundles</button>
+                    </div>
+                    <div class="products-sort">
+                        <label for="productSortSelect">Sort by</label>
+                        <select id="productSortSelect" aria-label="Sort products">
+                            <option value="popular">Popular</option>
+                            <option value="price-low">Price: Low to High</option>
+                            <option value="price-high">Price: High to Low</option>
+                        </select>
+                    </div>
+                </div>
+
+                <p class="product-search-empty" id="productSearchEmpty" role="status" aria-live="polite" hidden>
+                    No products match your search.
+                </p>
+
+                <div class="products-grid" id="productsGrid">
+                    <!-- Skeleton loading cards (replaced by JS) -->
+                    <div class="skeleton-card">
+                        <div class="skeleton-image"></div>
+                        <div class="skeleton-content">
+                            <div class="skeleton-line medium"></div>
+                            <div class="skeleton-line"></div>
+                            <div class="skeleton-line short"></div>
+                            <div class="skeleton-btn"></div>
+                        </div>
+                    </div>
+                    <div class="skeleton-card">
+                        <div class="skeleton-image"></div>
+                        <div class="skeleton-content">
+                            <div class="skeleton-line medium"></div>
+                            <div class="skeleton-line"></div>
+                            <div class="skeleton-line short"></div>
+                            <div class="skeleton-btn"></div>
+                        </div>
+                    </div>
+                    <div class="skeleton-card">
+                        <div class="skeleton-image"></div>
+                        <div class="skeleton-content">
+                            <div class="skeleton-line medium"></div>
+                            <div class="skeleton-line"></div>
+                            <div class="skeleton-line short"></div>
+                            <div class="skeleton-btn"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="seo-catalog-link">
+                    <a href="/products/">Browse the complete quant finance product catalog</a>
+                </p>
+
+                <!-- Machine-readable product data for bots, crawlers, and LLMs -->
+                <!-- PRODUCT DATA API: All products are available as JSON at https://desk2quant.com/api/products -->
+                <noscript>
+                    <div style="padding: 20px; background: #1a1a2e; border-radius: 8px; margin-top: 20px;">
+                        <h3>Our Digital Products</h3>
+                        <p>Products are loaded dynamically. To view the full product catalog as structured data, visit:
+                            <a
+                                href="https://desk2quant.com/api/products">https://desk2quant.com/api/products</a>
+                        </p>
+                        <p>We offer 36 paid products and 4 free resources for quantitative finance professionals,
+                            including:</p>
+                        <ul>
+                            <li>Quant Interview Problem Book (1000+ Problems with solutions) - ₹899</li>
+                            <li>Complete Front Office &amp; Risk Quant Professional Bundle (41+ PDFs &amp; 60+ scripts) - ₹7,999
+                            </li>
+                            <li>Greek Explainer Lab – The Production Quant Edition - ₹799</li>
+                            <li>Quant Models for Each Asset Class Master Pack: IR, FX, Credits, Equity - ₹1999</li>
+                            <li>Derivatives Products & Pricing Master Pack (6 PDFs) - ₹1999</li>
+                            <li>The Stochastic Calculus Visual Lab (20 Jupyter Notebooks) - ₹699</li>
+                            <li>Python for Quants: Complete Interview Guide - ₹599</li>
+                            <li>C++ for Quants: Desk-Ready Notes - ₹549</li>
+                            <li>SQL for Quant Interviews: Premium Pack - ₹499</li>
+                            <li>Statistics & Econometrics For Quants - ₹599</li>
+                            <li>Stochastic Calculus for Quants: Interview Playbook - ₹599</li>
+                            <li>Mental Math & Market Intuition for Quants - ₹499</li>
+                            <li>Machine Learning for Quants: Interview Playbook - ₹599</li>
+                            <li>Credit Models: Quant Interview Playbook - ₹499</li>
+                            <li>Interest Rate Models: Quant Interview Playbook - ₹499</li>
+                            <li>FX Models: Quant Interview Playbook - ₹499</li>
+                            <li>Equity Models: Quant Interview Playbook - ₹499</li>
+                            <li>PnL Attribution & Desk Diagnostics for Quants - ₹499</li>
+                            <li>Regulatory & Risk Frameworks for Quants - ₹499</li>
+                            <li>Probability Theory for Quants: Desk-First - ₹499</li>
+                            <li>Linear Algebra & Differential Equations for Quants - ₹499</li>
+                            <li>Greeks, Vols, YCurves, Numerical Methods, MC & XVA Guide - ₹499</li>
+                            <li>Ultimate Industry Grade Quant Project Pack (45 Projects) - ₹799</li>
+                            <li>Complete Quant ATS Friendly Resume Pack - ₹399</li>
+                            <li>Common Mistakes in Quant Interviews – Desk Fixes Edition - ₹799</li>
+                            <li>R for Risk Quants – Desk-Ready Notes + Runnable Templates - ₹599</li>
+                        </ul>
+                        <p>Free Resources: Quant Formula Sheet, Resources Map</p>
+                        <p>Visit <a href="https://desk2quant.com/#products">Desk2Quant.com</a> to browse and
+                            purchase.</p>
+                    </div>
+                </noscript>
+            </div>
+        </section>
+
+        <!-- Free Resources Section -->
+        <section class="products" id="resources" style="background: var(--bg-card); padding: 50px 0;">
+            <div class="section-container">
+                <div class="section-header reveal-up">
+                    <span class="section-label" style="color: var(--accent-secondary);">Free content</span>
+                    <h2 class="section-headline">Free <span class="gradient-text">Resources</span></h2>
+                    <p class="subheadline">High-quality guides and tools to kickstart your quant journey.</p>
+                </div>
+                <div class="products-grid" id="resources-grid">
+                    <!-- Skeleton loading cards (replaced by JS) -->
+                    <div class="skeleton-card">
+                        <div class="skeleton-image"></div>
+                        <div class="skeleton-content">
+                            <div class="skeleton-line medium"></div>
+                            <div class="skeleton-line"></div>
+                            <div class="skeleton-line short"></div>
+                            <div class="skeleton-btn"></div>
+                        </div>
+                    </div>
+                    <div class="skeleton-card">
+                        <div class="skeleton-image"></div>
+                        <div class="skeleton-content">
+                            <div class="skeleton-line medium"></div>
+                            <div class="skeleton-line"></div>
+                            <div class="skeleton-line short"></div>
+                            <div class="skeleton-btn"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Lead Capture Section -->
         <section class="lead-capture" id="lead-capture" aria-label="Free quant formula sheet signup">
             <div class="section-container">
@@ -622,214 +826,6 @@
                         </picture>
                         </div>
                     </figure>
-                </div>
-            </div>
-        </section>
-
-        <!-- Services Section -->
-        <section class="services" id="services">
-            <div class="section-container">
-                <div class="section-header reveal-up">
-                    <span class="section-label" style="color: var(--accent-primary);">Mentorship</span>
-                    <h2 class="section-headline">Personalized <span class="gradient-text">1&#8209;on&#8209;1 Sessions</span></h2>
-                    <p class="subheadline">Practical, practitioner-led sessions designed to bridge the gap between
-                        theory and the desk.</p>
-                </div>
-
-                <div class="services-grid">
-                    <!-- Skeleton loading cards (replaced by JS) -->
-                    <div class="skeleton-service">
-                        <div class="skeleton-icon"></div>
-                        <div class="skeleton-line title"></div>
-                        <div class="skeleton-line short"></div>
-                        <div class="skeleton-line medium"></div>
-                        <div class="skeleton-line"></div>
-                    </div>
-                    <div class="skeleton-service">
-                        <div class="skeleton-icon"></div>
-                        <div class="skeleton-line title"></div>
-                        <div class="skeleton-line short"></div>
-                        <div class="skeleton-line medium"></div>
-                        <div class="skeleton-line"></div>
-                    </div>
-                    <div class="skeleton-service">
-                        <div class="skeleton-icon"></div>
-                        <div class="skeleton-line title"></div>
-                        <div class="skeleton-line short"></div>
-                        <div class="skeleton-line medium"></div>
-                        <div class="skeleton-line"></div>
-                    </div>
-                </div>
-
-                <div class="resume-teardown-banner reveal-up">
-                    <div class="teardown-content">
-                        <div class="teardown-badge"><i class="fas fa-file-code"></i> SPECIALIZED AUDIT</div>
-                        <h3>Quant Resume &amp; Project Line-by-Line Teardown</h3>
-                        <p>Have your CV, GitHub repositories, and quantitative projects audited directly by Amit Kumar Jha (IIT Jodhpur / UBS). Get brutally honest feedback on formatting, ATS readability, mathematics terminology, and project credibility before applying to Citadel, Jane Street, Millennium, or Tier-1 banks.</p>
-                        <ul class="teardown-features">
-                            <li><i class="fas fa-check-circle"></i> Line-by-line bullet rewriting for high-signal quantitative metrics</li>
-                            <li><i class="fas fa-check-circle"></i> Code review of your GitHub pricing or backtesting repos</li>
-                            <li><i class="fas fa-check-circle"></i> 48-hour turn-around with detailed video/audio commentary</li>
-                        </ul>
-                    </div>
-                    <div class="teardown-action">
-                        <a href="#contact" class="btn btn-primary btn-teardown" onclick="window.selectResumeAudit(event)">
-                            <i class="fas fa-calendar-check"></i> Book Resume Audit
-                        </a>
-                        <span class="teardown-subtext">Direct 1-on-1 via Desk2Quant Session</span>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Products Section -->
-        <section class="products-section" id="products">
-            <div class="section-container">
-                <div class="section-header reveal-up">
-                    <span class="section-label" style="color: var(--accent-secondary);">Resources</span>
-                    <h2 class="section-headline">Premium <span class="gradient-text">Digital Products</span></h2>
-                    <p class="subheadline">Curated study materials, coding scripts, and interview guides from years
-                        of experience.</p>
-                </div>
-
-                <div class="products-toolbar">
-                    <div class="products-search" role="search">
-                        <label for="productSearchInput" class="sr-only">Search products</label>
-                        <i class="fas fa-search" aria-hidden="true"></i>
-                        <input type="search" id="productSearchInput" placeholder="Search products..."
-                            autocomplete="off" spellcheck="false" aria-controls="productsGrid">
-                    </div>
-                    <div class="products-filter">
-                        <button class="filter-btn active" data-filter="all">All</button>
-                        <button class="filter-btn" data-filter="notes">Notes & PDFs</button>
-                        <button class="filter-btn" data-filter="code">Code & Scripts</button>
-                        <button class="filter-btn" data-filter="bundle">Bundles</button>
-                    </div>
-                    <div class="products-sort">
-                        <label for="productSortSelect">Sort by</label>
-                        <select id="productSortSelect" aria-label="Sort products">
-                            <option value="popular">Popular</option>
-                            <option value="price-low">Price: Low to High</option>
-                            <option value="price-high">Price: High to Low</option>
-                        </select>
-                    </div>
-                </div>
-
-                <p class="product-search-empty" id="productSearchEmpty" role="status" aria-live="polite" hidden>
-                    No products match your search.
-                </p>
-
-                <div class="products-grid" id="productsGrid">
-                    <!-- Skeleton loading cards (replaced by JS) -->
-                    <div class="skeleton-card">
-                        <div class="skeleton-image"></div>
-                        <div class="skeleton-content">
-                            <div class="skeleton-line medium"></div>
-                            <div class="skeleton-line"></div>
-                            <div class="skeleton-line short"></div>
-                            <div class="skeleton-btn"></div>
-                        </div>
-                    </div>
-                    <div class="skeleton-card">
-                        <div class="skeleton-image"></div>
-                        <div class="skeleton-content">
-                            <div class="skeleton-line medium"></div>
-                            <div class="skeleton-line"></div>
-                            <div class="skeleton-line short"></div>
-                            <div class="skeleton-btn"></div>
-                        </div>
-                    </div>
-                    <div class="skeleton-card">
-                        <div class="skeleton-image"></div>
-                        <div class="skeleton-content">
-                            <div class="skeleton-line medium"></div>
-                            <div class="skeleton-line"></div>
-                            <div class="skeleton-line short"></div>
-                            <div class="skeleton-btn"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <p class="seo-catalog-link">
-                    <a href="/products/">Browse the complete quant finance product catalog</a>
-                </p>
-
-                <!-- Machine-readable product data for bots, crawlers, and LLMs -->
-                <!-- PRODUCT DATA API: All products are available as JSON at https://desk2quant.com/api/products -->
-                <noscript>
-                    <div style="padding: 20px; background: #1a1a2e; border-radius: 8px; margin-top: 20px;">
-                        <h3>Our Digital Products</h3>
-                        <p>Products are loaded dynamically. To view the full product catalog as structured data, visit:
-                            <a
-                                href="https://desk2quant.com/api/products">https://desk2quant.com/api/products</a>
-                        </p>
-                        <p>We offer 36 paid products and 4 free resources for quantitative finance professionals,
-                            including:</p>
-                        <ul>
-                            <li>Quant Interview Problem Book (1000+ Problems with solutions) - ₹899</li>
-                            <li>Complete Front Office &amp; Risk Quant Professional Bundle (41+ PDFs &amp; 60+ scripts) - ₹7,999
-                            </li>
-                            <li>Greek Explainer Lab – The Production Quant Edition - ₹799</li>
-                            <li>Quant Models for Each Asset Class Master Pack: IR, FX, Credits, Equity - ₹1999</li>
-                            <li>Derivatives Products & Pricing Master Pack (6 PDFs) - ₹1999</li>
-                            <li>The Stochastic Calculus Visual Lab (20 Jupyter Notebooks) - ₹699</li>
-                            <li>Python for Quants: Complete Interview Guide - ₹599</li>
-                            <li>C++ for Quants: Desk-Ready Notes - ₹549</li>
-                            <li>SQL for Quant Interviews: Premium Pack - ₹499</li>
-                            <li>Statistics & Econometrics For Quants - ₹599</li>
-                            <li>Stochastic Calculus for Quants: Interview Playbook - ₹599</li>
-                            <li>Mental Math & Market Intuition for Quants - ₹499</li>
-                            <li>Machine Learning for Quants: Interview Playbook - ₹599</li>
-                            <li>Credit Models: Quant Interview Playbook - ₹499</li>
-                            <li>Interest Rate Models: Quant Interview Playbook - ₹499</li>
-                            <li>FX Models: Quant Interview Playbook - ₹499</li>
-                            <li>Equity Models: Quant Interview Playbook - ₹499</li>
-                            <li>PnL Attribution & Desk Diagnostics for Quants - ₹499</li>
-                            <li>Regulatory & Risk Frameworks for Quants - ₹499</li>
-                            <li>Probability Theory for Quants: Desk-First - ₹499</li>
-                            <li>Linear Algebra & Differential Equations for Quants - ₹499</li>
-                            <li>Greeks, Vols, YCurves, Numerical Methods, MC & XVA Guide - ₹499</li>
-                            <li>Ultimate Industry Grade Quant Project Pack (45 Projects) - ₹799</li>
-                            <li>Complete Quant ATS Friendly Resume Pack - ₹399</li>
-                            <li>Common Mistakes in Quant Interviews – Desk Fixes Edition - ₹799</li>
-                            <li>R for Risk Quants – Desk-Ready Notes + Runnable Templates - ₹599</li>
-                        </ul>
-                        <p>Free Resources: Quant Formula Sheet, Resources Map</p>
-                        <p>Visit <a href="https://desk2quant.com/#products">Desk2Quant.com</a> to browse and
-                            purchase.</p>
-                    </div>
-                </noscript>
-            </div>
-        </section>
-
-        <!-- Free Resources Section -->
-        <section class="products" id="resources" style="background: var(--bg-card); padding: 50px 0;">
-            <div class="section-container">
-                <div class="section-header reveal-up">
-                    <span class="section-label" style="color: var(--accent-secondary);">Free content</span>
-                    <h2 class="section-headline">Free <span class="gradient-text">Resources</span></h2>
-                    <p class="subheadline">High-quality guides and tools to kickstart your quant journey.</p>
-                </div>
-                <div class="products-grid" id="resources-grid">
-                    <!-- Skeleton loading cards (replaced by JS) -->
-                    <div class="skeleton-card">
-                        <div class="skeleton-image"></div>
-                        <div class="skeleton-content">
-                            <div class="skeleton-line medium"></div>
-                            <div class="skeleton-line"></div>
-                            <div class="skeleton-line short"></div>
-                            <div class="skeleton-btn"></div>
-                        </div>
-                    </div>
-                    <div class="skeleton-card">
-                        <div class="skeleton-image"></div>
-                        <div class="skeleton-content">
-                            <div class="skeleton-line medium"></div>
-                            <div class="skeleton-line"></div>
-                            <div class="skeleton-line short"></div>
-                            <div class="skeleton-btn"></div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </section>
