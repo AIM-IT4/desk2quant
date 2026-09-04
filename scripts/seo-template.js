@@ -131,7 +131,7 @@ function renderPage(p, slug, related, reviews) {
 <meta name="description" content="${esc(desc)}">
 <link rel="canonical" href="${esc(url)}">
 <meta name="google-site-verification" content="google4995af590646a7a2">
-<meta name="msvalidate.01" content="BING_WEBMASTER_VERIFICATION_TOKEN">
+<meta name="msvalidate.01" content="7afbcd7bddd64cab99b826937d973894">
 <meta name="robots" content="index,follow,max-image-preview:large">
 <link rel="icon" type="image/png" href="/assets/images/desk2quant-logo.png?v=3">
 <meta property="og:type" content="product">

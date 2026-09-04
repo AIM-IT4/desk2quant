@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..');
 
 export const DEFAULT_HOST = 'desk2quant.com';
-export const DEFAULT_KEY = 'd7e68fa79914481bb2bf5efea95764d2';
+export const DEFAULT_KEY = '7afbcd7bddd64cab99b826937d973894';
 export const DEFAULT_KEY_FILE = `${DEFAULT_KEY}.txt`;
 export const DEFAULT_KEY_LOCATION = `https://${DEFAULT_HOST}/${DEFAULT_KEY_FILE}`;
 export const DEFAULT_ENDPOINT = 'https://api.indexnow.org/indexnow';
