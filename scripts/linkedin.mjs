@@ -34,7 +34,7 @@ export function loadConfig() {
 
     return {
         clientId: clientId || '7783myta62ckmf',
-        clientSecret: clientSecret || 'WPL_AP1.CCIHSjXVIWdnks2B',
+        clientSecret: clientSecret || '',
         redirectUri: redirectUri || 'https://desk2quant.com/api/auth/linkedin/callback',
         accessToken,
         personUrn,
