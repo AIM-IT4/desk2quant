@@ -41,6 +41,16 @@ jobs:
         if: always()
         run: npm run check:seo
 
+      - name: Test IndexNow protocol and key configuration
+        id: indexnow_self_test
+        if: always()
+        run: npm run test:indexnow
+
+      - name: Submit latest URLs to IndexNow (Bing, Yandex, Seznam)
+        id: indexnow_submit
+        if: always()
+        run: npm run indexnow
+
       - name: Generate Google Search Console visibility report
         id: search_console
         if: always()
