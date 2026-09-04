@@ -17,7 +17,10 @@
     "test:search-console": "node scripts/check-search-console.mjs --self-test",
     "indexnow": "node scripts/submit-indexnow.mjs",
     "indexnow:dry-run": "node scripts/submit-indexnow.mjs --dry-run",
-    "test:indexnow": "node scripts/submit-indexnow.mjs --self-test"
+    "test:indexnow": "node scripts/submit-indexnow.mjs --self-test",
+    "db": "node scripts/db.mjs",
+    "drive": "node scripts/drive.mjs",
+    "vercel": "node scripts/vercel.mjs"
   },
   "keywords": [],
   "author": "Amit Kumar Jha",
