@@ -589,39 +589,63 @@ body.d2q-launchzone main > section.lead-capture {
 }
 
 @media (max-width: 800px) {
-    body.d2q-launchzone .promo-announcement-bar .promo-content {
-        justify-content: flex-start;
-        padding-right: 34px;
-        overflow: hidden;
-    }
-
-    body.d2q-launchzone .promo-announcement-bar .promo-text {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    body.d2q-launchzone .promo-announcement-bar .promo-coupon {
-        display: none;
-    }
-}
-
-@media (max-width: 520px) {
-    body.d2q-launchzone .promo-announcement-bar .promo-text {
-        display: none;
+    body.d2q-launchzone .promo-announcement-bar {
+        padding: 8px 38px 8px 12px !important;
+        min-height: auto;
     }
 
     body.d2q-launchzone .promo-announcement-bar .promo-content {
         justify-content: center;
+        flex-wrap: wrap !important;
+        gap: 6px 10px;
+        font-size: 11px;
+        line-height: 1.4;
+        text-align: center;
+    }
+
+    body.d2q-launchzone .promo-announcement-bar .promo-text {
+        display: inline !important;
+        overflow: visible;
+        white-space: normal;
+    }
+
+    body.d2q-launchzone .promo-announcement-bar .promo-coupon {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 4px;
+    }
+
+    body.d2q-launchzone .promo-announcement-bar .btn-promo-cta {
+        min-height: 26px;
+        padding: 4px 10px;
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 520px) {
+    body.d2q-launchzone .promo-announcement-bar {
+        padding: 8px 32px 8px 10px !important;
+    }
+
+    body.d2q-launchzone .promo-announcement-bar .promo-content {
+        gap: 5px 8px;
+        font-size: 10.5px;
+    }
+
+    body.d2q-launchzone .promo-announcement-bar .promo-tag {
+        font-size: 9px;
+        padding: 2px 6px;
+    }
+
+    body.d2q-launchzone .promo-announcement-bar .promo-close-btn {
+        right: 8px;
+        font-size: 1.2rem;
+        padding: 4px;
     }
 }
 /* Product-detail readability and above-the-fold conversion. */
 body.d2q-launchzone .hero {
     padding-top: clamp(64px, 7vw, 104px);
-}
-
-body.d2q-launchzone .promo-announcement-bar .promo-content {
-    flex-wrap: nowrap !important;
 }
 
 body.d2q-launchzone .product-page-container {

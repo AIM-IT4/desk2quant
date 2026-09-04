@@ -1978,12 +1978,13 @@ async function loadProductsFromSupabase(prefetchPromise) {
             window.allProducts = cached;
             await displaySupabaseProducts(cached);
             buildProductCatalogJsonLd(cached);
+            if (typeof syncNewestProductPromo === 'function') syncNewestProductPromo(cached);
         }
 
         // Fire Supabase query immediately
         const queryPromise = window.supabaseClient
             .from('products')
-            .select('id,name,description,cover_image_url,price,original_price,created_at,coupon_code,discount_percentage,enable_ppp')
+            .select('id,name,description,cover_image_url,price,original_price,created_at,coupon_code,discount_percentage,enable_ppp,preview_summary')
             .order('created_at', { ascending: false });
 
         // Handle prefetch (country + rates) separately so it doesn't block products if it fails
@@ -2028,9 +2029,11 @@ async function loadProductsFromSupabase(prefetchPromise) {
                 window.allProducts = data;
                 await displaySupabaseProducts(data);
                 buildProductCatalogJsonLd(data);
+                if (typeof syncNewestProductPromo === 'function') syncNewestProductPromo(data);
             } else {
                 qmLog('✅ Products already up to date (cache matched)' + (countryKnownAtCachePaint ? '' : ' (INR paint is correct for this visitor)'));
                 window.allProducts = data;
+                if (typeof syncNewestProductPromo === 'function') syncNewestProductPromo(data);
             }
         }
     } catch (err) {
@@ -4719,9 +4722,95 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
 
 
 
-// --- LAUNCH PROMOTION CAMPAIGN LOGIC ---
+// --- LAUNCH PROMOTION CAMPAIGN LOGIC (AUTO-UPDATES TO NEWEST PRODUCT) ---
 (function () {
-    qmLog('🎉 Initializing Launch Promotion Campaign for Numerical Methods...');
+    qmLog('🎉 Initializing Launch Promotion Campaign...');
+
+    // Default to the latest product in catalog: The Vol Surface Construction Playbook
+    window.__newestLaunchProduct = {
+        id: '928a14d2-64b4-4a73-951d-dcf191fe72ad',
+        name: 'The Vol Surface Construction Playbook',
+        price: 999,
+        original_price: 1999,
+        coupon_code: 'VOL20',
+        discount_percentage: 20,
+        cover_image_url: 'assets/images/vol-surface-cover.svg',
+        preview_summary: 'Build an implied-volatility surface end to end: clean quotes, calibrate SVI/SSVI, enforce static-arbitrage conditions, extract Dupire local volatility, stress failure modes, validate by Monte Carlo closure, and handle 0DTE stability.'
+    };
+
+    // Dynamically synchronizes the announcement bar and modal to the newest product in Supabase
+    window.syncNewestProductPromo = function (products) {
+        if (!products || !products.length) return;
+        const newest = products.find(p => Number(p.price) > 0) || products[0];
+        if (!newest) return;
+
+        window.__newestLaunchProduct = newest;
+
+        // 1. Auto-update Top Announcement Bar
+        const banner = document.getElementById('launchPromoBanner');
+        if (banner) {
+            const textEl = document.getElementById('promoBannerText');
+            const couponEl = document.getElementById('promoBannerCoupon');
+            const codeEl = document.getElementById('promoBannerCode');
+            const ctaEl = document.getElementById('promoBannerCta');
+
+            const couponCode = newest.coupon_code || 'VOL20';
+            const discountPct = newest.discount_percentage || (couponCode === 'VOL20' ? 20 : 15);
+
+            if (textEl) {
+                textEl.innerHTML = `<strong>${escapeHtml(newest.name)}</strong> is live.`;
+            }
+            if (codeEl) {
+                codeEl.textContent = couponCode;
+            }
+            if (couponEl) {
+                couponEl.innerHTML = `Use code <strong class="promo-code-box" id="promoBannerCode">${escapeHtml(couponCode)}</strong> for <strong>${discountPct}% OFF</strong>!`;
+            }
+            if (ctaEl) {
+                ctaEl.href = `product.html?id=${encodeURIComponent(newest.id)}`;
+                ctaEl.innerHTML = `View Playbook <i class="fas fa-arrow-right" style="font-size:10px;"></i>`;
+            }
+        }
+
+        // 2. Auto-update Launch Promo Modal (Exit Intent)
+        const modal = document.getElementById('launchPromoModal');
+        if (modal) {
+            const img = modal.querySelector('.promo-popup-image-side img');
+            if (img && newest.cover_image_url) {
+                img.src = newest.cover_image_url;
+                img.alt = `${newest.name} Cover`;
+            }
+            const titleEl = document.getElementById('launchPromoTitle') || modal.querySelector('.promo-popup-info-side h2');
+            if (titleEl) {
+                titleEl.textContent = newest.name;
+            }
+            const descEl = document.getElementById('launchPromoDesc') || modal.querySelector('.popup-desc');
+            if (descEl) {
+                const summary = newest.preview_summary || (newest.description ? newest.description.replace(/<[^>]+>/g, '').slice(0, 180) + '...' : '');
+                descEl.textContent = summary;
+            }
+            const origEl = document.getElementById('launchOriginalPrice');
+            if (origEl) {
+                origEl.textContent = `${newest.original_price || newest.price * 2} INR`;
+            }
+            const discEl = document.getElementById('launchDiscountedPrice');
+            if (discEl) {
+                discEl.textContent = `${newest.price} INR`;
+            }
+            const couponTxt = document.getElementById('promoCouponCode');
+            if (couponTxt) {
+                couponTxt.textContent = newest.coupon_code || 'VOL20';
+            }
+            const couponLabel = document.getElementById('launchCouponLabel');
+            if (couponLabel) {
+                couponLabel.textContent = `COUPON CODE (${newest.discount_percentage || 20}% OFF):`;
+            }
+            const buyBtn = modal.querySelector('.btn-popup-buy');
+            if (buyBtn) {
+                buyBtn.textContent = `Buy Now with ${newest.discount_percentage || 20}% Off`;
+            }
+        }
+    };
 
     // Expose promo functions globally so inline HTML onclick handlers can trigger them
     window.dismissPromoBanner = function (e) {
@@ -4742,20 +4831,12 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
         const modal = document.getElementById('launchPromoModal');
         if (!modal) return;
 
-        // Convert prices to local currency if available
-        // 999 is the product's current original_price in the DB (the popup
-        // previously advertised a stale ₹1,299 that matched neither the price
-        // nor the charge).
-        const originalInr = 999;
-        const discountedInr = 699;
+        const newest = window.__newestLaunchProduct || { id: '928a14d2-64b4-4a73-951d-dcf191fe72ad', original_price: 1999, price: 999, coupon_code: 'VOL20' };
+        const originalInr = Number(newest.original_price) || 1999;
+        const discountedInr = Number(newest.price) || 999;
         const origEl = document.getElementById('launchOriginalPrice');
         const discEl = document.getElementById('launchDiscountedPrice');
 
-        // The launch product (Numerical Methods) has enable_ppp=true, so the
-        // popup must apply the same PPP multiplier the product modal uses —
-        // otherwise a UK visitor sees e.g. £6.44 here and is charged £9.66 at
-        // checkout. userLocalPrice is a raw-rate reference, so convert fresh
-        // with PPP enabled and fall back to the raw rate if it fails.
         const localPrice = window.userLocalPrice;
         let convertedOrig = null;
         let convertedDisc = null;
@@ -4777,18 +4858,11 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
             if (discEl) discEl.textContent = window.formatPrice(convertedDisc);
         } else {
             // Fallback: keep INR
-            if (origEl) origEl.textContent = '\u20b9999';
-            if (discEl) discEl.textContent = '\u20b9699';
+            if (origEl) origEl.textContent = `\u20b9${originalInr}`;
+            if (discEl) discEl.textContent = `\u20b9${discountedInr}`;
         }
 
         modal.classList.add('active');
-        // Own the scroll lock instead of relying on another modal's overlay
-        // handler to clear it. Use overflowY so the base `overflow-x: hidden`
-        // on body is never clobbered by a shorthand write.
-        // The cover sits inside a position:fixed modal, so loading="lazy" never
-        // defers it -- browsers treat a fixed overlay as in-viewport and fetch it
-        // on load (619KB on every visit). Keep the URL in data-src and promote it
-        // to src the first time the popup actually opens.
         const promoImg = modal.querySelector('img[data-src]');
         if (promoImg) {
             promoImg.src = promoImg.dataset.src;
@@ -4807,7 +4881,8 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
     };
 
     window.copyPromoCoupon = function () {
-        const couponText = 'LAUNCH15';
+        const newest = window.__newestLaunchProduct || { coupon_code: 'VOL20' };
+        const couponText = newest.coupon_code || 'VOL20';
         navigator.clipboard.writeText(couponText).then(() => {
             const btnText = document.getElementById('copyCouponBtnText');
             if (btnText) {
@@ -4823,6 +4898,7 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
 
     window.buyLaunchProduct = function () {
         window.closePromoModal();
+        const newest = window.__newestLaunchProduct || { id: '928a14d2-64b4-4a73-951d-dcf191fe72ad', coupon_code: 'VOL20' };
 
         // Scroll to products section
         const productsSec = document.getElementById('products');
@@ -4833,14 +4909,14 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
         // Open the product checkout modal
         setTimeout(() => {
             if (typeof window.openProductModal === 'function') {
-                window.openProductModal('6b78550d-e130-41d1-9409-92335ce82a6c');
+                window.openProductModal(newest.id);
 
-                // Auto-fill and apply LAUNCH15 coupon in the checkout modal
+                // Auto-fill and apply newest coupon in the checkout modal
                 setTimeout(() => {
                     const couponInput = document.getElementById('couponInput');
                     const applyBtn = document.getElementById('applyCouponBtn');
                     if (couponInput && applyBtn) {
-                        couponInput.value = 'LAUNCH15';
+                        couponInput.value = newest.coupon_code || 'VOL20';
                         applyBtn.click();
                     }
                 }, 800);
@@ -4850,8 +4926,9 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
 
     window.previewLaunchProduct = function () {
         window.closePromoModal();
+        const newest = window.__newestLaunchProduct || { id: '928a14d2-64b4-4a73-951d-dcf191fe72ad' };
         const isTest = window.location.pathname.includes('-test');
-        window.location.href = (isTest ? 'product-test.html' : 'product.html') + '?id=6b78550d-e130-41d1-9409-92335ce82a6c';
+        window.location.href = (isTest ? 'product-test.html' : 'product.html') + '?id=' + encodeURIComponent(newest.id);
     };
 
     // Setup Triggers
