@@ -12,6 +12,11 @@ export const DEFAULT_KEY = 'd7e68fa79914481bb2bf5efea95764d2';
 export const DEFAULT_KEY_FILE = `${DEFAULT_KEY}.txt`;
 export const DEFAULT_KEY_LOCATION = `https://${DEFAULT_HOST}/${DEFAULT_KEY_FILE}`;
 export const DEFAULT_ENDPOINT = 'https://api.indexnow.org/indexnow';
+export const INDEXNOW_ENDPOINTS = [
+    'https://api.indexnow.org/indexnow',
+    'https://search.seznam.cz/indexnow',
+    'https://yandex.com/indexnow'
+];
 export const MAX_URLS_PER_BATCH = 10000;
 
 /**
@@ -205,7 +210,9 @@ async function main() {
     const host = process.env.INDEXNOW_HOST || DEFAULT_HOST;
     const key = process.env.INDEXNOW_KEY || DEFAULT_KEY;
     const keyLocation = process.env.INDEXNOW_KEY_LOCATION || `https://${host}/${key}.txt`;
-    const endpoint = process.env.INDEXNOW_ENDPOINT || DEFAULT_ENDPOINT;
+    const endpoints = process.env.INDEXNOW_ENDPOINT 
+        ? [process.env.INDEXNOW_ENDPOINT] 
+        : INDEXNOW_ENDPOINTS;
 
     // Load sitemap.xml
     const sitemapPath = path.join(REPO_ROOT, 'sitemap.xml');
@@ -240,20 +247,36 @@ async function main() {
 
         if (isDryRun) {
             console.log(`[indexnow:dry-run] Batch ${i + 1}/${batches.length}: Prepared payload for ${batchUrls.length} URLs.`);
-            console.log(`[indexnow:dry-run] Endpoint: ${endpoint}`);
+            console.log(`[indexnow:dry-run] Endpoints: ${endpoints.join(', ')}`);
             console.log(`[indexnow:dry-run] Sample URLs:`, batchUrls.slice(0, 3));
             continue;
         }
 
-        console.log(`[indexnow] Submitting batch ${i + 1}/${batches.length} (${batchUrls.length} URLs) to ${endpoint}...`);
-        const result = await submitIndexNowPayload({ payload, endpoint });
-        console.log(`[indexnow] ${result.message}`);
-        if (!result.ok) {
-            throw new Error(`IndexNow submission failed: ${result.message}`);
+        let anySuccess = false;
+        const errors = [];
+
+        for (const endpoint of endpoints) {
+            console.log(`[indexnow] Submitting batch ${i + 1}/${batches.length} (${batchUrls.length} URLs) to ${endpoint}...`);
+            try {
+                const result = await submitIndexNowPayload({ payload, endpoint });
+                console.log(`[indexnow] [${new URL(endpoint).hostname}] ${result.message}`);
+                if (result.ok) {
+                    anySuccess = true;
+                } else {
+                    errors.push(`${new URL(endpoint).hostname}: ${result.message}`);
+                }
+            } catch (err) {
+                console.warn(`[indexnow] [${new URL(endpoint).hostname}] Network error: ${err.message}`);
+                errors.push(`${new URL(endpoint).hostname}: ${err.message}`);
+            }
+        }
+
+        if (!anySuccess) {
+            throw new Error(`IndexNow submission failed across all endpoints:\n  ${errors.join('\n  ')}`);
         }
     }
 
-    console.log('[indexnow] All batches submitted successfully.');
+    console.log('[indexnow] All batches submitted and acknowledged by the IndexNow network.');
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
