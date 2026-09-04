@@ -1,38 +1,40 @@
-A candidate gave an answer in an options interview last week that sounded mathematically spotless:
+In textbook quantitative finance:
+"Delta = 0 means directional risk is eliminated."
 
-"If we're delta-hedged, our directional risk is zero. A 4% move in spot doesn't hurt us."
+On a live options desk:
+Delta = 0 with short gamma is how books get liquidated in 3 minutes.
 
-On a trading desk, that candidate just blew up the book.
+Here is why:
 
-Why? Because Black-Scholes assumes continuous replication. Desks rehedge discretely.
+Black-Scholes assumes continuous replication. But desks rehedge discretely.
 
-The actual instantaneous PnL on a delta-hedged book isn't zero:
+In the discrete world, your instantaneous PnL is not zero:
 
-PnL ~ 0.5 * Gamma * (dS)^2 + Theta * dt
+PnL ~= 0.5 * Gamma * (dS)^2 + Theta * dt
 
-If you are short gamma, that 4% move produces a quadratic loss that steamrolls your accrued theta. If you don't quote your gamma and your local vol smile dynamic in the first 10 seconds of that question, the desk knows you've only read textbook pricing proofs.
+If you are short gamma, a 4% spot shock produces a quadratic loss that steamrolls your accrued theta. If you do not quote your discrete gamma exposure and local vol smile dynamics in the first 10 seconds of that question, the desk knows you have only read textbook derivations.
 
-Swipe through the slides below for the 4 core traps that break candidates in quant interviews:
+This is just Trap #1.
 
-1. The Discrete Delta Myth (Rehedging slippage & gamma blowup)
-2. Flat Vega Fallacy (Why Vanna & Volga dominate skew rotation)
-3. PnL Attribution Disconnect (Realized variance vs implied carry)
-4. Dupire Local Vol Breakdown (Why SLV is required in production)
+In trading desk and market maker interviews, interviewers test 3 deeper model-risk failure modes that break candidates with spotless GPAs:
 
-We put together desk-ready practitioner notes built around actual trading desk fixes:
+- The Flat Vega Fallacy: Why parallel vol shifts ignore Vanna and Volga during skew rotation.
+- The PnL Attribution Disconnect: Realized variance scalping vs implied carry slippage.
+- The Dupire Breakdown: Why pure local vol matches terminal prices but produces flat forward smiles (and why desks run SLV).
 
-- Common Mistakes in Quant Interviews (Desk Fixes Edition):
+Swipe through the 6-slide breakdown below for the complete visual walkthrough.
+
+---
+
+Curious to hear from vol traders: If your book is short gamma into a high-vol catalyst (CPI / Earnings), how do you hedge the tail without burning all your carry?
+
+---
+
+For those preparing for front-office & risk quant interviews, we compiled all 29 desk failure modes into one practitioner manual:
+
+Common Mistakes in Quant Interviews (Desk Fixes Edition):
 https://desk2quant.com/products/common-mistakes-in-quant-interviews-desk-fixes-edition.html
 
-- Quantitative Finance for Absolute Beginners:
-https://desk2quant.com/products/quantitative-finance-for-absolute-beginners-from-desk-to-quant.html
+(Use code MISTAKES20 for 20% off)
 
-- Derivatives Products & Pricing Master Pack (6 PDFs):
-https://desk2quant.com/products/derivatives-products-and-pricing-master-pack-6-pdfs-ir-fx-equity-credi.html
-
-- Complete 40-Guide Quant Library:
-https://desk2quant.com/products/
-
-(Use coupon code MISTAKES10 or BEGINNER10 for 10% off this week)
-
-#QuantitativeFinance #QuantTrading #Derivatives #FinancialEngineering #Desk2Quant
+#QuantitativeFinance #QuantTrading #Derivatives #Desk2Quant
