@@ -30,7 +30,10 @@ document.addEventListener('click', function (event) {
     const code = codeInput.value.trim().toUpperCase();
     if (!/^[A-Z]+20$/.test(code)) return;
 
-    let originalPrice = Number.parseFloat(buyBtn.dataset.price);
+    // If coupon is already marked applied on button, do not re-calculate
+    if (buyBtn.dataset.couponCode === code) return;
+
+    let originalPrice = Number.parseFloat(buyBtn.dataset.originalPrice) || Number.parseFloat(buyBtn.dataset.price);
     if (!Number.isFinite(originalPrice)) {
         const match = (priceEl.textContent || '').match(/\\d+/);
         originalPrice = match ? Number.parseFloat(match[0]) : 799;

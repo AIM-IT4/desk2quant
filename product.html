@@ -815,15 +815,15 @@
         // Load config.js if it exists, otherwise gracefully fallback
         (function () {
             var script = document.createElement('script');
-            script.src = 'config.js?v=21';
+            script.src = 'config.js?v=22';
             script.onerror = function () {
                 console.log('ℹ️ config.js not found. Using fallback configuration from script.js');
             };
             document.head.appendChild(script);
         })();
     </script>
-    <script src="product-seo.js?v=21"></script>
-    <script src="script.js?v=21"></script>
+    <script src="product-seo.js?v=22"></script>
+    <script src="script.js?v=22"></script>
 
     <!-- Navigation -->
     <nav class="navbar">
@@ -1168,6 +1168,7 @@
                     }
                     priceEl.innerHTML = `${originalPriceDisplay}${priceText}`;
                     buyBtn.innerHTML = `<i class="fas fa-credit-card"></i> Buy Now - ${priceText}`;
+                    buyBtn.dataset.originalPrice = product.price;
                     buyBtn.dataset.price = product.price;
                     buyBtn.dataset.currency = 'INR';
 
@@ -1312,7 +1313,7 @@
 
                         if (isValid) {
                             const discount = appliedDiscount;
-                            let originalPrice = parseFloat(buyBtn.dataset.price);
+                            let originalPrice = parseFloat(buyBtn.dataset.originalPrice) || parseFloat(buyBtn.dataset.price);
                             if (!Number.isFinite(originalPrice)) {
                                 originalPrice = parseFloat(product.price) || 799;
                             }
@@ -1354,15 +1355,19 @@
                         }
                     });
 
-                    // Check URL for coupon code, or pre-populate product coupon code
-                    const paramCoupon = urlParams.get('coupon') || urlParams.get('code');
+                    // Auto-apply coupon from URL param OR from product's default coupon code
+                    const autoCoupon = (urlParams.get('coupon') || urlParams.get('code') || product.coupon_code || '').trim().toUpperCase();
                     const codeInput = document.getElementById('coupon-input');
-                    if (paramCoupon && codeInput) {
-                        codeInput.value = paramCoupon.trim().toUpperCase();
+                    if (autoCoupon && codeInput) {
+                        codeInput.value = autoCoupon;
                         const applyBtn = document.getElementById('apply-coupon-btn');
-                        if (applyBtn) setTimeout(() => applyBtn.click(), 50);
-                    } else if (product.coupon_code && codeInput && !codeInput.value) {
-                        codeInput.value = product.coupon_code.toUpperCase();
+                        if (applyBtn) {
+                            setTimeout(() => {
+                                if (applyBtn && !applyBtn.disabled) {
+                                    applyBtn.click();
+                                }
+                            }, 50);
+                        }
                     }
                 }
 
@@ -1382,9 +1387,10 @@
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('product-content').style.display = 'grid';
 
-                // Store base price on button for the handler
-                buyBtn.dataset.price = product.price;
-                buyBtn.dataset.currency = 'INR';
+                // Store base price on button for the handler if not yet discounted
+                if (!buyBtn.dataset.originalPrice) buyBtn.dataset.originalPrice = product.price;
+                if (!buyBtn.dataset.couponCode) buyBtn.dataset.price = product.price;
+                if (!buyBtn.dataset.currency) buyBtn.dataset.currency = 'INR';
 
                 // Asynchronous currency conversion (Non-blocking)
                 if (window.convertPrice && window.getUserCountry && product.price > 0) {
