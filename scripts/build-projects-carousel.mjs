@@ -233,7 +233,7 @@ const slides = [
     <text x="130" y="685" fill="#cbd5e1" font-family="DejaVu Sans, Arial, sans-serif" font-size="19">• 600+ Pages of production code, documentation &amp; runnable notebooks</text>
     
     <rect x="130" y="715" width="820" height="45" rx="8" fill="#06120e" stroke="#134e4a" stroke-width="1"/>
-    <text x="145" y="745" fill="#10b981" font-family="DejaVu Sans, Arial, sans-serif" font-size="17" font-weight="bold">Launch Special: Use coupon code PROJECT20 or VASUDHA30 for 30% off</text>
+    <text x="145" y="745" fill="#10b981" font-family="DejaVu Sans, Arial, sans-serif" font-size="17" font-weight="bold">Launch Special: Use coupon code PROJECT20 at checkout for 20% off</text>
 
     <!-- Next Steps Card -->
     <rect x="90" y="815" width="900" height="230" rx="18" fill="#131d33" stroke="#253350" stroke-width="1.5"/>

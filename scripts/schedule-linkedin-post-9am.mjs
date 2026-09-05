@@ -47,7 +47,7 @@ const COMMENT_TEXT = `Discussion prompt for quants and developers: When building
 The complete blueprint covering all 45 industry-grade projects (mathematical derivations, Python prototypes, production C++ code, interview defense questions, and resume bullets) is available on Desk2Quant:
 https://desk2quant.com/products/ultimate-industry-grade-quant-project-pack-45-projects.html
 
-(Use coupon code VASUDHA30 or PROJECT20 at checkout for 30% off)`;
+(Use coupon code PROJECT20 at checkout for 20% off)`;
 
 async function updateMonitorScript(newUrn, activityUrl) {
     const monitorPath = path.join(ROOT, 'scripts', 'check-linkedin-post-analytics.mjs');
@@ -90,7 +90,7 @@ async function executePublish() {
     await new Promise(r => setTimeout(r, 4000));
 
     // 3. Publish Comment #1
-    console.log('4. Publishing Comment #1 with 45 Projects link and VASUDHA30 promo...');
+    console.log('4. Publishing Comment #1 with 45 Projects link and PROJECT20 promo...');
     let commentRes = null;
     for (let attempt = 1; attempt <= 3; attempt++) {
         try {
