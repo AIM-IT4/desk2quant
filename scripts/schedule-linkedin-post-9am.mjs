@@ -9,40 +9,36 @@ const ROOT = path.resolve(__dirname, '..');
 
 // Target time: 9:00 AM IST = 03:30:00 UTC on September 5, 2026
 const TARGET_TIME = new Date('2026-09-05T03:30:00.000Z');
-const OLD_POST_URN = 'urn:li:ugcPost:7501674434798346241';
+const OLD_POST_URN = 'urn:li:ugcPost:7501853371901952000';
 const PDF_PATH = path.join(ROOT, 'assets', 'downloads', 'quant-projects-blueprint-carousel.pdf');
 const TITLE = 'The 5 Projects That Actually Get You Hired As A Quant in 2026';
 
-const CAPTION_TEXT = `Every STEM applicant has a high GPA, an advanced degree, and knows Black-Scholes.
+const CAPTION_TEXT = `Why do 95% of STEM resumes get rejected at Citadel, Jane Street, and Optiver?
 
-So why do 95% of resumes get filtered out before the first technical round at Citadel, Jane Street, Millennium, and Optiver?
-
-Because interviewers do not hire candidates who only know how to solve textbook exercises. They hire candidates who have built production-grade systems on their GitHub.
-
-If your GitHub only has a naive moving average backtest using yfinance or a standard Black-Scholes calculator, recruiters move on in 5 seconds.
+Because textbooks teach Black-Scholes, but buyside desks hire candidates who build production engines.
 
 Here is a 6-slide architecture breakdown of the 5 projects that actually prove desk readiness in 2026:
 
-1. L2 Limit Order Book & Matching Engine (C++20)
-Price-time priority, lock-free SPSC ring buffers, probabilistic queue position depletion, and microsecond wire-to-wire latency modeling.
+1. L2 Limit Order Book & Matching Engine (Modern C++20)
+• Price-time priority, lock-free SPSC circular queues, probabilistic queue position depletion, and microsecond wire-to-wire latency modeling.
 
 2. Arbitrage-Free SVI Volatility Surface (Python + C++)
-Gatheral SSVI parameterization, calendar/butterfly static arbitrage checks (Breeden-Litzenberger), and Dupire local vol PDE inversion.
+• Gatheral SSVI parameterization, calendar/butterfly static arbitrage elimination (Breeden-Litzenberger), and Dupire local vol PDE inversion.
 
 3. Cointegration & Kalman Filter Stat Arb (Python)
-Augmented Dickey-Fuller / Johansen rank, dynamic state-space beta tracking, Ornstein-Uhlenbeck half-life calibration, and square-root market impact.
+• Augmented Dickey-Fuller / Johansen rank, dynamic state-space beta tracking, Ornstein-Uhlenbeck half-life calibration, and square-root market impact.
 
-4. Multi-Curve SOFR Discounting Engine (C++)
-Modern post-LIBOR dual-curve bootstrapping, OIS discounting, and monotone convex spline interpolation.
+4. Multi-Curve SOFR Discounting Engine (Modern C++)
+• Post-LIBOR dual-curve bootstrapping, OIS discounting, and monotone convex spline interpolation.
 
-5. XVA & Counterparty Risk Simulation (C++)
-American Monte Carlo (Longstaff-Schwartz) across 10,000 paths, Expected Exposure (EE), 99% PFE, and CSA netting sets.
+5. XVA & Counterparty Risk Simulation (Modern C++)
+• American Monte Carlo (Longstaff-Schwartz) across 10,000 paths, Expected Exposure (EE), 99% PFE, and CSA netting sets.
 
-Swipe through the 6 slides below for the system architecture diagrams, amateur pitfalls, and interview defense questions.
+Swipe through all 6 slides below for the system architecture diagrams, amateur pitfalls, and interview defense questions.
 
-(Access to all 45 production-grade project blueprints with code, derivations, and CV bullets is linked in Comment #1 below)`;
+The full 45-project repository blueprint (with complete C++ code, math derivations, and CV bullets) is linked in Comment #1 below.`;
 
-const COMMENT_TEXT = `Discussion prompt for quants and developers: When building a personal portfolio, which project taught you the most about real desk execution—microstructure matching engines or multi-asset volatility calibration?
+const COMMENT_TEXT = `Discussion prompt for quants and developers: When building your portfolio, which engine taught you the most about real desk execution—microstructure matching engines or multi-asset volatility calibration?
 
 The complete blueprint covering all 45 industry-grade projects (mathematical derivations, Python prototypes, production C++ code, interview defense questions, and resume bullets) is available on Desk2Quant:
 https://desk2quant.com/products/ultimate-industry-grade-quant-project-pack-45-projects.html
@@ -67,23 +63,43 @@ async function executePublish() {
     console.log('======================================================\n');
 
     // 1. Delete stagnant post
-    try {
-        console.log(`1. Deleting previous post (${OLD_POST_URN})...`);
-        await deletePost(OLD_POST_URN);
-        console.log('✅ Old post deleted successfully.');
-    } catch (err) {
-        console.warn('⚠️ Note on deletion (may have already been removed):', err.message);
+    // 1. Delete stagnant post
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+            console.log(`1. Deleting previous post (${OLD_POST_URN}) [attempt ${attempt}]...`);
+            await deletePost(OLD_POST_URN);
+            console.log('✅ Old post deleted successfully.');
+            break;
+        } catch (err) {
+            console.warn(`⚠️ Note on deletion (attempt ${attempt}):`, err.message);
+            if (err.message.includes('404')) {
+                console.log('Old post already deleted.');
+                break;
+            }
+            if (attempt < 3) await new Promise(r => setTimeout(r, 2000));
+        }
     }
 
     // Small breather
     await new Promise(r => setTimeout(r, 2000));
 
-    // 2. Publish document carousel
+    // 2. Publish document carousel with retry
     console.log(`\n2. Uploading and publishing 6-slide carousel: ${PDF_PATH}...`);
-    const publishRes = await publishDocumentPost(CAPTION_TEXT, PDF_PATH, TITLE);
-    console.log('✅ Carousel post published successfully!');
-    console.log(`Post URN:     ${publishRes.postUrn}`);
-    console.log(`Document URN: ${publishRes.documentUrn}`);
+    let publishRes = null;
+    for (let attempt = 1; attempt <= 4; attempt++) {
+        try {
+            publishRes = await publishDocumentPost(CAPTION_TEXT, PDF_PATH, TITLE);
+            console.log('✅ Carousel post published successfully!');
+            console.log(`Post URN:     ${publishRes.postUrn}`);
+            console.log(`Document URN: ${publishRes.documentUrn}`);
+            break;
+        } catch (pErr) {
+            console.error(`Attempt ${attempt} upload/publish failed: ${pErr.message}`);
+            if (attempt === 4) throw pErr;
+            console.log('Retrying publish in 4 seconds...');
+            await new Promise(r => setTimeout(r, 4000));
+        }
+    }
 
     // Wait 4s for LinkedIn index
     console.log('\n3. Waiting 4 seconds for LinkedIn index propagation...');

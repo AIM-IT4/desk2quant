@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 
-const POST_URL = 'https://www.linkedin.com/posts/akjha002_the-5-projects-that-actually-get-you-hired-activity-7501853372996775936-GP0g';
-const POST_URN = 'urn:li:ugcPost:7501853371901952000';
+const POST_URL = 'https://www.linkedin.com/posts/akjha002_the-5-projects-that-actually-get-you-hired-activity-7501858256844259328-t_Bh';
+const POST_URN = 'urn:li:ugcPost:7501858255816589313';
 
 async function checkPost() {
     console.log('=== Desk2Quant LinkedIn Post Monitor ===');
