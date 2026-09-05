@@ -328,6 +328,44 @@ export async function publishComment(postUrn, text) {
     return await res.json();
 }
 
+export async function deletePost(postUrn) {
+    const config = loadConfig();
+    if (!config.accessToken) {
+        throw new Error('LINKEDIN_ACCESS_TOKEN is not set. Run auth first.');
+    }
+
+    const cleanUrn = postUrn.trim();
+    // 1. Try rest/posts DELETE
+    let res = await fetch(`https://api.linkedin.com/rest/posts/${encodeURIComponent(cleanUrn)}`, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': `Bearer ${config.accessToken}`,
+            'Linkedin-Version': '202503',
+            'X-Restli-Protocol-Version': '2.0.0'
+        }
+    });
+
+    if (res.status === 204 || res.status === 200) {
+        return { success: true, status: res.status };
+    }
+
+    // 2. Fallback to v2/ugcPosts DELETE
+    res = await fetch(`https://api.linkedin.com/v2/ugcPosts/${encodeURIComponent(cleanUrn)}`, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': `Bearer ${config.accessToken}`,
+            'X-Restli-Protocol-Version': '2.0.0'
+        }
+    });
+
+    if (res.status === 204 || res.status === 200) {
+        return { success: true, status: res.status };
+    }
+
+    const err = await res.text();
+    throw new Error(`Failed to delete post (${res.status}): ${err}`);
+}
+
 // CLI handler
 async function main() {
     const args = process.argv.slice(2);
@@ -443,6 +481,23 @@ async function main() {
         return;
     }
 
+    if (command === '--delete' || command === 'delete') {
+        const postUrn = args[1];
+        if (!postUrn) {
+            console.error('Usage: node scripts/linkedin.mjs --delete <postUrn>');
+            process.exit(1);
+        }
+        try {
+            console.log(`Deleting post ${postUrn}...`);
+            await deletePost(postUrn);
+            console.log('✅ Post deleted successfully!');
+        } catch (err) {
+            console.error('❌ Failed to delete post:', err.message);
+            process.exit(1);
+        }
+        return;
+    }
+
     console.log(`
 Desk2Quant LinkedIn Automation CLI
 
@@ -453,6 +508,7 @@ Commands:
   node scripts/linkedin.mjs --post "text" [url]        Publish a post to your LinkedIn profile
   node scripts/linkedin.mjs --carousel <pdf> [title] [text] Publish a PDF document carousel post
   node scripts/linkedin.mjs --comment <postUrn> "text" Post a comment on a LinkedIn post
+  node scripts/linkedin.mjs --delete <postUrn>         Delete a post from LinkedIn
 `);
 }
 
