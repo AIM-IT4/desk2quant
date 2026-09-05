@@ -815,15 +815,15 @@
         // Load config.js if it exists, otherwise gracefully fallback
         (function () {
             var script = document.createElement('script');
-            script.src = 'config.js?v=21';
+            script.src = 'config.js';
             script.onerror = function () {
                 console.log('ℹ️ config.js not found. Using fallback configuration from script.js');
             };
             document.head.appendChild(script);
         })();
     </script>
-    <script src="product-seo.js?v=21"></script>
-    <script src="script.js?v=21"></script>
+    <script src="product-seo.js?v=1"></script>
+    <script src="script.js?v=19"></script>
 
     <!-- Navigation -->
     <nav class="navbar">
@@ -1353,17 +1353,6 @@
                             feedbackMsg.style.color = '#ef4444'; // Error Red
                         }
                     });
-
-                    // Check URL for coupon code, or pre-populate product coupon code
-                    const paramCoupon = urlParams.get('coupon') || urlParams.get('code');
-                    const codeInput = document.getElementById('coupon-input');
-                    if (paramCoupon && codeInput) {
-                        codeInput.value = paramCoupon.trim().toUpperCase();
-                        const applyBtn = document.getElementById('apply-coupon-btn');
-                        if (applyBtn) setTimeout(() => applyBtn.click(), 50);
-                    } else if (product.coupon_code && codeInput && !codeInput.value) {
-                        codeInput.value = product.coupon_code.toUpperCase();
-                    }
                 }
 
                 // Set Page Title

@@ -16,7 +16,8 @@ const CONFIG = {
 };
 window.CONFIG = CONFIG;
 
-// Recommendation-email and promotional coupons use NAME20 / PROJECT20 format.
+// Recommendation-email coupons use a simple NAME20 format.
+// Accept them directly without asking the customer to verify an email address.
 document.addEventListener('click', function (event) {
     const applyButton = event.target.closest('#apply-coupon-btn');
     if (!applyButton) return;
@@ -30,9 +31,12 @@ document.addEventListener('click', function (event) {
     const code = codeInput.value.trim().toUpperCase();
     if (!/^[A-Z]+20$/.test(code)) return;
 
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
     let originalPrice = Number.parseFloat(buyBtn.dataset.price);
     if (!Number.isFinite(originalPrice)) {
-        const match = (priceEl.textContent || '').match(/\\d+/);
+        const match = (priceEl.textContent || '').match(/\d+/);
         originalPrice = match ? Number.parseFloat(match[0]) : 799;
     }
 
@@ -59,7 +63,7 @@ document.addEventListener('click', function (event) {
     codeInput.disabled = true;
     applyButton.disabled = true;
     applyButton.textContent = 'Applied';
-});
+}, true);
 `;
 
 const configPath = path.join(__dirname, 'config.js');
