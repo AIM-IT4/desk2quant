@@ -4,6 +4,16 @@
  * Pricing, Greeks, Risk Attribution, Model Validation & Mentorship
  */
 (function () {
+    // Load the narrowly-scoped responsive correction after the legacy/global
+    // stylesheets so the current hero design wins the intended cascade.
+    if (!document.getElementById('heroResponsiveFixCss')) {
+        const heroFixStyles = document.createElement('link');
+        heroFixStyles.id = 'heroResponsiveFixCss';
+        heroFixStyles.rel = 'stylesheet';
+        heroFixStyles.href = 'hero-responsive-fix.css?v=1';
+        document.head.appendChild(heroFixStyles);
+    }
+
     const scenarios = [
         {
             id: 0,

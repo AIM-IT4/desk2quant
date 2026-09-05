@@ -1,0 +1,28 @@
+/*
+ * Desk2Quant homepage hero responsive correction.
+ *
+ * The dynamic hero introduced by 409329ae should remain a two-column
+ * copy/terminal layout on desktop, including 1024px-class windows. The
+ * generic responsive rules in styles.css predate that hero and otherwise
+ * inject a 44px container gap and cap .profile-card at 350px.
+ *
+ * Keep this override narrowly scoped to the LaunchZone homepage hero:
+ * - stack the split only at the existing <=900px responsive boundary;
+ * - let the profile card keep its intended 880px cap;
+ * - make .hero-visual margin-top the single source of spacing above profile.
+ */
+body.d2q-launchzone .hero-container {
+    gap: 0;
+}
+
+body.d2q-launchzone .hero-visual .profile-card {
+    max-width: 880px;
+}
+
+@media (min-width: 901px) and (max-width: 1060px) {
+    body.d2q-launchzone .hero-split-grid {
+        grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+        gap: clamp(28px, 3.5vw, 52px);
+        align-items: stretch;
+    }
+}
