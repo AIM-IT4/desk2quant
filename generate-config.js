@@ -9,77 +9,19 @@ const path = require('path');
 // All email now goes through the /api/send-email serverless relay (which
 // reads BREVO_API_KEY from the environment server-side), so no client code
 // needs the key. The sender identity is harmless and kept for reference.
+//
+// Coupon handling deliberately does NOT live in config.js. product.html,
+// script.js/cart and lib/pricing.js already contain the validated coupon
+// rules and propagate the applied code into server-authoritative checkout.
+// Duplicating coupon logic here previously intercepted broad *20 codes before
+// the real validator, which could make an invalid/mis-targeted code look
+// discounted in the UI until create-order.js corrected the amount.
 const content = `// Auto-generated config.js
 const CONFIG = {
     BREVO_SENDER_EMAIL: '${process.env.BREVO_SENDER_EMAIL || 'desk2quant@gmail.com'}',
     BREVO_SENDER_NAME: '${process.env.BREVO_SENDER_NAME || 'Desk2Quant'}'
 };
 window.CONFIG = CONFIG;
-
-// Recommendation/campaign coupons that end in 20 are handled here before the
-// product page's bubbling click handler. Keep the displayed price and checkout
-// state in sync: checkout reads data-coupon-code and the server independently
-// re-validates the coupon against the product before creating the Razorpay order.
-document.addEventListener('click', function (event) {
-    const applyButton = event.target.closest('#apply-coupon-btn');
-    if (!applyButton) return;
-
-    const codeInput = document.getElementById('coupon-input');
-    const feedbackMsg = document.getElementById('coupon-feedback');
-    const priceEl = document.getElementById('p-price');
-    const buyBtn = document.getElementById('buy-btn');
-    if (!codeInput || !feedbackMsg || !priceEl || !buyBtn) return;
-
-    const code = codeInput.value.trim().toUpperCase();
-    if (!/^[A-Z]+20$/.test(code)) return;
-
-    event.preventDefault();
-    event.stopImmediatePropagation();
-
-    // Never compound a second 20% discount from an already-discounted amount.
-    if (buyBtn.dataset.couponCode === code) return;
-
-    const storedOriginalPrice = Number.parseFloat(buyBtn.dataset.originalPrice);
-    const currentPrice = Number.parseFloat(buyBtn.dataset.price);
-    const originalPrice = Number.isFinite(storedOriginalPrice) ? storedOriginalPrice : currentPrice;
-
-    if (!Number.isFinite(originalPrice)) {
-        feedbackMsg.textContent = 'Unable to apply this coupon right now.';
-        feedbackMsg.style.color = '#ef4444';
-        return;
-    }
-
-    buyBtn.dataset.originalPrice = String(originalPrice);
-
-    const discountedPrice = Math.max(0, originalPrice * 0.8);
-    const currentCurrency = buyBtn.dataset.currency || 'INR';
-    let priceDisplay;
-
-    if (currentCurrency === 'INR') {
-        const roundedPrice = Math.round(discountedPrice);
-        priceDisplay = '₹' + roundedPrice;
-        priceEl.innerHTML = '<span style="text-decoration:line-through; color:var(--text-muted); font-size:0.8em; margin-right:10px;">₹' + originalPrice + '</span> ' + priceDisplay;
-        buyBtn.dataset.price = String(roundedPrice);
-    } else {
-        const fixedPrice = discountedPrice.toFixed(2);
-        priceDisplay = fixedPrice + ' ' + currentCurrency;
-        priceEl.innerHTML = '<span style="text-decoration:line-through; color:var(--text-muted); font-size:0.8em; margin-right:10px;">' + originalPrice.toFixed(2) + ' ' + currentCurrency + '</span> ' + priceDisplay;
-        buyBtn.dataset.price = fixedPrice;
-    }
-
-    // Critical: product.html passes this exact dataset value into
-    // initRazorpayCheckout(..., { couponCode }) so create-order.js can derive
-    // the authoritative discounted amount server-side. Without this assignment
-    // PROJECT20 looked applied in the UI but checkout reverted to full price.
-    buyBtn.dataset.couponCode = code;
-
-    buyBtn.innerHTML = '<i class="fas fa-credit-card"></i> Buy Now - ' + priceDisplay;
-    feedbackMsg.textContent = "Coupon '" + codeInput.value.trim() + "' applied! 20% OFF applied successfully.";
-    feedbackMsg.style.color = '#22c55e';
-    codeInput.disabled = true;
-    applyButton.disabled = true;
-    applyButton.textContent = 'Applied';
-}, true);
 `;
 
 const configPath = path.join(__dirname, 'config.js');
