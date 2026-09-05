@@ -1,4 +1,4 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 const path = require('path');
 
 // config.js content based on environment variables
@@ -16,8 +16,10 @@ const CONFIG = {
 };
 window.CONFIG = CONFIG;
 
-// Recommendation-email coupons use a simple NAME20 format.
-// Accept them directly without asking the customer to verify an email address.
+// Recommendation/campaign coupons that end in 20 are handled here before the
+// product page's bubbling click handler. Keep the displayed price and checkout
+// state in sync: checkout reads data-coupon-code and the server independently
+// re-validates the coupon against the product before creating the Razorpay order.
 document.addEventListener('click', function (event) {
     const applyButton = event.target.closest('#apply-coupon-btn');
     if (!applyButton) return;
@@ -34,12 +36,20 @@ document.addEventListener('click', function (event) {
     event.preventDefault();
     event.stopImmediatePropagation();
 
-    const originalPrice = Number.parseFloat(buyBtn.dataset.price);
+    // Never compound a second 20% discount from an already-discounted amount.
+    if (buyBtn.dataset.couponCode === code) return;
+
+    const storedOriginalPrice = Number.parseFloat(buyBtn.dataset.originalPrice);
+    const currentPrice = Number.parseFloat(buyBtn.dataset.price);
+    const originalPrice = Number.isFinite(storedOriginalPrice) ? storedOriginalPrice : currentPrice;
+
     if (!Number.isFinite(originalPrice)) {
         feedbackMsg.textContent = 'Unable to apply this coupon right now.';
         feedbackMsg.style.color = '#ef4444';
         return;
     }
+
+    buyBtn.dataset.originalPrice = String(originalPrice);
 
     const discountedPrice = Math.max(0, originalPrice * 0.8);
     const currentCurrency = buyBtn.dataset.currency || 'INR';
@@ -56,6 +66,12 @@ document.addEventListener('click', function (event) {
         priceEl.innerHTML = '<span style="text-decoration:line-through; color:var(--text-muted); font-size:0.8em; margin-right:10px;">' + originalPrice.toFixed(2) + ' ' + currentCurrency + '</span> ' + priceDisplay;
         buyBtn.dataset.price = fixedPrice;
     }
+
+    // Critical: product.html passes this exact dataset value into
+    // initRazorpayCheckout(..., { couponCode }) so create-order.js can derive
+    // the authoritative discounted amount server-side. Without this assignment
+    // PROJECT20 looked applied in the UI but checkout reverted to full price.
+    buyBtn.dataset.couponCode = code;
 
     buyBtn.innerHTML = '<i class="fas fa-credit-card"></i> Buy Now - ' + priceDisplay;
     feedbackMsg.textContent = "Coupon '" + codeInput.value.trim() + "' applied! 20% OFF applied successfully.";
