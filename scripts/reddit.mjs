@@ -87,7 +87,7 @@ export async function getUserProfile() {
     };
 }
 
-export async function publishPost({ title, text, subreddit = '', flairId = '', flairText = '' }) {
+export async function publishPost({ title, text, subreddit = '' }) {
     const { bearerToken, sessionCookie, username } = loadConfig();
     if (!bearerToken && !sessionCookie) {
         throw new Error('Neither REDDIT_BEARER_TOKEN nor REDDIT_SESSION_COOKIE is configured.');
@@ -134,13 +134,6 @@ export async function publishPost({ title, text, subreddit = '', flairId = '', f
         resubmit: 'true',
         sendreplies: 'true'
     });
-
-    if (flairId) {
-        params.append('flair_id', flairId);
-    }
-    if (flairText) {
-        params.append('flair_text', flairText);
-    }
 
     if (sessionCookie && me?.modhash) {
         params.append('uh', me.modhash);
@@ -230,15 +223,13 @@ async function main() {
         const title = args[1];
         const text = args[2];
         const subreddit = args[3] || '';
-        const flairId = args[4] || '';
-        const flairText = args[5] || '';
         if (!title || !text) {
-            console.error('Usage: node scripts/reddit.mjs --post "Title" "Markdown Text" [subreddit] [flairId] [flairText]');
+            console.error('Usage: node scripts/reddit.mjs --post "Title" "Markdown Text" [subreddit]');
             process.exit(1);
         }
         try {
             console.log(`Publishing post to ${subreddit || 'your profile'}...`);
-            const res = await publishPost({ title, text, subreddit, flairId, flairText });
+            const res = await publishPost({ title, text, subreddit });
             console.log('🎉 SUCCESS! Post is live on Reddit.');
             console.log(`URL: ${res.url}`);
             console.log(`ID:  ${res.id}`);
@@ -253,16 +244,14 @@ async function main() {
         const filePath = args[1];
         const title = args[2];
         const subreddit = args[3] || '';
-        const flairId = args[4] || '';
-        const flairText = args[5] || '';
         if (!filePath || !title) {
-            console.error('Usage: node scripts/reddit.mjs --post-file <path_to_markdown> "Title" [subreddit] [flairId] [flairText]');
+            console.error('Usage: node scripts/reddit.mjs --post-file <path_to_markdown> "Title" [subreddit]');
             process.exit(1);
         }
         const text = fs.readFileSync(filePath, 'utf8');
         try {
             console.log(`Publishing ${filePath} to ${subreddit || 'your profile'}...`);
-            const res = await publishPost({ title, text, subreddit, flairId, flairText });
+            const res = await publishPost({ title, text, subreddit });
             console.log('🎉 SUCCESS! Post is live on Reddit.');
             console.log(`URL: ${res.url}`);
             console.log(`ID:  ${res.id}`);

@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const path = require('path');
 
 // config.js content based on environment variables
@@ -34,10 +34,11 @@ document.addEventListener('click', function (event) {
     event.preventDefault();
     event.stopImmediatePropagation();
 
-    let originalPrice = Number.parseFloat(buyBtn.dataset.price);
+    const originalPrice = Number.parseFloat(buyBtn.dataset.price);
     if (!Number.isFinite(originalPrice)) {
-        const match = (priceEl.textContent || '').match(/\d+/);
-        originalPrice = match ? Number.parseFloat(match[0]) : 799;
+        feedbackMsg.textContent = 'Unable to apply this coupon right now.';
+        feedbackMsg.style.color = '#ef4444';
+        return;
     }
 
     const discountedPrice = Math.max(0, originalPrice * 0.8);
@@ -57,7 +58,6 @@ document.addEventListener('click', function (event) {
     }
 
     buyBtn.innerHTML = '<i class="fas fa-credit-card"></i> Buy Now - ' + priceDisplay;
-    buyBtn.dataset.couponCode = code;
     feedbackMsg.textContent = "Coupon '" + codeInput.value.trim() + "' applied! 20% OFF applied successfully.";
     feedbackMsg.style.color = '#22c55e';
     codeInput.disabled = true;

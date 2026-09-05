@@ -1168,8 +1168,6 @@
                     }
                     priceEl.innerHTML = `${originalPriceDisplay}${priceText}`;
                     buyBtn.innerHTML = `<i class="fas fa-credit-card"></i> Buy Now - ${priceText}`;
-                    buyBtn.dataset.price = product.price;
-                    buyBtn.dataset.currency = 'INR';
 
                     // Reveal the add-to-cart "+" button for paid products so
                     // shoppers can add this item to a combined multi-item checkout
@@ -1312,10 +1310,7 @@
 
                         if (isValid) {
                             const discount = appliedDiscount;
-                            let originalPrice = parseFloat(buyBtn.dataset.price);
-                            if (!Number.isFinite(originalPrice)) {
-                                originalPrice = parseFloat(product.price) || 799;
-                            }
+                            const originalPrice = parseFloat(buyBtn.dataset.price);
                             const currentCurrency = buyBtn.dataset.currency || 'INR';
                             // Calculate new price
                             const discountedPrice = Math.max(0, originalPrice * (100 - discount) / 100);

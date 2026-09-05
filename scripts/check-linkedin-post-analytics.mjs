@@ -1,32 +1,22 @@
 import fs from 'node:fs';
 
-const POST_URL = 'https://www.linkedin.com/posts/akjha002_the-5-projects-that-actually-get-you-hired-activity-7501860522250637312-qQPB';
-const POST_URN = 'urn:li:ugcPost:7501860496669675520';
+const POST_URL = 'https://www.linkedin.com/posts/akjha002_the-5-projects-that-actually-get-you-hired-activity-7501858256844259328-t_Bh';
+const POST_URN = 'urn:li:ugcPost:7501858255816589313';
 
 async function checkPost() {
     console.log('=== Desk2Quant LinkedIn Post Monitor ===');
     console.log(`Checking post: ${POST_URL}`);
 
-    // 1. Fetch public post metadata with retry
+    // 1. Fetch public post metadata
     try {
-        let res = null;
-        for (let a = 1; a <= 3; a++) {
-            try {
-                res = await fetch(POST_URL, {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-                    },
-                    signal: AbortSignal.timeout(25000)
-                });
-                if (res.ok) break;
-            } catch (err) {
-                if (a === 3) throw err;
-                await new Promise(r => setTimeout(r, 2000));
+        const res = await fetch(POST_URL, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             }
-        }
+        });
 
-        if (!res || !res.ok) {
-            console.log(`⚠️ Post HTTP Status: ${res ? res.status : 'No response'}`);
+        if (!res.ok) {
+            console.log(`⚠️ Post HTTP Status: ${res.status}`);
             return;
         }
 
