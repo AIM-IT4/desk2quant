@@ -9,7 +9,7 @@ const ROOT = path.resolve(__dirname, '..');
 
 // Target time: 9:00 AM IST = 03:30:00 UTC on September 5, 2026
 const TARGET_TIME = new Date('2026-09-05T03:30:00.000Z');
-const OLD_POST_URN = 'urn:li:ugcPost:7501853371901952000';
+const OLD_POST_URN = null; // Recent posts verified at 0
 const PDF_PATH = path.join(ROOT, 'assets', 'downloads', 'quant-projects-blueprint-carousel.pdf');
 const TITLE = 'The 5 Projects That Actually Get You Hired As A Quant in 2026';
 
@@ -19,31 +19,31 @@ Because textbooks teach Black-Scholes, but buyside desks hire candidates who bui
 
 Here is a 6-slide architecture breakdown of the 5 projects that actually prove desk readiness in 2026:
 
-1. L2 Limit Order Book & Matching Engine (Modern C++20)
+1. L2 Limit Order Book and Matching Engine - Modern C++20
 • Price-time priority, lock-free SPSC circular queues, probabilistic queue position depletion, and microsecond wire-to-wire latency modeling.
 
-2. Arbitrage-Free SVI Volatility Surface (Python + C++)
-• Gatheral SSVI parameterization, calendar/butterfly static arbitrage elimination (Breeden-Litzenberger), and Dupire local vol PDE inversion.
+2. Arbitrage-Free SVI Volatility Surface - Python and C++
+• Gatheral SSVI parameterization, calendar and butterfly static arbitrage elimination with Breeden-Litzenberger density, and Dupire local vol PDE inversion.
 
-3. Cointegration & Kalman Filter Stat Arb (Python)
-• Augmented Dickey-Fuller / Johansen rank, dynamic state-space beta tracking, Ornstein-Uhlenbeck half-life calibration, and square-root market impact.
+3. Cointegration and Kalman Filter Stat Arb - Python
+• Augmented Dickey-Fuller and Johansen rank, dynamic state-space beta tracking, Ornstein-Uhlenbeck half-life calibration, and square-root market impact.
 
-4. Multi-Curve SOFR Discounting Engine (Modern C++)
+4. Multi-Curve SOFR Discounting Engine - Modern C++
 • Post-LIBOR dual-curve bootstrapping, OIS discounting, and monotone convex spline interpolation.
 
-5. XVA & Counterparty Risk Simulation (Modern C++)
-• American Monte Carlo (Longstaff-Schwartz) across 10,000 paths, Expected Exposure (EE), 99% PFE, and CSA netting sets.
+5. XVA and Counterparty Risk Simulation - Modern C++
+• American Monte Carlo with Longstaff-Schwartz across 10,000 paths, Expected Exposure EE, 99% PFE, and CSA netting sets.
 
 Swipe through all 6 slides below for the system architecture diagrams, amateur pitfalls, and interview defense questions.
 
-The full 45-project repository blueprint (with complete C++ code, math derivations, and CV bullets) is linked in Comment #1 below.`;
+The full 45-project repository blueprint with complete C++ code, math derivations, and CV bullets is linked in Comment #1 below.`;
 
 const COMMENT_TEXT = `Discussion prompt for quants and developers: When building your portfolio, which engine taught you the most about real desk execution—microstructure matching engines or multi-asset volatility calibration?
 
-The complete blueprint covering all 45 industry-grade projects (mathematical derivations, Python prototypes, production C++ code, interview defense questions, and resume bullets) is available on Desk2Quant:
+The complete blueprint covering all 45 industry-grade projects with mathematical derivations, Python prototypes, production C++ code, interview defense questions, and resume bullets is available on Desk2Quant:
 https://desk2quant.com/products/ultimate-industry-grade-quant-project-pack-45-projects.html
 
-(Use coupon code PROJECT20 at checkout for 20% off)`;
+Use coupon code PROJECT20 at checkout for 20% off.`;
 
 async function updateMonitorScript(newUrn, activityUrl) {
     const monitorPath = path.join(ROOT, 'scripts', 'check-linkedin-post-analytics.mjs');
@@ -62,22 +62,21 @@ async function executePublish() {
     console.log('Product: Ultimate Industry Grade Quant Project Pack (45 Projects)');
     console.log('======================================================\n');
 
-    // 1. Delete stagnant post
-    // 1. Delete stagnant post
-    for (let attempt = 1; attempt <= 3; attempt++) {
-        try {
-            console.log(`1. Deleting previous post (${OLD_POST_URN}) [attempt ${attempt}]...`);
-            await deletePost(OLD_POST_URN);
-            console.log('✅ Old post deleted successfully.');
-            break;
-        } catch (err) {
-            console.warn(`⚠️ Note on deletion (attempt ${attempt}):`, err.message);
-            if (err.message.includes('404')) {
-                console.log('Old post already deleted.');
+    // 1. Delete stagnant post if exists
+    if (OLD_POST_URN) {
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+                console.log(`1. Deleting previous post (${OLD_POST_URN}) [attempt ${attempt}]...`);
+                await deletePost(OLD_POST_URN);
+                console.log('✅ Old post deleted successfully.');
+                break;
+            } catch (err) {
+                console.warn(`⚠️ Note on deletion (attempt ${attempt}):`, err.message);
                 break;
             }
-            if (attempt < 3) await new Promise(r => setTimeout(r, 2000));
         }
+    } else {
+        console.log('1. No previous post to delete (feed clean).');
     }
 
     // Small breather

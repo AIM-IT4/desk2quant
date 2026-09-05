@@ -443,3 +443,67 @@ test('reminders rate limiting triggers after exceeding limit from same IP', asyn
     }
     assert.equal(lastStatus, 429);
 });
+
+// ---------------------------------------------------------------------------
+// 7. Coupon propagation and pricing resolution
+// ---------------------------------------------------------------------------
+test('generate-config.js and config.js persist buyBtn.dataset.couponCode on coupon apply', async () => {
+    const configContent = await fs.readFile('config.js', 'utf8');
+    assert.match(configContent, /buyBtn\.dataset\.couponCode\s*=\s*code;/, 'config.js must set buyBtn.dataset.couponCode');
+
+    const generateConfigContent = await fs.readFile('generate-config.js', 'utf8');
+    assert.match(generateConfigContent, /buyBtn\.dataset\.couponCode\s*=\s*code;/, 'generate-config.js must set buyBtn.dataset.couponCode');
+});
+
+test('resolveProductDiscountPercent grants 20% discount for PROJECT20 on 45 Projects', async () => {
+    const { resolveProductDiscountPercent, getExpectedProductOrder, getSubunitMultiplier } = await import('../lib/pricing.js');
+    const product = {
+        id: 'bd2e57b7-32c4-44ad-8a2a-d156222b7ff7',
+        name: 'Ultimate Industry Grade Quant Project Pack (45 Projects)',
+        price: 799,
+        coupon_code: 'PROJECT20',
+        discount_percentage: 20
+    };
+    const discount = await resolveProductDiscountPercent(product, 'PROJECT20');
+    assert.equal(discount, 20);
+
+    const discountLower = await resolveProductDiscountPercent(product, 'project20');
+    assert.equal(discountLower, 20);
+
+    const noCoupon = await resolveProductDiscountPercent(product, null);
+    assert.equal(noCoupon, 0);
+
+    // End-to-end getExpectedProductOrder test with mocked fetch
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async (url) => {
+        if (String(url).includes('products')) {
+            return {
+                ok: true,
+                status: 200,
+                json: async () => [product]
+            };
+        }
+        throw new Error('Unexpected url: ' + url);
+    };
+
+    try {
+        const orderWithCoupon = await getExpectedProductOrder(product.id, 'INR', 'PROJECT20');
+        assert.equal(orderWithCoupon.ok, true);
+        assert.equal(orderWithCoupon.discountPercent, 20);
+        assert.equal(orderWithCoupon.amountInr, 639.2);
+        const multiplier = getSubunitMultiplier(orderWithCoupon.currency);
+        const subunitsWithCoupon = Math.round(orderWithCoupon.amountMajor * multiplier);
+        assert.equal(subunitsWithCoupon, 63920); // 63920 paise = ₹639.20
+
+        const orderWithoutCoupon = await getExpectedProductOrder(product.id, 'INR', null);
+        assert.equal(orderWithoutCoupon.ok, true);
+        assert.equal(orderWithoutCoupon.discountPercent, 0);
+        assert.equal(orderWithoutCoupon.amountInr, 799);
+        const subunitsWithoutCoupon = Math.round(orderWithoutCoupon.amountMajor * multiplier);
+        assert.equal(subunitsWithoutCoupon, 79900); // 79900 paise = ₹799.00
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+

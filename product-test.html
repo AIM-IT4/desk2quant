@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -1013,6 +1013,7 @@
 
                             // Update Button
                             buyBtn.dataset.price = discountedPrice;
+                            buyBtn.dataset.couponCode = code.toUpperCase();
                             buyBtn.innerHTML = `<i class="fas fa-credit-card"></i> Buy Now - ${priceDisplay}`;
 
                             // Success Feedback
@@ -1151,6 +1152,9 @@
                                     name: name,
                                     email: email,
                                     phone: phone // Optional, can be empty
+                                }, {
+                                    productId: product.id,
+                                    couponCode: buyBtn.dataset.couponCode || null
                                 });
                             } else {
                                 alert('Payment system loading... please try again.');
