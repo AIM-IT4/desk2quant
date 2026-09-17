@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1100" viewBox="0 0 800 1100">
+  <rect width="800" height="1100" fill="#0b1020"/>
+  <rect x="48" y="48" width="704" height="1004" rx="26" fill="none" stroke="#28d7c5" stroke-width="3" opacity="0.8"/>
+  <g fill="none" stroke-linecap="round">
+    <path d="M82 742 C168 698 236 774 322 716 S474 646 560 704 S688 768 740 708" stroke="#28d7c5" stroke-width="9"/>
+    <path d="M82 816 C186 764 258 834 354 782 S516 708 620 766 S704 804 740 780" stroke="#ffca3a" stroke-width="5" opacity="0.95"/>
+  </g>
+  <g fill="#fff" font-family="Arial,Helvetica,sans-serif">
+    <text x="70" y="110" font-size="28" font-weight="700" letter-spacing="4">DESK2QUANT</text>
+    <text x="70" y="236" font-size="54" font-weight="800">MARKET</text>
+    <text x="70" y="306" font-size="54" font-weight="800">MICROSTRUCTURE</text>
+    <text x="70" y="376" font-size="54" font-weight="800">&amp; MARKET MAKING</text>
+    <text x="70" y="430" font-size="24" fill="#a9b3c7">LIMIT ORDER BOOKS · OFI · QUEUES · EXECUTION</text>
+    <text x="70" y="468" font-size="24" fill="#a9b3c7">AVELLANEDA–STOIKOV · HAWKES · BACKTESTING</text>
+    <text x="70" y="930" font-size="27">100-page playbook + executable Python lab</text>
+    <text x="70" y="985" font-size="23" fill="#a9b3c7">Amit Kumar Jha · 2026</text>
+  </g>
+</svg>
