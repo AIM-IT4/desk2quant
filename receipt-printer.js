@@ -93,6 +93,14 @@
         return 'my-access.html';
     }
 
+    function notifyInvoiceUnavailable() {
+        const message = 'Tax invoice is available only for completed paid orders.';
+        console.warn('[Desk2Quant receipt]', message);
+        if (typeof window.showToast === 'function') {
+            window.showToast(message, 'info', 4500);
+        }
+    }
+
     function createOrGetModal() {
         let modal = document.getElementById('receiptPrinterModal');
         if (!modal) {
@@ -134,15 +142,20 @@
     };
 
     window.showReceiptPrinter = function (orderData) {
-        const modal = createOrGetModal();
-        const data = orderData || {};
+        const data = (orderData && typeof orderData === 'object') ? orderData : null;
+        if (!data) {
+            notifyInvoiceUnavailable();
+            return;
+        }
 
-        const paymentId = data.paymentId || 'pay_' + Math.random().toString(36).substring(2, 12);
-        const invoiceNo = generateInvoiceNumber(paymentId);
-        const dateStr = formatReceiptDate(data.date);
-        const customerEmail = data.customerEmail || data.email || 'customer@desk2quant.com';
-        const currency = data.currency || 'INR';
-        const currSymbol = currency === 'USD' ? '$' : (currency === 'EUR' ? '€' : (currency === 'GBP' ? '£' : '₹'));
+        // Never fabricate an invoice for a free resource or missing transaction.
+        // Free-resource success modals intentionally have no paid order metadata;
+        // previously that fell through to the hard-coded ₹7,999 Master Suite demo.
+        const paymentId = (typeof data.paymentId === 'string') ? data.paymentId.trim() : '';
+        if (!paymentId || /^FREE(?:_|$)/i.test(paymentId)) {
+            notifyInvoiceUnavailable();
+            return;
+        }
 
         let items = [];
         if (Array.isArray(data.items) && data.items.length > 0) {
@@ -152,10 +165,23 @@
             const perItemAmt = data.amount ? Math.round(data.amount / names.length) : 0;
             items = names.map(name => ({ name, price: perItemAmt }));
         } else {
-            items = [{ name: 'Desk2Quant Quant Finance Master Suite', price: data.amount || 7999 }];
+            notifyInvoiceUnavailable();
+            return;
         }
 
         const totalAmount = data.amount !== undefined ? Number(data.amount) : items.reduce((acc, i) => acc + (Number(i.price) || 0), 0);
+        if (!Number.isFinite(totalAmount) || totalAmount <= 0) {
+            notifyInvoiceUnavailable();
+            return;
+        }
+
+        const modal = createOrGetModal();
+        const invoiceNo = generateInvoiceNumber(paymentId);
+        const dateStr = formatReceiptDate(data.date);
+        const customerEmail = data.customerEmail || data.email || 'customer@desk2quant.com';
+        const currency = data.currency || 'INR';
+        const currSymbol = currency === 'USD' ? '$' : (currency === 'EUR' ? '€' : (currency === 'GBP' ? '£' : '₹'));
+
         // Compute 18% inclusive GST for display
         const gstAmount = Math.round((totalAmount - (totalAmount / 1.18)) * 100) / 100;
         const subtotal = Math.round((totalAmount - gstAmount) * 100) / 100;
@@ -301,6 +327,42 @@
             if (statusText) statusText.textContent = 'INVOICE READY';
         }, 2200);
     };
+
+    // Keep the success modal's tax-invoice action tied to the CURRENT paid order.
+    // Free downloads call showSuccessModal without order metadata. Before this guard,
+    // the button stayed visible and either reused stale paid-order data or, on a fresh
+    // page, triggered the receipt printer's old ₹7,999 demo fallback.
+    (function installReceiptAwareSuccessModal() {
+        const original = window.showSuccessModal;
+        if (typeof original !== 'function' || original.__d2qReceiptAware) return;
+
+        const wrapped = function (purchasedName, downloadLink, orderData) {
+            const paymentId = orderData && orderData.paymentId ? String(orderData.paymentId).trim() : '';
+            const isPaidOrder = !!(
+                orderData &&
+                Number(orderData.amount) > 0 &&
+                paymentId &&
+                !/^FREE(?:_|$)/i.test(paymentId)
+            );
+
+            const invoiceBtn = document.querySelector('#purchaseSuccessModal button[onclick*="showReceiptPrinter"]');
+            if (isPaidOrder) {
+                window.__lastOrderData = orderData;
+                if (invoiceBtn) invoiceBtn.style.display = '';
+            } else {
+                // Critical: clear any previous purchase so a free download can never
+                // print a stale invoice from an earlier transaction in the same tab.
+                window.__lastOrderData = null;
+                if (invoiceBtn) invoiceBtn.style.display = 'none';
+            }
+
+            return original.apply(this, arguments);
+        };
+
+        wrapped.__d2qReceiptAware = true;
+        if (original.__d2qFunnelWrapped) wrapped.__d2qFunnelWrapped = true;
+        window.showSuccessModal = wrapped;
+    })();
 
     // Global testing/preview helper
     window.previewReceiptPrinter = function (customData) {
