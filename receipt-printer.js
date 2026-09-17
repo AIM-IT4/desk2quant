@@ -62,6 +62,14 @@
             const clean = paymentId.replace('pay_', '').substring(0, 7).toUpperCase();
             return `INV-${year}-${clean}`;
         }
+        if (paymentId && /^FREE(?:_|-|$)/i.test(paymentId)) {
+            const clean = paymentId
+                .replace(/^FREE(?:_|-)?/i, '')
+                .replace(/[^a-zA-Z0-9]/g, '')
+                .substring(0, 7)
+                .toUpperCase();
+            return `INV-${year}-FREE-${clean || Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+        }
         const rand = Math.random().toString(36).substring(2, 8).toUpperCase();
         return `INV-${year}-${rand}`;
     }
@@ -94,7 +102,7 @@
     }
 
     function notifyInvoiceUnavailable() {
-        const message = 'Tax invoice is available only for completed paid orders.';
+        const message = 'Invoice details are unavailable for this access event.';
         console.warn('[Desk2Quant receipt]', message);
         if (typeof window.showToast === 'function') {
             window.showToast(message, 'info', 4500);
@@ -148,15 +156,6 @@
             return;
         }
 
-        // Never fabricate an invoice for a free resource or missing transaction.
-        // Free-resource success modals intentionally have no paid order metadata;
-        // previously that fell through to the hard-coded ₹7,999 Master Suite demo.
-        const paymentId = (typeof data.paymentId === 'string') ? data.paymentId.trim() : '';
-        if (!paymentId || /^FREE(?:_|$)/i.test(paymentId)) {
-            notifyInvoiceUnavailable();
-            return;
-        }
-
         let items = [];
         if (Array.isArray(data.items) && data.items.length > 0) {
             items = data.items;
@@ -169,8 +168,22 @@
             return;
         }
 
-        const totalAmount = data.amount !== undefined ? Number(data.amount) : items.reduce((acc, i) => acc + (Number(i.price) || 0), 0);
-        if (!Number.isFinite(totalAmount) || totalAmount <= 0) {
+        const totalAmount = data.amount !== undefined
+            ? Number(data.amount)
+            : items.reduce((acc, i) => acc + (Number(i.price) || 0), 0);
+        if (!Number.isFinite(totalAmount) || totalAmount < 0) {
+            notifyInvoiceUnavailable();
+            return;
+        }
+
+        // Zero-value/free resources still receive a proper invoice. They must never
+        // inherit a previous paid transaction or the old ₹7,999 demo fallback.
+        const isFree = data.isFree === true || totalAmount === 0 || /^FREE(?:_|-|$)/i.test(String(data.paymentId || ''));
+        let paymentId = (typeof data.paymentId === 'string') ? data.paymentId.trim() : '';
+        if (!paymentId && isFree) {
+            paymentId = `FREE_${Date.now().toString(36)}${Math.random().toString(36).substring(2, 6)}`;
+        }
+        if (!paymentId) {
             notifyInvoiceUnavailable();
             return;
         }
@@ -181,8 +194,15 @@
         const customerEmail = data.customerEmail || data.email || 'customer@desk2quant.com';
         const currency = data.currency || 'INR';
         const currSymbol = currency === 'USD' ? '$' : (currency === 'EUR' ? '€' : (currency === 'GBP' ? '£' : '₹'));
+        const invoiceBadge = isFree ? 'ZERO-VALUE INVOICE & OFFICIAL RECEIPT' : 'TAX INVOICE & OFFICIAL RECEIPT';
+        const paymentLabel = isFree ? 'COMPLIMENTARY / NO CHARGE' : 'ONLINE / PAID';
+        const statusLabel = isFree ? 'FREE RESOURCE • NO PAYMENT REQUIRED' : 'PAYMENT CAPTURED • VERIFIED';
+        const accessMessage = isFree
+            ? 'Complimentary lifetime access has been authorized.'
+            : 'Immediate lifetime access has been authorized.';
 
-        // Compute 18% inclusive GST for display
+        // Compute 18% inclusive GST for display. For a free resource this is
+        // naturally ₹0 subtotal and ₹0 tax.
         const gstAmount = Math.round((totalAmount - (totalAmount / 1.18)) * 100) / 100;
         const subtotal = Math.round((totalAmount - gstAmount) * 100) / 100;
 
@@ -215,7 +235,7 @@
                         <div class="receipt-header">
                             <h2 class="receipt-logo-title">DESK2QUANT</h2>
                             <p class="receipt-subtitle">Desk-Ready Quant Finance Preparation</p>
-                            <span class="receipt-badge-tax">TAX INVOICE &amp; OFFICIAL RECEIPT</span>
+                            <span class="receipt-badge-tax">${escapeHtml(invoiceBadge)}</span>
                         </div>
 
                         <!-- METADATA -->
@@ -238,7 +258,7 @@
                             </div>
                             <div class="receipt-row">
                                 <span class="receipt-row-label">PAYMENT:</span>
-                                <span class="receipt-row-value">ONLINE / PAID</span>
+                                <span class="receipt-row-value">${escapeHtml(paymentLabel)}</span>
                             </div>
                         </div>
 
@@ -253,7 +273,7 @@
                             ${items.map(item => `
                                 <div class="receipt-item-row">
                                     <span class="receipt-item-desc">1x ${escapeHtml(item.name)}</span>
-                                    <span class="receipt-item-amount">${currSymbol}${Number(item.price || totalAmount).toLocaleString('en-IN')}</span>
+                                    <span class="receipt-item-amount">${currSymbol}${Number(item.price ?? totalAmount).toLocaleString('en-IN')}</span>
                                 </div>
                             `).join('')}
                         </div>
@@ -279,7 +299,7 @@
                         <!-- STATUS STAMP -->
                         <div class="receipt-paid-stamp">
                             <i class="fas fa-check-circle"></i>
-                            <span>PAYMENT CAPTURED &bull; VERIFIED</span>
+                            <span>${escapeHtml(statusLabel)}</span>
                         </div>
 
                         <!-- BARCODE -->
@@ -289,7 +309,7 @@
                         </div>
 
                         <div class="receipt-footer-thanks">
-                            <p>Immediate lifetime access has been authorized.</p>
+                            <p>${escapeHtml(accessMessage)}</p>
                             <p>Thank you for choosing Desk2Quant!</p>
                             <p style="font-size: 8px; color: #9ca3af; margin-top: 4px;">desk2quant.com &bull; support@desk2quant.com</p>
                         </div>
@@ -328,30 +348,39 @@
         }, 2200);
     };
 
-    // Keep the success modal's tax-invoice action tied to the CURRENT paid order.
-    // Free downloads call showSuccessModal without order metadata. Before this guard,
-    // the button stayed visible and either reused stale paid-order data or, on a fresh
-    // page, triggered the receipt printer's old ₹7,999 demo fallback.
+    // Keep the success modal's invoice action tied to the CURRENT access event.
+    // Paid flows already pass order metadata as the third argument. Free product
+    // flows call showSuccessModal(productName, freeLink), so synthesize a clean
+    // zero-value invoice record from that current free resource instead of hiding
+    // the invoice button or reusing stale paid-order data from an earlier purchase.
     (function installReceiptAwareSuccessModal() {
         const original = window.showSuccessModal;
         if (typeof original !== 'function' || original.__d2qReceiptAware) return;
 
         const wrapped = function (purchasedName, downloadLink, orderData) {
-            const paymentId = orderData && orderData.paymentId ? String(orderData.paymentId).trim() : '';
-            const isPaidOrder = !!(
-                orderData &&
-                Number(orderData.amount) > 0 &&
-                paymentId &&
-                !/^FREE(?:_|$)/i.test(paymentId)
-            );
+            let receiptData = (orderData && typeof orderData === 'object') ? orderData : null;
+
+            if (!receiptData && purchasedName && downloadLink && downloadLink !== '#') {
+                const emailInput = document.getElementById('main-ud-email');
+                const customerEmail = emailInput && emailInput.value ? emailInput.value.trim() : '';
+                receiptData = {
+                    paymentId: `FREE_${Date.now().toString(36)}${Math.random().toString(36).substring(2, 6)}`,
+                    amount: 0,
+                    currency: 'INR',
+                    customerEmail: customerEmail,
+                    productName: purchasedName,
+                    downloadLink: downloadLink,
+                    isFree: true,
+                    date: new Date().toISOString()
+                };
+            }
 
             const invoiceBtn = document.querySelector('#purchaseSuccessModal button[onclick*="showReceiptPrinter"]');
-            if (isPaidOrder) {
-                window.__lastOrderData = orderData;
+            if (receiptData) {
+                // Always replace stale data with the CURRENT paid or free order.
+                window.__lastOrderData = receiptData;
                 if (invoiceBtn) invoiceBtn.style.display = '';
             } else {
-                // Critical: clear any previous purchase so a free download can never
-                // print a stale invoice from an earlier transaction in the same tab.
                 window.__lastOrderData = null;
                 if (invoiceBtn) invoiceBtn.style.display = 'none';
             }
