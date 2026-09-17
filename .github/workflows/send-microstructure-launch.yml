@@ -1,0 +1,52 @@
+name: Send Market Microstructure Launch
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'api/send-promo-latest.js'
+      - '.github/workflows/send-microstructure-launch.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  send-campaign:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Wait for Desk2Quant deployment and send in safe batches
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://desk2quant.com/api/send-promo-latest?campaign=microstructure-20260917'
+
+          echo 'Waiting for the temporary campaign endpoint to become live...'
+          for i in $(seq 1 30); do
+            body="$(curl -fsS "$url" 2>/dev/null || true)"
+            if echo "$body" | grep -q 'launch_microstructure_20260917'; then
+              echo "$body"
+              break
+            fi
+            sleep 10
+          done
+
+          if ! echo "${body:-}" | grep -q 'launch_microstructure_20260917'; then
+            echo 'Campaign endpoint did not become ready in time.' >&2
+            exit 1
+          fi
+
+          for i in $(seq 1 30); do
+            remaining="$(printf '%s' "$body" | python3 -c "import json,sys; print(json.load(sys.stdin).get('remainingEligible', 0))")"
+            echo "Batch $i complete; remaining=$remaining"
+            if [ "$remaining" -eq 0 ]; then
+              echo 'Campaign complete.'
+              exit 0
+            fi
+            sleep 2
+            body="$(curl -fsS "$url")"
+            echo "$body"
+          done
+
+          echo 'Campaign did not finish within the allowed batch count.' >&2
+          exit 1
