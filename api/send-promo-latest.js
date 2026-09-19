@@ -11,7 +11,16 @@ import { authorizeCronRequest } from '../lib/cronAuth.js';
 import { getServiceKey, blockIfUnconfigured } from '../lib/supabaseAdmin.js';
 import { hasRecentRecommendation } from '../lib/recommendationQueue.js';
 
+const FAST_GREEKS_TEST_CAMPAIGN = 'launch_fast_greeks_test_20260919';
+const FAST_GREEKS_PRODUCT_ID = '05597652-9abe-4fe6-8438-ade147609c9d';
+const FAST_GREEKS_COUPON = 'AAD20';
+const FAST_GREEKS_TEST_EMAIL = 'iitamit97@gmail.com';
+
 export default async function handler(req, res) {
+    if (req.query?.campaign === 'fast-greeks-test-20260919') {
+        return handleFastGreeksTest(req, res);
+    }
+
     if (req.method !== 'GET' && req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
@@ -230,6 +239,250 @@ export default async function handler(req, res) {
         console.error('Campaign error:', error);
         return res.status(500).json({ error: error.message });
     }
+}
+
+
+async function handleFastGreeksTest(req, res) {
+    if (req.method !== 'GET' && req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    const requestedEmail = String(req.query?.test_email || '').trim().toLowerCase();
+    if (requestedEmail !== FAST_GREEKS_TEST_EMAIL) {
+        return res.status(400).json({ error: 'This one-time test route only permits the configured test recipient.' });
+    }
+
+    const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
+    const SUPABASE_KEY = getServiceKey();
+    const BREVO_API_KEY = process.env.BREVO_API_KEY;
+    const SENDER_EMAIL = process.env.SENDER_EMAIL || 'hello@desk2quant.com';
+    const SENDER_NAME = process.env.SENDER_NAME || 'Desk2Quant';
+
+    if (!SUPABASE_KEY || !BREVO_API_KEY) {
+        return res.status(500).json({ error: 'Email service is not configured.' });
+    }
+
+    const headers = {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json'
+    };
+
+    const productResp = await fetch(
+        `${SUPABASE_URL}/rest/v1/products?id=eq.${FAST_GREEKS_PRODUCT_ID}&select=id,name,description,price,original_price,cover_image_url,coupon_code,discount_percentage&limit=1`,
+        { headers }
+    );
+    if (!productResp.ok) {
+        return res.status(500).json({ error: 'Unable to load target product.' });
+    }
+    const rows = await productResp.json();
+    const product = rows?.[0];
+    if (!product) {
+        return res.status(404).json({ error: 'Target product not found.' });
+    }
+
+    if (String(product.coupon_code || '').toUpperCase() !== FAST_GREEKS_COUPON ||
+        Number(product.discount_percentage) !== 20) {
+        return res.status(409).json({
+            error: 'Coupon configuration mismatch; test email was not sent.',
+            coupon: product.coupon_code,
+            discount: product.discount_percentage
+        });
+    }
+
+    const priorResp = await fetch(
+        `${SUPABASE_URL}/rest/v1/recommendation_emails?customer_email=eq.${encodeURIComponent(FAST_GREEKS_TEST_EMAIL)}&trigger_type=eq.${FAST_GREEKS_TEST_CAMPAIGN}&sent=eq.true&select=id,brevo_message_id&limit=1`,
+        { headers }
+    );
+    if (priorResp.ok) {
+        const prior = await priorResp.json();
+        if (prior?.length) {
+            return res.status(200).json({
+                mode: 'test',
+                status: 'already_sent',
+                testEmail: FAST_GREEKS_TEST_EMAIL,
+                coupon: FAST_GREEKS_COUPON,
+                discountPercent: 20,
+                buyerPriceInr: Number(product.price) * 0.8,
+                messageId: prior[0].brevo_message_id || null
+            });
+        }
+    }
+
+    const productUrl = `https://desk2quant.com/product.html?id=${product.id}`;
+    const sampleUrl = 'https://desk2quant.com/api/products?sample=fast-greeks';
+    const buyerPrice = Number(product.price) * 0.8;
+    const desc = stripHtml(product.description || '').substring(0, 300);
+
+    const html = `
+    <div style="font-family:'Segoe UI',Arial,sans-serif;background:#f7f7f3;padding:18px 0;margin:0;color:#090909;">
+      <div style="max-width:620px;margin:0 auto;background:#ffffff;border:1px solid #090909;box-shadow:8px 8px 0 #090909;">
+        <div style="background:#ffca3a;border-bottom:1px solid #090909;padding:30px;text-align:center;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 6px auto;">
+            <tr>
+              <td style="padding-right:12px;vertical-align:middle;">
+                <img src="https://desk2quant.com/assets/images/email-logo.png" width="40" height="40" alt="Desk2Quant" style="display:block;width:40px;height:40px;border:1px solid #090909;background:#fff;">
+              </td>
+              <td style="vertical-align:middle;"><span style="font-size:28px;font-weight:800;letter-spacing:1px;">Desk2Quant</span></td>
+            </tr>
+          </table>
+          <div style="font-size:12px;font-weight:800;letter-spacing:1.7px;text-transform:uppercase;">Previous Buyer Launch Offer</div>
+        </div>
+
+        <div style="padding:32px 30px;">
+          <div style="display:inline-block;background:#0b7f79;color:#fff;border:1px solid #090909;box-shadow:2px 2px 0 #090909;padding:5px 11px;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;">New Production Lab</div>
+          <h1 style="font-size:26px;line-height:1.25;margin:16px 0 12px;">Fast Greeks &amp; Initial Margin for Quants</h1>
+          <p style="font-size:15px;line-height:1.65;color:#44453f;margin:0 0 22px;">
+            A first-principles-to-production resource on <strong>Greeks, reverse-mode AAD, SIMM architecture, forward initial margin and MVA</strong>.
+          </p>
+
+          ${product.cover_image_url ? `<img src="${product.cover_image_url}" alt="${escapeHtml(product.name)}" style="display:block;width:100%;max-height:330px;object-fit:contain;background:#f7f7f3;border:1px solid #090909;margin:0 0 22px;">` : ''}
+
+          <p style="font-size:14px;line-height:1.65;color:#555;margin:0 0 22px;">${escapeHtml(desc)}...</p>
+
+          <div style="background:#f7f7f3;border:1px solid #090909;padding:18px 20px;margin:0 0 22px;">
+            <div style="font-weight:800;margin-bottom:9px;">What is inside</div>
+            <div style="font-size:14px;line-height:1.75;color:#333;">
+              • 200-page professional playbook<br>
+              • 2 executed Jupyter notebooks + tested Python package<br>
+              • Reverse-mode AAD from computational graphs to production tapes<br>
+              • SIMM architecture, sensitivity aggregation, forward IM and MVA<br>
+              • 130 interview questions with model answers<br>
+              • 26 visuals, 26 mnemonics and 26 scaling relationships
+            </div>
+          </div>
+
+          <div style="background:#ffca3a;border:1px solid #090909;box-shadow:4px 4px 0 #090909;padding:22px;text-align:center;margin:0 0 24px;">
+            <div style="font-size:12px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;">Exclusive previous-buyer coupon</div>
+            <div style="font-family:monospace;font-size:28px;font-weight:900;margin:8px 0;">AAD20</div>
+            <div style="font-size:16px;font-weight:800;">20% OFF</div>
+            <div style="font-size:14px;margin-top:7px;">
+              ₹${Number(product.price).toFixed(0)} → <strong>₹${buyerPrice.toFixed(2)}</strong>
+            </div>
+          </div>
+
+          <div style="text-align:center;margin:26px 0;">
+            <a href="${productUrl}" style="display:inline-block;background:#0b7f79;color:#fff;text-decoration:none;font-weight:800;border:1px solid #090909;box-shadow:3px 3px 0 #090909;padding:13px 22px;margin:4px;">View Product →</a>
+            <a href="${sampleUrl}" style="display:inline-block;background:#fff;color:#090909;text-decoration:none;font-weight:800;border:1px solid #090909;box-shadow:3px 3px 0 #090909;padding:13px 22px;margin:4px;">Preview 6 Sample Pages</a>
+          </div>
+
+          <p style="font-size:13px;line-height:1.6;color:#666;margin:24px 0 0;">
+            The executable margin examples use clearly labelled synthetic teaching parameters; proprietary ISDA parameter tables are not redistributed.
+          </p>
+        </div>
+
+        <div style="background:#f7f7f3;border-top:1px solid #090909;padding:20px 26px;text-align:center;color:#666;font-size:11px;line-height:1.6;">
+          You are receiving this because you previously purchased from Desk2Quant.<br>
+          Questions? Reply to this email. To stop future product recommendations, reply with <strong>unsubscribe</strong>.<br>
+          <a href="https://desk2quant.com" style="color:#090909;font-weight:700;text-decoration:none;">desk2quant.com</a>
+        </div>
+      </div>
+    </div>`;
+
+    const text = `Desk2Quant — New Production Lab
+
+Fast Greeks & Initial Margin for Quants — AAD, SIMM & MVA Production Lab
+
+A first-principles-to-production resource covering Greeks, reverse-mode AAD, SIMM architecture, forward initial margin and MVA.
+
+Included:
+- 200-page professional playbook
+- 2 executed Jupyter notebooks + tested Python package
+- Reverse-mode AAD from computational graphs to production tapes
+- SIMM architecture, forward IM and MVA
+- 130 interview questions with model answers
+- 26 visuals, 26 mnemonics and 26 scaling relationships
+
+Previous-buyer coupon: AAD20
+Discount: 20% OFF
+₹${Number(product.price).toFixed(0)} -> ₹${buyerPrice.toFixed(2)}
+
+Product: ${productUrl}
+6-page sample: ${sampleUrl}
+
+The executable margin examples use synthetic teaching parameters; proprietary ISDA parameter tables are not redistributed.
+
+You received this because you previously purchased from Desk2Quant.
+To stop future product recommendations, reply with unsubscribe.`;
+
+    const insertResp = await fetch(`${SUPABASE_URL}/rest/v1/recommendation_emails`, {
+        method: 'POST',
+        headers: { ...headers, Prefer: 'return=representation' },
+        body: JSON.stringify({
+            customer_email: FAST_GREEKS_TEST_EMAIL,
+            customer_name: 'Test recipient',
+            purchased_product: 'Fast Greeks launch test',
+            send_at: new Date().toISOString(),
+            sent: false,
+            trigger_type: FAST_GREEKS_TEST_CAMPAIGN,
+            coupon_code: FAST_GREEKS_COUPON,
+            discount_percent: 20,
+            status: 'sending',
+            attempts: 1
+        })
+    });
+    let logId = null;
+    if (insertResp.ok) {
+        const logged = await insertResp.json();
+        logId = logged?.[0]?.id || null;
+    }
+
+    const emailResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+            accept: 'application/json',
+            'api-key': BREVO_API_KEY,
+            'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+            sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+            replyTo: { name: SENDER_NAME, email: process.env.REPLY_TO_EMAIL || SENDER_EMAIL },
+            to: [{ email: FAST_GREEKS_TEST_EMAIL }],
+            subject: 'New Desk2Quant Lab: Fast Greeks, AAD, SIMM & MVA — 20% Buyer Offer',
+            htmlContent: html,
+            textContent: text
+        })
+    });
+
+    const responseText = await emailResponse.text();
+    let responseJson = {};
+    try { responseJson = responseText ? JSON.parse(responseText) : {}; } catch (_) {}
+
+    if (!emailResponse.ok) {
+        if (logId) {
+            await fetch(`${SUPABASE_URL}/rest/v1/recommendation_emails?id=eq.${logId}`, {
+                method: 'PATCH',
+                headers: { ...headers, Prefer: 'return=minimal' },
+                body: JSON.stringify({ status: 'failed', sent: false, last_error: `Brevo ${emailResponse.status}: ${responseText.slice(0, 250)}` })
+            });
+        }
+        return res.status(502).json({ mode: 'test', sent: 0, error: 'Brevo send failed.' });
+    }
+
+    if (logId) {
+        await fetch(`${SUPABASE_URL}/rest/v1/recommendation_emails?id=eq.${logId}`, {
+            method: 'PATCH',
+            headers: { ...headers, Prefer: 'return=minimal' },
+            body: JSON.stringify({
+                status: 'sent',
+                sent: true,
+                sent_at: new Date().toISOString(),
+                brevo_message_id: responseJson.messageId || null,
+                last_error: null
+            })
+        });
+    }
+
+    return res.status(200).json({
+        mode: 'test',
+        sent: 1,
+        testEmail: FAST_GREEKS_TEST_EMAIL,
+        productId: product.id,
+        coupon: FAST_GREEKS_COUPON,
+        discountPercent: 20,
+        buyerPriceInr: Number(buyerPrice.toFixed(2)),
+        messageId: responseJson.messageId || null
+    });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
