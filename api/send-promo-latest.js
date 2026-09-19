@@ -15,10 +15,17 @@ const FAST_GREEKS_TEST_CAMPAIGN = 'launch_fast_greeks_test30_20260919';
 const FAST_GREEKS_PRODUCT_ID = '05597652-9abe-4fe6-8438-ade147609c9d';
 const FAST_GREEKS_COUPON = 'AMIT30';
 const FAST_GREEKS_TEST_EMAIL = 'iitamit97@gmail.com';
+const FAST_GREEKS_BUYER_CAMPAIGN = 'launch_fast_greeks_name30_20260919';
+const FAST_GREEKS_BUYER_ROUTE = 'fast-greeks-name30-7f4a8d91';
+const FAST_GREEKS_BATCH_SIZE = 12;
 
 export default async function handler(req, res) {
     if (req.query?.campaign === 'fast-greeks-test30-20260919') {
         return handleFastGreeksTest(req, res);
+    }
+
+    if (req.query?.campaign === FAST_GREEKS_BUYER_ROUTE) {
+        return handleFastGreeksBuyerCampaign(req, res);
     }
 
     if (req.method !== 'GET' && req.method !== 'POST') {
@@ -241,6 +248,336 @@ export default async function handler(req, res) {
     }
 }
 
+
+
+function normalizeBuyerProductName(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[–—]/g, '-')
+        .replace(/\s+/g, ' ');
+}
+
+function buyerFirstNameAndCode(knownName, email) {
+    const emailLocal = String(email || '').split('@')[0] || '';
+    const raw = String(knownName || '').trim() || emailLocal.replace(/[._+\-]+/g, ' ');
+    let first = raw.split(/\s+/).filter(Boolean)[0] || '';
+    first = first.normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+    let codeBase = first.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 40);
+
+    if (codeBase.length < 2) {
+        const fallback = emailLocal
+            .normalize('NFKD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .split(/[._+\-\d]+/)
+            .find(part => /^[A-Za-z]{2,}$/.test(part));
+        codeBase = String(fallback || 'QUANT').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 40);
+    }
+
+    const displayName = first && /[A-Za-z]/.test(first) ? first : 'there';
+    return { displayName, couponCode: `${codeBase}30` };
+}
+
+function buildFastGreeksBuyerEmail(product, displayName, couponCode) {
+    const productUrl = `https://desk2quant.com/product.html?id=${product.id}`;
+    const sampleUrl = 'https://desk2quant.com/api/products?sample=fast-greeks';
+    const buyerPrice = Number(product.price) * 0.7;
+    const desc = stripHtml(product.description || '').substring(0, 280);
+    const safeName = escapeHtml(displayName);
+    const safeCode = escapeHtml(couponCode);
+
+    const html = `
+    <div style="font-family:'Segoe UI',Arial,sans-serif;background:#f7f7f3;padding:18px 0;margin:0;color:#090909;">
+      <div style="max-width:620px;margin:0 auto;background:#ffffff;border:1px solid #090909;box-shadow:8px 8px 0 #090909;">
+        <div style="background:#ffca3a;border-bottom:1px solid #090909;padding:30px;text-align:center;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 6px auto;">
+            <tr>
+              <td style="padding-right:12px;vertical-align:middle;">
+                <img src="https://desk2quant.com/assets/images/email-logo.png" width="40" height="40" alt="Desk2Quant" style="display:block;width:40px;height:40px;border:1px solid #090909;background:#fff;">
+              </td>
+              <td style="vertical-align:middle;"><span style="font-size:28px;font-weight:800;letter-spacing:1px;">Desk2Quant</span></td>
+            </tr>
+          </table>
+          <div style="font-size:12px;font-weight:800;letter-spacing:1.7px;text-transform:uppercase;">Private Previous-Buyer Launch</div>
+        </div>
+
+        <div style="padding:32px 30px;">
+          <p style="font-size:16px;margin:0 0 8px;">Hi ${safeName},</p>
+          <div style="display:inline-block;background:#0b7f79;color:#fff;border:1px solid #090909;box-shadow:2px 2px 0 #090909;padding:5px 11px;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;">New Production Lab</div>
+          <h1 style="font-size:26px;line-height:1.25;margin:16px 0 12px;">Fast Greeks &amp; Initial Margin for Quants</h1>
+          <p style="font-size:15px;line-height:1.65;color:#44453f;margin:0 0 22px;">
+            You have bought from Desk2Quant before, so this launch comes with a private <strong>30% previous-buyer discount</strong> generated for you.
+          </p>
+
+          ${product.cover_image_url ? `<img src="${product.cover_image_url}" alt="${escapeHtml(product.name)}" style="display:block;width:100%;max-height:330px;object-fit:contain;background:#f7f7f3;border:1px solid #090909;margin:0 0 22px;">` : ''}
+
+          <p style="font-size:14px;line-height:1.65;color:#555;margin:0 0 22px;">${escapeHtml(desc)}...</p>
+
+          <div style="background:#f7f7f3;border:1px solid #090909;padding:18px 20px;margin:0 0 22px;">
+            <div style="font-weight:800;margin-bottom:9px;">What you get</div>
+            <div style="font-size:14px;line-height:1.75;color:#333;">
+              • 200-page first-principles-to-production playbook<br>
+              • 2 executed Jupyter notebooks + tested Python package<br>
+              • Reverse-mode AAD, computational graphs, tapes and Monte Carlo sensitivities<br>
+              • SIMM architecture, sensitivity aggregation, forward IM and MVA<br>
+              • 130 interview questions with model answers<br>
+              • 26 visuals, 26 mnemonics and 26 scaling relationships
+            </div>
+          </div>
+
+          <div style="background:#ffca3a;border:1px solid #090909;box-shadow:4px 4px 0 #090909;padding:22px;text-align:center;margin:0 0 24px;">
+            <div style="font-size:12px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;">Your private 30% code</div>
+            <div style="font-family:monospace;font-size:28px;font-weight:900;margin:8px 0;overflow-wrap:anywhere;">${safeCode}</div>
+            <div style="font-size:14px;">₹${Number(product.price).toFixed(0)} → <strong>₹${buyerPrice.toFixed(2)}</strong></div>
+          </div>
+
+          <div style="text-align:center;margin:26px 0;">
+            <a href="${productUrl}" style="display:inline-block;background:#0b7f79;color:#fff;text-decoration:none;font-weight:800;border:1px solid #090909;box-shadow:3px 3px 0 #090909;padding:13px 22px;margin:4px;">Use ${safeCode} →</a>
+            <a href="${sampleUrl}" style="display:inline-block;background:#fff;color:#090909;text-decoration:none;font-weight:800;border:1px solid #090909;box-shadow:3px 3px 0 #090909;padding:13px 22px;margin:4px;">Preview 6 Sample Pages</a>
+          </div>
+
+          <p style="font-size:13px;line-height:1.6;color:#666;margin:24px 0 0;">
+            The executable margin examples use clearly labelled synthetic teaching parameters; proprietary ISDA parameter tables are not redistributed.
+          </p>
+        </div>
+
+        <div style="background:#f7f7f3;border-top:1px solid #090909;padding:20px 26px;text-align:center;color:#666;font-size:11px;line-height:1.6;">
+          You are receiving this because you previously purchased from Desk2Quant.<br>
+          Questions? Reply to this email. To stop future product recommendations, reply with <strong>unsubscribe</strong>.<br>
+          <a href="https://desk2quant.com" style="color:#090909;font-weight:700;text-decoration:none;">desk2quant.com</a>
+        </div>
+      </div>
+    </div>`;
+
+    const text = `Hi ${displayName},
+
+Your private Desk2Quant previous-buyer launch offer is here.
+
+Fast Greeks & Initial Margin for Quants — AAD, SIMM & MVA Production Lab
+
+Included:
+- 200-page professional playbook
+- 2 executed Jupyter notebooks + tested Python package
+- Reverse-mode AAD and Monte Carlo sensitivities
+- SIMM architecture, forward IM and MVA
+- 130 interview questions with model answers
+- 26 visuals, 26 mnemonics and 26 scaling relationships
+
+Your private 30% code: ${couponCode}
+₹${Number(product.price).toFixed(0)} -> ₹${buyerPrice.toFixed(2)}
+
+Product: ${productUrl}
+6-page sample: ${sampleUrl}
+
+You received this because you previously purchased from Desk2Quant.
+To stop future product recommendations, reply with unsubscribe.`;
+
+    return { html, text, buyerPrice };
+}
+
+async function handleFastGreeksBuyerCampaign(req, res) {
+    if (req.method !== 'GET' && req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
+    const SUPABASE_KEY = getServiceKey();
+    const BREVO_API_KEY = process.env.BREVO_API_KEY;
+    const SENDER_EMAIL = process.env.SENDER_EMAIL || 'hello@desk2quant.com';
+    const SENDER_NAME = process.env.SENDER_NAME || 'Desk2Quant';
+
+    if (!SUPABASE_KEY || !BREVO_API_KEY) {
+        return res.status(500).json({ error: 'Email service is not configured.' });
+    }
+
+    const headers = {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json'
+    };
+
+    const [productResp, purchasesResp, namesResp, priorResp] = await Promise.all([
+        fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${FAST_GREEKS_PRODUCT_ID}&select=id,name,description,price,cover_image_url&limit=1`, { headers }),
+        fetch(`${SUPABASE_URL}/rest/v1/purchases?select=customer_email,product_name&order=created_at.desc`, { headers }),
+        fetch(`${SUPABASE_URL}/rest/v1/recommendation_emails?select=customer_email,customer_name,created_at&order=created_at.desc`, { headers }),
+        fetch(`${SUPABASE_URL}/rest/v1/recommendation_emails?trigger_type=eq.${FAST_GREEKS_BUYER_CAMPAIGN}&select=customer_email,status`, { headers })
+    ]);
+
+    if (!productResp.ok || !purchasesResp.ok || !namesResp.ok || !priorResp.ok) {
+        return res.status(500).json({ error: 'Campaign data lookup failed.' });
+    }
+
+    const product = (await productResp.json())?.[0];
+    const purchases = await purchasesResp.json();
+    const nameRows = await namesResp.json();
+    const priorRows = await priorResp.json();
+
+    if (!product) return res.status(404).json({ error: 'Target product not found.' });
+
+    const targetName = normalizeBuyerProductName(product.name);
+    const buyerMap = new Map();
+    for (const row of purchases) {
+        const email = String(row.customer_email || '').trim().toLowerCase();
+        if (!email || !email.includes('@') || email === FAST_GREEKS_TEST_EMAIL) continue;
+        if (!buyerMap.has(email)) buyerMap.set(email, new Set());
+        buyerMap.get(email).add(normalizeBuyerProductName(row.product_name));
+    }
+
+    const knownNames = new Map();
+    for (const row of nameRows) {
+        const email = String(row.customer_email || '').trim().toLowerCase();
+        const nm = String(row.customer_name || '').trim();
+        if (!email || knownNames.has(email) || !nm) continue;
+        if (['customer', 'desk2quant customer', 'test recipient'].includes(nm.toLowerCase())) continue;
+        knownNames.set(email, nm);
+    }
+
+    const alreadySent = new Set(
+        priorRows
+            .filter(r => String(r.status || '').toLowerCase() === 'sent')
+            .map(r => String(r.customer_email || '').trim().toLowerCase())
+    );
+
+    const eligible = [...buyerMap.entries()]
+        .filter(([email, products]) => !products.has(targetName) && !alreadySent.has(email))
+        .map(([email]) => email)
+        .sort();
+
+    const batch = eligible.slice(0, FAST_GREEKS_BATCH_SIZE);
+    let sent = 0, skipped = 0, errors = 0;
+    const details = [];
+
+    for (const email of batch) {
+        const { displayName, couponCode } = buyerFirstNameAndCode(knownNames.get(email), email);
+
+        let blacklisted = false;
+        try {
+            const contactResp = await fetch(
+                `https://api.brevo.com/v3/contacts/${encodeURIComponent(email)}`,
+                { headers: { accept: 'application/json', 'api-key': BREVO_API_KEY } }
+            );
+            if (contactResp.ok) {
+                const contact = await contactResp.json();
+                blacklisted = contact?.emailBlacklisted === true;
+            }
+        } catch (_) {}
+
+        const logResp = await fetch(`${SUPABASE_URL}/rest/v1/recommendation_emails`, {
+            method: 'POST',
+            headers: { ...headers, Prefer: 'return=representation' },
+            body: JSON.stringify({
+                customer_email: email,
+                customer_name: displayName,
+                purchased_product: 'Fast Greeks previous-buyer launch',
+                send_at: new Date().toISOString(),
+                sent: false,
+                trigger_type: FAST_GREEKS_BUYER_CAMPAIGN,
+                coupon_code: couponCode,
+                discount_percent: 30,
+                target_product_id: FAST_GREEKS_PRODUCT_ID,
+                status: blacklisted ? 'failed' : 'sending',
+                attempts: 1,
+                last_error: blacklisted ? 'Brevo email blacklist / opt-out' : null
+            })
+        });
+
+        let logId = null;
+        if (logResp.ok) {
+            const logged = await logResp.json();
+            logId = logged?.[0]?.id || null;
+        }
+
+        if (blacklisted) {
+            skipped++;
+            details.push({ status: 'skipped_blacklisted' });
+            continue;
+        }
+
+        const content = buildFastGreeksBuyerEmail(product, displayName, couponCode);
+        const subject = `${displayName}, your private 30% Fast Greeks code is ${couponCode}`;
+
+        try {
+            const emailResp = await fetch('https://api.brevo.com/v3/smtp/email', {
+                method: 'POST',
+                headers: {
+                    accept: 'application/json',
+                    'api-key': BREVO_API_KEY,
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+                    replyTo: { name: SENDER_NAME, email: process.env.REPLY_TO_EMAIL || SENDER_EMAIL },
+                    to: [{ email, name: displayName === 'there' ? undefined : displayName }],
+                    subject,
+                    htmlContent: content.html,
+                    textContent: content.text
+                })
+            });
+
+            const emailText = await emailResp.text();
+            let emailJson = {};
+            try { emailJson = emailText ? JSON.parse(emailText) : {}; } catch (_) {}
+
+            if (emailResp.ok) {
+                sent++;
+                details.push({ status: 'sent' });
+                if (logId) {
+                    await fetch(`${SUPABASE_URL}/rest/v1/recommendation_emails?id=eq.${logId}`, {
+                        method: 'PATCH',
+                        headers: { ...headers, Prefer: 'return=minimal' },
+                        body: JSON.stringify({
+                            status: 'sent',
+                            sent: true,
+                            sent_at: new Date().toISOString(),
+                            brevo_message_id: emailJson.messageId || null,
+                            last_error: null
+                        })
+                    });
+                }
+            } else {
+                errors++;
+                details.push({ status: 'error' });
+                if (logId) {
+                    await fetch(`${SUPABASE_URL}/rest/v1/recommendation_emails?id=eq.${logId}`, {
+                        method: 'PATCH',
+                        headers: { ...headers, Prefer: 'return=minimal' },
+                        body: JSON.stringify({
+                            status: 'failed',
+                            sent: false,
+                            last_error: `Brevo ${emailResp.status}: ${emailText.slice(0, 250)}`
+                        })
+                    });
+                }
+            }
+        } catch (err) {
+            errors++;
+            details.push({ status: 'error' });
+            if (logId) {
+                await fetch(`${SUPABASE_URL}/rest/v1/recommendation_emails?id=eq.${logId}`, {
+                    method: 'PATCH',
+                    headers: { ...headers, Prefer: 'return=minimal' },
+                    body: JSON.stringify({
+                        status: 'failed',
+                        sent: false,
+                        last_error: String(err?.message || err).slice(0, 250)
+                    })
+                });
+            }
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 180));
+    }
+
+    return res.status(200).json({
+        campaign: FAST_GREEKS_BUYER_CAMPAIGN,
+        totalUniquePreviousBuyers: buyerMap.size,
+        batchAttempted: batch.length,
+        sent,
+        skipped,
+        errors,
+        remainingEligible: Math.max(0, eligible.length - batch.length)
+    });
+}
 
 async function handleFastGreeksTest(req, res) {
     if (req.method !== 'GET' && req.method !== 'POST') {
