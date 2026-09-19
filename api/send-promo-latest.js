@@ -345,7 +345,7 @@ async function handleFastGreeksTest(req, res) {
 
           <div style="background:#ffca3a;border:1px solid #090909;box-shadow:4px 4px 0 #090909;padding:22px;text-align:center;margin:0 0 24px;">
             <div style="font-size:12px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;">Exclusive previous-buyer coupon</div>
-            <div style="font-family:monospace;font-size:28px;font-weight:900;margin:8px 0;">AAD20</div>
+            <div style="font-family:monospace;font-size:28px;font-weight:900;margin:8px 0;">AMIT30</div>
             <div style="font-size:16px;font-weight:800;">30% OFF</div>
             <div style="font-size:14px;margin-top:7px;">
               ₹${Number(product.price).toFixed(0)} → <strong>₹${buyerPrice.toFixed(2)}</strong>
