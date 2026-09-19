@@ -11,13 +11,13 @@ import { authorizeCronRequest } from '../lib/cronAuth.js';
 import { getServiceKey, blockIfUnconfigured } from '../lib/supabaseAdmin.js';
 import { hasRecentRecommendation } from '../lib/recommendationQueue.js';
 
-const FAST_GREEKS_TEST_CAMPAIGN = 'launch_fast_greeks_test_20260919';
+const FAST_GREEKS_TEST_CAMPAIGN = 'launch_fast_greeks_test30_20260919';
 const FAST_GREEKS_PRODUCT_ID = '05597652-9abe-4fe6-8438-ade147609c9d';
-const FAST_GREEKS_COUPON = 'AAD20';
+const FAST_GREEKS_COUPON = 'AMIT30';
 const FAST_GREEKS_TEST_EMAIL = 'iitamit97@gmail.com';
 
 export default async function handler(req, res) {
-    if (req.query?.campaign === 'fast-greeks-test-20260919') {
+    if (req.query?.campaign === 'fast-greeks-test30-20260919') {
         return handleFastGreeksTest(req, res);
     }
 
@@ -281,15 +281,6 @@ async function handleFastGreeksTest(req, res) {
         return res.status(404).json({ error: 'Target product not found.' });
     }
 
-    if (String(product.coupon_code || '').toUpperCase() !== FAST_GREEKS_COUPON ||
-        Number(product.discount_percentage) !== 20) {
-        return res.status(409).json({
-            error: 'Coupon configuration mismatch; test email was not sent.',
-            coupon: product.coupon_code,
-            discount: product.discount_percentage
-        });
-    }
-
     const priorResp = await fetch(
         `${SUPABASE_URL}/rest/v1/recommendation_emails?customer_email=eq.${encodeURIComponent(FAST_GREEKS_TEST_EMAIL)}&trigger_type=eq.${FAST_GREEKS_TEST_CAMPAIGN}&sent=eq.true&select=id,brevo_message_id&limit=1`,
         { headers }
@@ -302,8 +293,8 @@ async function handleFastGreeksTest(req, res) {
                 status: 'already_sent',
                 testEmail: FAST_GREEKS_TEST_EMAIL,
                 coupon: FAST_GREEKS_COUPON,
-                discountPercent: 20,
-                buyerPriceInr: Number(product.price) * 0.8,
+                discountPercent: 30,
+                buyerPriceInr: Number(product.price) * 0.7,
                 messageId: prior[0].brevo_message_id || null
             });
         }
@@ -311,7 +302,7 @@ async function handleFastGreeksTest(req, res) {
 
     const productUrl = `https://desk2quant.com/product.html?id=${product.id}`;
     const sampleUrl = 'https://desk2quant.com/api/products?sample=fast-greeks';
-    const buyerPrice = Number(product.price) * 0.8;
+    const buyerPrice = Number(product.price) * 0.7;
     const desc = stripHtml(product.description || '').substring(0, 300);
 
     const html = `
@@ -355,7 +346,7 @@ async function handleFastGreeksTest(req, res) {
           <div style="background:#ffca3a;border:1px solid #090909;box-shadow:4px 4px 0 #090909;padding:22px;text-align:center;margin:0 0 24px;">
             <div style="font-size:12px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;">Exclusive previous-buyer coupon</div>
             <div style="font-family:monospace;font-size:28px;font-weight:900;margin:8px 0;">AAD20</div>
-            <div style="font-size:16px;font-weight:800;">20% OFF</div>
+            <div style="font-size:16px;font-weight:800;">30% OFF</div>
             <div style="font-size:14px;margin-top:7px;">
               ₹${Number(product.price).toFixed(0)} → <strong>₹${buyerPrice.toFixed(2)}</strong>
             </div>
@@ -393,8 +384,8 @@ Included:
 - 130 interview questions with model answers
 - 26 visuals, 26 mnemonics and 26 scaling relationships
 
-Previous-buyer coupon: AAD20
-Discount: 20% OFF
+Previous-buyer coupon: AMIT30
+Discount: 30% OFF
 ₹${Number(product.price).toFixed(0)} -> ₹${buyerPrice.toFixed(2)}
 
 Product: ${productUrl}
@@ -416,7 +407,8 @@ To stop future product recommendations, reply with unsubscribe.`;
             sent: false,
             trigger_type: FAST_GREEKS_TEST_CAMPAIGN,
             coupon_code: FAST_GREEKS_COUPON,
-            discount_percent: 20,
+            discount_percent: 30,
+            target_product_id: FAST_GREEKS_PRODUCT_ID,
             status: 'sending',
             attempts: 1
         })
@@ -438,7 +430,7 @@ To stop future product recommendations, reply with unsubscribe.`;
             sender: { name: SENDER_NAME, email: SENDER_EMAIL },
             replyTo: { name: SENDER_NAME, email: process.env.REPLY_TO_EMAIL || SENDER_EMAIL },
             to: [{ email: FAST_GREEKS_TEST_EMAIL }],
-            subject: 'New Desk2Quant Lab: Fast Greeks, AAD, SIMM & MVA — 20% Buyer Offer',
+            subject: 'New Desk2Quant Lab: Fast Greeks, AAD, SIMM & MVA — 30% Personal Buyer Offer',
             htmlContent: html,
             textContent: text
         })
@@ -479,7 +471,7 @@ To stop future product recommendations, reply with unsubscribe.`;
         testEmail: FAST_GREEKS_TEST_EMAIL,
         productId: product.id,
         coupon: FAST_GREEKS_COUPON,
-        discountPercent: 20,
+        discountPercent: 30,
         buyerPriceInr: Number(buyerPrice.toFixed(2)),
         messageId: responseJson.messageId || null
     });
