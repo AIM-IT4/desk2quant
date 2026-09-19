@@ -638,7 +638,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 isValid = true;
                 appliedDiscount = 20;
                 window.activeModalCoupon.percent = 20; // Ensure checkout button uses 20%
-            } else if (inputCodeUpper && /^[A-Z]{2,40}20(?:[A-F0-9]{8})?$/.test(inputCodeUpper)) {
+            } else if (inputCodeUpper && /^[A-Z]{2,40}(?:20|30)(?:[A-F0-9]{8})?$/.test(inputCodeUpper)) {
                 // Personalised post-purchase/post-booking coupon (e.g. AYAN20). Verified
                 // server-side by exact issued code against recommendation_emails via an
                 // RPC that never exposes the underlying table (see migrations 0006/0008),
@@ -656,7 +656,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             'Authorization': `Bearer ${SUPABASE_KEY}`,
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ p_code: inputCodeUpper })
+                        body: JSON.stringify({ p_code: inputCodeUpper, p_product_id: product.id })
                     });
                     const discountResult = rpcResp.ok ? await rpcResp.json() : null;
                     if (discountResult) {
@@ -5286,7 +5286,7 @@ async function resolveCartCouponDiscount(item, inputCode) {
     const hardcoded20 = mapKey ? CART_COUPON_MAP_20[mapKey].toUpperCase() : null;
     if (inputCodeUpper === expected20Code || inputCodeUpper === hardcoded20) return { valid: true, percent: 20 };
 
-    if (/^[A-Z]{2,40}20(?:[A-F0-9]{8})?$/.test(inputCodeUpper)) {
+    if (/^[A-Z]{2,40}(?:20|30)(?:[A-F0-9]{8})?$/.test(inputCodeUpper)) {
         try {
             const rpcResp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/validate_recommendation_coupon_code`, {
                 method: 'POST',
@@ -5295,7 +5295,7 @@ async function resolveCartCouponDiscount(item, inputCode) {
                     Authorization: `Bearer ${SUPABASE_KEY}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ p_code: inputCodeUpper })
+                body: JSON.stringify({ p_code: inputCodeUpper, p_product_id: item.id })
             });
             const result = rpcResp.ok ? await rpcResp.json() : null;
             if (typeof result === 'number' && result > 0) return { valid: true, percent: result };
