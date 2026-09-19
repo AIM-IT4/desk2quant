@@ -1,0 +1,390 @@
+<p>You implement a swap pricer in QuantLib. The schedule looks right. The market quotes came from the same screen. Your par rate is close. And yet the NPV still does not match Bloomberg.</p>
+
+<p>The instinctive reaction is usually: <strong>there must be a bug in the pricing formula</strong>. In practice, that is often the wrong place to start.</p>
+
+<p>A pricing system is not just a formula. It is a stack of choices: valuation date, settlement rules, calendars, day counts, fixing treatment, curve instruments, bootstrapping order, interpolation space, discounting curve, projection curve, quote conventions, and numerical tolerances. Two systems can implement the same financial model and still disagree because they are solving <em>slightly different specifications</em>.</p>
+
+<p>This article gives a desk-style reconciliation framework for diagnosing that disagreement. The goal is not to reverse-engineer proprietary Bloomberg internals. The goal is to make your own pricer explicit enough that, when two numbers differ, you can isolate the exact layer responsible.</p>
+
+<h2>1. The key idea: reconcile objects, not headline NPVs</h2>
+
+<p>Suppose your engine returns a present value <code>PV_Q</code> and the reference system returns <code>PV_B</code>. Looking only at</p>
+
+<div class="math-block">$$\Delta PV = PV_Q - PV_B$$</div>
+
+<p>tells you almost nothing about the cause. A 5 bp difference could come from one wrong holiday, a different fixing, a projection-curve interpolation choice, or a numerical integration setting.</p>
+
+<p>The correct approach is hierarchical. Reconcile the lowest-level objects first and move upward only after each layer matches.</p>
+
+<table>
+<thead>
+<tr><th>Layer</th><th>What to reconcile</th><th>Typical failure signal</th></tr>
+</thead>
+<tbody>
+<tr><td>0. Snapshot</td><td>Valuation timestamp, market-data timestamp, trade state</td><td>Everything is slightly off</td></tr>
+<tr><td>1. Contract</td><td>Effective date, maturity, notional, coupon, pay/receive, conventions</td><td>Different economics before pricing starts</td></tr>
+<tr><td>2. Schedule</td><td>Accrual dates, payment dates, fixing dates, stubs, lags</td><td>Cashflow dates differ</td></tr>
+<tr><td>3. Fixings</td><td>Historical and same-day fixings, fallback rules</td><td>One or a few coupons differ sharply</td></tr>
+<tr><td>4. Curves</td><td>Discount curve, projection curve, bootstrap instruments</td><td>Forward rates or discount factors differ</td></tr>
+<tr><td>5. Interpolation</td><td>Discount, zero, or forward interpolation and extrapolation</td><td>Differences concentrate between pillars</td></tr>
+<tr><td>6. Cashflows</td><td>Coupon rates, accrual factors, amounts, discount factors</td><td>Leg-level PV mismatch becomes identifiable</td></tr>
+<tr><td>7. Model/numerics</td><td>Vol surface, model parameters, solver, integration, tolerances</td><td>Inputs match but price still differs</td></tr>
+</tbody>
+</table>
+
+<p><strong>Do not start at layer 7.</strong> In production debugging, most wasted time comes from investigating model mathematics before proving that the two systems are pricing the same contractual cashflows with the same market state.</p>
+
+<h2>2. Freeze the snapshot before comparing anything</h2>
+
+<p>Before debugging the model, make the comparison reproducible. Record:</p>
+
+<ul>
+<li>valuation date and exact market-data timestamp;</li>
+<li>trade effective date, maturity, notional, fixed rate/spread and side;</li>
+<li>all historical fixings used by the trade;</li>
+<li>the exact curve quotes and their timestamps;</li>
+<li>the reference system settings used for the valuation;</li>
+<li>whether the trade is clean, dirty, settled, partially fixed, amended, or forward-starting.</li>
+</ul>
+
+<p>This sounds administrative, but it is quantitative discipline. If one system uses a 10:00 curve and another uses a 10:03 curve, the discrepancy may be real market movement, not model error.</p>
+
+<h2>3. Reconcile the contract specification</h2>
+
+<p>For a vanilla fixed-vs-floating interest-rate swap, the fixed-leg PV is approximately</p>
+
+<div class="math-block">$$PV_{\text{fix}} = s\,N K \sum_{i=1}^{m} \alpha_i D(0,T_i),$$</div>
+
+<p>where <code>N</code> is notional, <code>K</code> is the fixed coupon, <code>alpha_i</code> is the fixed-leg accrual fraction, <code>D(0,T_i)</code> is the discount factor, and <code>s</code> is the pay/receive sign.</p>
+
+<p>The floating leg is</p>
+
+<div class="math-block">$$PV_{\text{flt}} = -s\,N \sum_{j=1}^{n} \beta_j F_j D(0,U_j),$$</div>
+
+<p>with <code>beta_j</code> the floating accrual fraction and <code>F_j</code> the applicable fixing or forward rate.</p>
+
+<p>That formula is simple. The specification behind the symbols is not. You must match:</p>
+
+<ul>
+<li>fixed and floating frequencies;</li>
+<li>business-day convention;</li>
+<li>holiday calendar;</li>
+<li>day-count convention on each leg;</li>
+<li>date-generation rule;</li>
+<li>end-of-month handling;</li>
+<li>spot lag and payment lag;</li>
+<li>stub convention;</li>
+<li>index tenor and fixing lag.</li>
+</ul>
+
+<p>A one-day shift can alter both the accrual factor and the discounting date. A different stub can alter an entire coupon. A different calendar can move multiple payment dates. The model can be perfectly coded and still produce the wrong number because the contract was instantiated differently.</p>
+
+<h2>4. Reconcile schedules before rates</h2>
+
+<p>The fastest test is brutally simple: export the full schedule from both systems and compare row by row.</p>
+
+<table>
+<thead>
+<tr><th>Field</th><th>Your engine</th><th>Reference</th><th>Match?</th></tr>
+</thead>
+<tbody>
+<tr><td>Accrual start</td><td>...</td><td>...</td><td>Yes/No</td></tr>
+<tr><td>Accrual end</td><td>...</td><td>...</td><td>Yes/No</td></tr>
+<tr><td>Payment date</td><td>...</td><td>...</td><td>Yes/No</td></tr>
+<tr><td>Fixing date</td><td>...</td><td>...</td><td>Yes/No</td></tr>
+<tr><td>Accrual fraction</td><td>...</td><td>...</td><td>Yes/No</td></tr>
+</tbody>
+</table>
+
+<p>If dates differ, stop. Do not inspect interpolation yet. A curve cannot explain a contractual schedule mismatch.</p>
+
+<p>Day-count conventions deserve special care. A convention designed for coupon accrual is not automatically a good time coordinate for a generic term structure. QuantLib's own practitioner documentation demonstrates that some day-count choices can behave unexpectedly when used to convert arbitrary dates into curve times. Treat the day counter used by the <em>instrument</em> and the one used internally by the <em>term structure</em> as separate modelling decisions.</p>
+
+<h2>5. Fixings can change more than one coupon</h2>
+
+<p>A common debugging mistake is to think historical fixings matter only for the coupon that directly consumes them. In a bootstrapped framework, a fixing can also affect the curve calibration itself.</p>
+
+<p>Why? If quoted calibration instruments contain a coupon whose fixing is now known, their projected cashflows change. The bootstrapped curve must then move so those calibration instruments still reproduce their market quotes.</p>
+
+<p>This creates a non-obvious chain:</p>
+
+<pre>new fixing
+    -> calibration-instrument cashflow changes
+    -> bootstrap recalculates
+    -> forward curve changes
+    -> future projected coupons change
+    -> trade NPV changes</pre>
+
+<p>Therefore, when one system contains today's fixing and another forecasts it from the curve, you can see a difference even in trades that do not directly consume that fixing in the obvious place.</p>
+
+<p>When reconciling, explicitly compare:</p>
+
+<ul>
+<li>all past fixings;</li>
+<li>today's fixing treatment;</li>
+<li>whether same-day fixing is considered known or forecast;</li>
+<li>the timestamp at which the fixing became available;</li>
+<li>fallback or synthetic-index rules, where relevant.</li>
+</ul>
+
+<h2>6. The most important rates concept: discount and projection are different jobs</h2>
+
+<p>Post-crisis interest-rate pricing is generally a multi-curve problem. The curve used to <strong>discount</strong> cashflows is not necessarily the same curve used to <strong>project</strong> floating coupons.</p>
+
+<p>For an Ibor-style coupon, a simple forward can be written as</p>
+
+<div class="math-block">$$F(T_1,T_2)=\frac{1}{\delta}\left(\frac{P_f(0,T_1)}{P_f(0,T_2)}-1\right),$$</div>
+
+<p>where <code>P_f</code> comes from the projection curve and <code>delta</code> is the index accrual fraction. The resulting cashflow is then discounted with the appropriate discount curve <code>D</code>.</p>
+
+<p>This separation matters enormously in debugging.</p>
+
+<p>If your <strong>cashflow amount</strong> already differs before discounting, the first suspect is the projection side: fixings, forward curve, index conventions, or interpolation. If cashflow amounts match but <strong>present values</strong> differ, the first suspect is the discount curve.</p>
+
+<p>That distinction alone can cut a debugging session from hours to minutes.</p>
+
+<h2>7. Bootstrap order matters</h2>
+
+<p>A classic reconciliation error is to build a projection curve as though it were self-contained, when the market instruments used to calibrate it are themselves valued using an already-built discount curve.</p>
+
+<p>A robust workflow is:</p>
+
+<pre>1. Build the collateral / OIS discount curve.
+2. Hold that discount curve fixed.
+3. Build the projection curve using instruments valued with that discount curve.
+4. Verify every bootstrap instrument reprices to its market quote.
+5. Only then price the target trade.</pre>
+
+<p>This is often called curve stacking. The conceptual point is more important than the name: <strong>calibration instruments must be valued using the same discounting architecture assumed by the market quotes</strong>.</p>
+
+<p>A strong invariant is:</p>
+
+<div class="math-block">$$PV_{\text{bootstrap instrument }k}(\text{calibrated curves}) \approx 0$$</div>
+
+<p>for par instruments, within a deliberately chosen numerical tolerance. If the instruments used to construct your curve do not reprice, debugging the target swap is premature.</p>
+
+<h2>8. Interpolation is a pricing assumption, not a charting preference</h2>
+
+<p>Suppose two adjacent curve pillars match perfectly in both systems. You may still get different forward rates between them because the systems interpolate different objects.</p>
+
+<p>Common choices include:</p>
+
+<ul>
+<li>log-linear interpolation of discount factors;</li>
+<li>linear or cubic interpolation of zero rates;</li>
+<li>linear interpolation of instantaneous or simple forwards;</li>
+<li>monotone cubic variants designed to avoid oscillatory forwards.</li>
+</ul>
+
+<p>These choices can produce nearly identical-looking zero curves while producing materially different local forward rates.</p>
+
+<p>This is especially visible when:</p>
+
+<ul>
+<li>the curve is steep;</li>
+<li>the target fixing lies between sparse pillars;</li>
+<li>the trade is forward-starting;</li>
+<li>FRAs/futures bridge the short end;</li>
+<li>the interpolation method changes the slope sharply near a node.</li>
+</ul>
+
+<p>If most coupons match and one interpolated reset differs significantly, do not rebuild the whole model. Zoom in on the two curve pillars surrounding that fixing period and compare the forward calculation under each interpolation rule.</p>
+
+<h2>9. Decompose the PV error at cashflow level</h2>
+
+<p>For one cashflow, let the reference amount and discount factor be <code>CF_B</code> and <code>D_B</code>, while your engine gives <code>CF_Q</code> and <code>D_Q</code>. Then</p>
+
+<div class="math-block">$$\Delta PV_i = CF_QD_Q-CF_BD_B.$$</div>
+
+<p>An exact decomposition is</p>
+
+<div class="math-block">$$\Delta PV_i = D_B\,\Delta CF_i + CF_B\,\Delta D_i + \Delta CF_i\Delta D_i.$$</div>
+
+<p>This is a useful debugging identity because it separates the discrepancy into:</p>
+
+<ul>
+<li><strong>cashflow effect</strong> — usually projection, fixing, accrual, notional, or coupon logic;</li>
+<li><strong>discounting effect</strong> — usually discount curve, payment date, or compounding;</li>
+<li><strong>interaction effect</strong> — usually small, but exact accounting keeps the reconciliation honest.</li>
+</ul>
+
+<p>Aggregate these terms across the leg. Now the headline NPV difference becomes an explainable sum rather than a mystery.</p>
+
+<h2>10. A practical worked diagnosis</h2>
+
+<p>Consider a 10-year swap where:</p>
+
+<ul>
+<li>fixed-leg dates match the reference;</li>
+<li>fixed coupon amounts match;</li>
+<li>floating-leg dates match;</li>
+<li>most floating coupon amounts match;</li>
+<li>one forward coupon differs materially;</li>
+<li>the final NPV is therefore different.</li>
+</ul>
+
+<p>What should you conclude?</p>
+
+<p><strong>First:</strong> the contract schedule is probably not the main problem, because the dates match.</p>
+
+<p><strong>Second:</strong> discounting cannot be the primary cause of the differing coupon amount, because discount factors affect PV, not the undiscounted floating coupon itself.</p>
+
+<p><strong>Third:</strong> inspect the fixing/forward used for that coupon. Determine whether it is historical, same-day, or projected.</p>
+
+<p><strong>Fourth:</strong> if projected, inspect the two projection-curve pillars surrounding the reset interval and calculate the forward manually.</p>
+
+<p><strong>Fifth:</strong> run the same curve through alternative interpolation methods. If the discrepant reset moves while already-matching coupons remain stable, you have localized the source.</p>
+
+<p><strong>Sixth:</strong> only after the floating amount matches should you reconcile discount factors and total PV.</p>
+
+<p>This is much more reliable than changing five curve settings at once and hoping the final NPV gets closer.</p>
+
+<h2>11. QuantLib diagnostic code: export the objects that matter</h2>
+
+<p>For a floating leg, create a table containing the coupon mechanics and discounting inputs. The exact API may vary slightly by QuantLib version, but the diagnostic pattern is stable:</p>
+
+<pre><code class="language-python">import pandas as pd
+import QuantLib as ql
+
+def floating_leg_table(swap, discount_curve):
+    rows = []
+
+    for cf in swap.floatingLeg():
+        c = ql.as_floating_rate_coupon(cf)
+
+        pay_date = c.date()
+
+        rows.append({
+            "accrual_start": c.accrualStartDate().ISO(),
+            "accrual_end": c.accrualEndDate().ISO(),
+            "fixing_date": c.fixingDate().ISO(),
+            "pay_date": pay_date.ISO(),
+            "accrual_fraction": c.accrualPeriod(),
+            "rate": c.rate(),
+            "amount": c.amount(),
+            "discount_factor": discount_curve.discount(pay_date),
+            "pv_contribution": c.amount() * discount_curve.discount(pay_date),
+        })
+
+    return pd.DataFrame(rows)</code></pre>
+
+<p>Do the same for the fixed leg. Export the reference system's schedule/cashflows if available. Then merge the two tables by payment date and compare columns.</p>
+
+<p>The important debugging order is:</p>
+
+<pre>dates
+-> accrual fractions
+-> fixing dates
+-> coupon rates
+-> coupon amounts
+-> discount factors
+-> PV contributions
+-> total NPV</pre>
+
+<p>At each stage, the first mismatch tells you where to investigate next.</p>
+
+<h2>12. What if all cashflows and curves match?</h2>
+
+<p>Only now should you move to model and numerical settings.</p>
+
+<p>For vanilla swaps, there may be little left. For options and exotics, however, you still need to reconcile:</p>
+
+<ul>
+<li>forward construction and dividend treatment;</li>
+<li>volatility quote convention and surface interpolation;</li>
+<li>sticky-strike vs sticky-delta assumptions for scenarios;</li>
+<li>model parameterization;</li>
+<li>integration domain and quadrature method;</li>
+<li>PDE grid size and boundary conditions;</li>
+<li>Monte Carlo seed, time discretization and variance reduction;</li>
+<li>root-finding tolerance for implied volatility;</li>
+<li>rounding and reporting conventions.</li>
+</ul>
+
+<p>Numerical tolerance should be the <em>last</em> explanation, not the first. Increasing solver precision cannot repair a wrong calendar or a wrong projection curve.</p>
+
+<h2>13. Build an error budget instead of asking for an exact match</h2>
+
+<p>Production reconciliation needs a tolerance policy. “The prices should be identical” is not always meaningful when two systems use different numerical representations.</p>
+
+<p>A better framework is to define an error budget:</p>
+
+<table>
+<thead>
+<tr><th>Source</th><th>Diagnostic</th><th>Expected treatment</th></tr>
+</thead>
+<tbody>
+<tr><td>Market-data timestamp</td><td>Revalue on frozen snapshot</td><td>Must match before testing</td></tr>
+<tr><td>Contract conventions</td><td>Schedule diff</td><td>Must match exactly</td></tr>
+<tr><td>Bootstrap repricing</td><td>Par-instrument residuals</td><td>Near numerical tolerance</td></tr>
+<tr><td>Interpolation</td><td>Compare forwards between pillars</td><td>Documented methodology difference</td></tr>
+<tr><td>Numerical solver</td><td>Convergence study</td><td>Residual shrinks under refinement</td></tr>
+<tr><td>Reporting/rounding</td><td>Compare full precision</td><td>Ignore only after quantified</td></tr>
+</tbody>
+</table>
+
+<p>For any material unexplained difference, ask whether it is:</p>
+
+<pre>specification risk
+market-data risk
+curve-construction risk
+model risk
+numerical risk
+reporting risk</pre>
+
+<p>That classification turns a one-off debugging exercise into a reusable control framework.</p>
+
+<h2>14. A 12-check reconciliation ladder</h2>
+
+<ol>
+<li>Freeze valuation and market-data timestamps.</li>
+<li>Confirm pay/receive sign, notional, rate/spread, effective date and maturity.</li>
+<li>Match calendars, business-day rules, spot lag and payment lag.</li>
+<li>Match fixed and floating day-count conventions.</li>
+<li>Compare every accrual, fixing and payment date.</li>
+<li>Load identical historical and same-day fixings.</li>
+<li>Verify the discount curve independently.</li>
+<li>Build projection curves using the correct discounting architecture.</li>
+<li>Reprice every curve calibration instrument.</li>
+<li>Compare forwards between curve pillars under the chosen interpolation.</li>
+<li>Compare undiscounted cashflows, then discount factors, then PV contributions.</li>
+<li>Only then investigate model parameters and numerical tolerances.</li>
+</ol>
+
+<p>If you follow this order, “QuantLib vs Bloomberg” stops being a vague software problem and becomes a deterministic reconciliation exercise.</p>
+
+<h2>15. The interview version</h2>
+
+<p>If an interviewer asks, “Your swap price differs from Bloomberg. What do you do?”, a strong answer is not “I would change the interpolation until it matches.”</p>
+
+<p>A better answer is:</p>
+
+<blockquote>
+<p>I would reconcile from the bottom up: first freeze the same market snapshot and contract conventions, then compare schedules and fixings, then separate projection from discounting curves, verify that bootstrap instruments reprice, compare interpolation-driven forwards, and finally compare cashflow amounts and discount factors. Only if those inputs match would I inspect model and numerical settings.</p>
+</blockquote>
+
+<p>That answer signals something more valuable than library familiarity: you understand that a pricing engine is a controlled chain of financial specifications.</p>
+
+<h2>16. Why this problem matters beyond QuantLib</h2>
+
+<p>The framework applies equally to an in-house C++ library, a Python prototype, a vendor risk system, or an independent model-validation implementation.</p>
+
+<p>Two implementations do not validate each other merely because they produce close NPVs. A proper comparison asks whether they agree for the <em>right reasons</em>. The strongest validation artifact is therefore not a screenshot showing two matching numbers. It is a reconciliation table showing that schedules, fixings, forwards, discount factors and cashflows match independently.</p>
+
+<p>That is how you turn pricing from “my number versus your number” into auditable quantitative engineering.</p>
+
+<h2>Sources and further reading</h2>
+
+<ul>
+<li><a href="https://quant.stackexchange.com/questions/61998/replicating-bloomberg-swap-prices-with-quantlib" target="_blank" rel="noopener">Quant StackExchange: Replicating Bloomberg Swap Prices with QuantLib</a> — a public example of a dual-curve reconciliation problem.</li>
+<li><a href="https://quant.stackexchange.com/questions/77292/quantlib-mismatch-with-bbg-swap" target="_blank" rel="noopener">Quant StackExchange: QuantLib mismatch with BBG Swap</a> — an example where floating cashflows and forwards are the key diagnostic.</li>
+<li><a href="https://quant.stackexchange.com/questions/77323/quantlib-fra-and-interpolated-rate-in-swaps-vs-bbg-valuation" target="_blank" rel="noopener">Quant StackExchange: FRA/interpolated-rate mismatch</a> — illustrates how curve interpolation can materially change a projected reset.</li>
+<li><a href="https://www.quantlibguide.com/Dangerous%20day-count%20conventions.html" target="_blank" rel="noopener">A QuantLib Guide: Dangerous day-count conventions</a> — why coupon day counts and term-structure time coordinates should not be conflated.</li>
+<li><a href="https://www.quantlibguide.com/The%20effect%20of%20today's%20fixing.html" target="_blank" rel="noopener">A QuantLib Guide: The effect of today's fixing</a> — shows how a fixing can feed back into a bootstrapped forecast curve.</li>
+</ul>
+
+<h2>Continue on Desk2Quant</h2>
+
+<p>If you want to go deeper, the <a href="/products/numerical-methods-for-quants.html">Numerical Methods for Quants</a> resource covers curve construction, interpolation, numerical stability and calibration, while the <a href="/products/derivatives-products-and-pricing-master-pack-6-pdfs-ir-fx-equity-credi.html">Derivatives Products &amp; Pricing Master Pack</a> connects those numerical choices to market conventions across asset classes.</p>
+
+<p><em>Educational content only. Bloomberg is referenced as a widely used market-data and analytics platform; Desk2Quant is not affiliated with Bloomberg Finance L.P.</em></p>
