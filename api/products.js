@@ -6,6 +6,8 @@ import { getDriveAccessToken } from '../lib/secureDownload.js';
 
 const MICROSTRUCTURE_SAMPLE_FILE_ID = '1BLNufr0B5zvnTWPV2lmlLNj17RQUJ8z-';
 const MICROSTRUCTURE_SAMPLE_FILENAME = 'Desk2Quant_Market_Microstructure_6Page_Sample.pdf';
+const FAST_GREEKS_SAMPLE_FILE_ID = '1uBT4K39xt0Vx6_-5OwhwqdzZbbB7E1i2';
+const FAST_GREEKS_SAMPLE_FILENAME = 'Desk2Quant_Fast_Greeks_AAD_SIMM_MVA_6Page_Sample.pdf';
 
 export default async function handler(req, res) {
     // CORS
@@ -20,6 +22,10 @@ export default async function handler(req, res) {
     // existing products route so we do not consume another Vercel function.
     if (req.method === 'GET' && req.query.sample === 'market-microstructure') {
         return handleMicrostructureSample(res);
+    }
+
+    if (req.method === 'GET' && req.query.sample === 'fast-greeks') {
+        return handleFastGreeksSample(res);
     }
 
     // Quant Agent shares this serverless route because Vercel Hobby caps the
@@ -135,6 +141,39 @@ async function handleMicrostructureSample(res) {
         return res.status(200).end(bytes);
     } catch (error) {
         console.error('Microstructure sample error:', error.message);
+        return res.status(500).json({ error: 'Sample preview is temporarily unavailable.' });
+    }
+}
+
+
+async function handleFastGreeksSample(res) {
+    const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+    const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+    if (!clientEmail || !privateKey) {
+        return res.status(503).json({ error: 'Sample preview is temporarily unavailable.' });
+    }
+
+    try {
+        const token = await getDriveAccessToken(clientEmail, privateKey);
+        const driveResponse = await fetch(
+            `https://www.googleapis.com/drive/v3/files/${FAST_GREEKS_SAMPLE_FILE_ID}?alt=media`,
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (!driveResponse.ok) {
+            const detail = await driveResponse.text();
+            console.error('Fast Greeks sample Drive fetch failed:', driveResponse.status, detail.substring(0, 200));
+            return res.status(502).json({ error: 'Sample preview is temporarily unavailable.' });
+        }
+
+        const bytes = Buffer.from(await driveResponse.arrayBuffer());
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Length', String(bytes.length));
+        res.setHeader('Content-Disposition', `inline; filename="${FAST_GREEKS_SAMPLE_FILENAME}"`);
+        res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+        return res.status(200).end(bytes);
+    } catch (error) {
+        console.error('Fast Greeks sample error:', error.message);
         return res.status(500).json({ error: 'Sample preview is temporarily unavailable.' });
     }
 }
