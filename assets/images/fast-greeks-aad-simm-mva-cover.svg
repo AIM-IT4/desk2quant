@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1100" viewBox="0 0 800 1100">
+  <rect width="800" height="1100" fill="#0b1020"/>
+  <rect x="34" y="34" width="732" height="1032" rx="10" fill="none" stroke="#2dd4bf" stroke-width="2"/>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="70" y="92" fill="#f8fafc" font-size="28" font-weight="700" letter-spacing="4">DESK2QUANT</text>
+    <text x="70" y="150" fill="#94a3b8" font-size="19" font-weight="700" letter-spacing="2">DESK-READY QUANT FINANCE</text>
+
+    <text x="70" y="265" fill="#ffffff" font-size="58" font-weight="800">FAST GREEKS</text>
+    <text x="70" y="335" fill="#ffffff" font-size="58" font-weight="800">&amp; INITIAL MARGIN</text>
+    <text x="70" y="404" fill="#ffffff" font-size="49" font-weight="800">FOR QUANTS</text>
+
+    <text x="70" y="475" fill="#2dd4bf" font-size="25" font-weight="700">AAD · SIMM ARCHITECTURE · MVA</text>
+    <text x="70" y="518" fill="#cbd5e1" font-size="22">From first principles to production risk systems</text>
+
+    <g transform="translate(70 600)">
+      <rect width="660" height="220" rx="8" fill="#111827" stroke="#334155"/>
+      <circle cx="70" cy="110" r="22" fill="#ffca3a"/>
+      <circle cx="210" cy="55" r="22" fill="#2dd4bf"/>
+      <circle cx="210" cy="165" r="22" fill="#2dd4bf"/>
+      <circle cx="360" cy="110" r="22" fill="#60a5fa"/>
+      <circle cx="520" cy="70" r="22" fill="#f472b6"/>
+      <circle cx="520" cy="150" r="22" fill="#f472b6"/>
+      <path d="M92 110 L188 62 M92 110 L188 158 M232 55 L338 103 M232 165 L338 117 M382 104 L498 75 M382 116 L498 145"
+            stroke="#e5e7eb" stroke-width="4" fill="none"/>
+      <text x="38" y="154" fill="#cbd5e1" font-size="16">Inputs</text>
+      <text x="168" y="205" fill="#cbd5e1" font-size="16">Tape</text>
+      <text x="319" y="154" fill="#cbd5e1" font-size="16">PV</text>
+      <text x="474" y="205" fill="#cbd5e1" font-size="16">Adjoints</text>
+    </g>
+
+    <text x="70" y="900" fill="#ffffff" font-size="25" font-weight="700">200-page playbook + 2 executed notebooks + tested Python code</text>
+    <text x="70" y="948" fill="#cbd5e1" font-size="21">130 answered interview questions · 26 visuals · 26 mnemonics</text>
+    <text x="70" y="1014" fill="#ffffff" font-size="23">Amit Kumar Jha · September 2026</text>
+  </g>
+</svg>
