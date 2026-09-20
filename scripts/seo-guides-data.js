@@ -80,6 +80,18 @@ const PRODUCTS = {
   statistics: {
     href: '/products/statistics-and-econometrics-for-quants-interview-and-desk-playbook.html',
     title: 'Statistics & Econometrics for Quants'
+  },
+  volSurface: {
+    href: '/products/the-vol-surface-construction-playbook-svi-ssvi-static-arbitrage-and-du.html',
+    title: 'The Vol Surface Construction Playbook: SVI, SSVI, Static Arbitrage & Dupire'
+  },
+  fxProblems: {
+    href: '/products/50-fx-derivatives-problems-for-quant-interviews.html',
+    title: '50 FX Derivatives Problems for Quant Interviews'
+  },
+  fxModels: {
+    href: '/products/fx-models-quant-interview-playbook.html',
+    title: 'FX Models: Quant Interview Playbook'
   }
 };
 
@@ -589,9 +601,9 @@ const GUIDES = [
   {
     slug: 'model-validation-interview',
     schemaType: 'Article',
-    metaTitle: 'Model Validation Interview Guide | Desk2Quant',
-    description: 'Prepare for model validation quant interviews: conceptual soundness, data, implementation testing, benchmarking, outcomes analysis, findings, and governance.',
-    h1: 'Model Validation Quant Interview: A Practical Preparation Guide',
+    metaTitle: 'Model Validation Quant Interview: Questions & Case Studies',
+    description: 'Prepare model validation quant interview questions and case studies covering conceptual soundness, data, implementation, benchmarking, performance, findings, and governance.',
+    h1: 'Model Validation Quant Interview Questions and Case Studies',
     eyebrow: 'Independent model challenge',
     readTime: 14,
     keywords: ['model validation interview', 'model risk quant interview', 'quant model validation', 'model validation case study'],
@@ -955,9 +967,9 @@ const GUIDES = [
   {
     slug: 'stochastic-calculus-interview',
     schemaType: 'TechArticle',
-    metaTitle: 'Stochastic Calculus Interview Guide | Desk2Quant',
-    description: 'Prepare stochastic calculus for quant interviews: Brownian motion, Ito calculus, SDEs, martingales, risk-neutral pricing, PDE links, and practical questions.',
-    h1: 'Stochastic Calculus for Quant Interviews: Concepts to Explain Clearly',
+    metaTitle: 'Stochastic Calculus for Quants: Interview Guide | Desk2Quant',
+    description: 'Stochastic calculus for quants: Brownian motion, Ito calculus, SDEs, martingales, risk-neutral pricing, Feynman-Kac, simulation, and interview questions.',
+    h1: 'Stochastic Calculus for Quants: Interview Guide and Questions',
     eyebrow: 'Pricing mathematics',
     readTime: 15,
     keywords: ['stochastic calculus interview', 'stochastic calculus for quants', 'Ito lemma interview questions', 'quant finance mathematics'],
@@ -1071,7 +1083,7 @@ const GUIDES = [
       use(PRODUCTS.probability, 'Strengthen the conditional expectation and probability foundation beneath stochastic processes.'),
       use(PRODUCTS.numerical, 'Carry SDE knowledge into Monte Carlo, PDE, and calibration implementations with error controls.')
     ],
-    relatedSlugs: ['numerical-methods-quant-finance', 'xva-interview-questions', 'quant-interview-questions']
+    relatedSlugs: ['volatility-surface-svi-ssvi-dupire', 'numerical-methods-quant-finance', 'quant-interview-questions']
   },
 
   {
@@ -1198,11 +1210,267 @@ const GUIDES = [
   },
 
   {
+    slug: 'volatility-surface-svi-ssvi-dupire',
+    schemaType: 'TechArticle',
+    metaTitle: 'SVI & SSVI Volatility Surface: Arbitrage & Dupire Guide',
+    description: 'Build and validate an arbitrage-aware volatility surface with SVI and SSVI, static-arbitrage checks, Dupire local volatility, calibration diagnostics, and quant interview questions.',
+    h1: 'SVI and SSVI Volatility Surfaces: Static Arbitrage and Dupire Local Volatility',
+    eyebrow: 'Volatility surface construction',
+    readTime: 16,
+    keywords: ['SVI volatility surface', 'SSVI volatility surface', 'Dupire local volatility', 'static arbitrage volatility surface', 'volatility surface calibration'],
+    intro: [
+      'A production volatility surface is more than a smooth picture through option quotes. It must respect quote conventions, interpolate sensibly across strikes and maturities, avoid obvious static arbitrage, and remain stable enough for pricing, Greeks, and downstream local-volatility calculations.',
+      'SVI is widely used to represent a single implied-variance smile; SSVI adds a structured way to connect slices across maturity. The practical task is to fit market data while controlling calendar and butterfly arbitrage, then understand what happens when the fitted surface is differentiated inside Dupire local volatility.'
+    ],
+    quickAnswer: 'Work in forward log-moneyness and total implied variance, clean and weight quotes, fit SVI slices or an SSVI surface, enforce or diagnose calendar and butterfly arbitrage, test interpolation and extrapolation, then compute Dupire local volatility only after checking derivative stability.',
+    outcomes: [
+      'Translate option quotes into consistent forward-moneyness and total-variance coordinates.',
+      'Explain SVI and SSVI parameterizations and calibration trade-offs.',
+      'Diagnose butterfly and calendar-spread arbitrage before using the surface.',
+      'Connect implied volatility to Dupire local volatility and understand numerical instability.'
+    ],
+    sections: [
+      {
+        id: 'coordinates-quotes',
+        title: '1. Start with clean quotes and the right coordinates',
+        paragraphs: [
+          'A surface calibration is only as coherent as its inputs. Reconcile spot, discount factors, forwards, expiries, option conventions, bid-ask spreads, and delta-to-strike conversions before fitting. For equity-style smiles, a common coordinate is log-forward moneyness k = log(K/F), with total implied variance w(k,T) = sigma_imp(k,T)^2 T.',
+          'Total variance is useful because no-calendar-arbitrage conditions and maturity behavior are easier to express in w than in raw implied volatility. Weight observations by liquidity or spread rather than treating a stale wing quote as equal to an at-the-money quote.'
+        ],
+        bullets: [
+          'Use one consistent forward and discounting convention per expiry.',
+          'Keep bid, ask, mid, liquidity, and source timestamps available for diagnostics.',
+          'Convert delta quotes only with the market convention used by the instrument.',
+          'Do not extrapolate illiquid wings silently; state the rule and test its risk impact.'
+        ]
+      },
+      {
+        id: 'svi-slices',
+        title: '2. Fit SVI slices without losing economic shape',
+        paragraphs: [
+          'Raw SVI represents total variance as a five-parameter function of log-moneyness. The parameters control overall level, slope, skew orientation, horizontal shift, and curvature. Its flexibility makes it practical, but unconstrained least squares can produce visually good fits with poor arbitrage properties.',
+          'Calibrate with sensible parameter domains and multiple starts, inspect residuals in price or volatility space, and compare fitted wings with observed spreads. A low objective value is not sufficient if parameters jump between nearby expiries or the resulting density becomes negative.'
+        ],
+        table: {
+          caption: 'SVI calibration diagnostics',
+          headers: ['Diagnostic', 'What it checks', 'Warning sign'],
+          rows: [
+            ['Residuals by strike', 'Fit quality across the smile', 'Systematic wing or ATM bias'],
+            ['Parameter stability', 'Robustness across starts and expiries', 'Large jumps with similar fit error'],
+            ['Implied density', 'Butterfly-arbitrage behavior', 'Negative density regions'],
+            ['Wing slopes', 'Extrapolation and moment behavior', 'Extreme or unstable asymptotics']
+          ]
+        }
+      },
+      {
+        id: 'ssvi-arbitrage',
+        title: '3. Use SSVI and explicit static-arbitrage checks',
+        paragraphs: [
+          'SSVI parameterizes the whole surface through maturity-dependent at-the-money total variance and a controlled smile shape. Its attraction is not merely fewer parameters: suitable restrictions can make static-arbitrage control more transparent than calibrating unrelated slices.',
+          'Check calendar arbitrage by verifying that total variance behaves consistently across maturity for fixed log-moneyness. Check butterfly arbitrage through convexity of option prices or equivalent density conditions. Run these diagnostics on a dense grid, not only at quoted strikes.'
+        ],
+        callout: {
+          title: 'Smooth is not the same as arbitrage-free',
+          text: 'A visually smooth interpolation can still imply negative state-price density or decreasing option value with maturity. Arbitrage diagnostics must be explicit tests.'
+        }
+      },
+      {
+        id: 'dupire-local-vol',
+        title: '4. Differentiate carefully before using Dupire local volatility',
+        paragraphs: [
+          'Dupire local volatility extracts a state- and time-dependent diffusion coefficient from the option-price or implied-variance surface. The formula depends on derivatives across strike and maturity, so noise that looks harmless in implied volatility can become severe after differentiation.',
+          'Validate local volatility by checking positivity, smoothness, boundary behavior, and repricing. A local-vol Monte Carlo or PDE engine should reproduce the vanilla surface within numerical tolerance when fed the extracted local volatility. Large repricing errors usually reveal derivative, interpolation, extrapolation, or convention problems.'
+        ],
+        bullets: [
+          'Differentiate the fitted representation, not raw noisy quotes.',
+          'Stress maturity interpolation near short expiries where derivatives are unstable.',
+          'Inspect local variance for negative or explosive regions before simulation.',
+          'Reprice the calibration vanillas as an end-to-end consistency test.'
+        ]
+      },
+      {
+        id: 'production-validation',
+        title: '5. Treat the surface as a production model, not a chart',
+        paragraphs: [
+          'A desk-quality surface needs fallback logic, stale-data controls, calibration monitoring, parameter-jump alerts, arbitrage diagnostics, and reproducible snapshots. Changes in quote coverage or convention should be visible to users rather than absorbed silently by the optimizer.',
+          'For model validation, challenge the full chain: market-data selection, forward construction, parameterization, objective weights, constraints, interpolation, extrapolation, numerical derivatives, local-vol extraction, and downstream pricing impact.'
+        ],
+        bullets: [
+          'Track fit error alongside arbitrage violations and parameter stability.',
+          'Compare against a simpler interpolation or previous-day surface as a challenger.',
+          'Test sparse markets, crossed quotes, missing wings, and stressed skew regimes.',
+          'Version inputs and calibration settings so historical prices can be reproduced.'
+        ]
+      }
+    ],
+    drills: [
+      { question: 'Why use total implied variance instead of implied volatility in SVI?', answer: 'Total variance scales naturally with maturity and is the native quantity in SVI. Static-arbitrage conditions and cross-maturity comparisons are also easier to express in total variance.' },
+      { question: 'What is the difference between SVI and SSVI?', answer: 'SVI typically parameterizes one expiry slice. SSVI imposes a structured surface across maturities using ATM total variance and smile-shape functions, making cross-maturity consistency and arbitrage control more systematic.' },
+      { question: 'How do you detect butterfly arbitrage?', answer: 'Check convexity of option price in strike or an equivalent non-negative risk-neutral density condition on a sufficiently dense grid, including interpolated and extrapolated regions.' },
+      { question: 'Why can Dupire local volatility become unstable?', answer: 'It uses strike and maturity derivatives of the option or implied-variance surface, which amplify quote noise, interpolation artifacts, short-maturity instability, and weak wing extrapolation.' },
+      { question: 'How would you validate a fitted volatility surface?', answer: 'Reconcile conventions, inspect weighted residuals, test calendar and butterfly arbitrage, stress interpolation and extrapolation, monitor parameter stability, and reprice vanillas through downstream engines such as local volatility.' }
+    ],
+    plan: [
+      { label: 'Step 1', title: 'Normalize', text: 'Build forwards, convert quotes consistently, and move into log-moneyness and total variance.' },
+      { label: 'Step 2', title: 'Calibrate', text: 'Fit SVI slices with bounds, multiple starts, spread-aware weights, and residual diagnostics.' },
+      { label: 'Step 3', title: 'Constrain', text: 'Introduce SSVI or explicit cross-maturity constraints and run dense-grid arbitrage tests.' },
+      { label: 'Step 4', title: 'Differentiate', text: 'Extract Dupire local volatility and test positivity, smoothness, and sensitivity.' },
+      { label: 'Step 5', title: 'Reprice', text: 'Use PDE or Monte Carlo repricing to close the validation loop and document fallbacks.' }
+    ],
+    pitfalls: [
+      'Fitting every expiry independently and ignoring cross-maturity arbitrage.',
+      'Optimizing only a least-squares error while ignoring bid-ask spreads and density checks.',
+      'Differentiating raw implied-volatility quotes inside Dupire.',
+      'Treating successful optimizer termination as proof that the surface is production-ready.'
+    ],
+    faq: [
+      { question: 'What is SVI in volatility modeling?', answer: 'SVI is a five-parameter representation of total implied variance as a function of log-forward moneyness for an expiry. It is flexible enough to capture skew and curvature while supporting analytical arbitrage diagnostics.' },
+      { question: 'What is SSVI?', answer: 'SSVI extends the SVI idea into a structured maturity-dependent surface. With suitable parameter restrictions, it can provide a compact and more controllable arbitrage-aware representation across expiries.' },
+      { question: 'What is static arbitrage in a volatility surface?', answer: 'Static arbitrage includes violations such as negative butterfly spreads within a maturity or calendar-spread inconsistencies across maturities. These correspond to impossible option-price relationships and can imply negative densities.' },
+      { question: 'How is Dupire local volatility related to implied volatility?', answer: 'Dupire derives a local diffusion coefficient from derivatives of the full arbitrage-consistent option-price or implied-variance surface. It is not simply the implied volatility evaluated at the same strike and maturity.' }
+    ],
+    resources: [
+      use(PRODUCTS.volSurface, 'Use the full SVI/SSVI workflow, static-arbitrage diagnostics, Dupire construction, and executable companion material.'),
+      use(PRODUCTS.numerical, 'Deepen calibration, interpolation, PDE, Monte Carlo, convergence, and numerical validation techniques.'),
+      use(PRODUCTS.stochastic, 'Connect local-volatility dynamics and risk-neutral pricing back to stochastic calculus.')
+    ],
+    relatedSlugs: ['numerical-methods-quant-finance', 'stochastic-calculus-interview', 'model-validation-interview']
+  },
+
+  {
+    slug: 'fx-derivatives-quant-interview',
+    schemaType: 'Article',
+    metaTitle: 'FX Derivatives Quant Interview: 50 Questions & Pricing Guide',
+    description: 'Prepare for FX derivatives quant interviews: forwards, NDFs, Garman-Kohlhagen, delta conventions, volatility smiles, barriers, quanto, calibration, Greeks, and practical questions.',
+    h1: 'FX Derivatives Quant Interview Questions: Pricing, Smiles, Greeks and Exotics',
+    eyebrow: 'Foreign-exchange derivatives',
+    readTime: 15,
+    keywords: ['FX derivatives quant interview', 'FX quant interview questions', 'FX options interview', 'Garman Kohlhagen interview', 'FX volatility smile'],
+    intro: [
+      'FX derivatives interviews combine pricing theory with market conventions. Candidates often know Black-Scholes mechanics but lose points on domestic versus foreign discounting, forward construction, delta conventions, smile quoting, barrier behavior, or how a model is calibrated and controlled in production.',
+      'Prepare the market object first, then the model. For every FX option question, identify the currency pair convention, domestic and foreign rates, forward, quote and delta convention, volatility input, payoff currency, and settlement details before writing a pricing formula.'
+    ],
+    quickAnswer: 'Master FX forwards and NDFs, Garman-Kohlhagen vanilla pricing, domestic and foreign discounting, market delta conventions, volatility smiles, barriers and exotics, quanto effects, Greeks, calibration, and model validation. State conventions before calculating.',
+    outcomes: [
+      'Price and explain FX forwards, NDFs, and vanilla options consistently.',
+      'Handle delta and volatility-smile conventions without mixing market definitions.',
+      'Discuss barriers, quanto effects, and model choice beyond Garman-Kohlhagen.',
+      'Answer practical risk, calibration, and validation follow-ups.'
+    ],
+    sections: [
+      {
+        id: 'forwards-ndfs',
+        title: '1. Get forwards, discounting, and NDFs right first',
+        paragraphs: [
+          'For a currency pair quoted as domestic currency per unit of foreign currency, the no-arbitrage forward follows from domestic and foreign discount factors. The exact notation matters less than stating which currency is domestic, which is foreign, and how the payoff is settled.',
+          'NDFs add fixing and cash settlement instead of physical exchange. Interviewers may ask how fixing source, settlement currency, holidays, or capital controls affect valuation and operational risk.'
+        ],
+        bullets: [
+          'State the pair convention before using rates.',
+          'Reconcile forward points with the two discount curves.',
+          'Separate trade maturity, fixing date, and settlement date for NDFs.',
+          'Check signs by asking which currency you receive when spot or forward rises.'
+        ]
+      },
+      {
+        id: 'vanilla-gk',
+        title: '2. Use Garman-Kohlhagen as a baseline, not the whole answer',
+        paragraphs: [
+          'Garman-Kohlhagen adapts Black-Scholes to FX by treating the foreign short rate like a continuous yield. Under the domestic pricing measure, the forward embeds the domestic-foreign rate differential and the option is discounted in the domestic currency.',
+          'A strong answer gives the formula structure, then explains assumptions: lognormal spot, deterministic rates, constant volatility, frictionless trading, and continuous hedging. Real FX markets require a volatility surface and often richer dynamics for exotics.'
+        ],
+        callout: {
+          title: 'Fast consistency check',
+          text: 'Price the option from the forward form and verify domestic discounting. Then check put-call parity using the same spot, forward, and discount-factor conventions.'
+        }
+      },
+      {
+        id: 'delta-smile',
+        title: '3. Treat delta conventions and the smile as model inputs',
+        paragraphs: [
+          'FX volatility is frequently quoted by delta rather than strike. Depending on market and tenor, delta may be spot or forward, premium-adjusted or unadjusted. Converting a quoted delta to strike is therefore part of the model input process, not a cosmetic transformation.',
+          'Smile quotes may be expressed through ATM, risk reversals, and butterflies. Explain how these reconstruct call and put volatilities at chosen deltas, then how the resulting smile is interpolated in a way that preserves sensible shape and avoids arbitrage.'
+        ],
+        table: {
+          caption: 'Common FX smile concepts',
+          headers: ['Concept', 'Interpretation', 'Interview check'],
+          rows: [
+            ['ATM volatility', 'Reference volatility near the forward or convention-defined ATM strike', 'State the ATM convention'],
+            ['Risk reversal', 'Difference between call and put wing volatilities', 'Connect sign to skew'],
+            ['Butterfly', 'Average wing richness relative to ATM', 'Explain convention used to reconstruct wings'],
+            ['Delta-to-strike', 'Maps market delta quote into model strike', 'Specify spot/forward and premium adjustment']
+          ]
+        }
+      },
+      {
+        id: 'exotics-models',
+        title: '4. Move from vanillas to barriers, quanto, and richer models',
+        paragraphs: [
+          'Barrier options are sensitive not only to terminal spot but to whether a level is touched. This creates strong dependence on smile dynamics, monitoring convention, gaps, and numerical method. Explain knock-in/knock-out parity where applicable and why discrete monitoring differs from continuous monitoring.',
+          'Quanto or cross-currency payoffs introduce dependence between asset moves and FX. For smile-sensitive exotics, local volatility, stochastic volatility, or hybrid models may be considered. Model choice should be tied to the risk being hedged and the instruments available for calibration.'
+        ],
+        bullets: [
+          'Identify path dependence before choosing a pricing engine.',
+          'Discuss correlation and quanto drift adjustments when currencies and underlyings interact.',
+          'Explain which vanilla instruments calibrate each model component.',
+          'State model-risk implications when extrapolating beyond liquid smile quotes.'
+        ]
+      },
+      {
+        id: 'risk-validation',
+        title: '5. Finish with Greeks, calibration, and validation',
+        paragraphs: [
+          'FX option risk includes spot delta, gamma, vega, theta, rate sensitivities, and smile sensitivities. For exotics, risk can jump around barriers or become highly dependent on the chosen smile-dynamics assumption. Explain both the mathematical Greek and the hedge instrument or market move it represents.',
+          'Validate conventions, forwards, smile reconstruction, interpolation, calibration, numerical convergence, and benchmark prices separately. Reconcile vanilla prices first, then test exotics against independent methods or limiting cases.'
+        ],
+        bullets: [
+          'Bump market quotes in the same convention in which the desk manages risk.',
+          'Test put-call parity and forward consistency before exotic validation.',
+          'Compare analytical, PDE, tree, and Monte Carlo results where overlapping methods exist.',
+          'Stress skew, rates, correlation, and barrier proximity rather than reporting one base-case price.'
+        ]
+      }
+    ],
+    drills: [
+      { question: 'How do domestic and foreign rates enter an FX option price?', answer: 'They determine the forward through the two discount factors. Under the domestic measure, the foreign rate behaves like a yield on spot while the payoff is discounted domestically.' },
+      { question: 'Why is FX delta ambiguous without a convention?', answer: 'Markets use spot or forward delta and may adjust for premium. The same quoted delta can therefore map to different strikes unless the convention is specified.' },
+      { question: 'What do a 25-delta risk reversal and butterfly tell you?', answer: 'The risk reversal captures call-versus-put wing skew, while the butterfly captures wing richness relative to ATM. The exact reconstruction depends on the market quote convention.' },
+      { question: 'Why are barrier options more model-sensitive than vanillas?', answer: 'Their value depends on the path and proximity to the barrier, making them sensitive to smile dynamics, monitoring, gaps, and local or stochastic volatility assumptions that can be weakly constrained by vanillas.' },
+      { question: 'How would you validate an FX volatility smile implementation?', answer: 'Reconcile forwards and quote conventions, reproduce delta-to-strike conversion, reconstruct market nodes, test interpolation and arbitrage, compare vanilla prices, and stress wings and tenors.' }
+    ],
+    plan: [
+      { label: 'Module 1', title: 'Conventions', text: 'Master pair notation, forwards, discounting, settlements, and NDF mechanics.' },
+      { label: 'Module 2', title: 'Vanillas', text: 'Derive Garman-Kohlhagen, parity, Greeks, and limiting cases.' },
+      { label: 'Module 3', title: 'Smile', text: 'Practise delta conventions, ATM/RR/BF reconstruction, strike conversion, and interpolation.' },
+      { label: 'Module 4', title: 'Exotics', text: 'Work barriers, quanto, correlation, smile dynamics, and numerical methods.' },
+      { label: 'Module 5', title: 'Validation', text: 'Run convention, calibration, convergence, benchmark, and stress checks.' }
+    ],
+    pitfalls: [
+      'Writing a pricing formula before declaring the currency-pair convention.',
+      'Mixing spot delta, forward delta, and premium-adjusted delta.',
+      'Treating the implied-volatility smile as a single constant volatility.',
+      'Discussing an exotic model without explaining calibration instruments and hedge implications.'
+    ],
+    faq: [
+      { question: 'What is asked in an FX derivatives quant interview?', answer: 'Expect forwards and NDFs, Garman-Kohlhagen, domestic and foreign discounting, put-call parity, delta conventions, ATM and smile quotes, barriers and exotics, Greeks, calibration, numerical methods, and model-risk questions.' },
+      { question: 'What is Garman-Kohlhagen?', answer: 'It is the Black-Scholes-style model for FX options with domestic and foreign interest rates. The foreign rate enters similarly to a continuous yield and the option is valued under a domestic pricing measure.' },
+      { question: 'Why are FX options quoted by delta?', answer: 'Delta provides a market-standard way to identify smile points across spot levels and tenors, but the quote is incomplete unless the spot/forward and premium-adjustment convention is specified.' },
+      { question: 'How should I prepare FX exotic options?', answer: 'Understand vanilla smile construction first, then learn path dependence, barrier conventions, quanto and correlation effects, local/stochastic volatility choices, numerical pricing, Greeks, and validation.' }
+    ],
+    resources: [
+      use(PRODUCTS.fxProblems, 'Work through 50 FX derivatives interview problems with formulas and complete worked solutions.'),
+      use(PRODUCTS.fxModels, 'Deepen the model layer for FX pricing, calibration, smile dynamics, and interview preparation.'),
+      use(PRODUCTS.problemBook, 'Add broader probability, coding, derivatives, and quantitative-finance drills around the FX specialization.')
+    ],
+    relatedSlugs: ['quant-interview-questions', 'numerical-methods-quant-finance', 'stochastic-calculus-interview']
+  },
+
+  {
     slug: 'numerical-methods-quant-finance',
     schemaType: 'TechArticle',
-    metaTitle: 'Numerical Methods in Quant Finance Guide | Desk2Quant',
-    description: 'A practical guide to numerical methods in quant finance: error analysis, root finding, interpolation, PDEs, Monte Carlo, calibration, and production checks.',
-    h1: 'Numerical Methods for Quant Finance: An Interview and Desk Guide',
+    metaTitle: 'Numerical Methods for Quants | PDE, Monte Carlo & Calibration',
+    description: 'Numerical methods for quants: root finding, interpolation, PDE option pricing, Monte Carlo, calibration, convergence, error control, and production checks.',
+    h1: 'Numerical Methods for Quants: PDE, Monte Carlo, Calibration and Error Control',
     eyebrow: 'Computational quantitative finance',
     readTime: 16,
     keywords: ['numerical methods quantitative finance', 'numerical methods for quants', 'Monte Carlo quant interview', 'PDE option pricing'],
@@ -1321,7 +1589,7 @@ const GUIDES = [
       use(PRODUCTS.greeks, 'Connect numerical method choices to volatility, curves, Greeks, simulation, and XVA calculations.'),
       use(PRODUCTS.projects, 'Choose further projects to demonstrate convergence, testing, performance, and model-risk judgment.')
     ],
-    relatedSlugs: ['stochastic-calculus-interview', 'cpp-quant-interview', 'python-quant-interview']
+    relatedSlugs: ['volatility-surface-svi-ssvi-dupire', 'stochastic-calculus-interview', 'python-quant-interview']
   }
 ];
 
