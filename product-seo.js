@@ -52,6 +52,18 @@
         return `${SITE_URL}${getProductPath(product)}`;
     }
 
+    function getProductSeoImage(product, fallback = `${SITE_URL}/assets/images/desk2quant-logo.png`) {
+        const image = product && product.cover_image_url;
+        // This legacy inline SVG has an identical, publicly hosted cover.
+        // Google needs a crawlable URL in Product/OG image metadata. Keep any
+        // future hosted replacement and every other product's cover unchanged.
+        if (product && product.id === '928a14d2-64b4-4a73-951d-dcf191fe72ad' &&
+            typeof image === 'string' && /^data:image\//i.test(image.trim())) {
+            return `${SITE_URL}/assets/images/vol-surface-cover.svg`;
+        }
+        return image || fallback;
+    }
+
     // product.html already loads this tiny bootstrap before the product data.
     // Use it to load conversion modules only for the Complete Bundle, leaving
     // all other product pages and checkout code untouched.
@@ -85,6 +97,7 @@
         slugifyProductName,
         getProductSlug,
         getProductPath,
-        getProductUrl
+        getProductUrl,
+        getProductSeoImage
     });
 });

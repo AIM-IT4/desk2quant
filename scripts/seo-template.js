@@ -1,4 +1,5 @@
 const { esc, clamp, stripHtml, seoTitle, metaDescription, SITE } = require('./generate-seo-pages.js');
+const { getProductSeoImage } = require('../product-seo.js');
 
 // Every build-time page shares one footer. Generated pages are entry points
 // from search, so without it a visitor (and a crawler) lands on a leaf with no
@@ -37,7 +38,7 @@ function renderPage(p, slug, related, reviews) {
   const title = seoTitle(name);
   const desc = metaDescription(p.description, 158) ||
     'Practitioner-built quantitative finance resource from Desk2Quant.';
-  const img = p.cover_image_url || `${SITE}/assets/images/desk2quant-logo.png`;
+  const img = getProductSeoImage(p);
   const price = Number(p.price) || 0;
 
   const jsonLd = {

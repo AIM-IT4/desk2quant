@@ -1060,7 +1060,8 @@
             const title = `${product.name} | Desk2Quant`;
             const description = plainTextFromHtml(product.description, 160) ||
                 'Premium digital resource for quantitative finance professionals from Desk2Quant.';
-            const image = product.cover_image_url || 'https://desk2quant.com/assets/images/desk2quant-logo.png';
+            const image = productSeo?.getProductSeoImage?.(product) ||
+                product.cover_image_url || 'https://desk2quant.com/assets/images/desk2quant-logo.png';
 
             document.title = title;
             document.getElementById('p-meta-description').setAttribute('content', description);
