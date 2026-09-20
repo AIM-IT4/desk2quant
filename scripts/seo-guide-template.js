@@ -289,7 +289,7 @@ ${renderFooter()}
 
 function renderGuidesIndex() {
   const canonical = `${SITE}${GUIDE_ROOT}`;
-  const description = 'Explore practical Desk2Quant guides for quant interviews, C++, Python, stochastic calculus, numerical methods, model validation, risk, and XVA.';
+  const description = 'Explore practical Desk2Quant guides for quant interviews, numerical methods, stochastic calculus, model validation, FX derivatives, volatility surfaces, risk, XVA, Python, and C++.';
   const breadcrumbLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -363,7 +363,8 @@ function validateGuides() {
     'quant-interview-guide', 'quant-interview-questions', 'quant-developer-interview',
     'risk-quant-interview', 'model-validation-interview', 'cpp-quant-interview',
     'python-quant-interview', 'stochastic-calculus-interview',
-    'xva-interview-questions', 'numerical-methods-quant-finance'
+    'xva-interview-questions', 'volatility-surface-svi-ssvi-dupire',
+    'fx-derivatives-quant-interview', 'numerical-methods-quant-finance'
   ];
   const slugs = GUIDES.map(guide => guide.slug);
   if (GUIDES.length !== expected.length || expected.some(slug => !slugs.includes(slug))) {
