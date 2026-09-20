@@ -422,3 +422,23 @@ test('sitemap contains only unique, self-canonical desk2quant.com URLs without q
         assert.ok(locationSet.has(canonical), `${file} canonical is missing from sitemap.xml: ${canonical}`);
     }
 });
+
+
+test('high-intent quant guides remain indexable and target the intended search clusters', () => {
+    const expectations = [
+        ['guides/numerical-methods-quant-finance.html', /Numerical Methods for Quants/i, /PDE|Monte Carlo|calibration/i],
+        ['guides/model-validation-interview.html', /Model Validation Quant Interview Questions and Case Studies/i, /conceptual soundness|benchmarking|governance/i],
+        ['guides/stochastic-calculus-interview.html', /Stochastic Calculus for Quants/i, /Brownian motion|Ito|martingales/i],
+        ['guides/volatility-surface-svi-ssvi-dupire.html', /SVI and SSVI Volatility Surfaces/i, /Dupire local volatility|static arbitrage/i],
+        ['guides/fx-derivatives-quant-interview.html', /FX Derivatives Quant Interview Questions/i, /Garman-Kohlhagen|delta conventions|volatility smiles/i]
+    ];
+
+    for (const [file, titlePattern, bodyPattern] of expectations) {
+        assert.ok(htmlByFile.has(file), `${file} must be generated`);
+        const html = htmlByFile.get(file);
+        assert.equal(hasNoindex(html), false, `${file} must remain indexable`);
+        assert.match(html, titlePattern, `${file} should target its primary query in visible/title content`);
+        assert.match(html, bodyPattern, `${file} should contain substantive topical coverage`);
+        assert.equal(canonicalLinks(html)[0], `${CANONICAL_ORIGIN}/${file}`, `${file} canonical must be self-referential`);
+    }
+});
