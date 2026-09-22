@@ -1872,9 +1872,7 @@ function buildProductCatalogJsonLd(products) {
                     url: url,
                     availability: 'https://schema.org/InStock',
                     hasMerchantReturnPolicy: {
-                        '@type': 'MerchantReturnPolicy',
-                        applicableCountry: 'IN',
-                        returnPolicyCategory: 'https://schema.org/MerchantReturnPolicyNoReturns'
+                        '@id': 'https://desk2quant.com/refund.html#policy'
                     }
                 },
                 brand: { '@type': 'Brand', name: 'Desk2Quant' }

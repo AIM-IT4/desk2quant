@@ -13,6 +13,8 @@
 
     const SITE_URL = 'https://desk2quant.com';
     const COMPLETE_BUNDLE_ID = '164308cd-e3cd-4026-8fdc-337a5955ffff';
+    const VOL_SURFACE_PRODUCT_ID = '928a14d2-64b4-4a73-951d-dcf191fe72ad';
+    const VOL_SURFACE_SEO_IMAGE = `${SITE_URL}/assets/images/blog-heston-vol-surface.png`;
 
     // Product IDs are stable even when marketing names change. Keep the most
     // valuable search landing pages on short, durable URLs and fall back to a
@@ -54,12 +56,16 @@
 
     function getProductSeoImage(product, fallback = `${SITE_URL}/assets/images/desk2quant-logo.png`) {
         const image = product && product.cover_image_url;
-        // This legacy inline SVG has an identical, publicly hosted cover.
-        // Google needs a crawlable URL in Product/OG image metadata. Keep any
-        // future hosted replacement and every other product's cover unchanged.
-        if (product && product.id === '928a14d2-64b4-4a73-951d-dcf191fe72ad' &&
-            typeof image === 'string' && /^data:image\//i.test(image.trim())) {
-            return `${SITE_URL}/assets/images/vol-surface-cover.svg`;
+        // Merchant listings don't accept SVG product images. The Vol Surface
+        // product historically uses an inline/hosted SVG cover, so route only
+        // that legacy SVG to an existing crawlable PNG. Preserve any future
+        // raster replacement and every other product's cover unchanged.
+        if (product && product.id === VOL_SURFACE_PRODUCT_ID) {
+            const normalized = typeof image === 'string' ? image.trim() : '';
+            if (!normalized || /^data:image\/svg\+xml/i.test(normalized) ||
+                /\.svg(?:[?#]|$)/i.test(normalized)) {
+                return VOL_SURFACE_SEO_IMAGE;
+            }
         }
         return image || fallback;
     }

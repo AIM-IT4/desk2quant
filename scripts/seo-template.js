@@ -51,7 +51,10 @@ function renderPage(p, slug, related, reviews) {
     brand: { '@type': 'Brand', name: 'Desk2Quant' },
     offers: {
       '@type': 'Offer', url, priceCurrency: 'INR',
-      price: String(price), availability: 'https://schema.org/InStock'
+      price: String(price), availability: 'https://schema.org/InStock',
+      hasMerchantReturnPolicy: {
+        '@id': 'https://desk2quant.com/refund.html#policy'
+      }
     }
   };
   // aggregateRating/review must reflect REAL reviews, not sales_count or a

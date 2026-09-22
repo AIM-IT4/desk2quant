@@ -45,9 +45,7 @@ function enrichStructuredData(htmlContent, filePath) {
                                         'priceValidUntil': '2027-12-31',
                                         'availability': 'https://schema.org/InStock',
                                         'hasMerchantReturnPolicy': {
-                                            '@type': 'MerchantReturnPolicy',
-                                            'applicableCountry': 'IN',
-                                            'returnPolicyCategory': 'https://schema.org/MerchantReturnPolicyNoReturns'
+                                            '@id': 'https://desk2quant.com/refund.html#policy'
                                         }
                                     };
                                 }

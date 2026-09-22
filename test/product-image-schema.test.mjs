@@ -9,7 +9,7 @@ const seo = require('../product-seo.js');
 const { renderPage } = require('../scripts/seo-template.js');
 const read = (file) => readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
 const slug = 'the-vol-surface-construction-playbook-svi-ssvi-static-arbitrage-and-du';
-const imageUrl = 'https://desk2quant.com/assets/images/vol-surface-cover.svg';
+const imageUrl = 'https://desk2quant.com/assets/images/blog-heston-vol-surface.png';
 const product = {
     id: '928a14d2-64b4-4a73-951d-dcf191fe72ad',
     name: 'The Vol Surface Construction Playbook',
@@ -71,8 +71,10 @@ test('browser product and homepage schemas resolve the same inline cover without
     assert.deepEqual(product, original);
 });
 
-test('existing hosted covers, future replacements and missing-image fallbacks are preserved', () => {
-    const replacement = 'https://desk2quant.com/assets/images/vol-surface-cover.svg?v=next';
+test('merchant-incompatible Vol Surface SVGs map to raster while future raster replacements are preserved', () => {
+    const hostedSvg = 'https://desk2quant.com/assets/images/vol-surface-cover.svg?v=next';
+    assert.equal(seo.getProductSeoImage({ ...product, cover_image_url: hostedSvg }), imageUrl);
+    const replacement = 'https://cdn.example.com/vol-surface-cover.webp';
     assert.equal(seo.getProductSeoImage({ ...product, cover_image_url: replacement }), replacement);
     const otherCover = 'https://cdn.example.com/other-product.png';
     assert.equal(seo.getProductSeoImage({ id: 'other', cover_image_url: otherCover }), otherCover);

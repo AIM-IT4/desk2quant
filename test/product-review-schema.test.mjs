@@ -20,6 +20,13 @@ function schemaOf(html) {
     return blocks.find((b) => b['@type'] === 'Product');
 }
 
+test('product offers reference the site-wide merchant return policy', () => {
+    const schema = schemaOf(renderPage(product, 'test-pack', [], []));
+    assert.deepEqual(schema.offers.hasMerchantReturnPolicy, {
+        '@id': 'https://desk2quant.com/refund.html#policy'
+    });
+});
+
 test('product JSON-LD omits rating fields entirely when no reviews are linked', () => {
     const schema = schemaOf(renderPage(product, 'test-pack', [], []));
 
