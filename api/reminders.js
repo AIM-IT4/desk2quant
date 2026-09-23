@@ -1,3 +1,4 @@
+import { sendWebhookEmailOnce } from '../lib/webhookEmailDelivery.js';
 // Vercel Serverless Function: Automatic Session Reminders
 // Called by external cron service (cron-job.org) every 5 minutes
 //
@@ -517,6 +518,18 @@ async function sendReminder(booking, type, config) {
     }
 
     // Send email via Brevo
+    if (booking.mentor_id && booking.mentor_email) {
+        const common = { paymentId: booking.payment_id, BREVO_API_KEY, SUPABASE_URL, SUPABASE_KEY };
+        const base = `guest_reminder_${type}_${booking.booking_date}_${booking.booking_time}`;
+        await sendWebhookEmailOnce({ ...common, deliveryType: `${base}_customer`,
+            emailPayload: { sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+                to: [{ email: booking.email, name: userName }], subject, htmlContent: htmlBody } });
+        await sendWebhookEmailOnce({ ...common, deliveryType: `${base}_mentor`,
+            emailPayload: { sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+                to: [{ email: booking.mentor_email, name: booking.mentor_name }],
+                subject: `Mentor reminder: ${booking.service_name}`,
+                htmlContent: `<p>${escapeHtml(booking.service_name)} with ${escapeHtml(userName)}</p><p>${escapeHtml(booking.booking_date)} at ${escapeHtml(displayTime)} IST (Asia/Kolkata)</p><p><a href="${escapeHtml(meetLink)}">Join session</a></p>` } });
+    } else {
     const emailResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
         headers: {
@@ -555,6 +568,8 @@ async function sendReminder(booking, type, config) {
         })
     });
 
+    }
+
     // Update database to mark reminder as sent
     const updateField = type === '24h' ? 'reminder_24h_sent' : (type === '10m' ? 'reminder_10m_sent' : 'reminder_5m_sent');
 
@@ -574,3 +589,4 @@ async function sendReminder(booking, type, config) {
 
     console.log(`✅ ${type} reminder sent to ${booking.email}`);
 }
+

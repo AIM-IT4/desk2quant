@@ -556,6 +556,7 @@
                         <div>
                             <h3 style="margin: 0 0 5px 0;">${booking.service_name || booking.service}</h3>
                             <span style="color: var(--text-muted);">Booking ID: ${booking.id}</span>
+                            ${booking.mentor_name ? `<p>Mentor: ${String(booking.mentor_name).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;", "'":"&#39;"}[c]))}</p>` : ""}
                         </div>
                         <span class="booking-status status-${booking.status}">
                             ${booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
@@ -569,7 +570,7 @@
                         </div>
                         <div class="detail-item">
                             <i class="fas fa-clock"></i>
-                            <span>${booking.booking_time || booking.time}</span>
+                            <span>${booking.booking_time || booking.time}${booking.mentor_id ? " IST (Asia/Kolkata)" : ""}</span>
                         </div>
                         <div class="detail-item">
                             <i class="fas fa-hourglass-half"></i>
@@ -1143,3 +1144,4 @@ You will receive an email confirmation once your refund is processed.`);
 </body>
 
 </html>
+

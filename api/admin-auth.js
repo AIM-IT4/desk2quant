@@ -1,3 +1,4 @@
+import { handleMentorAdmin } from '../lib/guestMentors.js';
 // Admin auth + (new) live Razorpay revenue lookup.
 //
 // Extended in place (rather than adding a 13th serverless function — this
@@ -84,6 +85,8 @@ export default async function handler(req, res) {
         // Original behaviour: just confirm the password is correct.
         return res.status(200).json({ success: true });
     }
+
+    if (String(action || '').startsWith('mentors-')) return handleMentorAdmin(req, res);
 
     if (action === 'get-key') {
         // Admin panel bootstrap: after the password is verified, hand over the
@@ -191,3 +194,4 @@ async function handleRevenueLookup(req, res) {
         return res.status(500).json({ success: false, error: error.message });
     }
 }
+

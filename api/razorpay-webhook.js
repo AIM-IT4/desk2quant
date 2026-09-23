@@ -1,3 +1,4 @@
+import { fulfillMentorPayment } from '../lib/guestMentors.js';
 // Razorpay Webhook Handler
 // This endpoint is called by Razorpay when payment events occur
 // Handles product purchases and session bookings
@@ -205,7 +206,8 @@ export default async function handler(req, res) {
             const hasRequiredNotes = productType && (
                 (productType === 'cart' && payment.notes?.cart_items) ||
                 (productType === 'product' && (payment.notes?.product_id || payment.notes?.product_name)) ||
-                (productType === 'session' && payment.notes?.session_id)
+                (productType === 'session' && payment.notes?.session_id) ||
+                (productType === 'mentor_session' && payment.notes?.reservation_id)
             );
             if (!hasRequiredNotes && payment.order_id && RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {
                 try {
@@ -286,6 +288,8 @@ export default async function handler(req, res) {
                     SENDER_EMAIL,
                     SENDER_NAME
                 });
+            } else if (productType === 'mentor_session') {
+                await fulfillMentorPayment(payment);
             } else if (productType === 'session') {
                 // Handle session booking (Server-side fulfillment for reliability)
                 await handleSessionBooking({
@@ -1367,7 +1371,7 @@ async function handleSessionBooking(data) {
     if (sessionDate && sessionTime) {
         try {
             const dayResp = await fetch(
-                `${SUPABASE_URL}/rest/v1/bookings?booking_date=eq.${encodeURIComponent(sessionDate)}&select=booking_time,service_duration,status,payment_id`,
+                `${SUPABASE_URL}/rest/v1/bookings?mentor_id=is.null&booking_date=eq.${encodeURIComponent(sessionDate)}&select=booking_time,service_duration,status,payment_id`,
                 { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
             );
             if (dayResp.ok) {
@@ -1661,3 +1665,4 @@ async function handleSessionBooking(data) {
         }
     }
 }
+
