@@ -3746,10 +3746,13 @@ async function initSessionPayment(description, amount, customerEmail, currency =
         return;
     }
 
-    // Initialize Razorpay SDK
-    if (typeof Razorpay === 'undefined') {
-        qmLog('❌ Razorpay SDK not loaded');
-        showToast('❌ Payment system not available. Please refresh the page.', 'error', 0);
+    // The SDK is intentionally loaded on demand. A first-time session customer
+    // must wait for it before creating an order, just like product checkout.
+    try {
+        await loadRazorpaySdk();
+    } catch (error) {
+        console.error('Session checkout SDK could not load:', error);
+        showToast('Unable to load secure checkout. Check your connection or content blocker, then try again. No payment was taken.', 'error', 0);
         return;
     }
 
