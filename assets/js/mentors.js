@@ -32,7 +32,9 @@ function renderBooking(m,s){
    event.preventDefault();if(paying)return;paying=true;const button=$('mentor-pay'), feedback=$('booking-feedback');button.disabled=true;feedback.className='';feedback.textContent='Reserving your time…';
    const form=new FormData(event.target);checkoutKey=checkoutKey||crypto.randomUUID();track('mentor_checkout_start',{mentor_id:m.id,session_id:s.id});
    try{
-     if(!window.Razorpay)throw Error('Payment checkout could not load. Refresh and try again.');
+     if(typeof window.loadRazorpaySdk!=='function')throw Error('Unable to load secure checkout. Please refresh and try again. No payment was taken.');
+     try{await window.loadRazorpaySdk();}
+     catch{throw Error('Unable to load secure checkout. Check your connection or content blocker, then try again. No payment was taken.');}
      const order=await request('/api/create-order',{notes:{type:'mentor_session'},slot_id:$('booking-slot').value,checkout_key:checkoutKey,name:form.get('name'),email:form.get('email'),message:form.get('message')});
      feedback.textContent='Complete payment in the secure checkout window.';
      const checkout=new window.Razorpay({key:order.key,order_id:order.order_id,amount:order.amount,currency:order.currency,name:'Desk2Quant',description:order.description,prefill:{name:order.name,email:order.email},theme:{color:'#087f80'},modal:{ondismiss:()=>{paying=false;button.disabled=false;feedback.textContent='Checkout closed. Your reservation expires after 10 minutes.';}},handler:async payment=>{
