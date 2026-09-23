@@ -46,7 +46,24 @@ function renderBooking(m,s){
  });
  switchView('booking');track('mentor_session_view',{mentor_id:m.id,session_id:s.id});
 }
+function initMentorNavigation(){
+ const menu=document.getElementById('mobileMenuBtn'), links=document.querySelector('.nav-links');
+ if(!menu||!links)return;
+ menu.addEventListener('click',()=>{
+   const open=links.classList.toggle('mobile-active');
+   menu.setAttribute('aria-expanded',String(open));
+   menu.setAttribute('aria-label',open?'Close mobile menu':'Open mobile menu');
+   const icon=menu.querySelector('i');
+   if(icon){icon.classList.toggle('fa-bars',!open);icon.classList.toggle('fa-times',open);}
+ });
+ links.addEventListener('click',event=>{
+   if(!event.target.closest('a'))return;
+   links.classList.remove('mobile-active');
+   menu.setAttribute('aria-expanded','false');
+ });
+}
 async function start(){
+ initMentorNavigation();
  try{catalog=await request('/api/products?action=mentors');const filters=['All',...new Set(catalog.mentors.flatMap(m=>m.specialties))];$('mentor-filters').innerHTML=filters.map(f=>`<button class="chip" type="button" data-specialty="${esc(f)}" aria-pressed="${f==='All'}">${esc(f)}</button>`).join('');$('mentor-filters').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;specialty=b.dataset.specialty;document.querySelectorAll('[data-specialty]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));renderDirectory();});$('mentor-search').addEventListener('input',renderDirectory);renderDirectory();
  const params=new URLSearchParams(location.search),slug=params.get('mentor'),sid=params.get('session');if(slug){const m=catalog.mentors.find(m=>m.slug===slug);if(!m)throw Error('This mentor profile is not currently available.');const s=catalog.sessions.find(s=>s.id===sid&&s.mentor_id===m.id);if(s)renderBooking(m,s);else renderProfile(m);}
  }catch(error){$('catalog-status').hidden=false;$('catalog-status').textContent=error.message;}
