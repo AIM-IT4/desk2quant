@@ -1,3 +1,4 @@
+import { handleMentorOrder } from '../lib/guestMentors.js';
 // Create Razorpay Order with Instant Capture
 // POST /api/create-order
 // Body: { currency, notes: { type: 'product'|'session', product_id | session_id, coupon_code? } }
@@ -26,6 +27,8 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
+
+    if (req.body?.notes?.type === 'mentor_session') return handleMentorOrder(req, res);
 
     const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
     const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
@@ -171,3 +174,4 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Internal server error' });
     }
 }
+

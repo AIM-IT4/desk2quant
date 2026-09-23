@@ -1,3 +1,4 @@
+import { handleMentorPublic } from '../lib/guestMentors.js';
 import { gradeSubmission } from '../lib/gauntletGrading.js';
 import { verifyProjectEntitlement } from './_gauntlet-entitlement.js';
 import { getServiceKey, blockIfUnconfigured } from '../lib/supabaseAdmin.js';
@@ -16,6 +17,8 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') return res.status(200).end();
+
+    if (req.query?.action === 'mentors' || req.body?.action === 'mentor-confirm') return handleMentorPublic(req, res);
 
     // Public, deliberately limited 6-page product sample. The source PDF stays
     // private in Drive; only this dedicated sample file is exposed through the
@@ -316,3 +319,4 @@ async function handleGrade(req, res) {
         return res.status(500).json({ error: 'Grading failed.' });
     }
 }
+

@@ -212,7 +212,7 @@ export function calculateBookingRefund(bookingDate, bookingTime, servicePrice) {
 // needs, so the list is explicit.
 const BOOKINGS_PUBLIC_COLUMNS = [
     'id', 'email', 'name', 'service_name', 'service_price', 'service_duration',
-    'booking_date', 'booking_time', 'status', 'meet_link',
+    'booking_date', 'booking_time', 'status', 'meet_link', 'mentor_name', 'mentor_id', 'starts_at',
     'admin_proposed_date', 'admin_proposed_time', 'admin_reschedule_reason',
     'requested_date', 'requested_time', 'refund_amount', 'refund_percentage', 'created_at'
 ].join(',');
@@ -274,7 +274,7 @@ async function handleBookingsAction(req, res, action) {
             const date = String(body.date || '').trim();
             if (!date) return res.status(400).json({ error: 'date is required' });
             const resp = await fetch(
-                `${SUPABASE_URL}/rest/v1/bookings?booking_date=eq.${encodeURIComponent(date)}&select=booking_time,status`,
+                `${SUPABASE_URL}/rest/v1/bookings?mentor_id=is.null&booking_date=eq.${encodeURIComponent(date)}&select=booking_time,status`,
                 { headers }
             );
             if (!resp.ok) return res.status(502).json({ error: 'Failed to load slots' });
@@ -1140,3 +1140,4 @@ async function sendEmailReport(toEmail, toName, reportMarkdown) {
     await httpRequest('https://api.brevo.com/v3/smtp/email', options, body);
     console.log(`Email sent to ${toEmail}`);
 }
+

@@ -748,6 +748,7 @@
             backdrop-filter: blur(10px);
         }
     </style>
+<style>.gm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:20px}.gm-grid .card{min-width:0}.gm-grid label{display:block;margin:12px 0}.gm-grid input,.gm-grid textarea,.gm-grid select{display:block;width:100%;margin-top:5px;padding:9px}.gm-grid button{margin:10px 0}.gm-slots article{padding:14px 0;border-bottom:1px solid #ccc}.gm-table-wrap{overflow:auto}.gm-table-wrap td,.gm-table-wrap th{padding:12px;text-align:left}.gm-table-wrap button{font-size:12px;padding:8px}#gm-feedback{color:var(--text-primary);font-weight:600}</style>
 </head>
 
 <body>
@@ -773,6 +774,7 @@
             </a>
 
             <nav class="sidebar-nav">
+                <a class="nav-item" onclick="showSection('guestMentorsSection', 'Guest Mentors', this); loadGuestMentors()"><i class="fas fa-chalkboard-teacher"></i> Guest Mentors</a>
                 <a class="nav-item active" onclick="showSection('dashboardSection', 'Overview', this)">
                     <i class="fas fa-chart-line"></i> Dashboard
                 </a>
@@ -1572,6 +1574,7 @@ Brief Q&A"></textarea>
             </section>
 
             <!-- Availability Manager Section -->
+            <section id="guestMentorsSection" class="content-section" style="display:none"><div id="guestMentorsContent"></div></section>
             <section id="availabilitySection" class="content-section" style="display: none; margin-top: 30px;">
                 <div class="card">
                     <div class="card-header" style="margin-bottom: 20px;">
@@ -5735,6 +5738,8 @@ Desk2Quant
                 });
 
             </script>
+<script src="/assets/js/mentor-admin.js"></script>
 </body>
 
 </html>
+
