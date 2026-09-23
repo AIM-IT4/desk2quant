@@ -1147,29 +1147,9 @@ setTimeout(function () {
 // the visitor is just reading the page, which caused long main-thread tasks and
 // visible scroll stutter. We now fetch it on first checkout intent instead.
 // ================================
-let __razorpaySdkPromise = null;
-function loadRazorpaySdk() {
-    if (typeof window.Razorpay !== 'undefined') return Promise.resolve();
-    if (__razorpaySdkPromise) return __razorpaySdkPromise;
-
-    __razorpaySdkPromise = new Promise((resolve, reject) => {
-        const existing = document.querySelector('script[src*="checkout.razorpay.com"]');
-        if (existing) {
-            existing.addEventListener('load', () => resolve());
-            existing.addEventListener('error', () => reject(new Error('Razorpay SDK failed to load')));
-            if (typeof window.Razorpay !== 'undefined') resolve();
-            return;
-        }
-        const el = document.createElement('script');
-        el.src = 'https://checkout.razorpay.com/v1/checkout.js';
-        el.async = true;
-        el.onload = () => resolve();
-        el.onerror = () => { __razorpaySdkPromise = null; reject(new Error('Razorpay SDK failed to load')); };
-        document.head.appendChild(el);
-    });
-    return __razorpaySdkPromise;
-}
-window.loadRazorpaySdk = loadRazorpaySdk;
+const loadRazorpaySdk = (typeof window.loadRazorpaySdk === 'function')
+    ? window.loadRazorpaySdk
+    : () => Promise.reject(new Error('Secure checkout loader is unavailable. Please refresh and try again.'));
 
 async function getUserCountry() {
     try {
