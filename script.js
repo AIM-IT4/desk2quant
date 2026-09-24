@@ -1147,9 +1147,17 @@ setTimeout(function () {
 // the visitor is just reading the page, which caused long main-thread tasks and
 // visible scroll stutter. We now fetch it on first checkout intent instead.
 // ================================
-const loadRazorpaySdk = (typeof window.loadRazorpaySdk === 'function')
-    ? window.loadRazorpaySdk
-    : () => Promise.reject(new Error('Secure checkout loader is unavailable. Please refresh and try again.'));
+// Resolve the shared Razorpay loader at CALL TIME, not script-evaluation time.
+// Several pages load razorpay-loader.js with `defer` but script.js synchronously.
+// Capturing window.loadRazorpaySdk here used to permanently bind the rejection
+// fallback before the deferred loader had a chance to execute, making checkout
+// fail with "payment system loading" on product pages.
+const loadRazorpaySdk = () => {
+    if (typeof window.loadRazorpaySdk === 'function') {
+        return window.loadRazorpaySdk();
+    }
+    return Promise.reject(new Error('Secure checkout loader is unavailable. Please refresh and try again.'));
+};
 
 async function getUserCountry() {
     try {
