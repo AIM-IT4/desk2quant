@@ -1126,6 +1126,7 @@
 
                 // Populate UI
                 document.getElementById('p-title').textContent = product.name;
+                configureSampleModalForProduct(product);
 
                 // Description
                 const descEl = document.getElementById('p-desc');
@@ -2487,6 +2488,65 @@ def calculate_greeks(S: float, K: float, T: float, r: float, sigma: float, q: fl
     </div>
 
     <script>
+        function configureSampleModalForProduct(product) {
+            const name = String(product?.name || '').toLowerCase();
+            if (!name.includes('sft counterparty credit risk')) return;
+
+            const tabs = document.querySelectorAll('#samplePreviewModal .sample-tab');
+            if (tabs[0]) tabs[0].textContent = '📋 Scope & Mechanics';
+            if (tabs[1]) tabs[1].textContent = '📐 Exposure & MPOR';
+            if (tabs[2]) tabs[2].textContent = '💻 Python Engine';
+
+            const outline = document.getElementById('sample-tab-outline');
+            if (outline) outline.innerHTML = `
+                <div class="sample-content-box">
+                    <h4 style="margin:0 0 12px;color:var(--text-primary);">Five SFT risk-quant projects</h4>
+                    <ul class="sample-bullets">
+                        <li><i class="fas fa-check-circle" style="color:#0f766e;margin-right:8px;"></i> Treasury repo collateral repricing and MPOR exposure</li>
+                        <li><i class="fas fa-check-circle" style="color:#0f766e;margin-right:8px;"></i> GMRA repo/reverse-repo legal netting and netting benefit</li>
+                        <li><i class="fas fa-check-circle" style="color:#0f766e;margin-right:8px;"></i> Margin settlement lag, failed calls, disputes and stale collateral</li>
+                        <li><i class="fas fa-check-circle" style="color:#0f766e;margin-right:8px;"></i> Securities-lending WWR plus cross-currency non-cash collateral</li>
+                    </ul>
+                </div>`;
+
+            const math = document.getElementById('sample-tab-math');
+            if (math) math.innerHTML = `
+                <div class="sample-math-box">
+                    <h4 style="margin:0 0 12px;color:var(--text-primary);">Exposure mechanics sample</h4>
+                    <div class="latex-preview-block" style="background:var(--bg-tertiary);padding:16px;border-radius:8px;font-family:var(--font-mono,monospace);font-size:0.9rem;line-height:1.8;color:var(--text-primary);border:1px solid var(--border-light);">
+                        E(t) = max(K(t) - C(t), 0)<br>
+                        E<sub>N</sub>(t) = max(V<sub>N</sub>(t) - C<sub>settled</sub>(t), 0)<br>
+                        EE(t) = E[E(t)]<br>
+                        PFE<sub>q</sub>(t) = Q<sub>q</sub>(E(t))
+                    </div>
+                    <p style="margin-top:10px;font-size:0.85rem;color:var(--text-muted);">The projects distinguish called margin from settled collateral and propagate market risk through the close-out / MPOR window. Compact alpha × exposure-average outputs are labelled educational EAD proxies, not full regulatory Effective EPE.</p>
+                </div>`;
+
+            const code = document.getElementById('sample-tab-code');
+            if (code) code.innerHTML = `
+                <div class="sample-code-box">
+                    <div class="sample-code-header" style="display:flex;justify-content:space-between;background:rgba(0,0,0,0.2);padding:8px 12px;border-radius:6px 6px 0 0;font-size:0.82rem;color:var(--text-muted);">
+                        <span><i class="fab fa-python" style="color:#3b82f6;"></i> sft_exposure.py</span>
+                        <span>Python / NumPy / pandas</span>
+                    </div>
+                    <pre style="background:#0d1117;color:#e6edf3;padding:16px;border-radius:0 0 6px 6px;margin:0;overflow-x:auto;font-family:var(--font-mono,monospace);font-size:0.85rem;line-height:1.5;"><code>import numpy as np
+
+def residual_exposure(claim, collateral):
+    return np.maximum(claim - collateral, 0.0)
+
+def effective_ee(ee):
+    return np.maximum.accumulate(np.asarray(ee, dtype=float))
+
+def alpha_ead_proxy(exposure_average, alpha=1.4):
+    return alpha * exposure_average</code></pre>
+                </div>`;
+
+            const footer = document.querySelector('#samplePreviewModal .sample-footer-text');
+            if (footer) footer.innerHTML = `
+                <strong style="display:block;color:var(--text-primary);font-size:0.95rem;">5 executed SFT projects + 57-page interactive reference</strong>
+                <span style="font-size:0.82rem;color:var(--text-muted);">Includes data, notebooks, HTMLs, methodology PDFs, source code, outputs and 42 validation tests.</span>`;
+        }
+
         window.openSampleModal = function() {
             const modal = document.getElementById('samplePreviewModal');
             if (modal) {
