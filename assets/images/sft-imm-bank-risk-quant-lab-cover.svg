@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080">
+  <rect width="1080" height="1080" fill="#F6F1E7"/>
+  <rect x="30" y="30" width="1020" height="1020" rx="18" fill="#FFFDF8" stroke="#111111" stroke-width="6"/>
+  <rect x="30" y="30" width="1020" height="92" fill="#FFCA3A" stroke="#111111" stroke-width="6"/>
+  <text x="72" y="91" font-family="Arial,Helvetica,sans-serif" font-size="38" font-weight="800" fill="#111111">Desk2Quant</text>
+  <rect x="72" y="166" width="555" height="330" rx="16" fill="#FFFFFF" stroke="#111111" stroke-width="5"/>
+  <text x="106" y="228" font-family="Arial,Helvetica,sans-serif" font-size="24" font-weight="800" fill="#0B7F79">SFT COUNTERPARTY CREDIT RISK</text>
+  <text x="106" y="294" font-family="Arial,Helvetica,sans-serif" font-size="60" font-weight="900" fill="#111827">IMM Quant Lab</text>
+  <text x="106" y="352" font-family="Arial,Helvetica,sans-serif" font-size="33" font-weight="800" fill="#111111">5 Bank-Style Projects</text>
+  <line x1="106" y1="386" x2="590" y2="386" stroke="#111111" stroke-width="4"/>
+  <text x="106" y="430" font-family="Arial,Helvetica,sans-serif" font-size="23" font-weight="700" fill="#444444">Repo · GMRA Netting · Margin &amp; MPOR</text>
+  <text x="106" y="466" font-family="Arial,Helvetica,sans-serif" font-size="23" font-weight="700" fill="#444444">Securities Lending &amp; WWR · Cross-Currency Collateral</text>
+
+  <rect x="72" y="536" width="555" height="168" rx="14" fill="#FFCA3A" stroke="#111111" stroke-width="5"/>
+  <text x="106" y="602" font-family="Arial,Helvetica,sans-serif" font-size="48" font-weight="900" fill="#111111">57-Page</text>
+  <text x="106" y="650" font-family="Arial,Helvetica,sans-serif" font-size="27" font-weight="800" fill="#111111">Interactive Reference + Data + Code + Tests</text>
+
+  <rect x="666" y="166" width="330" height="538" rx="16" fill="#0B7F79" stroke="#111111" stroke-width="5"/>
+  <circle cx="831" cy="301" r="92" fill="#FFCA3A" stroke="#111111" stroke-width="5"/>
+  <text x="831" y="319" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="46" font-weight="900" fill="#111111">SFT</text>
+
+  <rect x="716" y="438" width="230" height="72" rx="10" fill="#FFFFFF" stroke="#111111" stroke-width="4"/>
+  <text x="831" y="484" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="24" font-weight="900" fill="#111111">GMRA NETTING</text>
+  <line x1="831" y1="510" x2="831" y2="565" stroke="#111111" stroke-width="5"/>
+  <polygon points="831,587 818,563 844,563" fill="#111111"/>
+  <rect x="716" y="592" width="230" height="72" rx="10" fill="#FFFFFF" stroke="#111111" stroke-width="4"/>
+  <text x="831" y="638" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="24" font-weight="900" fill="#111111">COLLATERAL</text>
+
+  <rect x="72" y="750" width="924" height="244" rx="16" fill="#111827" stroke="#111111" stroke-width="5"/>
+  <text x="106" y="810" font-family="Arial,Helvetica,sans-serif" font-size="24" font-weight="800" fill="#FFCA3A">EXECUTABLE BANK-RISK QUANT PROJECTS</text>
+  <text x="106" y="858" font-family="Arial,Helvetica,sans-serif" font-size="23" font-weight="700" fill="#FFFFFF">Treasury Repo IMM · GMRA Portfolio Netting · Margin Settlement &amp; Disputes</text>
+  <text x="106" y="902" font-family="Arial,Helvetica,sans-serif" font-size="23" font-weight="700" fill="#FFFFFF">Securities Lending Wrong-Way Risk · Cross-Currency Non-Cash Collateral</text>
+  <text x="106" y="954" font-family="Arial,Helvetica,sans-serif" font-size="19" font-weight="600" fill="#D1D5DB">Realistic educational implementations with explicit production and regulatory gaps.</text>
+</svg>
