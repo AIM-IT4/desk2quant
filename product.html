@@ -1558,6 +1558,35 @@
 
             const specificProfiles = [
                 {
+                    match: ['sft counterparty credit risk', 'sft/imm', 'gmra netting', 'securities lending wrong-way risk'],
+                    summary: 'Five executable SFT counterparty-risk projects covering repo collateral, GMRA netting, margin settlement/MPOR, securities-lending wrong-way risk and cross-currency collateral.',
+                    toc: ['Treasury Repo IMM & Collateral Repricing', 'GMRA Repo/Reverse-Repo Netting', 'Margin Settlement, Failed Calls & MPOR', 'Securities Lending & Wrong-Way Risk', 'Cross-Currency Collateral & Haircuts', 'SFT IMM Regulation, Validation & Production Controls'],
+                    audience: ['SFT / CCR / IMM quant candidates', 'Repo and securities-finance practitioners', 'Model-validation quants', 'Quant developers building collateral and exposure workflows'],
+                    prerequisites: ['Basic Python and NumPy/Pandas familiarity', 'Basic rates, collateral and present-value intuition', 'No prior SFT IMM implementation experience required'],
+                    outcomes: ['Explain SFT exposure beyond transaction notional', 'Model netting, settled collateral and MPOR correctly', 'Diagnose WWR and cross-currency collateral effects', 'Separate educational exposure proxies from full regulatory Effective EPE'],
+                    samplePages: [
+                        {
+                            title: 'Repo exposure: collateral absorbs the first loss',
+                            content: [
+                                { type: 'paragraph', text: 'For a cash lender in a reverse repo, counterparty exposure emerges only after the repurchase claim exceeds the close-out value of collateral.' },
+                                { type: 'formula', text: 'E(t) = max(K(t) - C(t), 0)' },
+                                { type: 'list', items: ['Start from transaction economics and collateral market value', 'Reprice collateral under MPOR market shocks', 'Measure EE and PFE from the residual unsecured distribution', 'Keep the compact alpha × exposure-average result labelled as an educational EAD proxy'] }
+                            ],
+                            note: 'The included Project 01 starts from a public SEC-filed Treasury repo and public Treasury history.'
+                        },
+                        {
+                            title: 'GMRA, margin state and MPOR',
+                            content: [
+                                { type: 'paragraph', text: 'A realistic SFT exposure engine works at enforceable netting-set level and distinguishes called margin from settled margin before default.' },
+                                { type: 'formula', text: 'E_N(t) = max(V_N(t) - C_settled(t), 0)' },
+                                { type: 'list', items: ['Net repos and reverse repos only where the legal set permits it', 'Freeze the last settled collateral state at default', 'Propagate market risk through the close-out / MPOR window', 'Stress settlement lag, disputes, liquidity and wrong-way dependence separately'] }
+                            ],
+                            note: 'Projects 02–05 isolate these mechanisms with reproducible code, data and regression tests.'
+                        }
+                    ],
+                    sampleText: 'The lab is built around traceable SFT mechanics: legal netting, collateral state, settlement timing, MPOR, tail exposure and explicit model limitations.'
+                },
+                {
                     match: ['fast greeks', 'initial margin for quants', 'aad, simm'],
                     summary: 'A first-principles-to-production guide to Greeks, reverse-mode AAD, SIMM architecture, forward initial margin and MVA.',
                     samplePdfUrl: '/api/products?sample=fast-greeks',
