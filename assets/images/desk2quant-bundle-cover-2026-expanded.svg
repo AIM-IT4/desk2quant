@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1500" viewBox="0 0 1200 1500">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#07111f"/><stop offset="1" stop-color="#111c33"/></linearGradient>
+</defs>
+<rect width="1200" height="1500" fill="url(#bg)"/>
+<rect x="54" y="54" width="1092" height="1392" rx="32" fill="none" stroke="#45e0d0" stroke-width="3"/>
+<text x="90" y="145" fill="#45e0d0" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="700" letter-spacing="7">DESK2QUANT</text>
+<text x="90" y="285" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="66" font-weight="800">COMPLETE FRONT OFFICE</text>
+<text x="90" y="365" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="66" font-weight="800">&amp; RISK QUANT</text>
+<text x="90" y="445" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="66" font-weight="800">PROFESSIONAL BUNDLE</text>
+<rect x="90" y="505" width="430" height="62" rx="31" fill="#f0bd3d"/>
+<text x="305" y="547" text-anchor="middle" fill="#07111f" font-family="Arial,Helvetica,sans-serif" font-size="28" font-weight="800">2026 EXPANDED EDITION</text>
+<text x="90" y="670" fill="#9eb0c8" font-family="Arial,Helvetica,sans-serif" font-size="28">ACTUAL BUNDLE INVENTORY</text>
+<g font-family="Arial,Helvetica,sans-serif">
+<rect x="90" y="720" width="310" height="245" rx="22" fill="#101e35" stroke="#45e0d0" stroke-width="2"/>
+<text x="245" y="835" text-anchor="middle" fill="#fff" font-size="86" font-weight="800">71</text><text x="245" y="905" text-anchor="middle" fill="#45e0d0" font-size="30" font-weight="700">PDFs</text>
+<rect x="445" y="720" width="310" height="245" rx="22" fill="#101e35" stroke="#45e0d0" stroke-width="2"/>
+<text x="600" y="835" text-anchor="middle" fill="#fff" font-size="86" font-weight="800">72</text><text x="600" y="905" text-anchor="middle" fill="#45e0d0" font-size="30" font-weight="700">NOTEBOOKS</text>
+<rect x="800" y="720" width="310" height="245" rx="22" fill="#101e35" stroke="#45e0d0" stroke-width="2"/>
+<text x="955" y="835" text-anchor="middle" fill="#fff" font-size="86" font-weight="800">134</text><text x="955" y="905" text-anchor="middle" fill="#45e0d0" font-size="30" font-weight="700">SCRIPTS</text>
+</g>
+<text x="90" y="1035" fill="#f0bd3d" font-family="Arial,Helvetica,sans-serif" font-size="31" font-weight="800">206 EXECUTABLE CODE ASSETS</text>
+<text x="90" y="1100" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="700">Old bundle + latest production labs</text>
+<text x="90" y="1165" fill="#9eb0c8" font-family="Arial,Helvetica,sans-serif" font-size="27">Derivatives · Pricing · Risk · XVA · AAD · SIMM</text>
+<text x="90" y="1215" fill="#9eb0c8" font-family="Arial,Helvetica,sans-serif" font-size="27">CCR/IMM · SFT · Market Microstructure · Quant Research</text>
+<line x1="90" y1="1300" x2="1110" y2="1300" stroke="#2c3c54" stroke-width="2"/>
+<text x="90" y="1365" fill="#f0bd3d" font-family="Arial,Helvetica,sans-serif" font-size="26" font-weight="700">THEORY + EXECUTABLE CODE + BANK-STYLE LABS</text>
+<text x="90" y="1415" fill="#7488a3" font-family="Arial,Helvetica,sans-serif" font-size="22">desk2quant.com</text>
+</svg>
