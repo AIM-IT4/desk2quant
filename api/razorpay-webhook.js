@@ -9,7 +9,7 @@ import {
     buildSignedDownloadUrl,
     parseSupabaseStorageUrl
 } from '../lib/secureDownload.js';
-import { createJitsiMeetingLink } from '../lib/jitsi.js';
+import { createJitsiMeetingLink, createSessionJoinUrl } from '../lib/jitsi.js';
 import { queuePostPurchaseRecommendation } from '../lib/recommendationQueue.js';
 import { getExpectedProductOrder, getExpectedSessionOrder, getExpectedCartOrder, isWithinTolerance, isZeroDecimalCurrency } from '../lib/pricing.js';
 import { getServiceKey } from '../lib/supabaseAdmin.js';
@@ -711,7 +711,7 @@ export async function handleProductPurchase(data) {
                     'apikey': SUPABASE_KEY,
                     'Authorization': `Bearer ${SUPABASE_KEY}`,
                     'Content-Type': 'application/json',
-                    'Prefer': 'return=minimal'
+                    'Prefer': 'return=representation'
                 },
                 body: JSON.stringify(purchaseRow)
             });
@@ -1381,6 +1381,7 @@ async function handleSessionBooking(data) {
 
     // 1. Check if already processed (prevent duplicate bookings).
     let bookingAlreadyProcessed = false;
+    let bookingId = null;
     try {
         const existingResponse = await fetch(
             `${SUPABASE_URL}/rest/v1/bookings?payment_id=eq.${paymentId}&select=id`,
@@ -1403,6 +1404,7 @@ async function handleSessionBooking(data) {
                 // would 500-loop forever.
                 console.log('Booking already processed; skipping insert but re-ensuring email delivery:', paymentId);
                 bookingAlreadyProcessed = true;
+                bookingId = existing[0].id;
             }
         }
     } catch (err) {
@@ -1507,8 +1509,23 @@ async function handleSessionBooking(data) {
             // the confirmation email below sends for a booking that doesn't exist.
             throw new Error(`Booking insert failed (${bookingInsertResp.status}): ${errorText}`);
         }
+        const insertedBooking = await bookingInsertResp.json();
+        bookingId = insertedBooking?.[0]?.id || null;
         console.log('✅ Booking logged to Supabase');
     }
+
+    if (!bookingId) {
+        const idResp = await fetch(
+            `${SUPABASE_URL}/rest/v1/bookings?payment_id=eq.${encodeURIComponent(paymentId)}&select=id&limit=1`,
+            { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+        );
+        if (idResp.ok) bookingId = (await idResp.json())?.[0]?.id || null;
+    }
+    if (!bookingId && !underpaymentFlag) {
+        throw new Error(`Booking id unavailable after payment fulfilment (${paymentId})`);
+    }
+    const attendeeJoinUrl = bookingId ? createSessionJoinUrl(bookingId, 'attendee') : null;
+    const hostJoinUrl = bookingId ? createSessionJoinUrl(bookingId, 'host') : null;
 
     // 3. Send confirmation email to customer via Brevo (withheld if the
     // captured amount didn't meet the verified price -- see price-tamper
@@ -1546,7 +1563,7 @@ async function handleSessionBooking(data) {
                         </div>
                         
                         <center>
-                            <a href="${meetLink}" style="display: inline-block; background:#ffca3a; color:#090909; font-weight:800; text-decoration:none; padding:14px 30px; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; font-size:16px; margin-bottom:30px;">Join Meeting</a>
+                            <a href="${attendeeJoinUrl}" style="display: inline-block; background:#ffca3a; color:#090909; font-weight:800; text-decoration:none; padding:14px 30px; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; font-size:16px; margin-bottom:30px;">Join Meeting</a>
                         </center>
 
                         <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px; margin-bottom:20px;">
@@ -1580,7 +1597,7 @@ async function handleSessionBooking(data) {
                     to: [{ email: customerEmail, name: customerName }],
                     subject: `Booking Confirmed: ${sessionName}`,
                     htmlContent: customerHtml,
-                    textContent: `Hi ${customerName},\n\nYour session is confirmed!\n\nSession: ${sessionName}\nDate: ${sessionDate}\nTime: ${displayTime} (${sessionDuration} mins)\nAmount Paid: ₹${sessionPrice}\n\nJoin Meeting Link:\n${meetLink}\n\nPayment ID: ${paymentId}\n\nNeed to reschedule or cancel? Open your manage link:\n${manageUrl}${myAccessText(customerEmail, MY_ACCESS_BOOKING_COPY)}\n\nHave an issue? Reply to this email.\n\nSent by Desk2Quant`
+                    textContent: `Hi ${customerName},\n\nYour session is confirmed!\n\nSession: ${sessionName}\nDate: ${sessionDate}\nTime: ${displayTime} (${sessionDuration} mins)\nAmount Paid: ₹${sessionPrice}\n\nJoin Meeting Link:\n${attendeeJoinUrl}\n\nPayment ID: ${paymentId}\n\nNeed to reschedule or cancel? Open your manage link:\n${manageUrl}${myAccessText(customerEmail, MY_ACCESS_BOOKING_COPY)}\n\nHave an issue? Reply to this email.\n\nSent by Desk2Quant`
                 })
             });
 
@@ -1650,7 +1667,7 @@ async function handleSessionBooking(data) {
                                 </tr>
                                 <tr>
                                     <td colspan="2" style="padding: 15px 0 5px 0;">
-                                        <a href="${meetLink}" style="color: #0b7f79; font-weight: bold; text-decoration: none; font-size: 14px;">🔗 Join Meeting</a>
+                                        <a href="${hostJoinUrl}" style="color: #0b7f79; font-weight: bold; text-decoration: none; font-size: 14px;">🔗 Start as Host</a>
                                     </td>
                                 </tr>
                             </table>
@@ -1682,7 +1699,7 @@ async function handleSessionBooking(data) {
                     to: ADMIN_EMAIL.split(',').map(email => ({ email: email.trim() })).filter(item => item.email),
                     subject: `🆕 New Booking: ${customerName} - ${sessionName}`,
                     htmlContent: adminHtml,
-                    textContent: `New Booking Received!\n\n${customerName} just booked a new session.\n\nSession Booked: ${sessionName}\nDate & Time: ${sessionDate} at ${displayTime}\nAmount Received: ₹${sessionPrice}\nLink: ${meetLink}\n\nCustomer Details:\nName: ${customerName}\nEmail: ${customerEmail}\nPhone: ${customerPhone || 'Not provided'}\nMessage: ${customerMessage || 'None'}\nPayment ID: ${paymentId}`
+                    textContent: `New Booking Received!\n\n${customerName} just booked a new session.\n\nSession Booked: ${sessionName}\nDate & Time: ${sessionDate} at ${displayTime}\nAmount Received: ₹${sessionPrice}\nHost Link: ${hostJoinUrl}\n\nCustomer Details:\nName: ${customerName}\nEmail: ${customerEmail}\nPhone: ${customerPhone || 'Not provided'}\nMessage: ${customerMessage || 'None'}\nPayment ID: ${paymentId}`
                 })
             });
 
