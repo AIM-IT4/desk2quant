@@ -26,7 +26,7 @@
                 { type: "metric", text: "       • Price: $148.20  |  Delta: +0.528  |  Gamma: +0.019" },
                 { type: "metric", text: "       • Vega: -64.5k/vol    |  Vanna: +3.2k    |  Volga: +8.9k" },
                 { type: "pass", text: "[PASS] Delta-Gamma neutral hedge executed via 25D Risk Reversal" },
-                { type: "value", text: "⚡ Flagship Scope: 46+ PDFs • 60+ scripts • 1000+ problems • Python + C++ + SQL" }
+                { type: "value", text: "⚡ Flagship Scope: 71 PDFs • 72 notebooks • 134 scripts • 1000+ problems" }
             ]
         },
         {
@@ -65,7 +65,7 @@
                 { type: "metric", text: "  • 1,000+ Quant Interview Problems with rigorous derivations & code" },
                 { type: "ok", text: "  • 1-on-1 Mentorship personally led by Amit Kumar Jha (IIT Alum)" },
                 { type: "pass", text: "[SUCCESS] 50+ candidates placed across global hedge funds & tier-1 banks" },
-                { type: "value", text: "⚡ Flagship: 46+ PDFs • 60+ scripts • 1000+ interview problems • Python + C++ + SQL" }
+                { type: "value", text: "⚡ Flagship: 71 PDFs • 72 notebooks • 134 scripts • 1000+ interview problems" }
             ]
         }
     ];
