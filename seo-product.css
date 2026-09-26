@@ -2,8 +2,14 @@
 
 /* Match the brand typography used on the homepage and product.html. */
 :root {
-    --font-primary: 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-primary: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+.seo-doc h1,
+.seo-doc h2,
+.seo-doc h3 {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
 }
 
 .seo-doc {
