@@ -92,7 +92,7 @@ Then open `http://localhost:8000` in a browser.
 ## BRAG launch video
 
 The project-scoped `/brag-slim` skill is available under
-`.agents/skills/brag-slim/`. The current Desk2Quant launch video, its
+`.agents/skills/brag-slim/`. The current products and 1-on-1 sessions video, its
 reproducible render script, and source-screen details are documented in
 [`promo/brag/README.md`](promo/brag/README.md). Run
 `python3 promo/brag/render.py` to create `brag-output/brag.mp4` locally.
