@@ -711,7 +711,7 @@ export async function handleProductPurchase(data) {
                     'apikey': SUPABASE_KEY,
                     'Authorization': `Bearer ${SUPABASE_KEY}`,
                     'Content-Type': 'application/json',
-                    'Prefer': 'return=representation'
+                    'Prefer': 'return=minimal'
                 },
                 body: JSON.stringify(purchaseRow)
             });
