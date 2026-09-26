@@ -17,6 +17,7 @@ import { emailShell, escapeHtml } from '../lib/emailBranding.js';
 import { signBookingToken } from '../lib/bookingTokens.js';
 import { signAccessToken, SESSION_TTL_MS } from '../lib/accessTokens.js';
 import { sendWebhookEmailOnce } from '../lib/webhookEmailDelivery.js';
+import { COMPLETE_BUNDLE_EXTRA_RESOURCES, isExpandedCompleteBundle } from '../lib/bundleEntitlements.js';
 
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || 'https://desk2quant.com';
 
@@ -636,6 +637,41 @@ export async function handleProductPurchase(data) {
         }
     }
 
+    // Expanded Complete Bundle: new purchases get the four post-legacy
+    // resources as additional entitlements. This does not modify permissions
+    // for historical buyers of the legacy bundle folder.
+    const bundleResources = [];
+    if (isExpandedCompleteBundle(productId) && !underpaymentFlag) {
+        const GOOGLE_SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+        const GOOGLE_PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY;
+        if (GOOGLE_SERVICE_ACCOUNT_EMAIL && GOOGLE_PRIVATE_KEY) {
+            for (const resource of COMPLETE_BUNDLE_EXTRA_RESOURCES) {
+                try {
+                    const extraGrant = await grantDrivePermission(
+                        GOOGLE_SERVICE_ACCOUNT_EMAIL,
+                        GOOGLE_PRIVATE_KEY,
+                        resource.fileId,
+                        customerEmail
+                    );
+                    const resourceUrl = (extraGrant && extraGrant.fallback === 'signed_download_url')
+                        ? buildSignedDownloadUrl(
+                            PUBLIC_BASE_URL,
+                            process.env.RAZORPAY_KEY_SECRET,
+                            resource.fileId,
+                            customerEmail,
+                            resource.fileName,
+                            false
+                        )
+                        : `https://drive.google.com/file/d/${resource.fileId}/view?usp=drivesdk`;
+                    bundleResources.push({ name: resource.name, url: resourceUrl });
+                    console.log(`Expanded bundle: shared ${resource.fileId} with ${customerEmail}`);
+                } catch (err) {
+                    console.error(`Expanded bundle resource ${resource.fileId} failed: ${err.message}`);
+                }
+            }
+        }
+    }
+
     if (!frontendAlreadyProcessed) {
         // Fail closed: the purchases row is the durable record of this sale. If
         // it cannot be written, throw so the webhook 500s and Razorpay retries —
@@ -726,6 +762,17 @@ export async function handleProductPurchase(data) {
                         <center>
                             <a href="${downloadLink}" style="display: inline-block; background:#ffca3a; color:#090909; font-weight:800; text-decoration:none; padding:14px 30px; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; font-size:16px; margin-bottom:30px;">Download / View Resource</a>
                         </center>
+                        
+                        ${bundleResources.length ? `
+                        <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px; margin-bottom:25px;">
+                            <p style="font-size:11px; color:#666761; text-transform:uppercase; font-weight:bold; margin:0 0 12px 0; letter-spacing:.5px;">Expanded Bundle — New Resources Included</p>
+                            <p style="font-size:14px; margin:0 0 14px 0;">Your new-buyer bundle entitlement also includes these four production resources:</p>
+                            ${bundleResources.map((resource) => `
+                                <p style="margin:10px 0; font-size:13px;">
+                                    <a href="${escapeHtml(resource.url)}" style="color:#0b7f79; font-weight:700; text-decoration:underline;">${escapeHtml(resource.name)}</a>
+                                </p>`).join('')}
+                        </div>
+                        ` : ''}
  
                         <div style="background:#ffffff; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; padding:20px; margin-bottom:20px;">
                             <p style="font-size: 11px; color: #666761; text-transform: uppercase; font-weight: bold; margin: 0 0 15px 0; letter-spacing: 0.5px;">Direct Link Backup</p>
@@ -775,7 +822,7 @@ Product: ${productName}
 Amount: ${currency} ${amount}
 
 Please download your resource using this link:
-${downloadLink}
+${downloadLink}${bundleResources.length ? `\n\nExpanded bundle — additional new resources:\n${bundleResources.map((resource) => `- ${resource.name}: ${resource.url}`).join('\n')}` : ''}
 
 If the button does not work, copy and paste the same link into your browser.
 
