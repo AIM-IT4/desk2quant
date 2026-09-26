@@ -107,7 +107,7 @@
     <link rel="stylesheet" href="salary-styles.css">
 
 
-    <link rel="stylesheet" href="launchzone.css?v=18">
+    <link rel="stylesheet" href="launchzone.css?v=19">
     <link rel="stylesheet" href="launchzone-pages.css?v=3">
     <link rel="stylesheet" href="receipt-printer.css?v=2">
 </head>
@@ -276,57 +276,31 @@
                     </div>
                 </div>
 
-                <!-- Bottom Row: The Original Profile Card at the EXACT same position where it was -->
-                <div class="hero-visual reveal-up delay-300">
-                    <div class="profile-card">
-                        <div class="profile-glow"></div>
-                        <div class="profile-image">
-                            <img src="assets/images/me_img.png" alt="Amit Kumar Jha" width="170" height="170" decoding="async" loading="lazy"
-                                onerror="this.src='assets/images/profile-placeholder.svg'; this.onerror=null;">
-                            <div class="profile-placeholder" style="display:none;">
-                                <i class="fas fa-user-tie"></i>
+                <!-- Mentors: founder card + every published guest mentor (filled by assets/js/home-mentors.js) -->
+                <div class="home-mentors reveal-up delay-300" aria-labelledby="home-mentors-title">
+                    <div class="home-mentors-head">
+                        <h2 id="home-mentors-title">Learn from practitioners</h2>
+                        <a class="home-mentors-all" href="/mentors.html">All mentors <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                    </div>
+                    <div class="home-mentors-grid" id="home-mentors-grid">
+                        <article class="mentor-card mentor-card-founder">
+                            <span class="mentor-badge">Founder</span>
+                            <div class="mentor-card-top">
+                                <img class="mentor-photo" src="assets/images/me_img.png" alt="Amit Kumar Jha" width="72" height="72" decoding="async" loading="lazy"
+                                    onerror="this.src='assets/images/profile-placeholder.svg'; this.onerror=null;">
+                                <div>
+                                    <h3 class="mentor-name">Amit Kumar Jha</h3>
+                                    <p class="mentor-headline">Quant Developer | Model Risk Quant | Mentor · IIT Jodhpur · UBS</p>
+                                </div>
                             </div>
-                        </div>
-                        <p class="profile-name">Amit Kumar Jha</p>
-                        <p class="profile-title">Quant Developer | Model Risk Quant | Mentor</p>
-                        <p class="profile-credentials">IIT Jodhpur Alumnus &bull; IIT Madras PhD Dropout &bull; UBS</p>
-                        <p class="profile-note">The sessions below are run personally by me. Explore <a href="/mentors.html">Guest Mentors</a> for sessions with other named instructors.</p>
-                        <div class="profile-tags">
-                            <span class="tag">XVA</span>
-                            <span class="tag">Derivatives</span>
-                            <span class="tag">Python</span>
-                            <span class="tag">C++</span>
-                            <span class="tag">Mathematics</span>
-                        </div>
-                        <div class="profile-research-badge">
-                            <a href="https://arxiv.org/search/q-fin?searchtype=author&query=Jha,+A+K" target="_blank" rel="noopener noreferrer" class="arxiv-pill" title="Read Amit Kumar Jha's quantitative finance research papers on arXiv" aria-label="Read Amit Kumar Jha's research papers on arXiv">
-                                <i class="fas fa-file-invoice" aria-hidden="true"></i>
-                                <span>Research Papers on <strong class="arxiv-text">ar<span class="arxiv-x">X</span>iv</strong></span>
-                                <i class="fas fa-arrow-up-right-from-square" style="font-size:0.75em;opacity:0.85;" aria-hidden="true"></i>
-                            </a>
-                        </div>
-                        <div class="social-links">
-                            <a href="https://www.linkedin.com/in/akjha002/" target="_blank" class="social-link"
-                                title="LinkedIn" aria-label="Connect on LinkedIn">
-                                <i class="fab fa-linkedin-in"></i>
-                            </a>
-                            <a href="https://github.com/AIM-IT4" target="_blank" class="social-link" title="GitHub"
-                                aria-label="View GitHub Profile">
-                                <i class="fab fa-github"></i>
-                            </a>
-                            <a href="https://arxiv.org/search/q-fin?searchtype=author&query=Jha,+A+K" target="_blank" rel="noopener noreferrer" class="social-link social-link-arxiv" title="arXiv Research Papers"
-                                aria-label="Read Research Papers on arXiv">
-                                <span class="arxiv-glyph">ar<span style="color:#b31b1b;">X</span>iv</span>
-                            </a>
-                            <a href="https://x.com/Akjha2023" target="_blank" class="social-link" title="X (Twitter)"
-                                aria-label="Follow on X (Twitter)">
-                                <i class="fab fa-twitter"></i>
-                            </a>
-                            <a href="https://topmate.io/amit_kumar_jha" target="_blank" class="social-link" title="Topmate"
-                                aria-label="Book on Topmate">
-                                <img src="assets/images/topmate-icon.svg" alt="Topmate" style="width: 18px; height: 18px;">
-                            </a>
-                        </div>
+                            <div class="mentor-tags"><span>XVA</span><span>Derivatives</span><span>Python &amp; C++</span></div>
+                            <div class="mentor-links">
+                                <a href="https://www.linkedin.com/in/akjha002/" target="_blank" rel="noopener noreferrer" aria-label="Amit on LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                                <a href="https://arxiv.org/search/q-fin?searchtype=author&amp;query=Jha,+A+K" target="_blank" rel="noopener noreferrer" aria-label="Amit's research on arXiv">arXiv</a>
+                                <a href="https://github.com/AIM-IT4" target="_blank" rel="noopener noreferrer" aria-label="Amit on GitHub"><i class="fab fa-github"></i></a>
+                            </div>
+                            <a class="mentor-cta" href="#services">Book 1-on-1 with Amit <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                        </article>
                     </div>
                 </div>
             </div>
@@ -1501,6 +1475,7 @@
     <script src="product-seo.js?v=20260926b" defer></script>
     <script src="/assets/js/razorpay-loader.js?v=1" defer></script>
     <script src="script.js?v=21" defer></script>
+    <script src="assets/js/home-mentors.js?v=1" defer></script>
     <script src="hero-terminal.js?v=20260926b" defer></script>
     <script src="receipt-printer.js?v=1" defer></script>
     <script>document.addEventListener('DOMContentLoaded', function(){ if(typeof renderSalaryWidget==='function') setTimeout(renderSalaryWidget, 800); });</script>
