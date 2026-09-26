@@ -15,6 +15,7 @@ import {
     streamSupabaseStorageObject
 } from '../lib/secureDownload.js';
 import { SUPABASE_URL, serviceHeaders, blockIfUnconfigured } from '../lib/supabaseAdmin.js';
+import { COMPLETE_BUNDLE_EXTRA_RESOURCES, isExpandedCompleteBundle } from '../lib/bundleEntitlements.js';
 // Zero-decimal currency handling lives in lib/pricing.js and is imported, not
 // re-declared -- a divergent copy makes the price-tamper guard compare a
 // 100x-wrong amount and wave through underpayment (see commit 0db1875, where a
@@ -442,6 +443,33 @@ export default async function handler(req, res) {
                 : `https://drive.google.com/file/d/${driveFileId}/view?usp=drivesdk`);
         }
 
+        // Expanded complete-bundle entitlement: NEW purchases receive the four
+        // post-legacy resources in addition to the original bundle folder.
+        // Existing buyers are not touched because this runs only during a new
+        // successful purchase fulfilment.
+        const bundleResources = [];
+        if (isExpandedCompleteBundle(productId) && GOOGLE_SERVICE_ACCOUNT_EMAIL && GOOGLE_PRIVATE_KEY) {
+            const baseUrl = `https://${req.headers.host}`;
+            for (const resource of COMPLETE_BUNDLE_EXTRA_RESOURCES) {
+                try {
+                    const extraGrant = await grantDrivePermission(
+                        GOOGLE_SERVICE_ACCOUNT_EMAIL,
+                        GOOGLE_PRIVATE_KEY,
+                        resource.fileId,
+                        email
+                    );
+                    const resourceUrl = (extraGrant && extraGrant.fallback === 'signed_download_url')
+                        ? buildSignedDownloadUrl(baseUrl, RAZORPAY_KEY_SECRET, resource.fileId, email, resource.fileName, false)
+                        : `https://drive.google.com/file/d/${resource.fileId}/view?usp=drivesdk`;
+                    bundleResources.push({ name: resource.name, download_link: resourceUrl, access_granted: true });
+                    console.log(`grant-access: expanded bundle resource granted ${resource.fileId} to ${email}`);
+                } catch (err) {
+                    bundleResources.push({ name: resource.name, download_link: null, access_granted: false, error: err.message });
+                    console.error(`grant-access: expanded bundle resource ${resource.fileId} failed: ${err.message}`);
+                }
+            }
+        }
+
         // Persist purchase row with service-role privileges if not already recorded.
         // This ensures the buyer appears in My Access and revenue stats even if the webhook was delayed.
         try {
@@ -481,7 +509,8 @@ export default async function handler(req, res) {
             product: productName || null,
             download_link: downloadLink,
             drive_access_granted: granted,
-            drive_error: grantError
+            drive_error: grantError,
+            bundle_resources: bundleResources
         });
     } catch (error) {
         console.error('grant-access error:', error);
