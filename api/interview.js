@@ -5,6 +5,7 @@ import { GROQ_CHAT_MODEL } from '../lib/groqModels.js';
 import { getServiceKey } from '../lib/supabaseAdmin.js';
 import { emailShell, escapeHtml } from '../lib/emailBranding.js';
 import { signBookingToken, verifyBookingToken } from '../lib/bookingTokens.js';
+import { createSessionJoinUrl, verifySessionJoinToken, jitsiRoomName } from '../lib/jitsi.js';
 import { signAccessToken, verifyAccessToken, normalizeAccessEmail, SESSION_TTL_MS } from '../lib/accessTokens.js';
 
 // --- Interview session tokens ------------------------------------------------
@@ -144,6 +145,161 @@ function verifyCustomerToken(email, token) {
     return verifyBookingToken(email, token) || !!verifyAccessToken(email, token, 'session');
 }
 
+function publicBooking(row) {
+    const booking = { ...row };
+    if (booking.meet_link && booking.id) {
+        booking.meet_link = createSessionJoinUrl(booking.id, 'attendee');
+    }
+    return booking;
+}
+
+function sessionRoomPage({ bookingId, token, roomName, mentorName, serviceName }) {
+    const safe = (value) => JSON.stringify(String(value || '')).replace(/</g, '\\u003c');
+    return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Start Desk2Quant Session</title>
+<style>
+html,body{margin:0;height:100%;background:#f7f5ee;color:#090909;font-family:Inter,Arial,sans-serif}
+#top{padding:10px 14px;border-bottom:1px solid #090909;background:#ffca3a;font-weight:800}
+#meet{height:calc(100vh - 43px)}
+#status{font-weight:600;margin-left:8px}
+</style>
+<script src="https://meet.jit.si/external_api.js"></script>
+</head>
+<body>
+<div id="top">Desk2Quant host room <span id="status">— learners are held until you enter.</span></div>
+<div id="meet"></div>
+<script>
+const bookingId=${safe(bookingId)};
+const token=${safe(token)};
+const roomName=${safe(roomName)};
+const mentorName=${safe(mentorName || 'Desk2Quant Mentor')};
+const serviceName=${safe(serviceName || 'Desk2Quant Session')};
+const statusEl=document.getElementById('status');
+const api=new JitsiMeetExternalAPI('meet.jit.si',{
+  roomName,
+  parentNode:document.getElementById('meet'),
+  width:'100%',
+  height:'100%',
+  userInfo:{displayName:mentorName},
+  configOverwrite:{prejoinConfig:{enabled:true}},
+  interfaceConfigOverwrite:{SHOW_JITSI_WATERMARK:false}
+});
+let marked=false;
+async function markReady(){
+  if(marked)return;
+  try{
+    const r=await fetch('/api/interview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'session-host-ready',bookingId,token})});
+    if(!r.ok)throw new Error('ready '+r.status);
+    marked=true;
+    statusEl.textContent='— host joined; learner access is now open.';
+  }catch(e){
+    statusEl.textContent='— joined, but Desk2Quant is still opening learner access…';
+    setTimeout(markReady,2500);
+  }
+}
+api.addEventListener('videoConferenceJoined',markReady);
+api.addEventListener('readyToClose',()=>{statusEl.textContent='— session ended.';});
+</script>
+</body>
+</html>`;
+}
+
+function attendeeWaitingPage(refreshUrl, mentorName, serviceName) {
+    const esc = (v) => String(v || '').replace(/[&<>"']/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="refresh" content="4;url=${esc(refreshUrl)}">
+<title>Waiting for your mentor</title>
+<style>
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f7f5ee;color:#090909;font-family:Inter,Arial,sans-serif;padding:24px;box-sizing:border-box}
+.card{max-width:560px;background:#fff;border:1px solid #090909;box-shadow:7px 7px 0 #090909;padding:28px}
+.badge{display:inline-block;background:#ffca3a;border:1px solid #090909;padding:5px 9px;font-weight:800;font-size:12px;text-transform:uppercase}
+h1{font-size:28px;margin:18px 0 10px}p{line-height:1.55}.muted{color:#666761;font-size:14px}
+</style>
+</head>
+<body><main class="card"><span class="badge">Waiting room</span><h1>Your mentor will start the room.</h1><p><strong>${esc(serviceName || 'Desk2Quant Session')}</strong></p><p>${esc(mentorName || 'Your mentor')} has not entered the meeting yet. Keep this page open; it checks automatically every few seconds and will open the meeting only after the host has joined.</p><p class="muted">You do not need to refresh manually.</p></main></body>
+</html>`;
+}
+
+async function fetchSessionBooking(bookingId) {
+    const key = getServiceKey();
+    const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
+    if (!key) throw new Error('Session service is not configured');
+    const resp = await fetch(
+        `${SUPABASE_URL}/rest/v1/bookings?id=eq.${encodeURIComponent(bookingId)}&select=id,status,meet_link,host_started_at,mentor_name,service_name&limit=1`,
+        { headers: { apikey: key, Authorization: `Bearer ${key}` } }
+    );
+    if (!resp.ok) throw new Error('Could not load session');
+    const rows = await resp.json();
+    return rows?.[0] || null;
+}
+
+async function handleSessionRoom(req, res) {
+    res.setHeader('Cache-Control', 'no-store, max-age=0');
+    const bookingId = String(req.query?.id || '').trim();
+    const role = String(req.query?.role || '').trim();
+    const token = String(req.query?.tk || '').trim();
+    if (!/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(bookingId) || !['host','attendee'].includes(role)
+        || !verifySessionJoinToken(bookingId, role, token)) {
+        return res.status(403).send('Invalid or expired session link.');
+    }
+
+    const booking = await fetchSessionBooking(bookingId);
+    if (!booking || !booking.meet_link) return res.status(404).send('Session not found.');
+    if (!['upcoming','confirmed','rescheduled'].includes(String(booking.status || '').toLowerCase())) {
+        return res.status(410).send('This session is no longer active.');
+    }
+
+    if (role === 'attendee') {
+        if (!booking.host_started_at) {
+            return res.status(200).send(attendeeWaitingPage(req.url, booking.mentor_name, booking.service_name));
+        }
+        res.setHeader('Location', booking.meet_link);
+        return res.status(302).end();
+    }
+
+    const roomName = jitsiRoomName(booking.meet_link);
+    if (!roomName) return res.status(500).send('Meeting provider link is invalid.');
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.status(200).send(sessionRoomPage({
+        bookingId,
+        token,
+        roomName,
+        mentorName: booking.mentor_name || 'Desk2Quant Mentor',
+        serviceName: booking.service_name
+    }));
+}
+
+async function handleSessionHostReady(req, res) {
+    const bookingId = String(req.body?.bookingId || '').trim();
+    const token = String(req.body?.token || '').trim();
+    if (!verifySessionJoinToken(bookingId, 'host', token)) {
+        return res.status(403).json({ error: 'Invalid host link' });
+    }
+    const booking = await fetchSessionBooking(bookingId);
+    if (!booking || !booking.meet_link) return res.status(404).json({ error: 'Session not found' });
+    if (!['upcoming','confirmed','rescheduled'].includes(String(booking.status || '').toLowerCase())) {
+        return res.status(409).json({ error: 'Session is not active' });
+    }
+
+    const key = getServiceKey();
+    const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
+    const patch = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${encodeURIComponent(bookingId)}`, {
+        method: 'PATCH',
+        headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({ host_started_at: new Date().toISOString() })
+    });
+    if (!patch.ok) return res.status(502).json({ error: 'Could not open learner access' });
+    return res.status(200).json({ success: true });
+}
+
 /**
  * Server-side refund calculation based on session date, time, and price.
  * Follows Desk2Quant cancellation policy:
@@ -266,7 +422,7 @@ async function handleBookingsAction(req, res, action) {
             );
             if (!resp.ok) return res.status(502).json({ error: 'Failed to load bookings' });
             const rows = await resp.json();
-            return res.status(200).json({ success: true, bookings: rows });
+            return res.status(200).json({ success: true, bookings: rows.map(publicBooking) });
         }
 
         // 2. SLOTS already taken on a date (homepage collision check).
@@ -624,7 +780,7 @@ async function handleAccessAction(req, res, action) {
             const purchases = exactMatches(await purchaseResp.json(), 'customer_email', email)
                 .map(({ customer_email, ...rest }) => rest);
             const bookings = bookingResp.ok
-                ? exactMatches(await bookingResp.json(), 'email', email)
+                ? exactMatches(await bookingResp.json(), 'email', email).map(publicBooking)
                 : [];
 
             return res.status(200).json({
@@ -751,11 +907,25 @@ async function handleLeadAction(req, res) {
 export default async function handler(req, res) {
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method === 'GET' && req.query?.action === 'session-room') {
+        try { return await handleSessionRoom(req, res); }
+        catch (err) {
+            console.error('Session room error:', err.message);
+            return res.status(500).send('Could not open this session. Please contact Desk2Quant.');
+        }
+    }
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    if (req.body?.action === 'session-host-ready') {
+        try { return await handleSessionHostReady(req, res); }
+        catch (err) {
+            console.error('Session host-ready error:', err.message);
+            return res.status(500).json({ error: 'Could not open learner access' });
+        }
+    }
 
     // Bookings self-service and the My Access library run before the Groq gate:
     // they need the service-role key, not Groq.
