@@ -1493,7 +1493,7 @@ async function handleSessionBooking(data) {
                     'apikey': SUPABASE_KEY,
                     'Authorization': `Bearer ${SUPABASE_KEY}`,
                     'Content-Type': 'application/json',
-                    'Prefer': 'return=minimal'
+                    'Prefer': 'return=representation'
                 },
                 body: JSON.stringify(bookingRow)
             });
