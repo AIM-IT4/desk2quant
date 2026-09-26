@@ -75,7 +75,7 @@
         section.innerHTML = `
             <div class="bundle-section-head">
                 <span>Value + proof</span>
-                <h2>See what the ₹7,999 bundle replaces.</h2>
+                <h2>See what the ₹9,999 bundle replaces.</h2>
                 <p>Instead of a vague “worth ₹X” claim, this comparison uses live standalone prices for selected resources that are already included in the bundle.</p>
             </div>
             <div class="bundle-proof-grid">
@@ -88,9 +88,9 @@
                 </article>
                 <article class="bundle-compare-card">
                     <h3>Bundle economics</h3>
-                    <p class="bundle-proof-muted">The Complete Bundle's configured list value is ₹12,999. Its current selling price is ₹7,999.</p>
+                    <p class="bundle-proof-muted">The Complete Bundle's configured list value is ₹12,999. Its current selling price is ₹9,999.</p>
                     <div class="bundle-savings-stack">
-                        <div class="bundle-saving"><span>Bundle price</span><strong>₹7,999</strong></div>
+                        <div class="bundle-saving"><span>Bundle price</span><strong>₹9,999</strong></div>
                         <div class="bundle-saving"><span>Saving vs configured list value</span><strong>₹5,000</strong></div>
                         <div class="bundle-saving"><span>With COMBINED10</span><strong>≈ ₹7,199</strong></div>
                         <div class="bundle-saving"><span>Saving vs list value with coupon</span><strong>≈ ₹5,800</strong></div>
