@@ -487,7 +487,7 @@
                     <h2>Frequently asked questions</h2>
                 </div>
                 <div class="bundle-faq">
-                    <details><summary>What exactly do I receive?</summary><p>41+ structured PDFs plus 60+ scripts/code resources across quantitative foundations, derivatives, asset-class models, Python/C++/SQL, risk, XVA, validation, projects and interview preparation.</p></details>
+                    <details><summary>What exactly do I receive?</summary><p>71 structured PDFs, 72 Jupyter notebooks and 134 scripts/code resources across quantitative foundations, derivatives, asset-class models, Python/C++/SQL, risk, XVA, validation, projects and interview preparation.</p></details>
                     <details><summary>Is this only for interview preparation?</summary><p>No. Interview material is one component. The larger goal is a desk-focused reference system covering pricing, implementation, risk, validation and model reasoning.</p></details>
                     <details><summary>How is the bundle delivered?</summary><p>It is a digital product. After verified payment, Desk2Quant's existing delivery and My Access workflow provides access to the purchased resources.</p></details>
                     <details><summary>Is there a discount code?</summary><p>Yes. The configured bundle coupon is <strong>COMBINED10</strong>, which applies 10% off when valid at checkout.</p></details>
@@ -497,8 +497,8 @@
             <section class="bundle-final-cta" id="bundle-buy">
                 <div>
                     <h2>Build the full quant stack instead of collecting disconnected notes.</h2>
-                    <p>41+ PDFs • 60+ scripts • 1000+ interview problems • Python + C++ + SQL</p>
-                    <p class="bundle-final-price" id="bundle-final-price">₹7,999 • List value ₹12,999 • COMBINED10 available</p>
+                    <p>71 PDFs • 72 notebooks • 134 scripts • 1000+ interview problems</p>
+                    <p class="bundle-final-price" id="bundle-final-price">₹9,999 • List value ₹12,999 • COMBINED10 available</p>
                 </div>
                 <button class="bundle-final-buy" id="bundle-final-buy-btn" type="button">Get Complete Bundle <i class="fas fa-arrow-right"></i></button>
             </section>
@@ -539,10 +539,10 @@
         price.insertAdjacentHTML('afterend', `
             <div class="bundle-price-note"><span>List value <s>₹12,999</s></span><span>•</span><span>Use <code>COMBINED10</code> for 10% off</span></div>
             <div class="bundle-value-row" aria-label="Bundle contents">
-                <div class="bundle-value-chip"><strong>41+</strong>PDFs</div>
-                <div class="bundle-value-chip"><strong>60+</strong>Scripts</div>
+                <div class="bundle-value-chip"><strong>71</strong>PDFs</div>
+                <div class="bundle-value-chip"><strong>72</strong>Notebooks</div>
+                <div class="bundle-value-chip"><strong>134</strong>Scripts</div>
                 <div class="bundle-value-chip"><strong>1000+</strong>Interview problems</div>
-                <div class="bundle-value-chip"><strong>3</strong>Python • C++ • SQL</div>
             </div>`);
 
         const actions = content.querySelector('.action-buttons');
