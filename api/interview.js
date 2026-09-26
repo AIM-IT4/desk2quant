@@ -145,70 +145,15 @@ function verifyCustomerToken(email, token) {
     return verifyBookingToken(email, token) || !!verifyAccessToken(email, token, 'session');
 }
 
+// Pending reschedule/cancel requests still run at the booked time until actioned.
+const ACTIVE_SESSION_STATUSES = ['upcoming','confirmed','rescheduled','reschedule_requested','admin_reschedule_pending','cancellation_requested'];
+
 function publicBooking(row) {
     const booking = { ...row };
     if (booking.meet_link && booking.id) {
         booking.meet_link = createSessionJoinUrl(booking.id, 'attendee');
     }
     return booking;
-}
-
-function sessionRoomPage({ bookingId, token, roomName, mentorName, serviceName }) {
-    const safe = (value) => JSON.stringify(String(value || '')).replace(/</g, '\\u003c');
-    return `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Start Desk2Quant Session</title>
-<style>
-html,body{margin:0;height:100%;background:#f7f5ee;color:#090909;font-family:Inter,Arial,sans-serif}
-#top{padding:10px 14px;border-bottom:1px solid #090909;background:#ffca3a;font-weight:800}
-#meet{height:calc(100vh - 43px)}
-#status{font-weight:600;margin-left:8px}
-</style>
-<script src="https://meet.jit.si/external_api.js"></script>
-</head>
-<body>
-<div id="top">Desk2Quant host room <span id="status">— learners are held until you enter.</span></div>
-<div id="meet"></div>
-<script>
-const bookingId=${safe(bookingId)};
-const token=${safe(token)};
-const roomName=${safe(roomName)};
-const mentorName=${safe(mentorName || 'Desk2Quant Mentor')};
-const serviceName=${safe(serviceName || 'Desk2Quant Session')};
-const statusEl=document.getElementById('status');
-const api=new JitsiMeetExternalAPI('meet.jit.si',{
-  roomName,
-  parentNode:document.getElementById('meet'),
-  width:'100%',
-  height:'100%',
-  userInfo:{displayName:mentorName},
-  configOverwrite:{prejoinConfig:{enabled:true}},
-  interfaceConfigOverwrite:{SHOW_JITSI_WATERMARK:false}
-});
-let joined=false;
-let heartbeat=null;
-async function markReady(){
-  try{
-    const r=await fetch('/api/interview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'session-host-ready',bookingId,token})});
-    if(!r.ok)throw new Error('ready '+r.status);
-    if(!joined){
-      joined=true;
-      statusEl.textContent='— host joined; learner access is now open.';
-      heartbeat=setInterval(markReady,20000);
-    }
-  }catch(e){
-    statusEl.textContent='— joined, but Desk2Quant is still opening learner access…';
-    if(!joined)setTimeout(markReady,2500);
-  }
-}
-api.addEventListener('videoConferenceJoined',markReady);
-api.addEventListener('readyToClose',()=>{if(heartbeat)clearInterval(heartbeat);statusEl.textContent='— session ended.';});
-</script>
-</body>
-</html>`;
 }
 
 function attendeeWaitingPage(refreshUrl, mentorName, serviceName) {
@@ -256,13 +201,14 @@ async function handleSessionRoom(req, res) {
 
     const booking = await fetchSessionBooking(bookingId);
     if (!booking || !booking.meet_link) return res.status(404).send('Session not found.');
-    if (!['upcoming','confirmed','rescheduled'].includes(String(booking.status || '').toLowerCase())) {
+    if (!ACTIVE_SESSION_STATUSES.includes(String(booking.status || '').toLowerCase())) {
         return res.status(410).send('This session is no longer active.');
     }
 
     if (role === 'attendee') {
-        const hostHeartbeat = booking.host_started_at ? Date.parse(booking.host_started_at) : NaN;
-        const hostIsPresent = Number.isFinite(hostHeartbeat) && (Date.now() - hostHeartbeat) < 90000;
+        // Admitted once the host link has been opened for this booking (reset on reschedule).
+        const hostStarted = booking.host_started_at ? Date.parse(booking.host_started_at) : NaN;
+        const hostIsPresent = Number.isFinite(hostStarted) && (Date.now() - hostStarted) < 6 * 3600 * 1000;
         if (!hostIsPresent) {
             return res.status(200).send(attendeeWaitingPage(req.url, booking.mentor_name, booking.service_name));
         }
@@ -270,16 +216,23 @@ async function handleSessionRoom(req, res) {
         return res.status(302).end();
     }
 
-    const roomName = jitsiRoomName(booking.meet_link);
-    if (!roomName) return res.status(500).send('Meeting provider link is invalid.');
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    return res.status(200).send(sessionRoomPage({
-        bookingId,
-        token,
-        roomName,
-        mentorName: booking.mentor_name || 'Desk2Quant Mentor',
-        serviceName: booking.service_name
-    }));
+    // Host: record the start, then hand off to meet.jit.si full-page. Embedding
+    // meet.jit.si via its iframe API is cut off after 5 minutes.
+    if (!jitsiRoomName(booking.meet_link)) return res.status(500).send('Meeting provider link is invalid.');
+    await markHostStarted(bookingId);
+    res.setHeader('Location', booking.meet_link);
+    return res.status(302).end();
+}
+
+async function markHostStarted(bookingId) {
+    const key = getServiceKey();
+    const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
+    const patch = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${encodeURIComponent(bookingId)}`, {
+        method: 'PATCH',
+        headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({ host_started_at: new Date().toISOString() })
+    });
+    if (!patch.ok) throw new Error('Could not open learner access');
 }
 
 async function handleSessionHostReady(req, res) {
@@ -290,18 +243,11 @@ async function handleSessionHostReady(req, res) {
     }
     const booking = await fetchSessionBooking(bookingId);
     if (!booking || !booking.meet_link) return res.status(404).json({ error: 'Session not found' });
-    if (!['upcoming','confirmed','rescheduled'].includes(String(booking.status || '').toLowerCase())) {
+    if (!ACTIVE_SESSION_STATUSES.includes(String(booking.status || '').toLowerCase())) {
         return res.status(409).json({ error: 'Session is not active' });
     }
 
-    const key = getServiceKey();
-    const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dntabmyurlrlnoajdnja.supabase.co';
-    const patch = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${encodeURIComponent(bookingId)}`, {
-        method: 'PATCH',
-        headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-        body: JSON.stringify({ host_started_at: new Date().toISOString() })
-    });
-    if (!patch.ok) return res.status(502).json({ error: 'Could not open learner access' });
+    await markHostStarted(bookingId);
     return res.status(200).json({ success: true });
 }
 
@@ -608,7 +554,7 @@ async function handleBookingsAction(req, res, action) {
                 host_started_at: null
             });
             if (!ok) return res.status(502).json({ error: 'Failed to accept new schedule' });
-            return res.status(200).json({ success: true, booking });
+            return res.status(200).json({ success: true, booking: publicBooking(booking) });
         }
 
         // 7. COUNTER-propose a different time.
