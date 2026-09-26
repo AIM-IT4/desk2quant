@@ -1,0 +1,209 @@
+<p>You pull an option chain, loop over the quotes, call a Newton-Raphson solver for implied volatility, and most rows come back fine. Then a handful return <code>nan</code>, a negative number, or a volatility of 1,400%. You add a <code>try/except</code>, drop the bad rows, and fit your smile to what is left.</p>
+
+<p>That is how most implied volatility code is written, and it is exactly the code that breaks on the strikes a desk cares about most: the short-dated wings. This guide shows <strong>why</strong> the textbook Newton iteration fails, how to write an implied volatility solver in Python that converges for every arbitrage-free price, and which market-data checks matter more than the root-finder itself.</p>
+
+<h2>1. The problem: inverting Black-Scholes</h2>
+
+<p>Implied volatility is the single number \(\sigma\) that makes the Black-Scholes (Black-76, when written on the forward) price equal the observed market price. With forward \(F\), strike \(K\), expiry \(T\) and discount factor \(D\):</p>
+
+<div class="math-block">$$C(\sigma) = D\left[F\,N(d_1) - K\,N(d_2)\right], \qquad d_{1,2} = \frac{\ln(F/K)}{\sigma\sqrt{T}} \pm \tfrac12\sigma\sqrt{T}$$</div>
+
+<p>There is no closed-form inverse, so we solve \(C(\sigma) = C_{\text{mkt}}\) numerically. The good news is that the problem is well posed: the price is strictly increasing in volatility (vega is positive), so <strong>a solution exists and is unique</strong> whenever the price lies inside the no-arbitrage bounds</p>
+
+<div class="math-block">$$D\,\max(F-K,\,0) \;<\; C_{\text{mkt}} \;<\; D\,F.$$</div>
+
+<p>If a solver fails on a price inside those bounds, the solver is the bug, not the market.</p>
+
+<h2>2. Why naive Newton-Raphson fails</h2>
+
+<p>The textbook iteration is \(\sigma_{n+1} = \sigma_n - \big(C(\sigma_n) - C_{\text{mkt}}\big)/\text{vega}(\sigma_n)\), started from something like 20%:</p>
+
+<pre><code class="language-python">def naive_newton(price, F, K, T, df=1.0, call=True, sigma0=0.2, tol=1e-10):
+    sigma = sigma0
+    for _ in range(100):
+        diff = bs_price(F, K, T, sigma, df, call) - price
+        if abs(diff) &lt; tol:
+            return sigma
+        sigma -= diff / bs_vega(F, K, T, sigma, df)   # nothing stops this going negative
+    raise RuntimeError(&quot;no convergence&quot;)</code></pre>
+
+<p>Try it on an ordinary wing option: forward 100, strike 130, 0.1 years to expiry, discount factor 0.99, true volatility 35%. The price is about 0.0371. Starting from 20%, this is what happens:</p>
+
+<table>
+<thead><tr><th>Iteration</th><th>\(\sigma_n\)</th><th>Vega</th><th>Price error</th><th>Next \(\sigma\)</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>0.2000</td><td>0.0026</td><td>−0.0371</td><td>14.41</td></tr>
+<tr><td>1</td><td>14.41</td><td>1.06</td><td>+96.4</td><td>−76.35</td></tr>
+</tbody>
+</table>
+
+<p>At 20% the option is so far out of the money that vega is almost zero, so the Newton step (price error divided by vega) is enormous: the solver jumps to 1,441% volatility. There the price is close to its upper bound, so the next step overshoots to a meaningless negative volatility (−76), and within a few more steps vega hits zero and the run ends in <code>nan</code>. Nothing is wrong with the option. The root-finder was simply started on the wrong side of a curve it cannot handle.</p>
+
+<p>The underlying reason is shape. As a function of \(\sigma\), the option price is <strong>convex, then concave</strong>. Differentiating vega gives volga (vomma):</p>
+
+<div class="math-block">$$\frac{\partial^2 C}{\partial\sigma^2} = \text{vega}\cdot\frac{d_1 d_2}{\sigma}, \qquad d_1 d_2 = \frac{x^2}{\sigma^2 T} - \frac{\sigma^2 T}{4}, \quad x = \ln(F/K).$$</div>
+
+<p>So the curvature changes sign exactly where \(\sigma^2 T = 2|x|\), at the inflection point</p>
+
+<div class="math-block">$$\sigma^{*} = \sqrt{\frac{2\,|\ln(F/K)|}{T}}.$$</div>
+
+<p>Newton's method is only guaranteed to behave on a region where the function does not change curvature. Start too low on the convex part and a tiny vega throws you far to the right; start too high on the concave part and you overshoot to the left. For the example above, \(\sigma^{*} = \sqrt{2\ln(1.3)/0.1} \approx 2.29\): the true root 0.35 and the 0.20 starting guess are both on the convex side, far below it, which is why the first step explodes.</p>
+
+<h2>3. The fix: start at the inflection point and keep a bracket</h2>
+
+<p>Two ideas make the solver robust.</p>
+
+<ol>
+<li><strong>Start at \(\sigma^{*}\).</strong> Manaster and Koehler (1982) showed that Newton's iteration started from this point converges monotonically to the implied volatility. It is also a far better guess than a constant 20% for short-dated wings.</li>
+<li><strong>Keep a bracket and fall back to bisection.</strong> Because the price is monotone in \(\sigma\), every evaluation tells you which side of the root you are on. Keep an interval \([\sigma_{lo}, \sigma_{hi}]\) that always contains the root; accept a Newton step only if it lands inside it, otherwise bisect. This is the classic safeguarded Newton, and it cannot diverge.</li>
+</ol>
+
+<p>Two more details matter in practice:</p>
+
+<ul>
+<li><strong>Solve on the out-of-the-money option.</strong> An in-the-money call is intrinsic value plus a small amount of time value, and all the volatility information lives in that small part. Converting to the OTM put with put-call parity, \(C - P = D(F-K)\), makes the problem better conditioned.</li>
+<li><strong>Use a tolerance relative to the OTM price.</strong> An absolute tolerance of \(10^{-10}\) is meaningless for a wing option worth \(10^{-9}\).</li>
+</ul>
+
+<h2>4. A robust implied volatility solver in Python</h2>
+
+<pre><code class="language-python">import math
+from scipy.stats import norm
+
+def bs_price(F, K, T, sigma, df=1.0, call=True):
+    &quot;&quot;&quot;Black (forward) price. df = discount factor to expiry.&quot;&quot;&quot;
+    if sigma &lt;= 0 or T &lt;= 0:
+        intrinsic = max(F - K, 0.0) if call else max(K - F, 0.0)
+        return df * intrinsic
+    v = sigma * math.sqrt(T)
+    d1 = math.log(F / K) / v + 0.5 * v
+    d2 = d1 - v
+    if call:
+        return df * (F * norm.cdf(d1) - K * norm.cdf(d2))
+    return df * (K * norm.cdf(-d2) - F * norm.cdf(-d1))
+
+def bs_vega(F, K, T, sigma, df=1.0):
+    v = sigma * math.sqrt(T)
+    d1 = math.log(F / K) / v + 0.5 * v
+    return df * F * norm.pdf(d1) * math.sqrt(T)
+
+def implied_vol(price, F, K, T, df=1.0, call=True,
+                tol=1e-12, max_iter=100, lo=1e-6, hi=5.0):
+    &quot;&quot;&quot;Safeguarded Newton: Newton steps inside a bisection bracket.&quot;&quot;&quot;
+    # 1. No-arbitrage bounds (undiscounted)
+    p = price / df
+    intrinsic = max(F - K, 0.0) if call else max(K - F, 0.0)
+    upper = F if call else K
+    if not (intrinsic &lt; p &lt; upper):
+        raise ValueError(f&quot;price {price:.6g} outside no-arbitrage bounds &quot;
+                         f&quot;({df*intrinsic:.6g}, {df*upper:.6g})&quot;)
+    # 2. Use the OTM side via put-call parity (better conditioned)
+    if call and K &lt; F:
+        p, call = p - (F - K), False
+    elif not call and K &gt; F:
+        p, call = p + (F - K), True
+    f = lambda s: bs_price(F, K, T, s, 1.0, call) - p
+    # 3. Start at the inflection point of price(sigma)
+    x = math.log(F / K)
+    sigma = math.sqrt(2.0 * abs(x) / T) if x != 0 else 0.2
+    sigma = min(max(sigma, lo), hi)
+    while f(hi) &lt; 0:                  # widen bracket for extreme prices
+        hi *= 2.0
+    for i in range(max_iter):
+        diff = f(sigma)
+        if abs(diff) &lt;= tol * p:          # relative to the OTM price
+            return sigma
+        if diff &gt; 0: hi = sigma
+        else:        lo = sigma
+        vega = bs_vega(F, K, T, sigma)
+        step_ok = vega &gt; 1e-14
+        if step_ok:
+            cand = sigma - diff / vega
+            step_ok = lo &lt; cand &lt; hi
+        sigma = cand if step_ok else 0.5 * (lo + hi)
+        if hi - lo &lt; 1e-15:
+            return sigma
+    return sigma</code></pre>
+
+<p>A round-trip test prices options across strikes from 40 to 250 (forward 100), expiries from one day to five years and volatilities from 5% to 150%, then solves for implied volatility and compares. For every out-of-the-money quote, the recovered volatility matches the true one to within about \(10^{-12}\), and there were no failures. When the same deep in-the-money options are passed as ITM prices, the error grows to around \(10^{-7}\). That is not the solver: a 150.00 option whose time value is \(1.5\times10^{-10}\) simply does not carry enough significant digits in double precision. <strong>Quote the OTM side.</strong></p>
+
+<p>If you only need something quick, <code>scipy.optimize.brentq</code> on \(C(\sigma) - C_{\text{mkt}}\) over a bracket such as \([10^{-6}, 5]\) is also robust, just slower than a safeguarded Newton. For production speed and machine-precision accuracy across all regimes, Peter Jäckel's <em>Let's Be Rational</em> (2015) algorithm reaches full double precision in at most two iterations; the open-source <code>py_vollib</code> library wraps an implementation of it.</p>
+
+<h2>5. A good closed-form first guess</h2>
+
+<p>For near-the-money options, Brenner and Subrahmanyam (1988) give an approximation from the fact that \(N(d_1) - N(d_2) \approx \sigma\sqrt{T}/\sqrt{2\pi}\) at the money:</p>
+
+<div class="math-block">$$\sigma \approx \sqrt{\frac{2\pi}{T}}\;\frac{C}{D\,F}.$$</div>
+
+<p>For an at-the-money option with 25% volatility and six months to expiry it gives 24.97%. It is excellent as a starting point near the money and poor in the wings, which is why the inflection point is the safer default.</p>
+
+<h2>6. The market-data problems that matter more than the solver</h2>
+
+<p>Once the root-finder is reliable, almost every remaining "bad implied vol" comes from the inputs.</p>
+
+<table>
+<thead><tr><th>Symptom</th><th>Usual cause</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>Price below intrinsic, solver refuses</td><td>Stale or crossed quote, wrong forward, or an American option priced as European</td><td>Check bounds first and report the row; do not clip it silently</td></tr>
+<tr><td>Calls and puts at the same strike give different vols</td><td>Wrong forward or dividend/borrow assumption</td><td>Imply the forward from put-call parity near the money</td></tr>
+<tr><td>Wings jump around between snapshots</td><td>Using mid when the bid is zero or the spread is wide</td><td>Compute bid and ask vols; flag rows where the band is wider than your tolerance</td></tr>
+<tr><td>Short-dated vols look too high</td><td>Calendar-day vs trading-day time, or wrong expiry time of day</td><td>Measure \(T\) consistently, down to the expiry cut-off</td></tr>
+<tr><td>ITM single-stock options give odd vols</td><td>Early-exercise premium in American options</td><td>Use OTM options, or de-Americanise with a tree before inverting</td></tr>
+</tbody>
+</table>
+
+<p>A useful rule is to report an implied volatility <em>band</em>, not a point: the bid vol and the ask vol. If a smile fit sits inside every band, it is consistent with the market, even if it misses every mid.</p>
+
+<pre><code class="language-python">import pandas as pd
+
+def chain_iv(chain: pd.DataFrame, F: float, T: float, df: float) -&gt; pd.DataFrame:
+    &quot;&quot;&quot;chain columns: strike, bid, ask, is_call. Uses OTM quotes only.&quot;&quot;&quot;
+    otm = chain[(chain.is_call &amp; (chain.strike &gt;= F)) |
+                (~chain.is_call &amp; (chain.strike &lt;= F))].copy()
+    for side in (&quot;bid&quot;, &quot;mid&quot;, &quot;ask&quot;):
+        px = otm[side] if side != &quot;mid&quot; else 0.5 * (otm.bid + otm.ask)
+        otm[f&quot;iv_{side}&quot;] = [
+            implied_vol(p, F, k, T, df, c) if p &gt; 0 else float(&quot;nan&quot;)
+            for p, k, c in zip(px, otm.strike, otm.is_call)
+        ]
+    return otm</code></pre>
+
+<h2>7. The interview version</h2>
+
+<p>"How would you compute implied volatility?" is a common quant interview question, and "Newton-Raphson" is only the start of a good answer. A strong answer covers:</p>
+
+<ol>
+<li>The solution exists and is unique inside the no-arbitrage bounds, because vega is positive.</li>
+<li>Plain Newton can diverge because price is convex then concave in \(\sigma\) and vega vanishes in the wings.</li>
+<li>Start at \(\sigma^{*} = \sqrt{2|\ln(F/K)|/T}\) and safeguard the step with a bisection bracket.</li>
+<li>Invert OTM options, use relative tolerances, and treat bid/ask as a band.</li>
+<li>Know that Jäckel's method is the production standard when speed and precision both matter.</li>
+</ol>
+
+<h2>8. Checklist</h2>
+
+<ul>
+<li>Compute the forward and discount factor first; solve in forward (Black) terms.</li>
+<li>Reject prices outside \(\big(D\max(F-K,0),\,DF\big)\) and log them.</li>
+<li>Convert to the OTM option with put-call parity.</li>
+<li>Start from the inflection point; keep a bracket; bisect when Newton leaves it.</li>
+<li>Use a tolerance relative to the OTM price.</li>
+<li>Round-trip test across strikes, expiries and volatilities before trusting the code.</li>
+<li>Produce bid and ask vols, not just mid.</li>
+</ul>
+
+<h2>Sources and further reading</h2>
+
+<ul>
+<li>S. Manaster and G. Koehler (1982), "The Calculation of Implied Variances from the Black-Scholes Model: A Note", <em>Journal of Finance</em> 37(1) — the inflection-point starting value and monotone convergence of Newton's method.</li>
+<li>M. Brenner and M. Subrahmanyam (1988), "A Simple Formula to Compute the Implied Standard Deviation", <em>Financial Analysts Journal</em> 44(5) — the at-the-money approximation.</li>
+<li>P. Jäckel (2015), "Let's Be Rational", <em>Wilmott</em> — machine-precision implied volatility in two iterations.</li>
+<li><a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.brentq.html" target="_blank" rel="noopener">SciPy documentation: scipy.optimize.brentq</a> — a bracketed root-finder you can use as a simple robust fallback.</li>
+<li><a href="https://github.com/vollib/py_vollib" target="_blank" rel="noopener">py_vollib on GitHub</a> — Python option pricing and implied volatility built on Jäckel's algorithm.</li>
+</ul>
+
+<h2>Continue on Desk2Quant</h2>
+
+<p>Implied volatility is the input to everything downstream. The <a href="/products/the-vol-surface-construction-playbook-svi-ssvi-static-arbitrage-and-du.html">Vol Surface Construction Playbook</a> takes these implied vols and builds an arbitrage-free SVI/SSVI surface, <a href="/products/numerical-methods-for-quants.html">Numerical Methods for Quants</a> covers root-finding, stability and calibration in depth, and <a href="/products/python-for-quants.html">Python for Quants</a> is the interview-ready companion for the code. For what vega's own derivatives do to a book, read <a href="/blog/greeks-you-were-never-taught-vanna-volga-charm-speed.html">The Greeks You Were Never Taught</a>.</p>
+
+<p><em>Educational content only. Code is provided as-is for learning; validate it against your own data and systems before any production use.</em></p>
