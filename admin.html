@@ -2803,7 +2803,7 @@ Brief Q&A"></textarea>
 
                         ${(function () {
                                 const link = booking.meet_link;
-                                return link ? `<div style="background: rgba(34, 197, 94, 0.1); padding: 8px 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.9em; color: #22c55e;"><i class="fas fa-video"></i> <strong>Session Link:</strong> <a href="${encodeURI(link)}" target="_blank" rel="noopener noreferrer" onclick="markHostStarted('${escapeHtml(escapeJsString(booking.id))}')" style="color: inherit; text-decoration: underline;">${escapeHtml(link)}</a></div>` : '';
+                                return link ? `<div style="background: rgba(34, 197, 94, 0.1); padding: 8px 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.9em; color: #22c55e;"><i class="fas fa-video"></i> <strong>Session Link:</strong> <a href="#" onclick="return openHostRoom('${escapeHtml(escapeJsString(booking.id))}')" style="color: inherit; text-decoration: underline;">${escapeHtml(link)}</a></div>` : '';
                             })()}
                         
                         ${booking.reschedule_reason ? `<p style="color: var(--text-muted); margin-bottom: 15px; font-size: 0.9em;"><strong>Reason:</strong> ${escapeHtml(booking.reschedule_reason)}</p>` : ''}
@@ -5007,7 +5007,7 @@ Desk2Quant
                             </td>
                             <td style="padding: 12px; text-align: right;">
                                 <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                                    ${meetLink !== '#' ? `<a href="${meetLink}" target="_blank" title="Join Meeting" onclick="markHostStarted('${escapeHtml(escapeJsString(b.id))}')" style="color:white; padding:6px; background:#6366f1; border-radius:4px;"><i class="fas fa-video"></i></a>` : ''}
+                                    ${meetLink !== '#' ? `<a href="#" title="Start as host" onclick="return openHostRoom('${escapeHtml(escapeJsString(b.id))}')" style="color:white; padding:6px; background:#6366f1; border-radius:4px;"><i class="fas fa-video"></i></a>` : ''}
                                     ${isActionable ?
                                     `<button onclick="adminInitiateReschedule('${b.id}')" title="Reschedule Session" style="padding:6px 10px; background:rgba(168, 85, 247, 0.2); color:#a855f7; border:none; border-radius:4px; cursor:pointer;"><i class="fas fa-calendar-alt"></i></button>
                                              <button onclick="manualSendReminder('${b.id}')" title="Send Reminder" style="padding:6px 10px; background:rgba(245, 158, 11, 0.2); color:#f59e0b; border:none; border-radius:4px; cursor:pointer;"><i class="fas fa-bell"></i></button>
@@ -5741,14 +5741,21 @@ Desk2Quant
             </script>
 <script src="/assets/js/mentor-admin.js"></script>
 <script>
-// The admin joins with the raw room link, so record the host start here too;
-// otherwise learners stay in the Desk2Quant waiting room.
-window.markHostStarted = function (bookingId) {
-    if (!window.supabaseAdminClient || !bookingId) return;
-    window.supabaseAdminClient.from('bookings')
-        .update({ host_started_at: new Date().toISOString() })
-        .eq('id', bookingId)
-        .then(({ error }) => { if (error) alert('Could not open learner access: ' + error.message); });
+// Start sessions through the signed host link: it opens the learner gate and,
+// with Daily, gives the admin the owner token so only they can admit learners.
+window.openHostRoom = function (bookingId) {
+    const win = window.open('', '_blank'); // open now so popup blockers allow it
+    fetch('/api/interview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': window.__adminServiceKey || '' },
+        body: JSON.stringify({ action: 'admin-host-link', bookingId })
+    }).then(r => r.json().then(d => ({ ok: r.ok, d })))
+      .then(({ ok, d }) => {
+          if (!ok || !d.url) throw new Error(d.error || 'Could not open host room');
+          if (win) win.location = d.url; else window.location = d.url;
+      })
+      .catch(err => { if (win) win.close(); alert(err.message); });
+    return false;
 };
 </script>
 </body>

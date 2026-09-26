@@ -6,6 +6,7 @@ import { getServiceKey } from '../lib/supabaseAdmin.js';
 import { emailShell, escapeHtml } from '../lib/emailBranding.js';
 import { signBookingToken, verifyBookingToken } from '../lib/bookingTokens.js';
 import { createSessionJoinUrl, verifySessionJoinToken, jitsiRoomName } from '../lib/jitsi.js';
+import { dailyEnabled, ensureDailyRoom, createDailyOwnerToken } from '../lib/daily.js';
 import { signAccessToken, verifyAccessToken, normalizeAccessEmail, SESSION_TTL_MS } from '../lib/accessTokens.js';
 
 // --- Interview session tokens ------------------------------------------------
@@ -212,16 +213,38 @@ async function handleSessionRoom(req, res) {
         if (!hostIsPresent) {
             return res.status(200).send(attendeeWaitingPage(req.url, booking.mentor_name, booking.service_name));
         }
-        res.setHeader('Location', booking.meet_link);
+        // Daily: private room, so the learner knocks and only the host can admit.
+        const target = dailyEnabled() ? (await ensureDailyRoom(bookingId)).url : booking.meet_link;
+        res.setHeader('Location', target);
         return res.status(302).end();
     }
 
-    // Host: record the start, then hand off to meet.jit.si full-page. Embedding
-    // meet.jit.si via its iframe API is cut off after 5 minutes.
+    // Host: record the start, then hand off full-page (embedding meet.jit.si
+    // via its iframe API is cut off after 5 minutes).
+    if (dailyEnabled()) {
+        const room = await ensureDailyRoom(bookingId);
+        const ownerToken = await createDailyOwnerToken(room.name, booking.mentor_name || 'Desk2Quant Mentor');
+        await markHostStarted(bookingId);
+        res.setHeader('Location', `${room.url}?t=${encodeURIComponent(ownerToken)}`);
+        return res.status(302).end();
+    }
     if (!jitsiRoomName(booking.meet_link)) return res.status(500).send('Meeting provider link is invalid.');
     await markHostStarted(bookingId);
     res.setHeader('Location', booking.meet_link);
     return res.status(302).end();
+}
+
+// The admin dashboard holds the service key after admin login; it trades it
+// for the signed host link so the admin always starts sessions as host.
+function handleAdminHostLink(req, res) {
+    const supplied = Buffer.from(String(req.headers?.['x-admin-key'] || ''));
+    const expected = Buffer.from(String(getServiceKey() || ''));
+    if (!expected.length || supplied.length !== expected.length || !crypto.timingSafeEqual(supplied, expected)) {
+        return res.status(403).json({ error: 'Admin only' });
+    }
+    const bookingId = String(req.body?.bookingId || '').trim();
+    if (!/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(bookingId)) return res.status(400).json({ error: 'Invalid booking id' });
+    return res.status(200).json({ url: createSessionJoinUrl(bookingId, 'host') });
 }
 
 async function markHostStarted(bookingId) {
@@ -860,7 +883,7 @@ export default async function handler(req, res) {
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-key');
 
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method === 'GET' && req.query?.action === 'session-room') {
@@ -871,6 +894,13 @@ export default async function handler(req, res) {
         }
     }
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    if (req.body?.action === 'admin-host-link') {
+        try { return handleAdminHostLink(req, res); }
+        catch (err) {
+            console.error('Admin host link error:', err.message);
+            return res.status(500).json({ error: 'Could not create host link' });
+        }
+    }
     if (req.body?.action === 'session-host-ready') {
         try { return await handleSessionHostReady(req, res); }
         catch (err) {
