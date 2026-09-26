@@ -205,7 +205,7 @@ if (typeof document !== 'undefined') {
  */
 (function () {
     const BUNDLE_URL = '/product.html?id=164308cd-e3cd-4026-8fdc-337a5955ffff';
-    const BUNDLE_COVER = '/assets/images/desk2quant-bundle-cover-2026.svg';
+    const BUNDLE_COVER = '/assets/images/desk2quant-bundle-cover-2026-expanded.svg?v=20260926b';
 
     function applyHomepageSalesLayer() {
         if (!document.body || !document.getElementById('hero')) return;
@@ -601,16 +601,16 @@ if (typeof document !== 'undefined') {
                                 <h2 id="flagship-bundle-heading">Serious quant preparation, <span class="gradient-text">in one structured bundle.</span></h2>
                                 <p class="flagship-lede">Move from foundations and coding into pricing, risk, XVA, model validation, projects, and interviews without stitching together disconnected material.</p>
                                 <div class="flagship-grid" aria-label="Complete bundle contents">
-                                    <div class="flagship-point"><i class="fas fa-check-circle"></i><span><strong>41+ high-quality PDFs</strong> across core quant topics</span></div>
-                                    <div class="flagship-point"><i class="fas fa-check-circle"></i><span><strong>60+ scripts</strong> across Python, C++ and SQL</span></div>
+                                    <div class="flagship-point"><i class="fas fa-check-circle"></i><span><strong>71 PDFs</strong> across core quant topics</span></div>
+                                    <div class="flagship-point"><i class="fas fa-check-circle"></i><span><strong>134 scripts</strong> across Python, C++ and SQL</span></div>
                                     <div class="flagship-point"><i class="fas fa-check-circle"></i><span><strong>1000+ interview problems</strong> with solutions and practice</span></div>
                                     <div class="flagship-point"><i class="fas fa-check-circle"></i><span><strong>Rates, FX, equity, credit &amp; vol</strong> model coverage</span></div>
                                     <div class="flagship-point"><i class="fas fa-check-circle"></i><span><strong>Desk reasoning</strong>: hedging, P&amp;L, risk and XVA</span></div>
                                     <div class="flagship-point"><i class="fas fa-check-circle"></i><span><strong>Projects + interview prep</strong> designed to be defended</span></div>
                                 </div>
-                                <div class="flagship-price"><strong>₹7,999</strong><span>complete professional bundle</span></div>
+                                <div class="flagship-price"><strong>₹9,999</strong><span>complete professional bundle</span></div>
                                 <div class="flagship-actions">
-                                    <a href="${BUNDLE_URL}" class="btn btn-primary">Get Complete Bundle — ₹7,999 <i class="fas fa-arrow-right"></i></a>
+                                    <a href="${BUNDLE_URL}" class="btn btn-primary">Get Complete Bundle — ₹9,999 <i class="fas fa-arrow-right"></i></a>
                                     <a href="#products" class="btn btn-secondary">Browse Individual Notes</a>
                                 </div>
                                 <p class="flagship-coupon">Use <code>COMBINED10</code> for 10% off at checkout.</p>
