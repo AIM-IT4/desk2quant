@@ -599,7 +599,8 @@ async function handleBookingsAction(req, res, action) {
                 admin_proposed_date: null,
                 admin_proposed_time: null,
                 admin_reschedule_reason: null,
-                admin_reschedule_requested_at: null
+                admin_reschedule_requested_at: null,
+                host_started_at: null
             });
             if (!ok) return res.status(502).json({ error: 'Failed to accept new schedule' });
             return res.status(200).json({ success: true, booking });
