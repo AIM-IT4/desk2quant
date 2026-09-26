@@ -89,6 +89,14 @@ python -m http.server 8000
 
 Then open `http://localhost:8000` in a browser.
 
+## BRAG launch video
+
+The project-scoped `/brag-slim` skill is available under
+`.agents/skills/brag-slim/`. The current Desk2Quant launch video, its
+reproducible render script, and source-screen details are documented in
+[`promo/brag/README.md`](promo/brag/README.md). Run
+`python3 promo/brag/render.py` to create `brag-output/brag.mp4` locally.
+
 ## Build and SEO product pages
 
 Vercel runs the repository build command during deployment. `npm run build` regenerates the static, crawlable product pages under `products/` from the current Supabase `products` table and refreshes the product hub and sitemap. After a product is added directly in Supabase, a deployment/build is therefore required before its canonical `/products/<slug>.html` URL exists in production. Product metadata changes that affect static SEO output—such as name, price or description updates—should also be followed by a deployment so canonical pages stay synchronized with the live catalog.
