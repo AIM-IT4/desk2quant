@@ -244,7 +244,7 @@
 }
 
 .receipt-subtitle {
-    font-size: 9px;
+    font-size: 10px;
     color: #4b5563;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -253,7 +253,7 @@
 
 .receipt-badge-tax {
     display: inline-block;
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 700;
     background: #111827;
     color: #ffffff;
@@ -398,14 +398,14 @@
 }
 
 .receipt-barcode-num {
-    font-size: 9px;
+    font-size: 10px;
     color: #6b7280;
     letter-spacing: 0.15em;
 }
 
 .receipt-footer-thanks {
     text-align: center;
-    font-size: 9px;
+    font-size: 10px;
     color: #6b7280;
     margin-top: 8px;
     line-height: 1.4;
@@ -432,7 +432,7 @@
     padding: 12px 18px;
     background: #10b981;
     color: #ffffff;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
     font-size: 13px;
     font-weight: 700;
     border: none;
@@ -465,7 +465,7 @@
     color: #e2e8f0;
     border: 1px solid #3e445b;
     border-radius: 8px;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;

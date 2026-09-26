@@ -2463,6 +2463,7 @@ body.d2q-reference .footer .logo-img {
 
 .footer-social {
     display: flex;
+    flex-wrap: wrap;
     gap: 12px;
 }
 

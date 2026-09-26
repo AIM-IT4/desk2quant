@@ -32,7 +32,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
         rel="stylesheet">
 
     <!-- Font Awesome Icons -->
@@ -805,9 +805,9 @@
     </style>
 
 
-    <link rel="stylesheet" href="launchzone.css?v=16">
-    <link rel="stylesheet" href="launchzone-pages.css?v=2">
-    <link rel="stylesheet" href="receipt-printer.css?v=1">
+    <link rel="stylesheet" href="launchzone.css?v=17">
+    <link rel="stylesheet" href="launchzone-pages.css?v=3">
+    <link rel="stylesheet" href="receipt-printer.css?v=2">
 </head>
 
 <body class="d2q-reference d2q-launchzone">
@@ -1161,10 +1161,10 @@
 
                 if (product.price === 0) {
                     priceEl.textContent = 'Free';
-                    priceEl.style.color = '#22c55e';
+                    priceEl.style.color = '#15803d';
                     buyBtn.innerHTML = '<i class="fas fa-download"></i> Download Free';
                     buyBtn.classList.replace('btn-primary', 'btn-success');
-                    buyBtn.style.background = '#22c55e';
+                    buyBtn.style.background = '#15803d';
                 } else {
                     let originalPriceDisplay = '';
                     if (product.original_price > product.price) {
@@ -1298,13 +1298,13 @@
                                     appliedDiscount = discountResult;
                                 } else {
                                     feedbackMsg.textContent = 'This coupon code is not valid.';
-                                    feedbackMsg.style.color = '#ef4444';
+                                    feedbackMsg.style.color = '#b91c1c';
                                     return;
                                 }
                             } catch (err) {
                                 console.error('Coupon verification failed:', err);
                                 feedbackMsg.textContent = 'Could not verify coupon right now. Please try again.';
-                                feedbackMsg.style.color = '#ef4444';
+                                feedbackMsg.style.color = '#b91c1c';
                                 return;
                             } finally {
                                 this.disabled = false;
@@ -1340,7 +1340,7 @@
 
                             // Success Feedback
                             feedbackMsg.textContent = `Coupon '${code}' applied! ${discount}% OFF applied successfully.`;
-                            feedbackMsg.style.color = '#22c55e'; // Success Green
+                            feedbackMsg.style.color = '#15803d'; // Success Green
 
                             // Disable input
                             codeInput.disabled = true;
@@ -1349,7 +1349,7 @@
                         } else {
                             // Error Feedback
                             feedbackMsg.textContent = 'Invalid coupon code for this product.';
-                            feedbackMsg.style.color = '#ef4444'; // Error Red
+                            feedbackMsg.style.color = '#b91c1c'; // Error Red
                         }
                     });
                 }

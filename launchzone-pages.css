@@ -622,7 +622,7 @@ body.d2q-launchzone main > section.lead-capture {
     body.d2q-launchzone .promo-announcement-bar .btn-promo-cta {
         min-height: 24px;
         padding: 3px 8px;
-        font-size: 9.5px;
+        font-size: 11px;
     }
 }
 
@@ -638,7 +638,7 @@ body.d2q-launchzone main > section.lead-capture {
     }
 
     body.d2q-launchzone .promo-announcement-bar .promo-tag {
-        font-size: 8px;
+        font-size: 10px;
         padding: 2px 5px;
     }
 

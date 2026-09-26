@@ -2768,7 +2768,7 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
     const releaseBtn = lockCheckoutButton(triggerBtn);
     const productId = orderMeta && orderMeta.productId ? orderMeta.productId : null;
     const couponCode = orderMeta && orderMeta.couponCode ? orderMeta.couponCode : null;
-    const downloadLink = PRODUCT_DOWNLOAD_LINKS[productName] || '';
+    let downloadLink = PRODUCT_DOWNLOAD_LINKS[productName] || '';
 
     // Handle FREE products (0 value) - skip payment, go directly to download
     if (amount <= 0) {
@@ -2965,7 +2965,7 @@ async function initRazorpayCheckout(productName, amount, currency = 'INR', inrAm
             contact: userDetails ? userDetails.phone : ''
         },
         theme: {
-            color: '#e95836'
+            color: '#0b7f79'
         }
     };
 
@@ -3808,7 +3808,7 @@ async function initSessionPayment(description, amount, customerEmail, currency =
             contact: bookingData ? bookingData.phone : ''
         },
         theme: {
-            color: '#e95836'
+            color: '#0b7f79'
         }
     };
 
@@ -5838,7 +5838,7 @@ async function runCartCheckout(cart, userDetails, releaseBtn) {
             email: userDetails.email,
             contact: userDetails.phone
         },
-        theme: { color: '#e95836' }
+        theme: { color: '#0b7f79' }
     };
 
     try {

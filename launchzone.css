@@ -1,4 +1,5 @@
-@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+/* Fonts (Space Grotesk + JetBrains Mono) are loaded by a <link> in each page head,
+   not an @import here, so they download in parallel with this stylesheet. */
 
 /* ==========================================================
    Desk2Quant Editorial Grid System
@@ -23,7 +24,7 @@ body.d2q-launchzone {
     --lz-shadow: 8px 8px 0 var(--lz-ink);
     --lz-font-sans: "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     --lz-font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
-    --lz-font-display: "Archivo Black", "Space Grotesk", "Arial Black", ui-sans-serif, sans-serif;
+    --lz-font-display: "Space Grotesk", "Arial Black", ui-sans-serif, sans-serif;
 
     --bg-primary: var(--lz-paper);
     --bg-secondary: var(--lz-white);
@@ -93,7 +94,7 @@ body.d2q-launchzone h3,
 body.d2q-launchzone h4 {
     color: var(--lz-ink);
     font-family: var(--lz-font-sans);
-    font-weight: 760;
+    font-weight: 700;
     letter-spacing: -0.045em;
 }
 
@@ -213,7 +214,7 @@ body.d2q-launchzone .navbar .logo-text {
 
 body.d2q-launchzone .logo-text {
     color: var(--lz-ink) !important;
-    font-weight: 760;
+    font-weight: 700;
 }
 
 body.d2q-launchzone .nav-links {
@@ -2266,7 +2267,7 @@ body.d2q-launchzone .theme-toggle {
         min-height: 36px;
         margin-left: 0;
         padding: 6px 8px;
-        font-size: 9.5px;
+        font-size: 11px;
         border: 1px solid var(--lz-line-strong);
         background: rgba(255, 255, 255, 0.85);
         border-radius: 3px;
@@ -2332,8 +2333,8 @@ body.d2q-launchzone .theme-toggle {
     }
 
     body.d2q-launchzone .stat-label {
-        font-size: 7.5px !important;
-        letter-spacing: 0.03em !important;
+        font-size: 10px !important;
+        letter-spacing: 0 !important;
         line-height: 1.2 !important;
         margin-top: 3px !important;
         color: var(--lz-muted) !important;
@@ -2373,7 +2374,7 @@ body.d2q-launchzone .theme-toggle {
     }
 
     body.d2q-launchzone .terminal-live-badge {
-        font-size: 8px;
+        font-size: 10px;
         white-space: nowrap;
         gap: 4px;
         flex-shrink: 0;
@@ -2415,7 +2416,7 @@ body.d2q-launchzone .theme-toggle {
     }
 
     body.d2q-launchzone .scenario-label {
-        font-size: 9px;
+        font-size: 10px;
         flex-shrink: 0;
     }
 
@@ -2431,7 +2432,7 @@ body.d2q-launchzone .theme-toggle {
     }
 
     body.d2q-launchzone .scenario-chip {
-        font-size: 9px;
+        font-size: 10px;
         padding: 3px 6px;
         flex-shrink: 0;
     }
@@ -2440,7 +2441,7 @@ body.d2q-launchzone .theme-toggle {
         display: grid !important;
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
         padding: 8px 10px !important;
-        font-size: 9px !important;
+        font-size: 10px !important;
         gap: 5px 8px !important;
         box-sizing: border-box !important;
         text-align: left !important;
@@ -2507,7 +2508,7 @@ body.d2q-launchzone .theme-toggle {
     }
 
     body.d2q-launchzone .hero-proof-row span {
-        font-size: 8.5px;
+        font-size: 10px;
         min-height: 30px;
         padding: 4px 6px;
     }
@@ -2517,7 +2518,7 @@ body.d2q-launchzone .theme-toggle {
     }
 
     body.d2q-launchzone .stat-label {
-        font-size: 7px !important;
+        font-size: 10px !important;
     }
 }
 

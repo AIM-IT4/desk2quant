@@ -1,4 +1,11 @@
 /* Styling for build-time generated SEO product and article pages. */
+
+/* Match the brand typography used on the homepage and product.html. */
+:root {
+    --font-primary: 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
 .seo-doc {
     max-width: 820px;
     margin: 0 auto;

@@ -151,8 +151,11 @@ function renderPage(p, slug, related, reviews) {
 <script type="application/ld+json">${safeJson(jsonLd)}</script>
 <script type="application/ld+json">${safeJson(crumbs)}</script>
 <script type="application/ld+json">${safeJson(faq)}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="/styles.css">
-<link rel="stylesheet" href="/seo-product.css?v=1">
+<link rel="stylesheet" href="/seo-product.css?v=2">
 </head>
 <body>
 <main class="seo-doc">
