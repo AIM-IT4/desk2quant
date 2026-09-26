@@ -11,6 +11,7 @@ import { sendRecommendationEmail } from '../lib/recommendationEmail.js';
 import { getServiceKey, blockIfUnconfigured } from '../lib/supabaseAdmin.js';
 import { emailShell, escapeHtml } from '../lib/emailBranding.js';
 import { authorizeCronRequest } from '../lib/cronAuth.js';
+import { createSessionJoinUrl } from '../lib/jitsi.js';
 
 // In-memory sliding-window rate limit for reminders endpoint
 const RATE_LIMIT_MAX = 30;
@@ -434,6 +435,8 @@ async function sendReminder(booking, type, config) {
         console.warn('Skipping reminder without a private session link:', booking.id);
         return;
     }
+    const attendeeJoinUrl = createSessionJoinUrl(booking.id, 'attendee');
+    const hostJoinUrl = createSessionJoinUrl(booking.id, 'host');
     const userName = booking.name || 'Learner';
 
     let displayTime = booking.booking_time || '';
@@ -496,7 +499,7 @@ async function sendReminder(booking, type, config) {
                         </div>
 
                         <center>
-                            <a href="${escapeHtml(meetLink)}" style="display: inline-block; background:#ffca3a; color:#090909; font-weight:800; text-decoration:none; padding:14px 30px; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; font-size:16px; margin-bottom:20px;">Join Meeting</a>
+                            <a href="${escapeHtml(attendeeJoinUrl)}" style="display: inline-block; background:#ffca3a; color:#090909; font-weight:800; text-decoration:none; padding:14px 30px; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; font-size:16px; margin-bottom:20px;">Join Meeting</a>
                         </center>
         ` });
     } else if (type === '5m') {
@@ -512,7 +515,7 @@ async function sendReminder(booking, type, config) {
                         </div>
 
                         <center>
-                            <a href="${escapeHtml(meetLink)}" style="display: inline-block; background:#d73f3f; color:#ffffff; font-weight:800; text-decoration:none; padding:16px 36px; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; font-size:18px; margin-bottom:10px;">🚀 JOIN NOW</a>
+                            <a href="${escapeHtml(attendeeJoinUrl)}" style="display: inline-block; background:#d73f3f; color:#ffffff; font-weight:800; text-decoration:none; padding:16px 36px; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; font-size:18px; margin-bottom:10px;">🚀 JOIN NOW</a>
                         </center>
         ` });
     }
@@ -528,7 +531,7 @@ async function sendReminder(booking, type, config) {
             emailPayload: { sender: { name: SENDER_NAME, email: SENDER_EMAIL },
                 to: [{ email: booking.mentor_email, name: booking.mentor_name }],
                 subject: `Mentor reminder: ${booking.service_name}`,
-                htmlContent: `<p>${escapeHtml(booking.service_name)} with ${escapeHtml(userName)}</p><p>${escapeHtml(booking.booking_date)} at ${escapeHtml(displayTime)} IST (Asia/Kolkata)</p><p><a href="${escapeHtml(meetLink)}">Join session</a></p>` } });
+                htmlContent: `<p>${escapeHtml(booking.service_name)} with ${escapeHtml(userName)}</p><p>${escapeHtml(booking.booking_date)} at ${escapeHtml(displayTime)} IST (Asia/Kolkata)</p><p><a href="${escapeHtml(hostJoinUrl)}">Start as host</a></p><p>Learners remain in the Desk2Quant waiting room until you have joined.</p>` } });
     } else {
     const emailResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
@@ -564,7 +567,7 @@ async function sendReminder(booking, type, config) {
             replyTo: { email: REPLY_TO_EMAIL, name: SENDER_NAME },
             to: ADMIN_EMAIL.split(',').map(email => ({ email: email.trim() })).filter(item => item.email),
             subject: `Admin Alert: ${type} Reminder Sent`,
-            htmlContent: `<p>${type} Reminder sent to ${booking.email} for ${booking.service_name}</p><p>Meeting Link: ${meetLink}</p>`
+            htmlContent: `<p>${type} Reminder sent to ${booking.email} for ${booking.service_name}</p><p>Host Link: <a href="${hostJoinUrl}">${hostJoinUrl}</a></p>`
         })
     });
 
