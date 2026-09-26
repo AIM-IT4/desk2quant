@@ -188,21 +188,24 @@ const api=new JitsiMeetExternalAPI('meet.jit.si',{
   configOverwrite:{prejoinConfig:{enabled:true}},
   interfaceConfigOverwrite:{SHOW_JITSI_WATERMARK:false}
 });
-let marked=false;
+let joined=false;
+let heartbeat=null;
 async function markReady(){
-  if(marked)return;
   try{
     const r=await fetch('/api/interview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'session-host-ready',bookingId,token})});
     if(!r.ok)throw new Error('ready '+r.status);
-    marked=true;
-    statusEl.textContent='— host joined; learner access is now open.';
+    if(!joined){
+      joined=true;
+      statusEl.textContent='— host joined; learner access is now open.';
+      heartbeat=setInterval(markReady,20000);
+    }
   }catch(e){
     statusEl.textContent='— joined, but Desk2Quant is still opening learner access…';
-    setTimeout(markReady,2500);
+    if(!joined)setTimeout(markReady,2500);
   }
 }
 api.addEventListener('videoConferenceJoined',markReady);
-api.addEventListener('readyToClose',()=>{statusEl.textContent='— session ended.';});
+api.addEventListener('readyToClose',()=>{if(heartbeat)clearInterval(heartbeat);statusEl.textContent='— session ended.';});
 </script>
 </body>
 </html>`;
@@ -258,7 +261,9 @@ async function handleSessionRoom(req, res) {
     }
 
     if (role === 'attendee') {
-        if (!booking.host_started_at) {
+        const hostHeartbeat = booking.host_started_at ? Date.parse(booking.host_started_at) : NaN;
+        const hostIsPresent = Number.isFinite(hostHeartbeat) && (Date.now() - hostHeartbeat) < 90000;
+        if (!hostIsPresent) {
             return res.status(200).send(attendeeWaitingPage(req.url, booking.mentor_name, booking.service_name));
         }
         res.setHeader('Location', booking.meet_link);
