@@ -1378,7 +1378,9 @@
                 if (window.convertPrice && window.getUserCountry && product.price > 0) {
                     window.getUserCountry().then(country => {
                         return window.convertPrice(product.price, country, product.enable_ppp).then(localPrice => {
-                            if (localPrice.currency.code !== 'INR') {
+                            // A coupon applied before conversion finished already set the price;
+                            // overwriting it here would hide the discount.
+                            if (localPrice.currency.code !== 'INR' && !buyBtn.dataset.couponCode) {
                                 // Update Buy Button Dataset
                                 buyBtn.dataset.price = localPrice.amount;
                                 buyBtn.dataset.currency = localPrice.currency.code;
