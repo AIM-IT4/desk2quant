@@ -330,7 +330,7 @@
     'use strict';
 
     const BUNDLE_ID = '164308cd-e3cd-4026-8fdc-337a5955ffff';
-    const FALLBACK_PRICE = 8999;
+    const FALLBACK_PRICE = 9999;
 
     function formatInr(value) {
         const amount = Number(value);
@@ -358,8 +358,14 @@
 
         homeRoots.forEach(function (root) {
             replaceText(root, '₹7,999', formatted);
-            replaceText(root, '41+ high-quality PDFs', '46+ high-quality PDFs');
-            replaceText(root, '41+ PDFs', '46+ PDFs');
+            replaceText(root, '₹8,999', formatted);
+            replaceText(root, '41+ high-quality PDFs', '71 PDFs');
+            replaceText(root, '46+ high-quality PDFs', '71 PDFs');
+            replaceText(root, '41+ PDFs', '71 PDFs');
+            replaceText(root, '46+ PDFs', '71 PDFs');
+            replaceText(root, '60+ scripts', '134 scripts');
+            replaceText(root, '59 notebooks', '72 notebooks');
+            replaceText(root, '59 Jupyter notebooks', '72 Jupyter notebooks');
         });
 
         const flagship = document.getElementById('flagship-bundle');
@@ -369,9 +375,9 @@
                 const item = document.createElement('div');
                 item.className = 'flagship-point';
                 item.setAttribute('data-d2q-notebooks', 'true');
-                item.innerHTML = '<i class="fas fa-check-circle"></i><span><strong>59 Jupyter notebooks</strong> for executable research and model workflows</span>';
+                item.innerHTML = '<i class="fas fa-check-circle"></i><span><strong>72 Jupyter notebooks</strong> for executable research and model workflows</span>';
                 const scriptPoint = Array.from(grid.children).find(function (child) {
-                    return /60\+ scripts/i.test(child.textContent || '');
+                    return /134 scripts/i.test(child.textContent || '');
                 });
                 if (scriptPoint && scriptPoint.nextSibling) {
                     grid.insertBefore(item, scriptPoint.nextSibling);
