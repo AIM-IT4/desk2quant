@@ -3320,13 +3320,6 @@ body.d2q-launchzone .mentor-card {
     box-shadow: 6px 6px 0 var(--lz-ink);
     text-align: left;
 }
-body.d2q-launchzone .mentor-card-founder {
-    color: var(--lz-white);
-    background: var(--lz-ink);
-    box-shadow: 6px 6px 0 var(--lz-signal);
-}
-body.d2q-launchzone .mentor-card-founder .mentor-name { color: var(--lz-white); }
-body.d2q-launchzone .mentor-card-founder .mentor-headline { color: #d8d8d1; }
 body.d2q-launchzone .mentor-badge {
     align-self: flex-start;
     padding: 3px 8px;
@@ -3400,7 +3393,6 @@ body.d2q-launchzone .mentor-cta {
     font-weight: 700;
     text-decoration: none;
 }
-body.d2q-launchzone .mentor-card-founder .mentor-cta { color: var(--lz-warning); }
 body.d2q-launchzone .mentor-cta:hover { text-decoration: underline; }
 
 @media (max-width: 620px) {

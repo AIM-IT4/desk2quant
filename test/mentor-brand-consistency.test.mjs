@@ -22,7 +22,7 @@ test('guest mentors uses the same Desk2Quant brand shell as the homepage', () =>
   assert.equal(mentorLogo, homeLogo);
 
   assert.match(mentors, /href="\/styles\.css"/);
-  assert.match(mentors, /href="\/launchzone\.css\?v=19"/);
+  assert.match(mentors, /href="\/launchzone\.css\?v=20"/);
   assert.match(mentors, /src="\/ui-components\.js\?v=1"/);
   assert.doesNotMatch(mentors, /class="mentor-nav"/);
   assert.doesNotMatch(mentors, />D2Q\s*<span>Desk2Quant<\/span>/);
