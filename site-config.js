@@ -613,7 +613,7 @@ if (typeof document !== 'undefined') {
                                     <a href="${BUNDLE_URL}" class="btn btn-primary">Get Complete Bundle — ₹9,999 <i class="fas fa-arrow-right"></i></a>
                                     <a href="#products" class="btn btn-secondary">Browse Individual Notes</a>
                                 </div>
-                                <p class="flagship-coupon">Use <code>COMBINED10</code> for 10% off at checkout.</p>
+                                <p class="flagship-coupon">This week only: use <code>COMBINED20</code> for 20% off (about ₹7,999) — until Sunday 4 October.</p>
                                 <div class="flagship-trust">
                                     <span><i class="fas fa-check-circle"></i> Instant digital delivery</span>
                                     <span><i class="fas fa-check-circle"></i> Desk-focused material</span>
