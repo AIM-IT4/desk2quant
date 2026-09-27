@@ -648,6 +648,83 @@
                 ? window.supabase.createClient(TESTIMONIALS_SUPABASE_URL, TESTIMONIALS_SUPABASE_KEY)
                 : null;
 
+
+        function escapeTestimonialHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        async function loadPublishedTestimonialsPage() {
+            const grid = document.getElementById('testimonialsGrid');
+            if (!grid || !testimonialSupabaseClient) return;
+
+            try {
+                const { data, error } = await testimonialSupabaseClient
+                    .from('testimonials')
+                    .select('id,name,title,rating,review,product,is_verified,is_published,created_at')
+                    .eq('is_published', true)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+                if (!Array.isArray(data) || data.length === 0) return;
+
+                grid.innerHTML = '';
+
+                data.forEach((t) => {
+                    const product = String(t.product || '').toLowerCase();
+                    const isMentorship =
+                        product.includes('consult') ||
+                        product.includes('mentor') ||
+                        product.includes('career') ||
+                        product.includes('session');
+                    const categories = [
+                        isMentorship ? 'mentorship' : 'products',
+                        String(t.review || '').length >= 220 ? 'detailed' : ''
+                    ].filter(Boolean).join(' ');
+
+                    const rating = Math.max(1, Math.min(5, Number(t.rating) || 5));
+                    const date = t.created_at
+                        ? new Date(t.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                        : '';
+
+                    const card = document.createElement('div');
+                    card.className = 'testimonial-card';
+                    card.dataset.category = categories;
+                    card.innerHTML = `
+                        <div class="testimonial-rating">${'<i class="fas fa-star"></i>'.repeat(rating)}</div>
+                        <p class="testimonial-text">"${escapeTestimonialHtml(t.review)}"</p>
+                        <div class="testimonial-author">
+                            <div class="author-avatar"><i class="fas fa-user"></i></div>
+                            <div class="author-info">
+                                <span class="author-name">${escapeTestimonialHtml(t.name)}</span>
+                                <span class="author-role">${escapeTestimonialHtml(t.title || 'Desk2Quant Learner')}</span>
+                            </div>
+                        </div>
+                        <div class="verified-badge">
+                            <i class="fas fa-check-circle"></i>
+                            ${t.is_verified ? 'Verified' : 'Published'}${date ? ' • ' + date : ''}
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+
+                const stats = document.querySelectorAll('.testimonials-page-stats .summary-value');
+                if (stats[0]) stats[0].textContent = String(data.filter(t => t.is_verified).length);
+                if (stats[1]) {
+                    const avg = data.reduce((sum, t) => sum + (Number(t.rating) || 5), 0) / data.length;
+                    stats[1].textContent = avg.toFixed(1);
+                }
+            } catch (error) {
+                console.error('Published testimonials failed to load; keeping static fallback.', error);
+            }
+        }
+
+        loadPublishedTestimonialsPage();
+
         // Star rating functionality
         const starLabels = document.querySelectorAll('[for^="s"]');
         starLabels.forEach((label, index) => {
