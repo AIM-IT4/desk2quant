@@ -106,7 +106,7 @@
     function cleanHeroPricing() {
         const note = document.querySelector('.bundle-price-note');
         if (note) {
-            note.innerHTML = 'Use <code>COMBINED10</code> at checkout for 10% off.';
+            note.innerHTML = 'This week only: use <code>COMBINED20</code> at checkout for 20% off (≈ ₹7,999, until Sun 4 Oct).';
         }
     }
 
@@ -117,7 +117,7 @@
         const applied = buy && buy.dataset.couponCode;
         target.textContent = applied
             ? `${formatCurrentPrice()} • ${String(applied).toUpperCase()} applied`
-            : `${formatCurrentPrice()} • Use COMBINED10 for 10% off`;
+            : `${formatCurrentPrice()} • This week: COMBINED20 for 20% off`;
     }
 
     function cleanFinalCard() {
@@ -151,7 +151,7 @@
                 <p class="bundle-proof-muted">Use the live total on the left as the reference point. The bundle includes those resources plus additional PDFs, notebooks, scripts, projects and interview material.</p>
                 <div class="bundle-savings-stack">
                     <div class="bundle-saving"><span>Complete Bundle</span><strong>₹9,999</strong></div>
-                    <div class="bundle-saving"><span>With COMBINED10</span><strong>≈ ₹8,999</strong></div>
+                    <div class="bundle-saving"><span>With COMBINED20 (until 4 Oct)</span><strong>≈ ₹7,999</strong></div>
                     <div class="bundle-saving"><span>Delivery</span><strong>Digital + My Access</strong></div>
                 </div>
                 <div class="bundle-compare-table" aria-label="Individual resources versus complete bundle">

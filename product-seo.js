@@ -79,9 +79,9 @@
                 .replace(/^['"]|['"]$/g, '');
             if (productId === COMPLETE_BUNDLE_ID) {
                 const modules = [
-                    ['bundle-product-v2-script', '/bundle-product-v2.js?v=20260926b'],
-                    ['bundle-proof-v3-script', '/bundle-proof-v3.js?v=20260926b'],
-                    ['bundle-polish-v4-script', '/bundle-polish-v4.js?v=20260926b']
+                    ['bundle-product-v2-script', '/bundle-product-v2.js?v=20260927a'],
+                    ['bundle-proof-v3-script', '/bundle-proof-v3.js?v=20260927a'],
+                    ['bundle-polish-v4-script', '/bundle-polish-v4.js?v=20260927a']
                 ];
                 modules.forEach(([id, src]) => {
                     if (document.getElementById(id)) return;

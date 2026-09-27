@@ -92,7 +92,7 @@
                     <div class="bundle-savings-stack">
                         <div class="bundle-saving"><span>Bundle price</span><strong>₹9,999</strong></div>
                         <div class="bundle-saving"><span>Saving vs configured list value</span><strong>₹5,000</strong></div>
-                        <div class="bundle-saving"><span>With COMBINED10</span><strong>≈ ₹7,199</strong></div>
+                        <div class="bundle-saving"><span>With COMBINED20 (until 4 Oct)</span><strong>≈ ₹7,999</strong></div>
                         <div class="bundle-saving"><span>Saving vs list value with coupon</span><strong>≈ ₹5,800</strong></div>
                     </div>
                     <div class="bundle-compare-table" aria-label="Individual resources versus complete bundle">

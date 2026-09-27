@@ -490,7 +490,7 @@
                     <details><summary>What exactly do I receive?</summary><p>71 structured PDFs, 72 Jupyter notebooks and 134 scripts/code resources across quantitative foundations, derivatives, asset-class models, Python/C++/SQL, risk, XVA, validation, projects and interview preparation.</p></details>
                     <details><summary>Is this only for interview preparation?</summary><p>No. Interview material is one component. The larger goal is a desk-focused reference system covering pricing, implementation, risk, validation and model reasoning.</p></details>
                     <details><summary>How is the bundle delivered?</summary><p>It is a digital product. After verified payment, Desk2Quant's existing delivery and My Access workflow provides access to the purchased resources.</p></details>
-                    <details><summary>Is there a discount code?</summary><p>Yes. The configured bundle coupon is <strong>COMBINED10</strong>, which applies 10% off when valid at checkout.</p></details>
+                    <details><summary>Is there a discount code?</summary><p>Yes. This week (until Sunday 4 October) code <strong>COMBINED20</strong> takes 20% off at checkout, bringing the bundle to about ₹7,999.</p></details>
                 </div>
             </section>
 
@@ -498,7 +498,7 @@
                 <div>
                     <h2>Build the full quant stack instead of collecting disconnected notes.</h2>
                     <p>71 PDFs • 72 notebooks • 134 scripts • 1000+ interview problems</p>
-                    <p class="bundle-final-price" id="bundle-final-price">₹9,999 • List value ₹12,999 • COMBINED10 available</p>
+                    <p class="bundle-final-price" id="bundle-final-price">₹9,999 • List value ₹12,999 • COMBINED20: 20% off this week</p>
                 </div>
                 <button class="bundle-final-buy" id="bundle-final-buy-btn" type="button">Get Complete Bundle <i class="fas fa-arrow-right"></i></button>
             </section>
@@ -537,7 +537,7 @@
         desc.innerHTML = '<strong>Stop learning models as isolated formulas.</strong> This bundle is designed to connect product mechanics → model choice → implementation → Greeks and P&amp;L → risk and validation → interview defence.';
 
         price.insertAdjacentHTML('afterend', `
-            <div class="bundle-price-note"><span>List value <s>₹12,999</s></span><span>•</span><span>Use <code>COMBINED10</code> for 10% off</span></div>
+            <div class="bundle-price-note"><span>List value <s>₹12,999</s></span><span>•</span><span>This week: <code>COMBINED20</code> for 20% off (≈ ₹7,999)</span></div>
             <div class="bundle-value-row" aria-label="Bundle contents">
                 <div class="bundle-value-chip"><strong>71</strong>PDFs</div>
                 <div class="bundle-value-chip"><strong>72</strong>Notebooks</div>
@@ -559,7 +559,7 @@
         if (finalPrice) {
             const syncPrice = () => {
                 const live = (price.textContent || '').replace(/\s+/g, ' ').trim();
-                if (live) finalPrice.textContent = `${live} • List value ₹12,999 • COMBINED10 available`;
+                if (live) finalPrice.textContent = `${live} • List value ₹12,999 • COMBINED20: 20% off this week`;
             };
             syncPrice();
             new MutationObserver(syncPrice).observe(price, { childList: true, subtree: true, characterData: true });

@@ -12,6 +12,7 @@ import { getServiceKey, blockIfUnconfigured } from '../lib/supabaseAdmin.js';
 import { emailShell, escapeHtml } from '../lib/emailBranding.js';
 import { authorizeCronRequest } from '../lib/cronAuth.js';
 import { createSessionJoinUrl } from '../lib/jitsi.js';
+import { processAbandonedCheckouts } from '../lib/abandonedCheckout.js';
 
 // In-memory sliding-window rate limit for reminders endpoint
 const RATE_LIMIT_MAX = 30;
@@ -180,9 +181,11 @@ export default async function handler(req, res) {
                 SUPABASE_URL, SUPABASE_KEY, BREVO_API_KEY, SENDER_EMAIL, SENDER_NAME
             });
             const bounceCheckEarly = await checkHardBounces({ BREVO_API_KEY, ADMIN_EMAIL, SENDER_EMAIL, SENDER_NAME });
+            const abandonedEarly = await runAbandonedCheckouts({ SUPABASE_URL, SUPABASE_KEY, BREVO_API_KEY, SENDER_EMAIL, SENDER_NAME });
             return res.status(200).json({
                 ...results,
                 message: 'No confirmed bookings found',
+                abandonedCheckouts: abandonedEarly,
                 recommendationQueue: recResultsEarly,
                 bounceAlerts: bounceCheckEarly
             });
@@ -244,6 +247,7 @@ export default async function handler(req, res) {
         // (a paid customer whose confirmation bounced has no download link by
         // email; the success modal only covers buyers who stay on the page).
         const bounceCheck = await checkHardBounces({ BREVO_API_KEY, ADMIN_EMAIL, SENDER_EMAIL, SENDER_NAME });
+        const abandoned = await runAbandonedCheckouts({ SUPABASE_URL, SUPABASE_KEY, BREVO_API_KEY, SENDER_EMAIL, SENDER_NAME });
 
         return res.status(200).json({
             ...results,
@@ -251,6 +255,7 @@ export default async function handler(req, res) {
             sent24h: results.reminders24h.length,
             sent10m: results.reminders10m.length,
             recommendationQueue: recResults,
+            abandonedCheckouts: abandoned,
             bounceAlerts: bounceCheck
         });
 
@@ -273,6 +278,11 @@ const MAX_ATTEMPTS = 3;
 // and alert the owner. Runs on the same 5-minute cron, so a given bounce is
 // seen by at most two ticks (rarely more than one alert per bounce). Never
 // throws — a monitoring failure must not fail the cron itself.
+async function runAbandonedCheckouts(cfg) {
+    try { return await processAbandonedCheckouts(cfg); }
+    catch (err) { console.error('Abandoned checkout sweep failed:', err.message); return { error: err.message }; }
+}
+
 async function checkHardBounces({ BREVO_API_KEY, ADMIN_EMAIL, SENDER_EMAIL, SENDER_NAME }) {
     const outcome = { checked: 0, alerts: 0, bounces: [] };
     if (!BREVO_API_KEY) return outcome;
