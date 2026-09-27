@@ -339,6 +339,18 @@
       "permanent": true
     },
     {
+      "source": "/blog.html",
+      "has": [
+        {
+          "type": "query",
+          "key": "slug",
+          "value": "(?<slug>[a-z0-9-]+)"
+        }
+      ],
+      "destination": "/blog/:slug.html",
+      "permanent": true
+    },
+    {
       "source": "/desk-simulator.html",
       "destination": "/",
       "permanent": true

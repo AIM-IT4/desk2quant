@@ -1802,7 +1802,7 @@ async function loadBlogsFromSupabase() {
                             Read Article <i class="fas fa-arrow-right" style="font-size:0.8em;"></i>
                         </span>
                         <div style="display:flex; gap:6px;">
-                            <button onclick="navigator.clipboard.writeText('${window.location.origin}/blog.html?slug=${blog.slug}').then(()=>{this.innerHTML='<i class=\\'fas fa-check\\'></i>';setTimeout(()=>this.innerHTML='<i class=\\'fas fa-share-alt\\'></i>',1500)})" title="Copy share link" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); color:var(--text-muted); width:30px; height:30px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.8em; transition:all 0.2s;">
+                            <button onclick="navigator.clipboard.writeText('${window.location.origin}/blog/${blog.slug}.html').then(()=>{this.innerHTML='<i class=\\'fas fa-check\\'></i>';setTimeout(()=>this.innerHTML='<i class=\\'fas fa-share-alt\\'></i>',1500)})" title="Copy share link" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); color:var(--text-muted); width:30px; height:30px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.8em; transition:all 0.2s;">
                                 <i class="fas fa-share-alt"></i>
                             </button>
                         </div>
