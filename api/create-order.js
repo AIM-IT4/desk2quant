@@ -12,7 +12,7 @@ import { handleMentorOrder } from '../lib/guestMentors.js';
 // The client's `amount`/`inr_amount` fields, if sent, are only used for
 // display/logging in `notes` and are never trusted for pricing.
 
-import { getExpectedProductOrder, getExpectedSessionOrder, getExpectedInterviewOrder, getExpectedCartOrder, getSubunitMultiplier } from '../lib/pricing.js';
+import { getExpectedProductOrder, getExpectedSessionOrder, getExpectedCartOrder, getSubunitMultiplier } from '../lib/pricing.js';
 
 export default async function handler(req, res) {
     // CORS headers for frontend calls
@@ -47,14 +47,12 @@ export default async function handler(req, res) {
             expected = await getExpectedProductOrder(notes.product_id, currency, notes.coupon_code);
         } else if (type === 'session') {
             expected = await getExpectedSessionOrder(notes.session_id, currency, notes.coupon_code);
-        } else if (type === 'interview') {
-            expected = await getExpectedInterviewOrder(notes.duration_minutes, currency);
         } else if (type === 'cart') {
             // items are passed outside `notes` (req.body.items) to avoid Razorpay's
             // notes value-size limits; notes only carries the coupon + a summary.
             expected = await getExpectedCartOrder(req.body?.items, currency, notes.coupon_code);
         } else {
-            return res.status(400).json({ error: 'notes.type must be "product", "session", "interview", or "cart", with matching id/duration/items fields' });
+            return res.status(400).json({ error: 'notes.type must be "product", "session", or "cart", with matching id/items fields' });
         }
 
         if (!expected.ok) {

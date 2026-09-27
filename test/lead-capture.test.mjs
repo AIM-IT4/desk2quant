@@ -79,17 +79,6 @@ test('records a homepage lead with amount 0 and a server-chosen product name', a
     assert.match(insert.body.payment_id, /^LEAD_\d+_[0-9a-f]{8}$/);
 });
 
-test('the desk simulator origin gets its own distinguishable product name', async () => {
-    const calls = installSupabaseStub();
-    const res = mockRes();
-
-    await handler(mockReq({ action: 'log-lead', email: 'sim@example.com', origin: 'desk-simulator' }), res);
-
-    assert.equal(res.statusCode, 200);
-    const insert = calls.find((c) => c.method === 'POST');
-    assert.equal(insert.body.product_name, 'Quant Formula Sheet (Lead Capture - Desk Simulator)');
-});
-
 test('payment_id is unique across leads recorded in the same millisecond', async () => {
     // Migration 0010 puts a unique index on purchases(payment_id) for non-cart
     // rows, so a bare timestamp would collide on a double submit.

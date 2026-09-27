@@ -15,11 +15,11 @@ function sectionContent(id) {
     return match[1];
 }
 
-test('hero prioritizes direct mentorship booking and free simulator practice', () => {
+test('hero prioritizes direct mentorship booking and browsing resources', () => {
     const hero = sectionContent('hero');
-    assert.match(hero, /Book direct 1-on-1 mentorship[\s\S]*free Desk Simulator practice/);
+    assert.match(hero, /Book direct 1-on-1 mentorship[\s\S]*practitioner-built resources/);
     assert.match(hero, /<a href="#contact" class="btn btn-primary">Book 1-on-1 Mentorship/);
-    assert.match(hero, /<a href="desk-simulator\.html" class="btn btn-secondary">Try the Free Desk Simulator</);
+    assert.match(hero, /<a href="#products" class="btn btn-secondary">Browse Quant Resources</);
 });
 
 test('the choose-path section offers exactly four independent routes', () => {
@@ -34,11 +34,11 @@ test('the choose-path section offers exactly four independent routes', () => {
     assert.equal(cards.length, 4, 'Choose-path should contain four linked cards');
     assert.deepEqual(
         cards.map((card) => card[1]),
-        ['#services', 'desk-simulator.html', 'interview.html', '#products']
+        ['#services', '/mentors.html', '/guides/', '#products']
     );
     assert.deepEqual(
         cards.map((card) => card[2].match(/<h3>([^<]+)<\/h3>/)?.[1]),
-        ['1-on-1 Mentorship', 'Desk Simulator', 'AI Interview', 'Digital Products']
+        ['1-on-1 Mentorship', 'Guest Mentors', 'Free Interview Guides', 'Digital Products']
     );
     cards.forEach((card) => {
         assert.match(card[2], /<p>[^<]+<\/p>/);
@@ -53,7 +53,7 @@ test('homepage metadata represents all desk-ready learning routes', () => {
         html.match(/<meta property="twitter:description"\s+content="([^"]+)"/s)?.[1]
     ].join(' ').toLowerCase();
 
-    ['mentorship', 'simulat', 'interview', 'product'].forEach((term) => {
+    ['mentorship', 'interview', 'product'].forEach((term) => {
         assert.ok(metadata.includes(term), `Expected metadata to include ${term}`);
     });
 });

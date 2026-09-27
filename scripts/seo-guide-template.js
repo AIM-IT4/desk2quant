@@ -70,8 +70,8 @@ function renderHeader() {
     <nav class="guide-site-nav" aria-label="Primary navigation">
       <a href="/guides/">Guides</a>
       <a href="/products/">Resources</a>
-      <a href="/desk-simulator.html">Desk Simulator</a>
-      <a class="guide-site-nav__cta" href="/interview.html">AI Interview</a>
+      <a href="/mentors.html">Mentors</a>
+      <a class="guide-site-nav__cta" href="/#services">Book 1-on-1</a>
     </nav>
   </div>
 </header>`;
@@ -274,8 +274,8 @@ ${renderHeader()}
         </section>
 
         <aside class="guide-next-step">
-          <div><p class="guide-section-kicker">Practise under pressure</p><h2>Turn the framework into a live answer</h2><p>Use the free AI interview practice tool, then review your assumptions, structure, checks, and conclusion.</p></div>
-          <a href="/interview.html">Start an AI interview</a>
+          <div><p class="guide-section-kicker">Practise under pressure</p><h2>Turn the framework into a live answer</h2><p>Rehearse it in a 1-on-1 mock interview with a practitioner, and get direct feedback on your assumptions, structure, checks, and conclusion.</p></div>
+          <a href="/#services">Book a mock interview</a>
         </aside>
       </div>
     </div>

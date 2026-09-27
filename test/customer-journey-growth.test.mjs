@@ -17,12 +17,6 @@ test('index.html booking service contains resume teardown native option', async 
     assert.match(html, /window\.selectResumeAudit/);
 });
 
-test('desk-simulator.mjs uses official LinkedIn share-offsite dialog', async () => {
-    const code = await fs.readFile('desk-simulator.mjs', 'utf8');
-    assert.match(code, /https:\/\/www\.linkedin\.com\/sharing\/share-offsite\/\?url=/);
-    assert.doesNotMatch(code, /linkedin\.com\/feed\/\?shareActive=true/);
-});
-
 test('script.js addToCart supports both string ID and direct product object', async () => {
     const code = await fs.readFile('script.js', 'utf8');
     assert.match(code, /window\.addToCart = function \(/);
@@ -84,8 +78,6 @@ test('script.js generates clean option values without extra whitespace and flexi
 test('high-intent subpages load site-config.js for sitewide Clarity and live chat coverage', async () => {
     const pages = [
         'product.html',
-        'interview.html',
-        'desk-simulator.html',
         'salary-explorer.html',
         'diagnostic.html'
     ];

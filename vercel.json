@@ -339,23 +339,43 @@
       "permanent": true
     },
     {
-      "source": "/gauntlet/projects/01-sofr-curve/sample_tests.py",
-      "destination": "/404.html",
+      "source": "/desk-simulator.html",
+      "destination": "/",
       "permanent": true
     },
     {
-      "source": "/gauntlet/projects/01-sofr-curve/starter.py",
-      "destination": "/404.html",
+      "source": "/desk-simulator",
+      "destination": "/",
       "permanent": true
     },
     {
-      "source": "/gauntlet/hidden/:path*",
-      "destination": "/404.html",
+      "source": "/interview.html",
+      "destination": "/#services",
       "permanent": true
     },
     {
-      "source": "/gauntlet/projects/:slug/reference.mjs",
-      "destination": "/404.html",
+      "source": "/interview",
+      "destination": "/#services",
+      "permanent": true
+    },
+    {
+      "source": "/gauntlet.html",
+      "destination": "/products/",
+      "permanent": true
+    },
+    {
+      "source": "/gauntlet",
+      "destination": "/products/",
+      "permanent": true
+    },
+    {
+      "source": "/gauntlet-playground.html",
+      "destination": "/products/",
+      "permanent": true
+    },
+    {
+      "source": "/gauntlet/:path*",
+      "destination": "/products/",
       "permanent": true
     },
     {

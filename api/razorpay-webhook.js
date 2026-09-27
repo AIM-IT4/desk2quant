@@ -758,7 +758,6 @@ export async function handleProductPurchase(data) {
                             </table>
                         </div>
                         
-                        ${gauntletPlaygroundBlock(productId, productName, paymentId)}
                         <center>
                             <a href="${downloadLink}" style="display: inline-block; background:#ffca3a; color:#090909; font-weight:800; text-decoration:none; padding:14px 30px; border:1px solid #090909; border-radius:0; box-shadow:4px 4px 0 #090909; font-size:16px; margin-bottom:30px;">Download / View Resource</a>
                         </center>
@@ -826,7 +825,7 @@ ${downloadLink}${bundleResources.length ? `\n\nExpanded bundle — additional ne
 
 If the button does not work, copy and paste the same link into your browser.
 
-Payment ID: ${paymentId}${gauntletPlaygroundText(productId, productName, paymentId)}${myAccessText(customerEmail)}
+Payment ID: ${paymentId}${myAccessText(customerEmail)}
 
 Have an issue? Reply to this email.
 
@@ -1002,47 +1001,6 @@ Payment ID: ${paymentId} (Webhook)`
 // product's download link, share Drive access, log one purchases row per
 // item, and send a single combined confirmation email (instead of one email
 // per product).
-// Gauntlet purchases unlock an in-browser playground with instant grading.
-// The buyer's payment id is the access key, so surface it prominently rather
-// than leaving it buried in the order-details table at the bottom.
-const GAUNTLET_PROJECTS = {
-    'eb4ee16b-8a1f-475c-9dbf-e03993528ac9': '01-sofr-curve'
-};
-
-function gauntletPlaygroundText(productId, productName, paymentId) {
-    let slug = productId ? GAUNTLET_PROJECTS[String(productId).trim()] : null;
-    if (!slug && /gauntlet/i.test(String(productName || ''))) slug = '01-sofr-curve';
-    if (!slug || !paymentId) return '';
-    return '\n\nRun it in your browser: https://desk2quant.com/gauntlet-playground.html?project='
-        + slug
-        + '\nWrite Python, run the self-checks, and get an instant graded scorecard.'
-        + '\nUnlock with the email you paid with plus the payment id above.';
-}
-
-function gauntletPlaygroundBlock(productId, productName, paymentId) {
-    let slug = productId ? GAUNTLET_PROJECTS[String(productId).trim()] : null;
-    // Fall back to the name: cart lines and older orders may not carry an id.
-    if (!slug && /gauntlet/i.test(String(productName || ''))) slug = '01-sofr-curve';
-    if (!slug || !paymentId) return '';
-
-    const url = 'https://desk2quant.com/gauntlet-playground.html?project=' + slug;
-    return `
-                        <div style="background:#dff2ef; border:1px solid #090909; padding:22px; border-radius:0; box-shadow:4px 4px 0 #090909; margin-bottom:20px;">
-                            <p style="font-size: 11px; color: #0b7f79; text-transform: uppercase; font-weight: bold; margin: 0 0 12px 0; letter-spacing: 0.5px;">Run it in your browser</p>
-                            <p style="font-size: 14px; margin: 0 0 14px 0; color: #090909; line-height: 1.55;">
-                                You do not have to install anything. Open the playground to write Python in the browser, run the public self-checks, and get an <strong>instant graded scorecard</strong> from the hidden test suite.
-                            </p>
-                            <center>
-                                <a href="${url}" style="display: inline-block; background:#0b7f79; color:#ffffff; font-weight:800; text-decoration:none; padding:13px 26px; border:1px solid #090909; border-radius:0; box-shadow:3px 3px 0 #090909; font-size:15px;">Open the playground</a>
-                            </center>
-                            <p style="font-size: 13px; margin: 14px 0 0 0; color: #444; line-height: 1.55;">
-                                To unlock it, enter the email you paid with and this payment id:<br>
-                                <span style="font-family: monospace; font-size: 14px; color: #090909; font-weight: bold; word-break: break-all;">${paymentId}</span>
-                            </p>
-                        </div>
-`;
-}
-
 export async function handleCartPurchase(data) {
     const {
         paymentId, amount, inrAmount, currency, customerEmail, customerName, customerPhone, customerCountry,

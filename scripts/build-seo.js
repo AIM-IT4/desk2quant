@@ -25,9 +25,9 @@ function safeJson(value) {
 }
 
 const STATIC_PAGES = [
-  ['/', '1.0'], ['/desk-simulator.html', '0.9'], ['/diagnostic.html', '0.9'], ['/interview.html', '0.8'],
+  ['/', '1.0'], ['/diagnostic.html', '0.9'],
   ['/blog.html', '0.8'], ['/faq.html', '0.6'], ['/code-playground.html', '0.6'],
-  ['/products/', '0.9'], ['/guides/', '0.9'], ['/gauntlet.html', '0.8'], ['/gauntlet-playground.html', '0.7'],
+  ['/products/', '0.9'], ['/guides/', '0.9'],
   ['/resources.html', '0.7'], ['/testimonials.html', '0.6'], ['/salary-explorer.html', '0.6'],
   ['/share-salary.html', '0.5'], ['/refund.html', '0.3'], ['/privacy.html', '0.3'],
   ['/terms.html', '0.3']

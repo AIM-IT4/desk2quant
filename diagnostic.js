@@ -64,7 +64,6 @@
         numerical: { id: '6b78550d-e130-41d1-9409-92335ce82a6c', name: 'Numerical Methods for Quants', reason: 'Strengthen calibration, PDE, Monte Carlo and numerical implementation judgement.' },
         interview: { id: '73806d69-768b-497e-87b7-d94fa4cfd772', name: 'Quant Interview Problem Book (1000+ Problems)', reason: 'Convert knowledge into timed recall, problem solving and interview execution.' },
         projects: { id: 'bd2e57b7-32c4-44ad-8a2a-d156222b7ff7', name: 'Industry Grade Quant Project Pack (45 Projects)', reason: 'Integrate multiple domains into implementations you can explain and defend.' },
-        gauntlet: { id: 'eb4ee16b-8a1f-475c-9dbf-e03993528ac9', name: 'Quant Project Gauntlet 01: OIS/SOFR Curve', reason: 'Stress-test advanced readiness with a graded, desk-style curve project.' },
         bundle: { id: '164308cd-e3cd-4026-8fdc-337a5955ffff', name: 'Complete Front Office & Risk Quant Professional Bundle', reason: 'Use one structured library when several high-priority domains need work together.' }
     });
 
@@ -177,7 +176,7 @@
         });
 
         if (!selected.length) {
-            add(answers.role === 'pricing' ? PRODUCTS.gauntlet : PRODUCTS.projects, 'integration');
+            add(PRODUCTS.projects, 'integration');
             add(PRODUCTS.interview, 'interview');
         } else if (selected.length < 3) {
             add(PRODUCTS.projects, 'integration');
