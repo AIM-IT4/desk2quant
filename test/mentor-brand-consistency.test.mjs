@@ -16,8 +16,8 @@ test('guest mentors uses the same Desk2Quant brand shell as the homepage', () =>
     'class="logo-text"'
   ]) assert.ok(mentors.includes(token), `missing shared brand token: ${token}`);
 
-  const homeLogo = home.match(/<img src="([^"]*desk2quant-logo\.png\?v=3)"[^>]*class="logo-img"/)?.[1];
-  const mentorLogo = mentors.match(/<img src="([^"]*desk2quant-logo\.png\?v=3)"[^>]*class="logo-img"/)?.[1];
+  const homeLogo = home.match(/<img src="([^"]*desk2quant-logo\.png\?v=4)"[^>]*class="logo-img"/)?.[1];
+  const mentorLogo = mentors.match(/<img src="([^"]*desk2quant-logo\.png\?v=4)"[^>]*class="logo-img"/)?.[1];
   assert.ok(homeLogo && mentorLogo, 'both pages must use the canonical logo asset');
   assert.equal(mentorLogo, homeLogo);
 

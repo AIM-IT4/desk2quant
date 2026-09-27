@@ -1851,8 +1851,8 @@ function buildProductCatalogJsonLd(products) {
                 description: description,
                 url: url,
                 image: window.Desk2QuantProductSeo?.getProductSeoImage?.(product,
-                    'https://desk2quant.com/assets/images/desk2quant-logo.png?v=3') ||
-                    product.cover_image_url || 'https://desk2quant.com/assets/images/desk2quant-logo.png?v=3',
+                    'https://desk2quant.com/assets/images/desk2quant-logo.png?v=4') ||
+                    product.cover_image_url || 'https://desk2quant.com/assets/images/desk2quant-logo.png?v=4',
                 offers: {
                     '@type': 'Offer',
                     price: String(product.price),

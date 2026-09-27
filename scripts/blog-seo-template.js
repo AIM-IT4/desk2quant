@@ -404,7 +404,7 @@ window.MathJax = {
       '@type': 'Organization',
       '@id': `${SITE}/#organization`,
       name: 'Desk2Quant',
-      logo: { '@type': 'ImageObject', url: `${SITE}/assets/images/desk2quant-logo.png?v=3` }
+      logo: { '@type': 'ImageObject', url: `${SITE}/assets/images/desk2quant-logo.png?v=4` }
     },
     inLanguage: 'en'
   };
@@ -449,7 +449,7 @@ window.MathJax = {
 <meta name="twitter:image" content="${esc(image)}">
 <script type="application/ld+json">${safeJson(article)}</script>
 <script type="application/ld+json">${safeJson(crumbs)}</script>
-<link rel="icon" type="image/png" href="/assets/images/desk2quant-logo.png?v=3">
+<link rel="icon" type="image/png" href="/assets/images/desk2quant-logo.png?v=4">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap">

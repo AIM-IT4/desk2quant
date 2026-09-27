@@ -186,13 +186,11 @@ test('deployable HTML contains no stale Desk2Quant.in branding', () => {
     assert.deepEqual(staleFiles, [], `HTML files containing Desk2Quant.in:\n${staleFiles.join('\n')}`);
 });
 
-// The brand lockup is only half-static. Pages ship the legacy wordmark
-// (desk2quant-logo.png, which already contains the words "Desk2Quant") in their
-// markup, and ui-components.js rewrites every .logo-img to the square mark at
-// runtime. A navbar page that omits the script therefore renders the wordmark
-// straight next to <span class="logo-text">Desk2Quant</span> and reads
-// "Desk2Quant Desk2Quant" -- exactly how my-access.html shipped. Generated
-// pages under products/, guides/ and blog/ have no navbar and are unaffected.
+// desk2quant-logo.png is the square chart mark (same as desk2quant-mark.svg and
+// the email logo); it used to be the old "DQ" wordmark. ui-components.js still
+// swaps every .logo-img to the SVG mark and wraps the navbar one in .logo-mark
+// for sizing, so navbar pages must keep loading it. Generated pages under
+// products/, guides/ and blog/ have no navbar and are unaffected.
 test('every page with a navbar logo loads ui-components.js to apply the brand mark', () => {
     const offenders = [...htmlByFile]
         // *-test.html are local scaffolds; they are not deployed (both 404 in

@@ -64,7 +64,7 @@ function renderHeader() {
 <header class="guide-site-header">
   <div class="guide-site-header__inner">
     <a class="guide-brand" href="/" aria-label="Desk2Quant home">
-      <img src="/assets/images/desk2quant-logo.png?v=3" width="36" height="36" alt="">
+      <img src="/assets/images/desk2quant-logo.png?v=4" width="36" height="36" alt="">
       <span>Desk2Quant</span>
     </a>
     <nav class="guide-site-nav" aria-label="Primary navigation">
@@ -111,7 +111,7 @@ function renderHead({ title, description, canonical, type = 'article', jsonLd = 
 <link rel="canonical" href="${esc(canonical)}">
 <meta name="google-site-verification" content="google4995af590646a7a2">
 <meta name="msvalidate.01" content="7afbcd7bddd64cab99b826937d973894">
-<link rel="icon" type="image/png" href="/assets/images/desk2quant-logo.png?v=3">
+<link rel="icon" type="image/png" href="/assets/images/desk2quant-logo.png?v=4">
 <meta property="og:type" content="${esc(type)}">
 <meta property="og:site_name" content="Desk2Quant">
 <meta property="og:url" content="${esc(canonical)}">
@@ -154,7 +154,7 @@ function renderGuide(guide) {
       '@type': 'Organization',
       name: 'Desk2Quant',
       url: `${SITE}/`,
-      logo: { '@type': 'ImageObject', url: `${SITE}/assets/images/desk2quant-logo.png?v=3` }
+      logo: { '@type': 'ImageObject', url: `${SITE}/assets/images/desk2quant-logo.png?v=4` }
     },
     mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
     isPartOf: { '@type': 'WebSite', name: 'Desk2Quant', url: `${SITE}/` }

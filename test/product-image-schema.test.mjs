@@ -80,6 +80,6 @@ test('merchant-incompatible Vol Surface SVGs map to raster while future raster r
     assert.equal(seo.getProductSeoImage({ id: 'other', cover_image_url: otherCover }), otherCover);
     assert.equal(seo.getProductSeoImage({ id: 'other' }),
         'https://desk2quant.com/assets/images/desk2quant-logo.png');
-    assert.equal(seo.getProductSeoImage({}, 'https://desk2quant.com/assets/images/desk2quant-logo.png?v=3'),
-        'https://desk2quant.com/assets/images/desk2quant-logo.png?v=3');
+    assert.equal(seo.getProductSeoImage({}, 'https://desk2quant.com/assets/images/desk2quant-logo.png?v=4'),
+        'https://desk2quant.com/assets/images/desk2quant-logo.png?v=4');
 });
