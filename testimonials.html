@@ -638,7 +638,16 @@
         </div>
     </footer>
 
+    <!-- Supabase SDK: required for testimonial submissions -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        const TESTIMONIALS_SUPABASE_URL = "https://dntabmyurlrlnoajdnja.supabase.co";
+        const TESTIMONIALS_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRudGFibXl1cmxybG5vYWpkbmphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMDEyNjUsImV4cCI6MjA4NTY3NzI2NX0.PYpNd_t_px09zi2d5WGjFVOB23sjb3ZPuAnxagYshe0";
+        const testimonialSupabaseClient =
+            window.supabase && typeof window.supabase.createClient === 'function'
+                ? window.supabase.createClient(TESTIMONIALS_SUPABASE_URL, TESTIMONIALS_SUPABASE_KEY)
+                : null;
+
         // Star rating functionality
         const starLabels = document.querySelectorAll('[for^="s"]');
         starLabels.forEach((label, index) => {
@@ -690,46 +699,53 @@
 
                 const formData = new FormData(reviewFormPage);
                 const data = {
-                    name: formData.get('name'),
-                    title: formData.get('title'),
-                    rating: formData.get('rating'),
-                    review: formData.get('review'),
+                    name: String(formData.get('name') || '').trim(),
+                    title: String(formData.get('title') || '').trim(),
+                    rating: Number.parseInt(formData.get('rating'), 10),
+                    review: String(formData.get('review') || '').trim(),
                     created_at: new Date().toISOString()
                 };
 
-                if (!data.name || !data.title || !data.rating || !data.review) {
+                if (!data.name || !data.title || !Number.isInteger(data.rating) || data.rating < 1 || data.rating > 5 || !data.review) {
                     alert('Please fill in all required fields.');
                     return;
                 }
 
-                try {
-                    if (typeof supabase !== 'undefined') {
-                        const { error } = await supabase
-                            .from('testimonials')
-                            .insert([{
-                                name: data.name,
-                                title: data.title,
-                                rating: parseInt(data.rating),
-                                review: data.review,
-                                is_verified: false,
-                                is_published: false,
-                                created_at: data.created_at
-                            }]);
+                const submitButton = reviewFormPage.querySelector('button[type="submit"]');
+                const originalButtonHtml = submitButton ? submitButton.innerHTML : '';
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+                }
 
-                        if (error) throw error;
-                    } else {
-                        console.log('Supabase not available, storing review:', data);
-                        let reviews = JSON.parse(localStorage.getItem('pendingReviews') || '[]');
-                        reviews.push(data);
-                        localStorage.setItem('pendingReviews', JSON.stringify(reviews));
+                try {
+                    if (!testimonialSupabaseClient) {
+                        throw new Error('Supabase client failed to initialize.');
                     }
+
+                    const { error } = await testimonialSupabaseClient
+                        .from('testimonials')
+                        .insert([{
+                            name: data.name,
+                            title: data.title,
+                            rating: data.rating,
+                            review: data.review,
+                            is_verified: false,
+                            is_published: false,
+                            created_at: data.created_at
+                        }]);
+
+                    if (error) throw error;
 
                     reviewFormPage.style.display = 'none';
                     reviewSuccessPage.style.display = 'block';
-
                 } catch (error) {
-                    console.error('Error:', error);
-                    alert('There was an error submitting your review. Please try again.');
+                    console.error('Testimonial submission failed:', error);
+                    alert('Your review could not be submitted. Please try again in a moment.');
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = originalButtonHtml;
+                    }
                 }
             });
         }
