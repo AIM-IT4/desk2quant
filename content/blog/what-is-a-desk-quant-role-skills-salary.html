@@ -1,0 +1,98 @@
+<p><strong>A desk quant is a quantitative analyst who sits with a trading desk and builds, runs and defends the pricing and risk models that traders use every day.</strong> When a trader asks "what should I quote for this trade?" or "why did my P&amp;L move overnight?", the desk quant is usually the person who answers. The role is also called a front-office quant, and at some banks a "strat".</p>
+
+<p>This guide explains what a desk quant actually does, how the role differs from other quant jobs, which skills matter, what drives pay, and how people realistically get into it.</p>
+
+<h2>1. What a desk quant does, day to day</h2>
+
+<p>The job is less about deriving new models and more about making existing models work reliably under time pressure. A typical week includes:</p>
+
+<ul>
+<li><strong>P&amp;L explain.</strong> Each morning the desk's P&amp;L is broken down into market moves (delta, vega, rates), new trades, time decay and "unexplained". When the unexplained part is large, the desk quant finds out why: a bad market data point, a curve that bootstrapped differently, a trade booked with the wrong convention, or a genuine model limitation.</li>
+<li><strong>Pricing new trades.</strong> Traders and structurers bring trades that do not fit the standard templates: an unusual barrier, a callable feature, a new underlying. The desk quant decides whether the existing model can price it, what adjustments are needed, and how confident the price is.</li>
+<li><strong>Risk and hedging.</strong> Producing sensitivities (Greeks) the desk can trust, and explaining how a position will behave if volatility, rates or correlation move.</li>
+<li><strong>Calibration and market data.</strong> Keeping volatility surfaces, yield curves and model parameters calibrated and stable, and noticing when a calibration "fits" but produces nonsense prices elsewhere.</li>
+<li><strong>Model changes.</strong> Implementing improvements in the pricing library, testing them, and documenting them for model validation and risk.</li>
+<li><strong>Explaining.</strong> A large part of the job is translating between traders, risk managers, model validators and developers.</li>
+</ul>
+
+<h2>2. Desk quant vs other quant roles</h2>
+
+<table>
+<thead><tr><th>Role</th><th>Main focus</th><th>Typical output</th></tr></thead>
+<tbody>
+<tr><td><strong>Desk / front-office quant</strong></td><td>Pricing and risk for one trading desk</td><td>Prices, Greeks, P&amp;L explanations, model fixes</td></tr>
+<tr><td><strong>Quant developer</strong></td><td>Production code and infrastructure</td><td>Pricing libraries, risk systems, performance</td></tr>
+<tr><td><strong>Model validation quant</strong></td><td>Independent review of models</td><td>Validation reports, benchmark models, limitations</td></tr>
+<tr><td><strong>Risk quant</strong></td><td>Firm-wide risk measures</td><td>VaR, stress tests, counterparty and capital models</td></tr>
+<tr><td><strong>Quant researcher (buy side)</strong></td><td>Finding trading signals</td><td>Alpha research, backtests, portfolio construction</td></tr>
+</tbody>
+</table>
+
+<p>The distinguishing feature of the desk role is proximity to trading. Your work is used within hours, errors cost real money quickly, and you are judged on whether the desk can rely on your numbers.</p>
+
+<h2>3. The skills that actually matter</h2>
+
+<ul>
+<li><strong>Derivatives and market conventions.</strong> Knowing how products are quoted, settled and hedged, and the day-count, calendar and fixing details that make two "identical" prices disagree.</li>
+<li><strong>Stochastic calculus and probability.</strong> Enough to understand why a model prices the way it does, not just to reproduce a formula.</li>
+<li><strong>Numerical methods.</strong> Monte Carlo, finite differences, trees, root-finding and calibration, and, crucially, how they fail.</li>
+<li><strong>Programming.</strong> C++ and Python are the most common. Many banks use large in-house pricing libraries, so reading and changing existing code matters as much as writing new code.</li>
+<li><strong>Communication under pressure.</strong> Explaining clearly to a trader why a number moved, and saying "I don't know yet" when that is the honest answer.</li>
+</ul>
+
+<h2>4. What drives desk quant pay</h2>
+
+<p>Compensation varies more than for most technical roles, so single "average salary" figures are misleading. The main drivers are:</p>
+
+<ul>
+<li><strong>Sell side vs buy side.</strong> Banks and hedge funds structure pay differently, especially the bonus share.</li>
+<li><strong>City.</strong> London, New York, Singapore, Hong Kong and Indian centres such as Mumbai and Bengaluru have very different bands.</li>
+<li><strong>Desk and asset class.</strong> Pay tends to follow the revenue and complexity of the desk you support.</li>
+<li><strong>Seniority and bonus.</strong> At senior levels the variable part can be a large fraction of total pay.</li>
+</ul>
+
+<p>For real, self-reported figures by role, city and experience, see the <a href="/salary-explorer.html">Desk2Quant Salary Explorer</a>. If you work in the industry, adding your own data anonymously makes it more useful for everyone.</p>
+
+<h2>5. How people become desk quants</h2>
+
+<p>There is no single path, but most people arrive through one of these routes:</p>
+
+<ol>
+<li><strong>Straight from a quantitative degree.</strong> A master's or PhD in mathematics, physics, engineering, computer science or financial mathematics, followed by a graduate or associate quant role.</li>
+<li><strong>From model validation or risk.</strong> Validation is excellent training: you learn many models in depth and how they break. Moving to the desk is a common next step.</li>
+<li><strong>From quant development.</strong> Developers who already work in the pricing library often move closer to the models and the desk.</li>
+</ol>
+
+<p>Whichever route you take, interviewers look for evidence that you can connect theory to a desk problem. Strong signals are:</p>
+
+<ul>
+<li>A pricing project you can defend end to end: model choice, calibration, numerical method, Greeks, and its limitations.</li>
+<li>Clear explanations of common failure modes, such as why an implied volatility solver fails in the wings or why two systems disagree on a swap price.</li>
+<li>Comfort with both the mathematics and the code.</li>
+</ul>
+
+<h2>6. Questions desk quant interviews often ask</h2>
+
+<ul>
+<li>Price a European option in your preferred model, then explain what goes wrong when volatility is not constant.</li>
+<li>What is vega, and why might two systems show different vega for the same trade?</li>
+<li>How would you explain an unexpected overnight P&amp;L move to a trader?</li>
+<li>How do you calibrate a stochastic volatility model, and how do you know the calibration is good?</li>
+<li>Walk through how you would bootstrap an interest rate curve.</li>
+</ul>
+
+<p>Our free <a href="/guides/quant-interview-guide.html">quant interview preparation guide</a> and the practitioner articles on <a href="/blog/why-quantlib-price-does-not-match-bloomberg.html">reconciling QuantLib with Bloomberg</a> and <a href="/blog/implied-volatility-python-why-newton-raphson-fails.html">robust implied volatility solvers</a> cover several of these in depth.</p>
+
+<h2>Frequently asked questions</h2>
+
+<p><strong>Is a desk quant the same as a trader?</strong><br>No. The trader takes and manages risk; the desk quant provides the models, prices and risk numbers the trader relies on. They work side by side.</p>
+
+<p><strong>Do you need a PhD to become a desk quant?</strong><br>No, although many desk quants have one. A strong master's degree plus demonstrable pricing and programming skills is a common route.</p>
+
+<p><strong>Is "strat" the same as a desk quant?</strong><br>Broadly yes. Some banks use "strat" for quantitative roles embedded with trading desks; the exact scope varies by firm.</p>
+
+<p><strong>Which programming language should I learn?</strong><br>Learn Python well for analysis and prototyping, and C++ if you are targeting pricing-library work at banks.</p>
+
+<h2>Continue on Desk2Quant</h2>
+
+<p>If you are starting out, <a href="/products/quantitative-finance-for-absolute-beginners-from-desk-to-quant.html">Quantitative Finance for Absolute Beginners</a> builds the foundations. For desk-level depth across products, pricing, risk and interviews, the <a href="/product.html?id=164308cd-e3cd-4026-8fdc-337a5955ffff">Complete Front Office &amp; Risk Quant Bundle</a> brings it together. If you want a personal plan for breaking into a desk role, you can <a href="/#services">book a 1-on-1 session with Amit</a>, who works as a quant.</p>

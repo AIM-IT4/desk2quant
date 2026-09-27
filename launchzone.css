@@ -3408,3 +3408,32 @@ body.d2q-launchzone .mentor-cta:hover { text-decoration: underline; }
     }
     body.d2q-launchzone .mentor-card { scroll-snap-align: start; }
 }
+
+/* Homepage "Popular reads": static links so search engines see the top articles */
+body.d2q-launchzone .popular-reads {
+    margin-top: 28px;
+}
+body.d2q-launchzone .popular-reads h3 {
+    margin: 0 0 12px;
+    font-size: 1rem;
+}
+body.d2q-launchzone .popular-reads ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+body.d2q-launchzone .popular-reads a {
+    display: inline-block;
+    padding: 6px 12px;
+    font-size: 14px;
+    text-decoration: none;
+    background: var(--lz-white);
+    border: 1px solid var(--lz-line-strong);
+    border-radius: 999px;
+}
+body.d2q-launchzone .popular-reads a:hover {
+    border-color: var(--lz-ink);
+}
