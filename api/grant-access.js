@@ -15,7 +15,7 @@ import {
     streamSupabaseStorageObject
 } from '../lib/secureDownload.js';
 import { SUPABASE_URL, serviceHeaders, blockIfUnconfigured } from '../lib/supabaseAdmin.js';
-import { COMPLETE_BUNDLE_EXTRA_RESOURCES, isExpandedCompleteBundle } from '../lib/bundleEntitlements.js';
+import { COMPLETE_BUNDLE_EXTRA_RESOURCES, isExpandedCompleteBundle, LEGACY_BUNDLE_FOLDER_URL, BUNDLE_FOLDER_SWITCH_AT } from '../lib/bundleEntitlements.js';
 // Zero-decimal currency handling lives in lib/pricing.js and is imported, not
 // re-declared -- a divergent copy makes the price-tamper guard compare a
 // 100x-wrong amount and wave through underpayment (see commit 0db1875, where a
@@ -242,6 +242,20 @@ export default async function handler(req, res) {
                 console.error('grant-access cart price verification error:', err.message);
             }
 
+            // Keep each cart line on the Drive link recorded when it was bought
+            // (same precedence as the single-product path below).
+            let cartPurchaseRows = [];
+            try {
+                const pr = await fetch(
+                    `${SUPABASE_URL}/rest/v1/purchases?payment_id=eq.${encodeURIComponent(paymentId)}&select=product_name,download_link&limit=100`,
+                    { headers: serviceHeaders() }
+                );
+                if (pr.ok) cartPurchaseRows = await pr.json();
+            } catch (err) {
+                console.warn('grant-access (cart): purchase link lookup failed:', err.message);
+            }
+            const cartPaidAtMs = Number(payment.created_at) * 1000;
+
             const items = [];
             for (const item of parsedItems) {
                 let name = item.productId;
@@ -260,6 +274,15 @@ export default async function handler(req, res) {
                     } else {
                         console.error('grant-access (cart): product lookup failed:', prodResp.status, await prodResp.text());
                     }
+                }
+
+                const recorded = (Array.isArray(cartPurchaseRows) ? cartPurchaseRows : []).find((r) =>
+                    /^https:\/\/drive\.google\.com\//.test(String(r.download_link || ''))
+                    && normalizeProductName(r.product_name) === normalizeProductName(name));
+                if (recorded) {
+                    fileUrl = recorded.download_link;
+                } else if (isExpandedCompleteBundle(item.productId) && Number.isFinite(cartPaidAtMs) && cartPaidAtMs < BUNDLE_FOLDER_SWITCH_AT) {
+                    fileUrl = LEGACY_BUNDLE_FOLDER_URL;
                 }
 
                 let downloadLink = fileUrl || null;
@@ -373,6 +396,53 @@ export default async function handler(req, res) {
         if (!(await isWithinTolerance(capturedMajor, expected.amountMajor, payment.currency))) {
             console.error('🚨 grant-access: underpayment detected, refusing to grant:', { paymentId, productId, capturedMajor, expected });
             return res.status(402).json({ error: 'Captured amount does not match the product price. This purchase has been flagged for review.' });
+        }
+
+        // The link is decided server-side, never from order notes: notes come
+        // from the browser at checkout, so trusting notes.download_link let a
+        // buyer of a cheap product request any Drive folder the sharing
+        // account can share. Order of precedence:
+        //   1. the Drive link recorded on this purchase (written by the
+        //      webhook from the product row), so every buyer keeps the folder
+        //      they bought;
+        //   2. Complete Bundle bought before the folder switch -> legacy folder;
+        //   3. the product's current file_url.
+        {
+            let resolved = '';
+            try {
+                const purchaseResp = await fetch(
+                    `${SUPABASE_URL}/rest/v1/purchases?payment_id=eq.${encodeURIComponent(paymentId)}&select=product_name,download_link&limit=20`,
+                    { headers: serviceHeaders() }
+                );
+                if (purchaseResp.ok) {
+                    const rows = await purchaseResp.json();
+                    const want = normalizeProductName(productName || '');
+                    const isDrive = (r) => /^https:\/\/drive\.google\.com\//.test(String(r.download_link || ''));
+                    const row = (Array.isArray(rows) ? rows : []).find((r) => isDrive(r) && (!want || normalizeProductName(r.product_name) === want));
+                    if (row) resolved = row.download_link;
+                }
+            } catch (err) {
+                console.warn('grant-access: purchase link lookup failed:', err.message);
+            }
+            const paidAtMs = Number(payment.created_at) * 1000;
+            if (!resolved && isExpandedCompleteBundle(productId) && Number.isFinite(paidAtMs) && paidAtMs < BUNDLE_FOLDER_SWITCH_AT) {
+                resolved = LEGACY_BUNDLE_FOLDER_URL;
+            }
+            if (!resolved && productId) {
+                try {
+                    const prodResp = await fetch(
+                        `${SUPABASE_URL}/rest/v1/products?id=eq.${encodeURIComponent(productId)}&select=file_url`,
+                        { headers: serviceHeaders() }
+                    );
+                    if (prodResp.ok) {
+                        const rows = await prodResp.json();
+                        if (rows && rows[0] && rows[0].file_url) resolved = rows[0].file_url;
+                    }
+                } catch (err) {
+                    console.warn('grant-access: product link lookup failed:', err.message);
+                }
+            }
+            if (resolved) downloadLink = resolved;
         }
 
         // 3. Fallback: look up link in Supabase products by name
