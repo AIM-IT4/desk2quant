@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080">
+  <defs><pattern id="g" width="36" height="36" patternUnits="userSpaceOnUse"><path d="M36 0H0V36" fill="none" stroke="#0B0B0B" stroke-opacity="0.05" stroke-width="1.5"/></pattern></defs>
+  <rect width="1080" height="1080" fill="#F7F4EC"/><rect width="1080" height="1080" fill="url(#g)"/>
+  <g font-family="Poppins,Arial,Helvetica,sans-serif">
+  <rect x="64" y="58" width="52" height="52" rx="12" fill="#F7C531" stroke="#0B0B0B" stroke-width="4"/>
+  <text x="90" y="97" font-size="30" font-weight="900" text-anchor="middle" fill="#0B0B0B">D</text>
+  <text x="132" y="96" font-size="30" font-weight="800" fill="#0B0B0B">Desk2Quant</text>
+  <rect x="64" y="146" width="596" height="50" rx="25" fill="#F7C531" stroke="#0B0B0B" stroke-width="4"/>
+  <text x="362" y="180" font-family="'Courier New',monospace" font-size="22" font-weight="700" text-anchor="middle" fill="#0B0B0B">NOTES + 3-PROJECT LAB · 2026</text>
+  <text x="64" y="292" font-size="84" font-weight="900" fill="#0B0B0B" letter-spacing="-3">Market Risk</text>
+  <text x="64" y="384" font-size="84" font-weight="900" fill="#0B0B0B" letter-spacing="-3">Quant:</text>
+  <rect x="58" y="410" width="826" height="102" fill="#F7C531"/>
+  <text x="64" y="486" font-size="80" font-weight="900" fill="#0B0B0B" letter-spacing="-3">VaR, ES &amp; FRTB</text>
+  <text x="64" y="566" font-size="30" font-weight="600" fill="#0B7F79">Backtesting · Stress · SA vs IMA capital · real data</text>
+  <g stroke="#0B0B0B" stroke-width="4">
+    <rect x="72" y="624" width="292" height="170" rx="18" fill="#0B0B0B"/><rect x="64" y="616" width="292" height="170" rx="18" fill="#FFF2C4"/>
+    <rect x="402" y="624" width="292" height="170" rx="18" fill="#0B0B0B"/><rect x="394" y="616" width="292" height="170" rx="18" fill="#DFF1EE"/>
+    <rect x="732" y="624" width="292" height="170" rx="18" fill="#0B0B0B"/><rect x="724" y="616" width="292" height="170" rx="18" fill="#E3E8FB"/>
+  </g>
+  <text x="92" y="704" font-size="70" font-weight="900" fill="#0B0B0B">141</text><text x="92" y="752" font-size="24" font-weight="600" fill="#222">pages, 19 modules</text>
+  <text x="422" y="704" font-size="70" font-weight="900" fill="#0B0B0B">3</text><text x="422" y="752" font-size="24" font-weight="600" fill="#222">real-data projects</text>
+  <text x="752" y="704" font-size="70" font-weight="900" fill="#0B0B0B">64</text><text x="752" y="752" font-size="24" font-weight="600" fill="#222">interview Q&amp;As</text>
+  <rect x="64" y="840" width="952" height="118" rx="18" fill="#FFFFFF" stroke="#0B0B0B" stroke-width="4"/>
+  <text x="96" y="890" font-size="26" font-weight="800" fill="#0B0B0B">20 years of Fed/Treasury data · 4,919-day backtest</text>
+  <text x="96" y="934" font-size="24" font-weight="500" fill="#444">Notebooks · Python library · tests · methodology PDFs</text>
+  <text x="64" y="1030" font-family="'Courier New',monospace" font-size="24" font-weight="700" fill="#0B0B0B">desk2quant.com</text>
+  <text x="1016" y="1030" font-size="24" font-weight="700" text-anchor="end" fill="#0B0B0B">Amit Kumar Jha</text>
+  </g>
+</svg>
