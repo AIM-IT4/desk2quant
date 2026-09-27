@@ -91,7 +91,7 @@ test('high-intent subpages load site-config.js for sitewide Clarity and live cha
     ];
     for (const page of pages) {
         const html = await fs.readFile(page, 'utf8');
-        assert.match(html, /<script[^>]+src=["'][^"']*site-config\.js["'][^>]*defer/i, `${page} must load site-config.js with defer`);
+        assert.match(html, /<script[^>]+src=["'][^"']*site-config\.js(?:\?[^"']*)?["'][^>]*defer/i, `${page} must load site-config.js with defer`);
     }
 });
 

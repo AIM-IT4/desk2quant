@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>/* Canonical host guard; permanent redirects are configured at the edge. */!function(){try{var p=location.protocol,h=location.hostname.toLowerCase(),local=['localhost','127.0.0.1','0.0.0.0','::1','[::1]'].indexOf(h)>-1;if(/^https?:$/.test(p)&&!local&&h!=='desk2quant.com')location.replace('https://desk2quant.com'+location.pathname+location.search+location.hash)}catch(e){}}();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FX Derivatives Quant Interview: 50 Questions &amp; Pricing Guide</title>
+<meta name="description" content="Prepare for FX derivatives quant interviews: forwards, NDFs, Garman-Kohlhagen, delta conventions, smiles, barriers, quanto, Greeks, calibration, and validation.">
+<meta name="author" content="Desk2Quant Editorial Team">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<link rel="canonical" href="https://desk2quant.com/guides/fx-derivatives-quant-interview.html">
+<meta name="google-site-verification" content="google4995af590646a7a2">
+<meta name="msvalidate.01" content="7afbcd7bddd64cab99b826937d973894">
+<link rel="icon" type="image/png" href="/assets/images/desk2quant-logo.png?v=3">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Desk2Quant">
+<meta property="og:url" content="https://desk2quant.com/guides/fx-derivatives-quant-interview.html">
+<meta property="og:title" content="FX Derivatives Quant Interview: 50 Questions &amp; Pricing Guide">
+<meta property="og:description" content="Prepare for FX derivatives quant interviews: forwards, NDFs, Garman-Kohlhagen, delta conventions, smiles, barriers, quanto, Greeks, calibration, and validation.">
+<meta property="og:image" content="https://desk2quant.com/assets/images/desk2quant-editorial-og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="article:published_time" content="2026-08-11">
+<meta property="article:modified_time" content="2026-08-11">
+<meta property="article:section" content="Quantitative Finance Education">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="https://desk2quant.com/guides/fx-derivatives-quant-interview.html">
+<meta name="twitter:title" content="FX Derivatives Quant Interview: 50 Questions &amp; Pricing Guide">
+<meta name="twitter:description" content="Prepare for FX derivatives quant interviews: forwards, NDFs, Garman-Kohlhagen, delta conventions, smiles, barriers, quanto, Greeks, calibration, and validation.">
+<meta name="twitter:image" content="https://desk2quant.com/assets/images/desk2quant-editorial-og.jpg">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"FX Derivatives Quant Interview Questions: Pricing, Smiles, Greeks and Exotics","name":"FX Derivatives Quant Interview Questions: Pricing, Smiles, Greeks and Exotics","description":"Prepare for FX derivatives quant interviews: forwards, NDFs, Garman-Kohlhagen, delta conventions, smiles, barriers, quanto, Greeks, calibration, and validation.","image":{"@type":"ImageObject","url":"https://desk2quant.com/assets/images/desk2quant-editorial-og.jpg","width":1200,"height":630},"datePublished":"2026-08-11","dateModified":"2026-08-11","inLanguage":"en","isAccessibleForFree":true,"proficiencyLevel":"Intermediate","keywords":"FX derivatives quant interview, FX quant interview questions, FX options interview, Garman Kohlhagen interview, FX volatility smile","author":{"@type":"Organization","name":"Desk2Quant Editorial Team","url":"https://desk2quant.com/"},"publisher":{"@type":"Organization","name":"Desk2Quant","url":"https://desk2quant.com/","logo":{"@type":"ImageObject","url":"https://desk2quant.com/assets/images/desk2quant-logo.png?v=3"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://desk2quant.com/guides/fx-derivatives-quant-interview.html"},"isPartOf":{"@type":"WebSite","name":"Desk2Quant","url":"https://desk2quant.com/"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://desk2quant.com/"},{"@type":"ListItem","position":2,"name":"Quant Finance Guides","item":"https://desk2quant.com/guides/"},{"@type":"ListItem","position":3,"name":"FX Derivatives Quant Interview Questions: Pricing, Smiles, Greeks and Exotics","item":"https://desk2quant.com/guides/fx-derivatives-quant-interview.html"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is asked in an FX derivatives quant interview?","acceptedAnswer":{"@type":"Answer","text":"Expect forwards and NDFs, Garman-Kohlhagen, domestic and foreign discounting, put-call parity, delta conventions, ATM and smile quotes, barriers and exotics, Greeks, calibration, numerical methods, and model-risk questions."}},{"@type":"Question","name":"What is Garman-Kohlhagen?","acceptedAnswer":{"@type":"Answer","text":"It is the Black-Scholes-style model for FX options with domestic and foreign interest rates. The foreign rate enters similarly to a continuous yield and the option is valued under a domestic pricing measure."}},{"@type":"Question","name":"Why are FX options quoted by delta?","acceptedAnswer":{"@type":"Answer","text":"Delta provides a market-standard way to identify smile points across spot levels and tenors, but the quote is incomplete unless the spot/forward and premium-adjustment convention is specified."}},{"@type":"Question","name":"How should I prepare FX exotic options?","acceptedAnswer":{"@type":"Answer","text":"Understand vanilla smile construction first, then learn path dependence, barrier conventions, quanto and correlation effects, local/stochastic volatility choices, numerical pricing, Greeks, and validation."}}]}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/seo-guide.css?v=1">
+</head>
+<body class="guide-page">
+<a class="guide-skip-link" href="#guide-content">Skip to guide content</a>
+<header class="guide-site-header">
+  <div class="guide-site-header__inner">
+    <a class="guide-brand" href="/" aria-label="Desk2Quant home">
+      <img src="/assets/images/desk2quant-logo.png?v=3" width="36" height="36" alt="">
+      <span>Desk2Quant</span>
+    </a>
+    <nav class="guide-site-nav" aria-label="Primary navigation">
+      <a href="/guides/">Guides</a>
+      <a href="/products/">Resources</a>
+      <a href="/desk-simulator.html">Desk Simulator</a>
+      <a class="guide-site-nav__cta" href="/interview.html">AI Interview</a>
+    </nav>
+  </div>
+</header>
+<main id="guide-content" class="guide-main">
+  <nav class="guide-crumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a><span aria-hidden="true">/</span><a href="/guides/">Guides</a><span aria-hidden="true">/</span><span aria-current="page">FX Derivatives Quant Interview Questions: Pricing, Smiles, Greeks and Exotics</span>
+  </nav>
+  <article>
+    <header class="guide-hero">
+      <p class="guide-eyebrow">Foreign-exchange derivatives</p>
+      <h1>FX Derivatives Quant Interview Questions: Pricing, Smiles, Greeks and Exotics</h1>
+      <p class="guide-dek">Prepare for FX derivatives quant interviews: forwards, NDFs, Garman-Kohlhagen, delta conventions, smiles, barriers, quanto, Greeks, calibration, and validation.</p>
+      <div class="guide-meta"><span>Desk2Quant Editorial Team</span><span>15 minute read</span><time datetime="2026-08-11">Updated August 11, 2026</time></div>
+    </header>
+
+    <div class="guide-layout">
+      <aside class="guide-toc" aria-label="On this page">
+        <p class="guide-toc__title">On this page</p>
+        <ol><li><a href="#forwards-ndfs">Get forwards, discounting, and NDFs right first</a></li>
+<li><a href="#vanilla-gk">Use Garman-Kohlhagen as a baseline, not the whole answer</a></li>
+<li><a href="#delta-smile">Treat delta conventions and the smile as model inputs</a></li>
+<li><a href="#exotics-models">Move from vanillas to barriers, quanto, and richer models</a></li>
+<li><a href="#risk-validation">Finish with Greeks, calibration, and validation</a></li>
+          <li><a href="#interview-drills">Interview drills</a></li>
+          <li><a href="#study-plan">Study plan</a></li>
+          <li><a href="#frequent-mistakes">Frequent mistakes</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ol>
+      </aside>
+
+      <div class="guide-article-body">
+        <div class="guide-intro">
+          <p>FX derivatives interviews combine pricing theory with market conventions. Candidates often know Black-Scholes mechanics but lose points on domestic versus foreign discounting, forward construction, delta conventions, smile quoting, barrier behavior, or how a model is calibrated and controlled in production.</p>
+          <p>Prepare the market object first, then the model. For every FX option question, identify the currency pair convention, domestic and foreign rates, forward, quote and delta convention, volatility input, payoff currency, and settlement details before writing a pricing formula.</p>
+        </div>
+
+        <aside class="guide-answer-box" aria-label="Quick answer">
+          <p class="guide-answer-box__label">Quick answer</p>
+          <p>Master FX forwards and NDFs, Garman-Kohlhagen vanilla pricing, domestic and foreign discounting, market delta conventions, volatility smiles, barriers and exotics, quanto effects, Greeks, calibration, and model validation. State conventions before calculating.</p>
+        </aside>
+
+        <section class="guide-outcomes" aria-labelledby="outcomes-title">
+          <h2 id="outcomes-title">What this guide helps you do</h2>
+          <ul class="guide-check-list">
+  <li>Price and explain FX forwards, NDFs, and vanilla options consistently.</li>
+  <li>Handle delta and volatility-smile conventions without mixing market definitions.</li>
+  <li>Discuss barriers, quanto effects, and model choice beyond Garman-Kohlhagen.</li>
+  <li>Answer practical risk, calibration, and validation follow-ups.</li>
+</ul>
+        </section>
+
+        <section class="guide-section" id="forwards-ndfs">
+    <h2>1. Get forwards, discounting, and NDFs right first</h2>
+    <p>For a currency pair quoted as domestic currency per unit of foreign currency, the no-arbitrage forward follows from domestic and foreign discount factors. The exact notation matters less than stating which currency is domestic, which is foreign, and how the payoff is settled.</p>
+    <p>NDFs add fixing and cash settlement instead of physical exchange. Interviewers may ask how fixing source, settlement currency, holidays, or capital controls affect valuation and operational risk.</p>
+    <ul class="guide-bullet-list">
+  <li>State the pair convention before using rates.</li>
+  <li>Reconcile forward points with the two discount curves.</li>
+  <li>Separate trade maturity, fixing date, and settlement date for NDFs.</li>
+  <li>Check signs by asking which currency you receive when spot or forward rises.</li>
+</ul>
+
+
+  </section>
+
+        <section class="guide-section" id="vanilla-gk">
+    <h2>2. Use Garman-Kohlhagen as a baseline, not the whole answer</h2>
+    <p>Garman-Kohlhagen adapts Black-Scholes to FX by treating the foreign short rate like a continuous yield. Under the domestic pricing measure, the forward embeds the domestic-foreign rate differential and the option is discounted in the domestic currency.</p>
+    <p>A strong answer gives the formula structure, then explains assumptions: lognormal spot, deterministic rates, constant volatility, frictionless trading, and continuous hedging. Real FX markets require a volatility surface and often richer dynamics for exotics.</p>
+
+
+    <aside class="guide-callout"><h3>Fast consistency check</h3><p>Price the option from the forward form and verify domestic discounting. Then check put-call parity using the same spot, forward, and discount-factor conventions.</p></aside>
+  </section>
+
+        <section class="guide-section" id="delta-smile">
+    <h2>3. Treat delta conventions and the smile as model inputs</h2>
+    <p>FX volatility is frequently quoted by delta rather than strike. Depending on market and tenor, delta may be spot or forward, premium-adjusted or unadjusted. Converting a quoted delta to strike is therefore part of the model input process, not a cosmetic transformation.</p>
+    <p>Smile quotes may be expressed through ATM, risk reversals, and butterflies. Explain how these reconstruct call and put volatilities at chosen deltas, then how the resulting smile is interpolated in a way that preserves sensible shape and avoids arbitrage.</p>
+
+    <div class="guide-table-wrap" tabindex="0" role="region" aria-label="Common FX smile concepts">
+    <table class="guide-table">
+      <caption>Common FX smile concepts</caption>
+      <thead><tr><th scope="col">Concept</th><th scope="col">Interpretation</th><th scope="col">Interview check</th></tr></thead>
+      <tbody><tr><td>ATM volatility</td><td>Reference volatility near the forward or convention-defined ATM strike</td><td>State the ATM convention</td></tr>
+<tr><td>Risk reversal</td><td>Difference between call and put wing volatilities</td><td>Connect sign to skew</td></tr>
+<tr><td>Butterfly</td><td>Average wing richness relative to ATM</td><td>Explain convention used to reconstruct wings</td></tr>
+<tr><td>Delta-to-strike</td><td>Maps market delta quote into model strike</td><td>Specify spot/forward and premium adjustment</td></tr></tbody>
+    </table>
+  </div>
+
+  </section>
+
+        <section class="guide-section" id="exotics-models">
+    <h2>4. Move from vanillas to barriers, quanto, and richer models</h2>
+    <p>Barrier options are sensitive not only to terminal spot but to whether a level is touched. This creates strong dependence on smile dynamics, monitoring convention, gaps, and numerical method. Explain knock-in/knock-out parity where applicable and why discrete monitoring differs from continuous monitoring.</p>
+    <p>Quanto or cross-currency payoffs introduce dependence between asset moves and FX. For smile-sensitive exotics, local volatility, stochastic volatility, or hybrid models may be considered. Model choice should be tied to the risk being hedged and the instruments available for calibration.</p>
+    <ul class="guide-bullet-list">
+  <li>Identify path dependence before choosing a pricing engine.</li>
+  <li>Discuss correlation and quanto drift adjustments when currencies and underlyings interact.</li>
+  <li>Explain which vanilla instruments calibrate each model component.</li>
+  <li>State model-risk implications when extrapolating beyond liquid smile quotes.</li>
+</ul>
+
+
+  </section>
+
+        <section class="guide-section" id="risk-validation">
+    <h2>5. Finish with Greeks, calibration, and validation</h2>
+    <p>FX option risk includes spot delta, gamma, vega, theta, rate sensitivities, and smile sensitivities. For exotics, risk can jump around barriers or become highly dependent on the chosen smile-dynamics assumption. Explain both the mathematical Greek and the hedge instrument or market move it represents.</p>
+    <p>Validate conventions, forwards, smile reconstruction, interpolation, calibration, numerical convergence, and benchmark prices separately. Reconcile vanilla prices first, then test exotics against independent methods or limiting cases.</p>
+    <ul class="guide-bullet-list">
+  <li>Bump market quotes in the same convention in which the desk manages risk.</li>
+  <li>Test put-call parity and forward consistency before exotic validation.</li>
+  <li>Compare analytical, PDE, tree, and Monte Carlo results where overlapping methods exist.</li>
+  <li>Stress skew, rates, correlation, and barrier proximity rather than reporting one base-case price.</li>
+</ul>
+
+
+  </section>
+
+        <section class="guide-section" id="interview-drills">
+          <p class="guide-section-kicker">Practise aloud</p>
+          <h2>Interview drills with answer direction</h2>
+          <div class="guide-drills">
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 1</p>
+              <h3>How do domestic and foreign rates enter an FX option price?</h3>
+              <p><strong>Answer direction:</strong> They determine the forward through the two discount factors. Under the domestic measure, the foreign rate behaves like a yield on spot while the payoff is discounted domestically.</p>
+            </article>
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 2</p>
+              <h3>Why is FX delta ambiguous without a convention?</h3>
+              <p><strong>Answer direction:</strong> Markets use spot or forward delta and may adjust for premium. The same quoted delta can therefore map to different strikes unless the convention is specified.</p>
+            </article>
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 3</p>
+              <h3>What do a 25-delta risk reversal and butterfly tell you?</h3>
+              <p><strong>Answer direction:</strong> The risk reversal captures call-versus-put wing skew, while the butterfly captures wing richness relative to ATM. The exact reconstruction depends on the market quote convention.</p>
+            </article>
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 4</p>
+              <h3>Why are barrier options more model-sensitive than vanillas?</h3>
+              <p><strong>Answer direction:</strong> Their value depends on the path and proximity to the barrier, making them sensitive to smile dynamics, monitoring, gaps, and local or stochastic volatility assumptions that can be weakly constrained by vanillas.</p>
+            </article>
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 5</p>
+              <h3>How would you validate an FX volatility smile implementation?</h3>
+              <p><strong>Answer direction:</strong> Reconcile forwards and quote conventions, reproduce delta-to-strike conversion, reconstruct market nodes, test interpolation and arbitrage, compare vanilla prices, and stress wings and tenors.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="guide-section" id="study-plan">
+          <p class="guide-section-kicker">Turn reading into practice</p>
+          <h2>A focused study plan</h2>
+          <ol class="guide-plan">
+            <li><span>Module 1</span><div><h3>Conventions</h3><p>Master pair notation, forwards, discounting, settlements, and NDF mechanics.</p></div></li>
+            <li><span>Module 2</span><div><h3>Vanillas</h3><p>Derive Garman-Kohlhagen, parity, Greeks, and limiting cases.</p></div></li>
+            <li><span>Module 3</span><div><h3>Smile</h3><p>Practise delta conventions, ATM/RR/BF reconstruction, strike conversion, and interpolation.</p></div></li>
+            <li><span>Module 4</span><div><h3>Exotics</h3><p>Work barriers, quanto, correlation, smile dynamics, and numerical methods.</p></div></li>
+            <li><span>Module 5</span><div><h3>Validation</h3><p>Run convention, calibration, convergence, benchmark, and stress checks.</p></div></li>
+          </ol>
+        </section>
+
+        <section class="guide-section" id="frequent-mistakes">
+          <p class="guide-section-kicker">Self-review</p>
+          <h2>Frequent mistakes to catch early</h2>
+          <ul class="guide-warning-list">
+  <li>Writing a pricing formula before declaring the currency-pair convention.</li>
+  <li>Mixing spot delta, forward delta, and premium-adjusted delta.</li>
+  <li>Treating the implied-volatility smile as a single constant volatility.</li>
+  <li>Discussing an exotic model without explaining calibration instruments and hedge implications.</li>
+</ul>
+        </section>
+
+        <section class="guide-resources" aria-labelledby="resources-title">
+          <p class="guide-section-kicker">Continue with structured practice</p>
+          <h2 id="resources-title">Relevant Desk2Quant resources</h2>
+          <div class="guide-resource-grid">
+            <article><h3><a href="/products/50-fx-derivatives-problems-for-quant-interviews.html">50 FX Derivatives Problems for Quant Interviews</a></h3><p>Work through 50 FX derivatives interview problems with formulas and complete worked solutions.</p><a class="guide-text-link" href="/products/50-fx-derivatives-problems-for-quant-interviews.html">Explore this resource <span aria-hidden="true">&rarr;</span></a></article>
+            <article><h3><a href="/products/fx-models-quant-interview-playbook.html">FX Models: Quant Interview Playbook</a></h3><p>Deepen the model layer for FX pricing, calibration, smile dynamics, and interview preparation.</p><a class="guide-text-link" href="/products/fx-models-quant-interview-playbook.html">Explore this resource <span aria-hidden="true">&rarr;</span></a></article>
+            <article><h3><a href="/products/quant-interview-problem-book.html">Quant Interview Problem Book (1000+ Problems with Solutions)</a></h3><p>Add broader probability, coding, derivatives, and quantitative-finance drills around the FX specialization.</p><a class="guide-text-link" href="/products/quant-interview-problem-book.html">Explore this resource <span aria-hidden="true">&rarr;</span></a></article>
+          </div>
+        </section>
+
+        <section class="guide-section" aria-labelledby="related-title">
+          <p class="guide-section-kicker">Keep building</p>
+          <h2 id="related-title">Related quant finance guides</h2>
+          <div class="guide-related-grid">
+            <a href="/guides/quant-interview-questions.html"><span>Question bank strategy</span><strong>Quant Interview Questions: What to Expect and How to Answer</strong><small>Practise quant interview questions by category, with answer frameworks for probability, statistics, coding, derivatives, estimation, and project discussions.</small></a>
+            <a href="/guides/numerical-methods-quant-finance.html"><span>Computational quantitative finance</span><strong>Numerical Methods for Quants: PDE, Monte Carlo, Calibration and Error Control</strong><small>Numerical methods for quants: root finding, interpolation, PDE option pricing, Monte Carlo, calibration, convergence, error control, and production checks.</small></a>
+            <a href="/guides/stochastic-calculus-interview.html"><span>Pricing mathematics</span><strong>Stochastic Calculus for Quants: Interview Guide and Questions</strong><small>Stochastic calculus for quants: Brownian motion, Ito calculus, SDEs, martingales, risk-neutral pricing, Feynman-Kac, simulation, and interview questions.</small></a>
+          </div>
+        </section>
+
+        <section class="guide-section guide-faq" id="faq">
+          <p class="guide-section-kicker">Common questions</p>
+          <h2>Frequently asked questions</h2>
+          <details><summary>What is asked in an FX derivatives quant interview?</summary><p>Expect forwards and NDFs, Garman-Kohlhagen, domestic and foreign discounting, put-call parity, delta conventions, ATM and smile quotes, barriers and exotics, Greeks, calibration, numerical methods, and model-risk questions.</p></details>
+          <details><summary>What is Garman-Kohlhagen?</summary><p>It is the Black-Scholes-style model for FX options with domestic and foreign interest rates. The foreign rate enters similarly to a continuous yield and the option is valued under a domestic pricing measure.</p></details>
+          <details><summary>Why are FX options quoted by delta?</summary><p>Delta provides a market-standard way to identify smile points across spot levels and tenors, but the quote is incomplete unless the spot/forward and premium-adjustment convention is specified.</p></details>
+          <details><summary>How should I prepare FX exotic options?</summary><p>Understand vanilla smile construction first, then learn path dependence, barrier conventions, quanto and correlation effects, local/stochastic volatility choices, numerical pricing, Greeks, and validation.</p></details>
+        </section>
+
+        <aside class="guide-next-step">
+          <div><p class="guide-section-kicker">Practise under pressure</p><h2>Turn the framework into a live answer</h2><p>Use the free AI interview practice tool, then review your assumptions, structure, checks, and conclusion.</p></div>
+          <a href="/interview.html">Start an AI interview</a>
+        </aside>
+      </div>
+    </div>
+  </article>
+</main>
+<footer class="guide-footer">
+  <div class="guide-footer__inner">
+    <div>
+      <a class="guide-brand guide-brand--footer" href="/">Desk2Quant</a>
+      <p>Practitioner-built preparation for quantitative finance interviews and desk work.</p>
+    </div>
+    <nav aria-label="Footer navigation">
+      <a href="/guides/">All guides</a>
+      <a href="/products/">All resources</a>
+      <a href="/faq.html">FAQ</a>
+      <a href="/privacy.html">Privacy</a>
+      <a href="/terms.html">Terms</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

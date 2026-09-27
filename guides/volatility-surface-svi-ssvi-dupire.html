@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>/* Canonical host guard; permanent redirects are configured at the edge. */!function(){try{var p=location.protocol,h=location.hostname.toLowerCase(),local=['localhost','127.0.0.1','0.0.0.0','::1','[::1]'].indexOf(h)>-1;if(/^https?:$/.test(p)&&!local&&h!=='desk2quant.com')location.replace('https://desk2quant.com'+location.pathname+location.search+location.hash)}catch(e){}}();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SVI &amp; SSVI Volatility Surface: Arbitrage &amp; Dupire Guide</title>
+<meta name="description" content="Build an arbitrage-aware volatility surface with SVI and SSVI, static-arbitrage checks, Dupire local volatility, calibration diagnostics, and interview questions.">
+<meta name="author" content="Desk2Quant Editorial Team">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<link rel="canonical" href="https://desk2quant.com/guides/volatility-surface-svi-ssvi-dupire.html">
+<meta name="google-site-verification" content="google4995af590646a7a2">
+<meta name="msvalidate.01" content="7afbcd7bddd64cab99b826937d973894">
+<link rel="icon" type="image/png" href="/assets/images/desk2quant-logo.png?v=3">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Desk2Quant">
+<meta property="og:url" content="https://desk2quant.com/guides/volatility-surface-svi-ssvi-dupire.html">
+<meta property="og:title" content="SVI &amp; SSVI Volatility Surface: Arbitrage &amp; Dupire Guide">
+<meta property="og:description" content="Build an arbitrage-aware volatility surface with SVI and SSVI, static-arbitrage checks, Dupire local volatility, calibration diagnostics, and interview questions.">
+<meta property="og:image" content="https://desk2quant.com/assets/images/desk2quant-editorial-og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="article:published_time" content="2026-08-11">
+<meta property="article:modified_time" content="2026-08-11">
+<meta property="article:section" content="Quantitative Finance Education">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="https://desk2quant.com/guides/volatility-surface-svi-ssvi-dupire.html">
+<meta name="twitter:title" content="SVI &amp; SSVI Volatility Surface: Arbitrage &amp; Dupire Guide">
+<meta name="twitter:description" content="Build an arbitrage-aware volatility surface with SVI and SSVI, static-arbitrage checks, Dupire local volatility, calibration diagnostics, and interview questions.">
+<meta name="twitter:image" content="https://desk2quant.com/assets/images/desk2quant-editorial-og.jpg">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"SVI and SSVI Volatility Surfaces: Static Arbitrage and Dupire Local Volatility","name":"SVI and SSVI Volatility Surfaces: Static Arbitrage and Dupire Local Volatility","description":"Build an arbitrage-aware volatility surface with SVI and SSVI, static-arbitrage checks, Dupire local volatility, calibration diagnostics, and interview questions.","image":{"@type":"ImageObject","url":"https://desk2quant.com/assets/images/desk2quant-editorial-og.jpg","width":1200,"height":630},"datePublished":"2026-08-11","dateModified":"2026-08-11","inLanguage":"en","isAccessibleForFree":true,"proficiencyLevel":"Intermediate","keywords":"SVI volatility surface, SSVI volatility surface, Dupire local volatility, static arbitrage volatility surface, volatility surface calibration","author":{"@type":"Organization","name":"Desk2Quant Editorial Team","url":"https://desk2quant.com/"},"publisher":{"@type":"Organization","name":"Desk2Quant","url":"https://desk2quant.com/","logo":{"@type":"ImageObject","url":"https://desk2quant.com/assets/images/desk2quant-logo.png?v=3"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://desk2quant.com/guides/volatility-surface-svi-ssvi-dupire.html"},"isPartOf":{"@type":"WebSite","name":"Desk2Quant","url":"https://desk2quant.com/"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://desk2quant.com/"},{"@type":"ListItem","position":2,"name":"Quant Finance Guides","item":"https://desk2quant.com/guides/"},{"@type":"ListItem","position":3,"name":"SVI and SSVI Volatility Surfaces: Static Arbitrage and Dupire Local Volatility","item":"https://desk2quant.com/guides/volatility-surface-svi-ssvi-dupire.html"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is SVI in volatility modeling?","acceptedAnswer":{"@type":"Answer","text":"SVI is a five-parameter representation of total implied variance as a function of log-forward moneyness for an expiry. It is flexible enough to capture skew and curvature while supporting analytical arbitrage diagnostics."}},{"@type":"Question","name":"What is SSVI?","acceptedAnswer":{"@type":"Answer","text":"SSVI extends the SVI idea into a structured maturity-dependent surface. With suitable parameter restrictions, it can provide a compact and more controllable arbitrage-aware representation across expiries."}},{"@type":"Question","name":"What is static arbitrage in a volatility surface?","acceptedAnswer":{"@type":"Answer","text":"Static arbitrage includes violations such as negative butterfly spreads within a maturity or calendar-spread inconsistencies across maturities. These correspond to impossible option-price relationships and can imply negative densities."}},{"@type":"Question","name":"How is Dupire local volatility related to implied volatility?","acceptedAnswer":{"@type":"Answer","text":"Dupire derives a local diffusion coefficient from derivatives of the full arbitrage-consistent option-price or implied-variance surface. It is not simply the implied volatility evaluated at the same strike and maturity."}}]}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/seo-guide.css?v=1">
+</head>
+<body class="guide-page">
+<a class="guide-skip-link" href="#guide-content">Skip to guide content</a>
+<header class="guide-site-header">
+  <div class="guide-site-header__inner">
+    <a class="guide-brand" href="/" aria-label="Desk2Quant home">
+      <img src="/assets/images/desk2quant-logo.png?v=3" width="36" height="36" alt="">
+      <span>Desk2Quant</span>
+    </a>
+    <nav class="guide-site-nav" aria-label="Primary navigation">
+      <a href="/guides/">Guides</a>
+      <a href="/products/">Resources</a>
+      <a href="/desk-simulator.html">Desk Simulator</a>
+      <a class="guide-site-nav__cta" href="/interview.html">AI Interview</a>
+    </nav>
+  </div>
+</header>
+<main id="guide-content" class="guide-main">
+  <nav class="guide-crumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a><span aria-hidden="true">/</span><a href="/guides/">Guides</a><span aria-hidden="true">/</span><span aria-current="page">SVI and SSVI Volatility Surfaces: Static Arbitrage and Dupire Local Volatility</span>
+  </nav>
+  <article>
+    <header class="guide-hero">
+      <p class="guide-eyebrow">Volatility surface construction</p>
+      <h1>SVI and SSVI Volatility Surfaces: Static Arbitrage and Dupire Local Volatility</h1>
+      <p class="guide-dek">Build an arbitrage-aware volatility surface with SVI and SSVI, static-arbitrage checks, Dupire local volatility, calibration diagnostics, and interview questions.</p>
+      <div class="guide-meta"><span>Desk2Quant Editorial Team</span><span>16 minute read</span><time datetime="2026-08-11">Updated August 11, 2026</time></div>
+    </header>
+
+    <div class="guide-layout">
+      <aside class="guide-toc" aria-label="On this page">
+        <p class="guide-toc__title">On this page</p>
+        <ol><li><a href="#coordinates-quotes">Start with clean quotes and the right coordinates</a></li>
+<li><a href="#svi-slices">Fit SVI slices without losing economic shape</a></li>
+<li><a href="#ssvi-arbitrage">Use SSVI and explicit static-arbitrage checks</a></li>
+<li><a href="#dupire-local-vol">Differentiate carefully before using Dupire local volatility</a></li>
+<li><a href="#production-validation">Treat the surface as a production model, not a chart</a></li>
+          <li><a href="#interview-drills">Interview drills</a></li>
+          <li><a href="#study-plan">Study plan</a></li>
+          <li><a href="#frequent-mistakes">Frequent mistakes</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ol>
+      </aside>
+
+      <div class="guide-article-body">
+        <div class="guide-intro">
+          <p>A production volatility surface is more than a smooth picture through option quotes. It must respect quote conventions, interpolate sensibly across strikes and maturities, avoid obvious static arbitrage, and remain stable enough for pricing, Greeks, and downstream local-volatility calculations.</p>
+          <p>SVI is widely used to represent a single implied-variance smile; SSVI adds a structured way to connect slices across maturity. The practical task is to fit market data while controlling calendar and butterfly arbitrage, then understand what happens when the fitted surface is differentiated inside Dupire local volatility.</p>
+        </div>
+
+        <aside class="guide-answer-box" aria-label="Quick answer">
+          <p class="guide-answer-box__label">Quick answer</p>
+          <p>Work in forward log-moneyness and total implied variance, clean and weight quotes, fit SVI slices or an SSVI surface, enforce or diagnose calendar and butterfly arbitrage, test interpolation and extrapolation, then compute Dupire local volatility only after checking derivative stability.</p>
+        </aside>
+
+        <section class="guide-outcomes" aria-labelledby="outcomes-title">
+          <h2 id="outcomes-title">What this guide helps you do</h2>
+          <ul class="guide-check-list">
+  <li>Translate option quotes into consistent forward-moneyness and total-variance coordinates.</li>
+  <li>Explain SVI and SSVI parameterizations and calibration trade-offs.</li>
+  <li>Diagnose butterfly and calendar-spread arbitrage before using the surface.</li>
+  <li>Connect implied volatility to Dupire local volatility and understand numerical instability.</li>
+</ul>
+        </section>
+
+        <section class="guide-section" id="coordinates-quotes">
+    <h2>1. Start with clean quotes and the right coordinates</h2>
+    <p>A surface calibration is only as coherent as its inputs. Reconcile spot, discount factors, forwards, expiries, option conventions, bid-ask spreads, and delta-to-strike conversions before fitting. For equity-style smiles, a common coordinate is log-forward moneyness k = log(K/F), with total implied variance w(k,T) = sigma_imp(k,T)^2 T.</p>
+    <p>Total variance is useful because no-calendar-arbitrage conditions and maturity behavior are easier to express in w than in raw implied volatility. Weight observations by liquidity or spread rather than treating a stale wing quote as equal to an at-the-money quote.</p>
+    <ul class="guide-bullet-list">
+  <li>Use one consistent forward and discounting convention per expiry.</li>
+  <li>Keep bid, ask, mid, liquidity, and source timestamps available for diagnostics.</li>
+  <li>Convert delta quotes only with the market convention used by the instrument.</li>
+  <li>Do not extrapolate illiquid wings silently; state the rule and test its risk impact.</li>
+</ul>
+
+
+  </section>
+
+        <section class="guide-section" id="svi-slices">
+    <h2>2. Fit SVI slices without losing economic shape</h2>
+    <p>Raw SVI represents total variance as a five-parameter function of log-moneyness. The parameters control overall level, slope, skew orientation, horizontal shift, and curvature. Its flexibility makes it practical, but unconstrained least squares can produce visually good fits with poor arbitrage properties.</p>
+    <p>Calibrate with sensible parameter domains and multiple starts, inspect residuals in price or volatility space, and compare fitted wings with observed spreads. A low objective value is not sufficient if parameters jump between nearby expiries or the resulting density becomes negative.</p>
+
+    <div class="guide-table-wrap" tabindex="0" role="region" aria-label="SVI calibration diagnostics">
+    <table class="guide-table">
+      <caption>SVI calibration diagnostics</caption>
+      <thead><tr><th scope="col">Diagnostic</th><th scope="col">What it checks</th><th scope="col">Warning sign</th></tr></thead>
+      <tbody><tr><td>Residuals by strike</td><td>Fit quality across the smile</td><td>Systematic wing or ATM bias</td></tr>
+<tr><td>Parameter stability</td><td>Robustness across starts and expiries</td><td>Large jumps with similar fit error</td></tr>
+<tr><td>Implied density</td><td>Butterfly-arbitrage behavior</td><td>Negative density regions</td></tr>
+<tr><td>Wing slopes</td><td>Extrapolation and moment behavior</td><td>Extreme or unstable asymptotics</td></tr></tbody>
+    </table>
+  </div>
+
+  </section>
+
+        <section class="guide-section" id="ssvi-arbitrage">
+    <h2>3. Use SSVI and explicit static-arbitrage checks</h2>
+    <p>SSVI parameterizes the whole surface through maturity-dependent at-the-money total variance and a controlled smile shape. Its attraction is not merely fewer parameters: suitable restrictions can make static-arbitrage control more transparent than calibrating unrelated slices.</p>
+    <p>Check calendar arbitrage by verifying that total variance behaves consistently across maturity for fixed log-moneyness. Check butterfly arbitrage through convexity of option prices or equivalent density conditions. Run these diagnostics on a dense grid, not only at quoted strikes.</p>
+
+
+    <aside class="guide-callout"><h3>Smooth is not the same as arbitrage-free</h3><p>A visually smooth interpolation can still imply negative state-price density or decreasing option value with maturity. Arbitrage diagnostics must be explicit tests.</p></aside>
+  </section>
+
+        <section class="guide-section" id="dupire-local-vol">
+    <h2>4. Differentiate carefully before using Dupire local volatility</h2>
+    <p>Dupire local volatility extracts a state- and time-dependent diffusion coefficient from the option-price or implied-variance surface. The formula depends on derivatives across strike and maturity, so noise that looks harmless in implied volatility can become severe after differentiation.</p>
+    <p>Validate local volatility by checking positivity, smoothness, boundary behavior, and repricing. A local-vol Monte Carlo or PDE engine should reproduce the vanilla surface within numerical tolerance when fed the extracted local volatility. Large repricing errors usually reveal derivative, interpolation, extrapolation, or convention problems.</p>
+    <ul class="guide-bullet-list">
+  <li>Differentiate the fitted representation, not raw noisy quotes.</li>
+  <li>Stress maturity interpolation near short expiries where derivatives are unstable.</li>
+  <li>Inspect local variance for negative or explosive regions before simulation.</li>
+  <li>Reprice the calibration vanillas as an end-to-end consistency test.</li>
+</ul>
+
+
+  </section>
+
+        <section class="guide-section" id="production-validation">
+    <h2>5. Treat the surface as a production model, not a chart</h2>
+    <p>A desk-quality surface needs fallback logic, stale-data controls, calibration monitoring, parameter-jump alerts, arbitrage diagnostics, and reproducible snapshots. Changes in quote coverage or convention should be visible to users rather than absorbed silently by the optimizer.</p>
+    <p>For model validation, challenge the full chain: market-data selection, forward construction, parameterization, objective weights, constraints, interpolation, extrapolation, numerical derivatives, local-vol extraction, and downstream pricing impact.</p>
+    <ul class="guide-bullet-list">
+  <li>Track fit error alongside arbitrage violations and parameter stability.</li>
+  <li>Compare against a simpler interpolation or previous-day surface as a challenger.</li>
+  <li>Test sparse markets, crossed quotes, missing wings, and stressed skew regimes.</li>
+  <li>Version inputs and calibration settings so historical prices can be reproduced.</li>
+</ul>
+
+
+  </section>
+
+        <section class="guide-section" id="interview-drills">
+          <p class="guide-section-kicker">Practise aloud</p>
+          <h2>Interview drills with answer direction</h2>
+          <div class="guide-drills">
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 1</p>
+              <h3>Why use total implied variance instead of implied volatility in SVI?</h3>
+              <p><strong>Answer direction:</strong> Total variance scales naturally with maturity and is the native quantity in SVI. Static-arbitrage conditions and cross-maturity comparisons are also easier to express in total variance.</p>
+            </article>
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 2</p>
+              <h3>What is the difference between SVI and SSVI?</h3>
+              <p><strong>Answer direction:</strong> SVI typically parameterizes one expiry slice. SSVI imposes a structured surface across maturities using ATM total variance and smile-shape functions, making cross-maturity consistency and arbitrage control more systematic.</p>
+            </article>
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 3</p>
+              <h3>How do you detect butterfly arbitrage?</h3>
+              <p><strong>Answer direction:</strong> Check convexity of option price in strike or an equivalent non-negative risk-neutral density condition on a sufficiently dense grid, including interpolated and extrapolated regions.</p>
+            </article>
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 4</p>
+              <h3>Why can Dupire local volatility become unstable?</h3>
+              <p><strong>Answer direction:</strong> It uses strike and maturity derivatives of the option or implied-variance surface, which amplify quote noise, interpolation artifacts, short-maturity instability, and weak wing extrapolation.</p>
+            </article>
+            <article class="guide-drill">
+              <p class="guide-drill__number">Question 5</p>
+              <h3>How would you validate a fitted volatility surface?</h3>
+              <p><strong>Answer direction:</strong> Reconcile conventions, inspect weighted residuals, test calendar and butterfly arbitrage, stress interpolation and extrapolation, monitor parameter stability, and reprice vanillas through downstream engines such as local volatility.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="guide-section" id="study-plan">
+          <p class="guide-section-kicker">Turn reading into practice</p>
+          <h2>A focused study plan</h2>
+          <ol class="guide-plan">
+            <li><span>Step 1</span><div><h3>Normalize</h3><p>Build forwards, convert quotes consistently, and move into log-moneyness and total variance.</p></div></li>
+            <li><span>Step 2</span><div><h3>Calibrate</h3><p>Fit SVI slices with bounds, multiple starts, spread-aware weights, and residual diagnostics.</p></div></li>
+            <li><span>Step 3</span><div><h3>Constrain</h3><p>Introduce SSVI or explicit cross-maturity constraints and run dense-grid arbitrage tests.</p></div></li>
+            <li><span>Step 4</span><div><h3>Differentiate</h3><p>Extract Dupire local volatility and test positivity, smoothness, and sensitivity.</p></div></li>
+            <li><span>Step 5</span><div><h3>Reprice</h3><p>Use PDE or Monte Carlo repricing to close the validation loop and document fallbacks.</p></div></li>
+          </ol>
+        </section>
+
+        <section class="guide-section" id="frequent-mistakes">
+          <p class="guide-section-kicker">Self-review</p>
+          <h2>Frequent mistakes to catch early</h2>
+          <ul class="guide-warning-list">
+  <li>Fitting every expiry independently and ignoring cross-maturity arbitrage.</li>
+  <li>Optimizing only a least-squares error while ignoring bid-ask spreads and density checks.</li>
+  <li>Differentiating raw implied-volatility quotes inside Dupire.</li>
+  <li>Treating successful optimizer termination as proof that the surface is production-ready.</li>
+</ul>
+        </section>
+
+        <section class="guide-resources" aria-labelledby="resources-title">
+          <p class="guide-section-kicker">Continue with structured practice</p>
+          <h2 id="resources-title">Relevant Desk2Quant resources</h2>
+          <div class="guide-resource-grid">
+            <article><h3><a href="/products/the-vol-surface-construction-playbook-svi-ssvi-static-arbitrage-and-du.html">The Vol Surface Construction Playbook: SVI, SSVI, Static Arbitrage &amp; Dupire</a></h3><p>Use the full SVI/SSVI workflow, static-arbitrage diagnostics, Dupire construction, and executable companion material.</p><a class="guide-text-link" href="/products/the-vol-surface-construction-playbook-svi-ssvi-static-arbitrage-and-du.html">Explore this resource <span aria-hidden="true">&rarr;</span></a></article>
+            <article><h3><a href="/products/numerical-methods-for-quants.html">Numerical Methods for Quants: The Master Field Manual</a></h3><p>Deepen calibration, interpolation, PDE, Monte Carlo, convergence, and numerical validation techniques.</p><a class="guide-text-link" href="/products/numerical-methods-for-quants.html">Explore this resource <span aria-hidden="true">&rarr;</span></a></article>
+            <article><h3><a href="/products/stochastic-calculus-for-quants.html">Stochastic Calculus for Quants: Interview Playbook</a></h3><p>Connect local-volatility dynamics and risk-neutral pricing back to stochastic calculus.</p><a class="guide-text-link" href="/products/stochastic-calculus-for-quants.html">Explore this resource <span aria-hidden="true">&rarr;</span></a></article>
+          </div>
+        </section>
+
+        <section class="guide-section" aria-labelledby="related-title">
+          <p class="guide-section-kicker">Keep building</p>
+          <h2 id="related-title">Related quant finance guides</h2>
+          <div class="guide-related-grid">
+            <a href="/guides/numerical-methods-quant-finance.html"><span>Computational quantitative finance</span><strong>Numerical Methods for Quants: PDE, Monte Carlo, Calibration and Error Control</strong><small>Numerical methods for quants: root finding, interpolation, PDE option pricing, Monte Carlo, calibration, convergence, error control, and production checks.</small></a>
+            <a href="/guides/stochastic-calculus-interview.html"><span>Pricing mathematics</span><strong>Stochastic Calculus for Quants: Interview Guide and Questions</strong><small>Stochastic calculus for quants: Brownian motion, Ito calculus, SDEs, martingales, risk-neutral pricing, Feynman-Kac, simulation, and interview questions.</small></a>
+            <a href="/guides/model-validation-interview.html"><span>Independent model challenge</span><strong>Model Validation Quant Interview Questions and Case Studies</strong><small>Prepare model validation quant interview questions and case studies on conceptual soundness, data, implementation, benchmarking, performance, findings, and governance.</small></a>
+          </div>
+        </section>
+
+        <section class="guide-section guide-faq" id="faq">
+          <p class="guide-section-kicker">Common questions</p>
+          <h2>Frequently asked questions</h2>
+          <details><summary>What is SVI in volatility modeling?</summary><p>SVI is a five-parameter representation of total implied variance as a function of log-forward moneyness for an expiry. It is flexible enough to capture skew and curvature while supporting analytical arbitrage diagnostics.</p></details>
+          <details><summary>What is SSVI?</summary><p>SSVI extends the SVI idea into a structured maturity-dependent surface. With suitable parameter restrictions, it can provide a compact and more controllable arbitrage-aware representation across expiries.</p></details>
+          <details><summary>What is static arbitrage in a volatility surface?</summary><p>Static arbitrage includes violations such as negative butterfly spreads within a maturity or calendar-spread inconsistencies across maturities. These correspond to impossible option-price relationships and can imply negative densities.</p></details>
+          <details><summary>How is Dupire local volatility related to implied volatility?</summary><p>Dupire derives a local diffusion coefficient from derivatives of the full arbitrage-consistent option-price or implied-variance surface. It is not simply the implied volatility evaluated at the same strike and maturity.</p></details>
+        </section>
+
+        <aside class="guide-next-step">
+          <div><p class="guide-section-kicker">Practise under pressure</p><h2>Turn the framework into a live answer</h2><p>Use the free AI interview practice tool, then review your assumptions, structure, checks, and conclusion.</p></div>
+          <a href="/interview.html">Start an AI interview</a>
+        </aside>
+      </div>
+    </div>
+  </article>
+</main>
+<footer class="guide-footer">
+  <div class="guide-footer__inner">
+    <div>
+      <a class="guide-brand guide-brand--footer" href="/">Desk2Quant</a>
+      <p>Practitioner-built preparation for quantitative finance interviews and desk work.</p>
+    </div>
+    <nav aria-label="Footer navigation">
+      <a href="/guides/">All guides</a>
+      <a href="/products/">All resources</a>
+      <a href="/faq.html">FAQ</a>
+      <a href="/privacy.html">Privacy</a>
+      <a href="/terms.html">Terms</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>
