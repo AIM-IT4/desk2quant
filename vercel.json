@@ -18,6 +18,18 @@
   ],
   "redirects": [
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "id",
+          "value": "(?<productId>[0-9a-fA-F-]{36})"
+        }
+      ],
+      "destination": "/product.html?id=:productId",
+      "permanent": false
+    },
+    {
       "source": "/api/reminders.js",
       "destination": "/api/reminders",
       "permanent": false
@@ -66,7 +78,11 @@
         {
           "type": "host",
           "value": {
-            "inc": ["www.desk2quant.com", "desk2quant.vercel.app", "quant-mentor.vercel.app"]
+            "inc": [
+              "www.desk2quant.com",
+              "desk2quant.vercel.app",
+              "quant-mentor.vercel.app"
+            ]
           }
         }
       ],
@@ -79,7 +95,11 @@
         {
           "type": "host",
           "value": {
-            "inc": ["www.desk2quant.com", "desk2quant.vercel.app", "quant-mentor.vercel.app"]
+            "inc": [
+              "www.desk2quant.com",
+              "desk2quant.vercel.app",
+              "quant-mentor.vercel.app"
+            ]
           }
         }
       ],
@@ -92,7 +112,11 @@
         {
           "type": "host",
           "value": {
-            "inc": ["www.desk2quant.com", "desk2quant.vercel.app", "quant-mentor.vercel.app"]
+            "inc": [
+              "www.desk2quant.com",
+              "desk2quant.vercel.app",
+              "quant-mentor.vercel.app"
+            ]
           }
         }
       ],
@@ -105,7 +129,11 @@
         {
           "type": "host",
           "value": {
-            "inc": ["www.desk2quant.com", "desk2quant.vercel.app", "quant-mentor.vercel.app"]
+            "inc": [
+              "www.desk2quant.com",
+              "desk2quant.vercel.app",
+              "quant-mentor.vercel.app"
+            ]
           }
         }
       ],
@@ -118,7 +146,11 @@
         {
           "type": "host",
           "value": {
-            "inc": ["www.desk2quant.com", "desk2quant.vercel.app", "quant-mentor.vercel.app"]
+            "inc": [
+              "www.desk2quant.com",
+              "desk2quant.vercel.app",
+              "quant-mentor.vercel.app"
+            ]
           }
         }
       ],
@@ -131,7 +163,11 @@
         {
           "type": "host",
           "value": {
-            "inc": ["www.desk2quant.com", "desk2quant.vercel.app", "quant-mentor.vercel.app"]
+            "inc": [
+              "www.desk2quant.com",
+              "desk2quant.vercel.app",
+              "quant-mentor.vercel.app"
+            ]
           }
         }
       ],
@@ -144,7 +180,11 @@
         {
           "type": "host",
           "value": {
-            "inc": ["www.desk2quant.com", "desk2quant.vercel.app", "quant-mentor.vercel.app"]
+            "inc": [
+              "www.desk2quant.com",
+              "desk2quant.vercel.app",
+              "quant-mentor.vercel.app"
+            ]
           }
         }
       ],
@@ -157,7 +197,11 @@
         {
           "type": "host",
           "value": {
-            "inc": ["www.desk2quant.com", "desk2quant.vercel.app", "quant-mentor.vercel.app"]
+            "inc": [
+              "www.desk2quant.com",
+              "desk2quant.vercel.app",
+              "quant-mentor.vercel.app"
+            ]
           }
         }
       ],
