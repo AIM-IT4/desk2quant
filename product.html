@@ -1012,31 +1012,9 @@
                 return;
             }
 
-            // Initialize Supabase immediately for product page
-            if (window.supabaseClient) {
-                await loadProduct(productId);
-            } else if (window.supabase && typeof window.supabase.createClient === 'function') {
-                const SUPABASE_URL = 'https://dntabmyurlrlnoajdnja.supabase.co';
-                const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRudGFibXl1cmxybG5vYWpkbmphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMDEyNjUsImV4cCI6MjA4NTY3NzI2NX0.PYpNd_t_px09zi2d5WGjFVOB23sjb3ZPuAnxagYshe0'; // Correct API Key
-                window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                await loadProduct(productId);
-            } else {
-                // If the SDK script hasn't downloaded yet, retry briefly
-                let attempts = 0;
-                const checkSupabase = setInterval(async () => {
-                    attempts++;
-                    if (window.supabase && typeof window.supabase.createClient === 'function') {
-                        clearInterval(checkSupabase);
-                        const SUPABASE_URL = 'https://dntabmyurlrlnoajdnja.supabase.co';
-                        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRudGFibXl1cmxybG5vYWpkbmphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMDEyNjUsImV4cCI6MjA4NTY3NzI2NX0.PYpNd_t_px09zi2d5WGjFVOB23sjb3ZPuAnxagYshe0';
-                        window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                        await loadProduct(productId);
-                    } else if (attempts > 20) { // Max 2 seconds (20 * 100ms)
-                        clearInterval(checkSupabase);
-                        alert('Failed to load database. Please reload the page.');
-                    }
-                }, 100);
-            }
+            // Product details now come from Desk2Quant's same-origin API.
+            // Do not gate rendering on the optional Supabase browser SDK.
+            await loadProduct(productId);
         });
 
         // Strip HTML tags and collapse whitespace for use in meta/description contexts
