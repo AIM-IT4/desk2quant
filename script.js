@@ -339,17 +339,18 @@ document.addEventListener('DOMContentLoaded', function () {
     if (typeof loadSessionsFromSupabase === 'function') loadSessionsFromSupabase();
     if (typeof loadBlogsFromSupabase === 'function') loadBlogsFromSupabase();
 
-    // --- Auto-open product modal if ?id= present ---
+    // --- Legacy/deep product links: send ?id= URLs to the standalone product page ---
+    // Older emails and shared links used https://desk2quant.com/?id=<uuid>, which
+    // previously auto-opened the homepage modal. The standalone product page is
+    // now the canonical checkout surface, so preserve those existing links by
+    // redirecting them rather than opening the modal.
     const urlParams = new URLSearchParams(window.location.search);
     const productIdCode = urlParams.get('id');
     if (productIdCode) {
-        setTimeout(() => {
-            if (typeof window.openProductModal === 'function') {
-                window.openProductModal(productIdCode);
-            }
-        }, 300); // Small delay to ensure UI is ready
+        window.location.replace('/product.html?id=' + encodeURIComponent(productIdCode));
+        return;
     }
-    // -------------------------------------
+    // ---------------------------------------------------------------------------
 
     // --------------------------------
     // Mobile Navigation
