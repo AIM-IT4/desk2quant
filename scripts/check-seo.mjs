@@ -1,5 +1,7 @@
 // Production technical-SEO smoke test. It intentionally checks only owned
 // URLs and never scrapes Google results or depends on Search Console secrets.
+import { assertHomepageHeading } from './seo-homepage-check.mjs';
+
 const CANONICAL_ORIGIN = 'https://desk2quant.com';
 const LEGACY_HOSTS = ['desk2quant.vercel.app', 'quant-mentor.vercel.app'];
 const PERMANENT_REDIRECTS = new Set([301, 307, 308]);
@@ -118,7 +120,7 @@ await check('canonical homepage is indexable and self-canonical', async () => {
     invariant(new URL(response.url).href === `${CANONICAL_ORIGIN}/`, `unexpected response URL ${response.url}`);
     const html = await response.text();
     invariant(/<title\b[^>]*>[\s\S]*Desk2Quant[\s\S]*<\/title>/i.test(html), 'homepage title is missing Desk2Quant');
-    invariant(/<h1\b[^>]*>[\s\S]*Build Quant Skills That Survive the[\s\S]*Interview and the Desk[\s\S]*<\/h1>/i.test(html), 'homepage H1 is missing the primary quant interview topic');
+    assertHomepageHeading(html);
     invariant(!/Desk2Quant\.in\b/i.test(html), 'homepage still contains the Desk2Quant.in label');
     const canonical = canonicalFrom(html);
     invariant(canonical === `${CANONICAL_ORIGIN}/`, `expected homepage canonical ${CANONICAL_ORIGIN}/, received ${canonical ?? 'none'}`);
