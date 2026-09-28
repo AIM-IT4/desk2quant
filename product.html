@@ -1105,14 +1105,14 @@
                 // no matter what was entered in admin. They need column-level SELECT
                 // granted to anon -- without it PostgREST fails the whole query, not
                 // just the column, and the page would hit showError().
-                const { data: product, error } = await window.supabaseClient
-                    .from('products')
-                    .select('id,name,description,cover_image_url,price,original_price,created_at,coupon_code,discount_percentage,enable_ppp,preview_summary,preview_table_of_contents,preview_target_audience,preview_prerequisites,preview_expected_outcomes,preview_sample_text,preview_sample_images')
-                    .eq('id', id)
-                    .single();
+                const productResp = await fetch('/api/products?id=' + encodeURIComponent(id), {
+                    headers: { 'Accept': 'application/json' }
+                });
+                const productPayload = productResp.ok ? await productResp.json() : null;
+                const product = productPayload && productPayload.product ? productPayload.product : null;
 
-                if (error || !product) {
-                    console.error('Product load error:', error);
+                if (!product) {
+                    console.error('Product load error:', productPayload || productResp.status);
                     showError();
                     return;
                 }
