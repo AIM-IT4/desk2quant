@@ -48,6 +48,35 @@ export default async function handler(req, res) {
     const SUPABASE_KEY = getServiceKey();
 
     try {
+        // Product detail page: serve one product through the same-origin backend so
+        // mobile browsers never depend on the Supabase browser SDK/RLS path.
+        if (req.method === 'GET' && req.query?.id) {
+            const id = String(req.query.id).trim();
+            const detailResponse = await fetch(
+                `${SUPABASE_URL}/rest/v1/products?id=eq.${encodeURIComponent(id)}&select=id,name,description,cover_image_url,price,original_price,created_at,coupon_code,discount_percentage,enable_ppp,preview_summary,preview_table_of_contents,preview_target_audience,preview_prerequisites,preview_expected_outcomes,preview_sample_text,preview_sample_images`,
+                {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            if (!detailResponse.ok) {
+                const errText = await detailResponse.text();
+                console.error('Supabase product detail error:', detailResponse.status, errText);
+                return res.status(detailResponse.status).json({ error: 'Failed to fetch product' });
+            }
+
+            const rows = await detailResponse.json();
+            const product = Array.isArray(rows) ? rows[0] : null;
+            if (!product) return res.status(404).json({ error: 'Product not found' });
+
+            res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+            return res.status(200).json({ product });
+        }
+
         // Use fetch (same pattern as razorpay-webhook.js and reminders.js)
         const response = await fetch(
             `${SUPABASE_URL}/rest/v1/products?select=id,name,description,price,cover_image_url,file_url,created_at&order=created_at.desc`,
