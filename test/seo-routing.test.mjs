@@ -87,6 +87,25 @@ function matchesHost(rule, hostname) {
     });
 }
 
+function queryCapturesFor(rule, requestUrl) {
+    const captures = {};
+
+    for (const condition of rule.has ?? []) {
+        if (condition.type !== 'query') continue;
+
+        const value = requestUrl.searchParams.get(condition.key);
+        if (value === null) return null;
+        if (condition.value === undefined) continue;
+
+        assert.equal(typeof condition.value, 'string', 'Query matcher expects a string pattern');
+        const match = new RegExp(`^(?:${condition.value})$`).exec(value);
+        if (!match) return null;
+        Object.assign(captures, match.groups ?? {});
+    }
+
+    return captures;
+}
+
 function firstRedirectFor(hostname, requestTarget) {
     const requestUrl = new URL(requestTarget, `https://${hostname}`);
 
@@ -97,7 +116,13 @@ function firstRedirectFor(hostname, requestTarget) {
         const match = regex.exec(requestUrl.pathname);
         if (!match) continue;
 
-        const captures = Object.fromEntries(names.map((name, captureIndex) => [name, match[captureIndex + 1]]));
+        const queryCaptures = queryCapturesFor(rule, requestUrl);
+        if (queryCaptures === null) continue;
+
+        const captures = {
+            ...Object.fromEntries(names.map((name, captureIndex) => [name, match[captureIndex + 1]])),
+            ...queryCaptures
+        };
         const destination = rule.destination.replace(
             /:([A-Za-z0-9_]+)[+*?]?/g,
             (_, name) => captures[name] ?? ''
@@ -162,4 +187,42 @@ test('canonical /index.html normalization remains permanent and same-host', () =
     assert.ok(result, 'Expected /index.html to normalize to the root URL');
     assert.equal(result.rule.permanent, true);
     assert.equal(result.location.href, 'https://desk2quant.com/');
+});
+
+test('legacy product links redirect with the captured product id', () => {
+    const productIds = [
+        '12345678-1234-1234-1234-123456789abc',
+        'ABCDEF12-3456-7890-ABCD-EF1234567890'
+    ];
+
+    for (const hostname of ['desk2quant.com', ...NONCANONICAL_HOSTS]) {
+        for (const productId of productIds) {
+            const result = firstRedirectFor(hostname, `/?id=${productId}`);
+            assert.ok(result, `Expected a product redirect for ${hostname} and ${productId}`);
+            assert.equal(result.rule.permanent, false);
+            assert.equal(result.location.href, `https://${hostname}/product.html?id=${productId}`);
+        }
+    }
+});
+
+test('missing or malformed product ids do not trigger the legacy product redirect', () => {
+    const cases = [
+        '/',
+        '/?coupon=TEST',
+        '/?id=',
+        '/?id=not-a-product-id',
+        '/?id=12345678-1234-1234-1234-123456789abc-extra',
+        '/?id=extra-12345678-1234-1234-1234-123456789abc'
+    ];
+
+    for (const requestTarget of cases) {
+        assert.equal(firstRedirectFor('desk2quant.com', requestTarget), null, requestTarget);
+
+        for (const hostname of NONCANONICAL_HOSTS) {
+            const result = firstRedirectFor(hostname, requestTarget);
+            assert.ok(result, `Expected canonical normalization for ${hostname}${requestTarget}`);
+            assert.equal(result.rule.permanent, true);
+            assert.equal(result.location.href, expectedCanonical(requestTarget).href);
+        }
+    }
 });
