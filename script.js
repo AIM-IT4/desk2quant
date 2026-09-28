@@ -339,18 +339,16 @@ document.addEventListener('DOMContentLoaded', function () {
     if (typeof loadSessionsFromSupabase === 'function') loadSessionsFromSupabase();
     if (typeof loadBlogsFromSupabase === 'function') loadBlogsFromSupabase();
 
-    // --- Legacy/deep product links: send ?id= URLs to the standalone product page ---
-    // Older emails and shared links used https://desk2quant.com/?id=<uuid>, which
-    // previously auto-opened the homepage modal. The standalone product page is
-    // now the canonical checkout surface, so preserve those existing links by
-    // redirecting them rather than opening the modal.
+    // Legacy ?id= homepage links are redirected at the Vercel edge.
+    // Keep a client-side fallback ONLY on the homepage; never redirect
+    // product.html to itself, which would cause an infinite reload loop.
     const urlParams = new URLSearchParams(window.location.search);
     const productIdCode = urlParams.get('id');
-    if (productIdCode) {
+    const isHomepagePath = window.location.pathname === '/' || window.location.pathname === '/index.html';
+    if (productIdCode && isHomepagePath) {
         window.location.replace('/product.html?id=' + encodeURIComponent(productIdCode));
         return;
     }
-    // ---------------------------------------------------------------------------
 
     // --------------------------------
     // Mobile Navigation
