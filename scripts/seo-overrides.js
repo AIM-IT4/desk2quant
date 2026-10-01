@@ -18,6 +18,10 @@ module.exports = {
     }
   },
   blogs: {
+    'backtesting-var-traffic-light-zones-kupiec-christoffersen': {
+      title: 'VaR Backtesting: Traffic Lights & Kupiec Test',
+      description: 'How VaR backtesting really works: Basel traffic-light zones, FRTB desk limits, Kupiec and Christoffersen tests, and what 4,919 days of real data revealed.'
+    },
     'xva-in-plain-english-why-banks-price-counterparty-risk': {
       title: 'XVA Explained: CVA, DVA, FVA, MVA, KVA',
       description: 'What is XVA? How banks price counterparty credit risk, funding, margin and capital into derivatives, with CVA, DVA, FVA, MVA and KVA explained simply.'
