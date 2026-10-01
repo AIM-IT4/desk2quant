@@ -4840,8 +4840,9 @@ window.sendTestimonialRequestEmail = sendTestimonialRequestEmail;
         let convertedOrig = null;
         let convertedDisc = null;
         try {
-            const pppOrig = await convertPrice(originalInr, userCountryCode, true);
-            const pppDisc = await convertPrice(discountedInr, userCountryCode, true);
+            const launchPpp = newest.enable_ppp !== false; // same flag the checkout uses
+            const pppOrig = await convertPrice(originalInr, userCountryCode, launchPpp);
+            const pppDisc = await convertPrice(discountedInr, userCountryCode, launchPpp);
             if (pppOrig && pppOrig.currency.code !== 'INR') {
                 convertedOrig = { amount: pppOrig.amount, currency: pppOrig.currency };
                 convertedDisc = { amount: pppDisc.amount, currency: pppDisc.currency };
@@ -5494,14 +5495,14 @@ async function renderCartDrawer() {
             bumpContainer.innerHTML = '';
         } else {
             const isBumpInCart = cart.some(item => item.id === bumpProduct.id);
-            const localBump = await convertPrice(bumpProduct.price, window.userCountryCode, false);
+            const localBump = await convertPrice(bumpProduct.price, window.userCountryCode, !!bumpProduct.enablePpp);
             const isLocalBump = localBump.currency.code !== 'INR';
             const displayBumpPrice = isLocalBump ? formatPrice(localBump) : '₹' + bumpProduct.price;
             const encodedProduct = encodeURIComponent(JSON.stringify({
                 id: bumpProduct.id,
                 name: bumpProduct.name,
                 price: bumpProduct.price,
-                enable_ppp: false
+                enable_ppp: !!bumpProduct.enablePpp
             }));
 
             bumpContainer.innerHTML = `
@@ -5549,7 +5550,7 @@ function getSmartCartOrderBump(cart) {
             save: 'SAVE 60%',
             title: 'Add Quant ATS Resume & Cover Letter Pack',
             desc: 'LaTeX + DOCX templates tested for Citadel, Jane Street & Tier-1 banks.',
-            enablePpp: false,
+            enablePpp: true, // matches products.enable_ppp: the server charges PPP on these, so the UI must show it
             score: (cartText.includes('python') || cartText.includes('c++') || cartText.includes('model') || cartText.includes('stochastic') || cartText.includes('derivatives') || cartText.includes('greek')) ? 15 : 6
         },
         {
@@ -5561,7 +5562,7 @@ function getSmartCartOrderBump(cart) {
             save: 'SAVE 50%',
             title: 'Add Common Mistakes in Quant Interviews',
             desc: 'How candidates fail technical rounds & how to fix your answers on the spot.',
-            enablePpp: false,
+            enablePpp: true, // matches products.enable_ppp: the server charges PPP on these, so the UI must show it
             score: (cartText.includes('resume') || cartText.includes('interview') || cartText.includes('cheatcode')) ? 18 : 5
         },
         {
@@ -5573,7 +5574,7 @@ function getSmartCartOrderBump(cart) {
             save: 'SAVE 55%',
             title: 'Add Greek Explainer Lab: Production Edition',
             desc: 'Master Delta, Gamma, Vega, Vanna, Volga & P&L explain with visual intuition.',
-            enablePpp: false,
+            enablePpp: true, // matches products.enable_ppp: the server charges PPP on these, so the UI must show it
             score: (cartText.includes('fixed income') || cartText.includes('rate') || cartText.includes('option') || cartText.includes('fx') || cartText.includes('pricing')) ? 16 : 4
         },
         {
@@ -5585,7 +5586,7 @@ function getSmartCartOrderBump(cart) {
             save: 'SAVE 58%',
             title: 'Add 1000+ Quant Interview Problem Book',
             desc: 'Probability, brainteasers, calculus & coding problems with step-by-step solutions.',
-            enablePpp: false,
+            enablePpp: true, // matches products.enable_ppp: the server charges PPP on these, so the UI must show it
             score: (cartText.includes('math') || cartText.includes('beginner') || cartText.includes('calculus') || cartText.includes('linear algebra')) ? 14 : 3
         }
     ];

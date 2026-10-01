@@ -73,3 +73,10 @@ test('server enforces PPP for INR orders from outside India (fail-open when coun
     const usd = await getExpectedProductOrder('p', 'USD', '', 'US');
     assert.ok(Math.abs(usd.amountMajor - 1000 * RATES.USD * STRONG) < 1e-6);
 });
+
+test('cart order-bump offers show PPP like the server charges it', async () => {
+    const src = await fs.readFile('script.js', 'utf8');
+    const catalog = src.slice(src.indexOf('function getSmartCartOrderBump'));
+    assert.ok(!/enablePpp: false/.test(catalog), 'bump offers must not hard-code PPP off: the server applies PPP to them');
+    assert.ok(/convertPrice\(bumpProduct\.price, window\.userCountryCode, !!bumpProduct\.enablePpp\)/.test(src));
+});
