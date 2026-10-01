@@ -375,8 +375,9 @@ function clampText(value, max) {
 function renderBlogPage(blog, slug) {
   const url = `${SITE}/blog/${slug}.html`;
   const headline = plainText(blog.title) || 'Desk2Quant quant finance article';
-  const title = seoTitle(headline);
-  const description = metaDescription(plainText(blog.excerpt || blog.content), 158) ||
+  const ov = (require('./seo-overrides.js').blogs || {})[slug] || {};
+  const title = ov.title ? seoTitle(ov.title) : seoTitle(headline);
+  const description = ov.description || metaDescription(plainText(blog.excerpt || blog.content), 158) ||
     'A practitioner-written quantitative finance article from Desk2Quant.';
   const image = safeUrl(blog.cover_image_url || '', { image: true, absolute: true }) ||
     `${SITE}/assets/images/desk2quant-editorial-og.jpg`;

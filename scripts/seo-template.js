@@ -35,8 +35,9 @@ function renderPage(p, slug, related, reviews) {
   // places where Google compares strings for consistency. Normalised once here
   // rather than at each use, so a new use site cannot reintroduce it.
   const name = String(p.name ?? '').replace(/\s+/g, ' ').trim();
-  const title = seoTitle(name);
-  const desc = metaDescription(p.description, 158) ||
+  const ov = (require('./seo-overrides.js').products || {})[slug] || {};
+  const title = ov.title ? seoTitle(ov.title) : seoTitle(name);
+  const desc = ov.description || metaDescription(p.description, 158) ||
     'Practitioner-built quantitative finance resource from Desk2Quant.';
   const img = getProductSeoImage(p);
   const price = Number(p.price) || 0;
