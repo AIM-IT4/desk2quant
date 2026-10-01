@@ -400,6 +400,8 @@ async function processRecommendationQueue({ SUPABASE_URL, SUPABASE_KEY, BREVO_AP
             purchasedProductName: row.purchased_product,
             trigger: row.trigger_type,
             couponCode: row.coupon_code,
+            discountPercent: row.discount_percent,
+            targetProductId: row.target_product_id,
             SUPABASE_URL, SUPABASE_KEY, BREVO_API_KEY, SENDER_EMAIL, SENDER_NAME
         });
 
