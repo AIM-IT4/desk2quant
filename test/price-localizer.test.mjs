@@ -43,3 +43,17 @@ test('localizer root selectors still match the bundle landing markup', async () 
     }
     assert.ok((await fs.readFile('product.html', 'utf8')).includes('id="p-desc" data-localize-inr'));
 });
+
+test('homepage flagship + role-path sections are localized', async () => {
+    const cfg = await fs.readFile('site-config.js', 'utf8');
+    assert.ok(/section\.id = 'flagship-bundle';\s*\n\s*section\.setAttribute\('data-localize-inr'/.test(cfg), 'flagship section must opt in to localization');
+    assert.ok(/roleSection\.id = 'role-paths';\s*\n\s*roleSection\.setAttribute\('data-localize-inr'/.test(cfg), 'role-path section must opt in to localization');
+});
+
+test('the bundle copy guard never overwrites the coupon price with the full price', async () => {
+    const ui = await fs.readFile('ui-components.js', 'utf8');
+    // legacy "7,999 -> live price" rewrite must skip the coupon line...
+    assert.ok(ui.includes("replaceText(root, '₹7,999', formatted, '.flagship-coupon')"));
+    // ...and the coupon line is derived from the live price (20% off), not hard-coded
+    assert.ok(ui.includes('formatInr(price * 0.8)'));
+});

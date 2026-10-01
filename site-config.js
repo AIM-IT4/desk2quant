@@ -592,6 +592,7 @@ if (typeof document !== 'undefined') {
                 const section = document.createElement('section');
                 section.className = 'flagship-offer';
                 section.id = 'flagship-bundle';
+                section.setAttribute('data-localize-inr', ''); // PPP-adjusted local prices (price-localizer.js)
                 section.setAttribute('aria-labelledby', 'flagship-bundle-heading');
                 section.innerHTML = `
                     <div class="section-container">
@@ -636,6 +637,7 @@ if (typeof document !== 'undefined') {
                 const roleSection = document.createElement('section');
                 roleSection.className = 'role-paths-section';
                 roleSection.id = 'role-paths';
+                roleSection.setAttribute('data-localize-inr', '');
                 roleSection.setAttribute('aria-labelledby', 'role-paths-heading');
                 roleSection.innerHTML = `
                     <div class="section-container">

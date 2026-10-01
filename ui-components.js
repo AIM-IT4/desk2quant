@@ -337,12 +337,16 @@
         return `₹${Math.round(Number.isFinite(amount) ? amount : FALLBACK_PRICE).toLocaleString('en-IN')}`;
     }
 
-    function replaceText(root, from, to) {
+    // `skipSelector` lets a replacement leave deliberate prices alone: the coupon
+    // line legitimately shows the DISCOUNTED price ("about 7,999"), which this
+    // guard used to overwrite with the full bundle price.
+    function replaceText(root, from, to, skipSelector) {
         if (!root) return;
         const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
         const nodes = [];
         while (walker.nextNode()) nodes.push(walker.currentNode);
         nodes.forEach(function (node) {
+            if (skipSelector && node.parentElement && node.parentElement.closest(skipSelector)) return;
             if (node.nodeValue && node.nodeValue.includes(from)) {
                 node.nodeValue = node.nodeValue.split(from).join(to);
             }
@@ -357,8 +361,8 @@
         ].filter(Boolean);
 
         homeRoots.forEach(function (root) {
-            replaceText(root, '₹7,999', formatted);
-            replaceText(root, '₹8,999', formatted);
+            replaceText(root, '₹7,999', formatted, '.flagship-coupon');
+            replaceText(root, '₹8,999', formatted, '.flagship-coupon');
             replaceText(root, '41+ high-quality PDFs', '71 PDFs');
             replaceText(root, '46+ high-quality PDFs', '71 PDFs');
             replaceText(root, '41+ PDFs', '71 PDFs');
@@ -370,6 +374,15 @@
 
         const flagship = document.getElementById('flagship-bundle');
         if (flagship) {
+            // COMBINED20 = 20% off the live bundle price (never the full price).
+            const discounted = formatInr(price * 0.8);
+            flagship.querySelectorAll('.flagship-coupon').forEach(function (el) {
+                const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+                while (w.nextNode()) {
+                    const n = w.currentNode;
+                    if (/about \u20B9[0-9,]+/.test(n.nodeValue)) n.nodeValue = n.nodeValue.replace(/about \u20B9[0-9,]+/, 'about ' + discounted);
+                }
+            });
             const grid = flagship.querySelector('.flagship-grid');
             if (grid && !grid.querySelector('[data-d2q-notebooks]')) {
                 const item = document.createElement('div');
