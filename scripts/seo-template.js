@@ -168,7 +168,7 @@ function renderPage(p, slug, related, reviews) {
 
   <article>
     <h1>${esc(name)}</h1>
-    <p class="seo-price"><strong>&#8377;${esc(price)}</strong></p>
+    <p class="seo-price"><strong data-price-inr="${esc(price)}" data-ppp="${p.enable_ppp === false ? 'false' : 'true'}">&#8377;${esc(price)}</strong></p>
 
     ${p.coupon_code ? `<p class="seo-coupon"><strong>Use coupon code ${esc(p.coupon_code)} at checkout for ${esc(p.discount_percentage || 10)}% off.</strong></p>` : ''}
 
@@ -205,6 +205,7 @@ ${faqItems.map(item => `      <h3>${esc(item.question)}</h3>\n      <p>${esc(ite
   </article>
 </main>
 ${FOOTER_HTML}
+<script src="/price-localizer.js?v=1" defer></script>
 </body>
 </html>
 `;

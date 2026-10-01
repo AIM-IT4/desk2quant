@@ -107,7 +107,7 @@ async function fetchProducts() {
   // and discount_percentage are public (granted for PPP display) so the pages
   // can advertise each product's real code.
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/products?select=id,name,description,price,original_price,cover_image_url,coupon_code,discount_percentage,created_at&order=created_at.desc`,
+    `${SUPABASE_URL}/rest/v1/products?select=id,name,description,price,original_price,cover_image_url,coupon_code,discount_percentage,enable_ppp,created_at&order=created_at.desc`,
     { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
   );
   if (!res.ok) throw new Error(`Supabase ${res.status}`);
