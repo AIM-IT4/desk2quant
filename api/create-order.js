@@ -42,15 +42,19 @@ export default async function handler(req, res) {
         const { currency = 'INR', notes = {} } = req.body || {};
         const type = notes.type;
 
+        // Country Vercel resolved from the request IP (clients cannot set this
+        // header on Vercel). Used to apply PPP even when INR is requested.
+        const geoCountry = req.headers['x-vercel-ip-country'];
+
         let expected;
         if (type === 'product') {
-            expected = await getExpectedProductOrder(notes.product_id, currency, notes.coupon_code);
+            expected = await getExpectedProductOrder(notes.product_id, currency, notes.coupon_code, geoCountry);
         } else if (type === 'session') {
-            expected = await getExpectedSessionOrder(notes.session_id, currency, notes.coupon_code);
+            expected = await getExpectedSessionOrder(notes.session_id, currency, notes.coupon_code, geoCountry);
         } else if (type === 'cart') {
             // items are passed outside `notes` (req.body.items) to avoid Razorpay's
             // notes value-size limits; notes only carries the coupon + a summary.
-            expected = await getExpectedCartOrder(req.body?.items, currency, notes.coupon_code);
+            expected = await getExpectedCartOrder(req.body?.items, currency, notes.coupon_code, geoCountry);
         } else {
             return res.status(400).json({ error: 'notes.type must be "product", "session", or "cart", with matching id/items fields' });
         }

@@ -41,5 +41,35 @@ test('browser code uses the same multipliers as the server', async () => {
         assert.ok(!/isWeaker ? 1\.2 : 1\.5/.test(src), `${f} still has the old multipliers`);
     }
     const server = await fs.readFile('lib/pricing.js', 'utf8');
-    assert.ok(server.includes(`WEAK_CURRENCIES.has(code) ? ${WEAK} : ${STRONG}`));
+    assert.ok(server.includes(`const PPP_STRONG = ${STRONG};`));
+    assert.ok(server.includes(`const PPP_WEAK = ${WEAK};`));
+});
+
+test('server enforces PPP for INR orders from outside India (fail-open when country unknown)', async () => {
+    const { geoPppFactor, getExpectedProductOrder, getExpectedSessionOrder } = await import('../lib/pricing.js');
+    // factor helper
+    assert.equal(geoPppFactor('US', true), STRONG);
+    assert.equal(geoPppFactor('gb', true), STRONG);
+    assert.equal(geoPppFactor('PK', true), WEAK);
+    assert.equal(geoPppFactor('BR', true), WEAK);
+    assert.equal(geoPppFactor('IN', true), 1, 'India is never uplifted');
+    assert.equal(geoPppFactor('US', false), 1, 'PPP off means no uplift');
+    for (const bad of [undefined, null, '', 'XX', 'T1', 'USA', '1', 'U']) {
+        assert.equal(geoPppFactor(bad, true), 1, `unknown country ${JSON.stringify(bad)} must fail open`);
+    }
+    // product orders (price 1000, no coupon)
+    const us = await getExpectedProductOrder('p', 'INR', '', 'US');
+    assert.equal(us.amountMajor, 1000 * STRONG);
+    assert.equal(us.amountInr, 1000, 'amountInr (tamper-check floor) stays the base price');
+    const pk = await getExpectedProductOrder('p', 'INR', '', 'PK');
+    assert.equal(pk.amountMajor, 1000 * WEAK);
+    const india = await getExpectedProductOrder('p', 'INR', '', 'IN');
+    assert.equal(india.amountMajor, 1000);
+    const unknown = await getExpectedProductOrder('p', 'INR', '', undefined);
+    assert.equal(unknown.amountMajor, 1000);
+    const nonPpp = await getExpectedProductOrder('nop', 'INR', '', 'US');
+    assert.equal(nonPpp.amountMajor, 1000, 'non-PPP products are never uplifted');
+    // foreign-currency orders are unchanged by geo (already uplifted)
+    const usd = await getExpectedProductOrder('p', 'USD', '', 'US');
+    assert.ok(Math.abs(usd.amountMajor - 1000 * RATES.USD * STRONG) < 1e-6);
 });
