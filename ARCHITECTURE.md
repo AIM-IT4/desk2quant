@@ -143,6 +143,6 @@ Grant paths (both idempotent):
 
 ## Constraints
 
-- Vercel Hobby: max 12 serverless functions (currently exactly 12; archive/ holds retired ones)
+- Vercel Hobby: max 12 serverless functions (currently exactly 12; retired ones were removed; see git history)
 - Cheatcode product: dead Drive file ID in Supabase — pending new link
 ```

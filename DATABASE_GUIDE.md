@@ -4,7 +4,7 @@ This project uses a version-controlled migration system to manage Supabase datab
 
 ## Directory Structure
 - `supabase/migrations/`: Contains chronological `.sql` files representing the database schema.
-- `archive/sql/`: Contains legacy SQL scripts for reference.
+- `supabase/migrations/`: the current schema and RLS migrations. Older ad-hoc setup SQL was removed; see git history if needed.
 
 ## Current Migration Status
 
