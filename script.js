@@ -1683,8 +1683,8 @@ async function convertPrice(inrPrice, countryCode, enablePPP = false) {
     let convertedAmount = inrPrice * rate;
 
     // PPP Adjustment: applies ONLY when PPP pricing is explicitly enabled for
-    // this product. Strong currencies get a 1.5x multiplier (developed
-    // markets); weaker economies get a gentler 1.2x instead of being
+    // this product. Strong currencies get a 1.6x multiplier (developed
+    // markets); weaker economies get a gentler 1.3x instead of being
     // excluded entirely.
     const weakersCurrencies = [
         'PKR', 'BDT', 'LKR', 'NPR', // South Asia
@@ -1698,7 +1698,7 @@ async function convertPrice(inrPrice, countryCode, enablePPP = false) {
     let isWeaker = weakersCurrencies.includes(currency.code);
 
     if (enablePPP && currency.code !== 'INR') {
-        convertedAmount = convertedAmount * (isWeaker ? 1.2 : 1.5);
+        convertedAmount = convertedAmount * (isWeaker ? 1.3 : 1.6);
         pppApplied = true;
     }
 
@@ -2195,7 +2195,7 @@ async function displaySupabaseProducts(products) {
                     let convertedOriginal = product.original_price * rate;
 
                     if (product.enable_ppp) {
-                        convertedOriginal = convertedOriginal * (localPrice.isWeaker ? 1.2 : 1.5);
+                        convertedOriginal = convertedOriginal * (localPrice.isWeaker ? 1.3 : 1.6);
                     }
 
                     const originalObj = {
