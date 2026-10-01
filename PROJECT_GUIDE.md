@@ -7,7 +7,7 @@ This document gives a practical, end-to-end map of the codebase so new contribut
 Desk2Quant is a static-first website that combines:
 - Mentorship session discovery + booking
 - Digital product purchases
-- AI mock interview feature
+- Product advisor chat on the homepage
 - Admin dashboard for operations
 
 The frontend is mostly HTML/CSS/vanilla JS, while backend behavior is handled by Supabase and Vercel serverless APIs.
@@ -21,7 +21,7 @@ The frontend is mostly HTML/CSS/vanilla JS, while backend behavior is handled by
 - Supabase JS client is used directly in browser for many read/write flows.
 
 ### Backend (serverless)
-- `/api/interview` runs AI interview orchestration + scorecard/report generation.
+- `/api/interview` is the main customer API (the name is historical): booking self-service (my-bookings, reschedule, cancel), My Access login and library, session rooms, lead capture and the homepage product advisor chat.
 - `/api/reminders` runs scheduled reminder processing for upcoming sessions.
 - `/api/razorpay-webhook` verifies payment webhook signatures and performs reliable fulfillment/logging.
 
@@ -47,21 +47,12 @@ Primary code: `script.js`, `api/razorpay-webhook.js`.
 
 Primary code: `script.js`, `my-bookings.html`, `api/reminders.js`.
 
-### C) AI interview flow
-1. User enters setup form (topic/difficulty/name/email) and pays/free-trial gates.
-2. Frontend posts conversation turns to `/api/interview`.
-3. Backend calls Groq chat completion API.
-4. End action generates markdown report, converts to HTML, and emails it.
-
-Primary code: `interview.html`, `api/interview.js`.
-
 ## 4) Important files and responsibilities
 
 - `index.html`: main landing page and conversion funnel.
 - `script.js`: shared app logic (products, sessions, booking, payments, emails, blogs, testimonials).
 - `admin.html`: admin dashboard, analytics, product/session/blog management.
 - `my-bookings.html`: customer booking lookup + reschedule/cancellation flows.
-- `interview.html`: full AI mock interview UX (voice I/O + report flow).
 - `api/*.js`: serverless business logic and integrations.
 - `generate-config.js`: build-time config.js generation from env vars.
 - `vercel.json`: Vercel build/output config.
@@ -91,9 +82,9 @@ Primary code: `interview.html`, `api/interview.js`.
 1. Read `README.md` for product intent and quick setup.
 2. Read `index.html` and `script.js` to understand the default customer flow.
 3. Read `admin.html` and `my-bookings.html` for operational workflow.
-4. Read `api/interview.js`, `api/reminders.js`, `api/razorpay-webhook.js` for backend behavior.
+4. Read `api/interview.js` (bookings, My Access, advisor), `api/reminders.js`, `api/razorpay-webhook.js` for backend behavior.
 5. Review SQL files to map tables and policy model.
-6. Run locally with a static server and verify: landing page, product modal, booking flow, admin login, interview page.
+6. Run locally with a static server and verify: landing page, product modal, booking flow, My Access login and admin login.
 
 ## 8) Recommended next refactors
 

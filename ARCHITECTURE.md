@@ -18,7 +18,7 @@ graph TB
         AA[admin-auth]
         PR[products]
         RM[reminders]
-        INT[interview / tts]
+        INT[bookings / access / advisor]
         PROMO[send-latest-products /<br/>send-promo-latest /<br/>send-single-buyer-offers]
     end
 

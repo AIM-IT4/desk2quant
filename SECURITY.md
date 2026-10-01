@@ -8,7 +8,7 @@ has not been, in this repository.
 ## What is actually in the repository
 
 Every hardcoded Supabase JWT in the repo (33 occurrences across `script.js`,
-`product.html`, `salary-explorer.html`, `desk-simulator.mjs`, `admin.html` and
+`product.html`, `salary-explorer.html`, `admin.html` and
 several `scripts/*`) decodes to `role: anon`. The anon key is **public by
 design** — it is the publishable client key for Supabase, the same way a Stripe
 publishable key is. It is not a secret, but it must only ever work against
@@ -40,7 +40,7 @@ Consequences that matter:
 
 1. **Browser writes to `purchases` are denied.** Every client-side insert with
    the anon key fails with `401 permission denied for table purchases`. The
-   lead-capture forms (homepage + desk simulator) were broken by this and are
+   lead-capture forms (homepage) were broken by this and are
    now fixed via the server-side `log-lead` action in `api/interview.js`.
    The frontend post-checkout insert (`script.js`) is still a dead write — the
    webhook is authoritative, so this is a safety-net gap, not a functional one.

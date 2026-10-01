@@ -1,6 +1,5 @@
 import { handleMentorPublic } from '../lib/guestMentors.js';
 import { getServiceKey, blockIfUnconfigured } from '../lib/supabaseAdmin.js';
-import { handleQuantAgentAdvanced } from '../lib/quantAgentAdvanced.js';
 import { getDriveAccessToken } from '../lib/secureDownload.js';
 
 const MICROSTRUCTURE_SAMPLE_FILE_ID = '1BLNufr0B5zvnTWPV2lmlLNj17RQUJ8z-';
@@ -27,13 +26,6 @@ export default async function handler(req, res) {
 
     if (req.method === 'GET' && req.query.sample === 'fast-greeks') {
         return handleFastGreeksSample(res);
-    }
-
-    // Quant Agent shares this serverless route because Vercel Hobby caps the
-    // project at 12 functions. Advanced handler owns adaptive assessment/RAG
-    // actions and delegates ordinary auth/progress/run actions to the core.
-    if (req.method === 'POST' && String(req.body?.action || '').startsWith('agent-')) {
-        return handleQuantAgentAdvanced(req, res);
     }
 
     // Cache for 5 minutes, serve stale for 10 min
