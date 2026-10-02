@@ -14,6 +14,8 @@ google-credentials.json
 
 # Dependency directories
 node_modules/
+brag-output/
+__pycache__/
 vendor/
 
 # Logs
