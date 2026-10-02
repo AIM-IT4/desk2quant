@@ -1,4 +1,5 @@
 *
 !Dockerfile
 !start-listmonk.sh
+!start-postgres.sh
 !supervisord.conf
