@@ -21,6 +21,7 @@ listmonk --upgrade --yes --config ''
 # its SHA-256 digest, matching Listmonk's native API-token implementation.
 if [ -n "${LISTMONK_MCP_API_TOKEN:-}" ]; then
   TOKEN_HASH="$(printf '%s' "${LISTMONK_MCP_API_TOKEN}" | sha256sum | awk '{print $1}')"
+
   ROLE_ID="$(
     PGPASSWORD="${POSTGRES_PASSWORD}" psql       -h 127.0.0.1 -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -At       -c "INSERT INTO roles (type, permissions, name)
           VALUES (
@@ -38,14 +39,14 @@ if [ -n "${LISTMONK_MCP_API_TOKEN:-}" ]; then
           RETURNING id;"
   )"
 
-  PGPASSWORD="${POSTGRES_PASSWORD}" psql     -h 127.0.0.1 -U "${POSTGRES_USER}" -d "${POSTGRES_DB}"     -v ON_ERROR_STOP=1     -v role_id="${ROLE_ID}"     -v token_hash="${TOKEN_HASH}"     -c "INSERT INTO users (
+  PGPASSWORD="${POSTGRES_PASSWORD}" psql     -h 127.0.0.1 -U "${POSTGRES_USER}" -d "${POSTGRES_DB}"     -v ON_ERROR_STOP=1     -c "INSERT INTO users (
           username, password_login, password, email, name, type,
           user_role_id, list_role_id, status
         )
         VALUES (
-          'desk2quant-mcp', false, :'token_hash',
+          'desk2quant-mcp', false, '${TOKEN_HASH}',
           'desk2quant-mcp@api', 'Desk2Quant MCP', 'api',
-          :role_id, NULL, 'enabled'
+          ${ROLE_ID}, NULL, 'enabled'
         )
         ON CONFLICT (username)
         DO UPDATE SET
