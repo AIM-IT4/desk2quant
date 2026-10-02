@@ -1,6 +1,6 @@
 FROM listmonk/listmonk:v6.2.0 AS listmonk
 
-FROM postgres:17-alpine
+FROM postgres:18-alpine
 
 RUN apk add --no-cache supervisor ca-certificates tzdata
 
