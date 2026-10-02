@@ -157,7 +157,8 @@ function renderPage(p, slug, related, reviews) {
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="/styles.css">
 <link rel="stylesheet" href="/seo-product.css?v=3">
-<script src="/umami-analytics.js?v=20261002a" defer></script>\n</head>
+<script src="/umami-analytics.js?v=20261002a" defer></script>
+</head>
 <body>
 <main class="seo-doc">
   <nav class="seo-crumbs" aria-label="Breadcrumb">
