@@ -1,2 +1,4 @@
 *
 !Dockerfile
+!start-listmonk.sh
+!supervisord.conf
