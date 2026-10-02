@@ -17,27 +17,32 @@ listmonk --install --idempotent --yes --config ''
 listmonk --upgrade --yes --config ''
 
 # Create/update a dedicated read-only API identity for the ChatGPT MCP.
-# The plaintext token is kept only in Railway's environment; Listmonk stores
-# its SHA-256 digest, matching Listmonk's native API-token implementation.
 if [ -n "${LISTMONK_MCP_API_TOKEN:-}" ]; then
   TOKEN_HASH="$(printf '%s' "${LISTMONK_MCP_API_TOKEN}" | sha256sum | awk '{print $1}')"
 
+  PGPASSWORD="${POSTGRES_PASSWORD}" psql     -h 127.0.0.1 -U "${POSTGRES_USER}" -d "${POSTGRES_DB}"     -v ON_ERROR_STOP=1     -c "INSERT INTO roles (type, permissions, name)
+        VALUES (
+          'user',
+          ARRAY[
+            'lists:get_all','list:get',
+            'subscribers:get','subscribers:get_all',
+            'campaigns:get','campaigns:get_all','campaigns:get_analytics',
+            'bounces:get','templates:get','settings:get'
+          ]::text[],
+          'Desk2Quant MCP Read Only'
+        )
+        ON CONFLICT (type, name) WHERE name IS NOT NULL
+        DO UPDATE SET permissions = EXCLUDED.permissions, updated_at = NOW();"     >/dev/null
+
   ROLE_ID="$(
-    PGPASSWORD="${POSTGRES_PASSWORD}" psql       -h 127.0.0.1 -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -At       -c "INSERT INTO roles (type, permissions, name)
-          VALUES (
-            'user',
-            ARRAY[
-              'lists:get_all','list:get',
-              'subscribers:get','subscribers:get_all',
-              'campaigns:get','campaigns:get_all','campaigns:get_analytics',
-              'bounces:get','templates:get','settings:get'
-            ]::text[],
-            'Desk2Quant MCP Read Only'
-          )
-          ON CONFLICT (type, name) WHERE name IS NOT NULL
-          DO UPDATE SET permissions = EXCLUDED.permissions, updated_at = NOW()
-          RETURNING id;"
+    PGPASSWORD="${POSTGRES_PASSWORD}" psql       -h 127.0.0.1 -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -qAt       -c "SELECT id FROM roles
+          WHERE type = 'user' AND name = 'Desk2Quant MCP Read Only'
+          LIMIT 1;"
   )"
+
+  case "${ROLE_ID}" in
+    ''|*[!0-9]*) echo "invalid MCP role id: ${ROLE_ID}" >&2; exit 1 ;;
+  esac
 
   PGPASSWORD="${POSTGRES_PASSWORD}" psql     -h 127.0.0.1 -U "${POSTGRES_USER}" -d "${POSTGRES_DB}"     -v ON_ERROR_STOP=1     -c "INSERT INTO users (
           username, password_login, password, email, name, type,
@@ -53,7 +58,7 @@ if [ -n "${LISTMONK_MCP_API_TOKEN:-}" ]; then
           password = EXCLUDED.password,
           user_role_id = EXCLUDED.user_role_id,
           status = 'enabled',
-          updated_at = NOW();"
+          updated_at = NOW();"     >/dev/null
 fi
 
 exec listmonk --config ''
