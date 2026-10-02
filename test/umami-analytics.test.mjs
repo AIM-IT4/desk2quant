@@ -20,7 +20,9 @@ test('shared and generated pages load the local Umami bootstrap', () => {
     'scripts/blog-seo-template.js',
     'scripts/build-seo.js'
   ]) {
-    assert.match(read(file), /\/umami-analytics\.js\?v=20261002a/);
+    const source = read(file);
+    assert.match(source, /\/umami-analytics\.js\?v=20261002a/);
+    assert.doesNotMatch(source, /\\n<\/head>/, 'template must not emit literal \\n before </head>');
   }
 });
 
