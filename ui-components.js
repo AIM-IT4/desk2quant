@@ -241,6 +241,7 @@
     function loadPageEnhancements() {
         const path = window.location.pathname;
         const modules = [
+            ['d2q-umami-analytics', '/umami-analytics.js?v=20261002a'],
             ['d2q-funnel-analytics', '/funnel-analytics.js?v=20260828a']
         ];
         if (path === '/' || path === '/index.html') {
