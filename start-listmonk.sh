@@ -31,27 +31,29 @@ if [ -n "${LISTMONK_MCP_API_TOKEN:-}" ]; then
           ]::text[],
           'Desk2Quant MCP Read Only'
         )
-        ON CONFLICT (type, name) WHERE name IS NOT NULL
-        DO UPDATE SET permissions = EXCLUDED.permissions, updated_at = NOW();"     >/dev/null
+        ON CONFLICT DO NOTHING;
 
-  ROLE_ID="$(
-    PGPASSWORD="${POSTGRES_PASSWORD}" psql       -h 127.0.0.1 -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -qAt       -c "SELECT id FROM roles
-          WHERE type = 'user' AND name = 'Desk2Quant MCP Read Only'
-          LIMIT 1;"
-  )"
+        UPDATE roles
+        SET permissions = ARRAY[
+          'lists:get_all','list:get',
+          'subscribers:get','subscribers:get_all',
+          'campaigns:get','campaigns:get_all','campaigns:get_analytics',
+          'bounces:get','templates:get','settings:get'
+        ]::text[],
+        updated_at = NOW()
+        WHERE type = 'user' AND name = 'Desk2Quant MCP Read Only';
 
-  case "${ROLE_ID}" in
-    ''|*[!0-9]*) echo "invalid MCP role id: ${ROLE_ID}" >&2; exit 1 ;;
-  esac
-
-  PGPASSWORD="${POSTGRES_PASSWORD}" psql     -h 127.0.0.1 -U "${POSTGRES_USER}" -d "${POSTGRES_DB}"     -v ON_ERROR_STOP=1     -c "INSERT INTO users (
+        INSERT INTO users (
           username, password_login, password, email, name, type,
           user_role_id, list_role_id, status
         )
         VALUES (
           'desk2quant-mcp', false, '${TOKEN_HASH}',
           'desk2quant-mcp@api', 'Desk2Quant MCP', 'api',
-          ${ROLE_ID}, NULL, 'enabled'
+          (SELECT id FROM roles
+             WHERE type = 'user' AND name = 'Desk2Quant MCP Read Only'
+             ORDER BY id LIMIT 1),
+          NULL, 'enabled'
         )
         ON CONFLICT (username)
         DO UPDATE SET
