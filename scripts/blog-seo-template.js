@@ -457,7 +457,7 @@ window.MathJax = {
 <link rel="stylesheet" href="/styles.css">
 <link rel="stylesheet" href="/seo-product.css?v=3">
 ${mathJax}
-</head>
+<script src="/umami-analytics.js?v=20261002a" defer></script>\n</head>
 <body>
 <main class="seo-doc">
   <nav class="seo-crumbs" aria-label="Breadcrumb">
