@@ -6,9 +6,10 @@ RUN apk add --no-cache supervisor ca-certificates tzdata
 
 COPY --from=listmonk /listmonk/listmonk /usr/local/bin/listmonk
 COPY start-listmonk.sh /usr/local/bin/start-listmonk.sh
+COPY start-postgres.sh /usr/local/bin/start-postgres.sh
 COPY supervisord.conf /etc/supervisord.conf
 
-RUN chmod +x /usr/local/bin/listmonk /usr/local/bin/start-listmonk.sh
+RUN chmod +x /usr/local/bin/listmonk /usr/local/bin/start-listmonk.sh /usr/local/bin/start-postgres.sh
 
 ENV LISTMONK_app__address=0.0.0.0:9000 \
     LISTMONK_db__host=127.0.0.1 \
