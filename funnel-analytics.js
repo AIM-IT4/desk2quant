@@ -117,6 +117,31 @@
         };
     }
 
+    const UMAMI_EVENT_FIELDS = Object.freeze([
+        'product_id', 'source', 'role', 'experience', 'timeline', 'readiness_band',
+        'top_gap', 'recommendation_domain', 'material_gap_count', 'bundle_suggested',
+        'amount', 'currency', 'cta_source'
+    ]);
+
+    function trackWithUmami(eventName, safe) {
+        const eventData = {};
+        UMAMI_EVENT_FIELDS.forEach(function (key) {
+            const value = safe[key];
+            if (value !== null && value !== undefined && value !== '') eventData[key] = value;
+        });
+
+        const send = function () {
+            try {
+                if (window.umami && typeof window.umami.track === 'function') {
+                    window.umami.track(eventName, eventData);
+                }
+            } catch (_) { }
+        };
+
+        if (window.umami && typeof window.umami.track === 'function') send();
+        else window.addEventListener('d2q:umami-ready', send, { once: true });
+    }
+
     function track(eventName, data) {
         const payload = Object.assign({
             event_id: randomId('e'),
@@ -147,6 +172,10 @@
         ];
         const safe = {};
         allowed.forEach(k => { if (payload[k] !== undefined) safe[k] = payload[k]; });
+
+        // Mirror only the privacy-minimized business dimensions into self-hosted Umami.
+        // Random session/event/diagnostic identifiers are intentionally omitted here.
+        trackWithUmami(eventName, safe);
 
         try {
             fetch(ENDPOINT, {
